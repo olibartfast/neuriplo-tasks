@@ -476,13 +476,14 @@ static void clamp_to_bounds(cv::Rect& box, const cv::Size& size) noexcept;
 
 - [x] Set up repository structure
 - [x] Implement core data structures
-- [x] Implement YOLO postprocessor interface
-- [x] Implement RT-DETR postprocessor interface
+- [x] Implement YOLO postprocessor (v5-v12 with auto-format detection)
+- [x] Implement RT-DETR postprocessor
+- [x] Implement classification postprocessor
+- [x] Implement instance segmentation postprocessor
 - [x] Create comprehensive documentation
-- [ ] Implement YOLO postprocessor logic
-- [ ] Implement RT-DETR postprocessor logic
 - [ ] Add unit tests for all components
 - [ ] Set up CI/CD pipeline
+- [ ] Performance benchmarking
 
 ### Medium-term
 
