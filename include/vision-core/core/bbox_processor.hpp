@@ -34,6 +34,25 @@ public:
     );
 
     /**
+     * @brief Calculate bounding box from XYXY coordinates with letterbox scaling
+     * 
+     * Converts bounding box coordinates from network space (x1, y1, x2, y2) to original image space,
+     * accounting for letterbox padding used during preprocessing.
+     * 
+     * @param image_size Original image size
+     * @param bbox Raw bbox coordinates [x1, y1, x2, y2]
+     * @param network_width Network input width
+     * @param network_height Network input height
+     * @return Scaled bounding box in original image coordinates
+     */
+    [[nodiscard]] static cv::Rect calculate_bounding_box_from_xyxy(
+        const cv::Size& image_size,
+        const std::vector<float>& bbox,
+        int network_width,
+        int network_height
+    );
+
+    /**
      * @brief Scale bbox from network coordinates to image coordinates
      * 
      * Simple scaling without letterbox consideration. Use calculate_bounding_box()

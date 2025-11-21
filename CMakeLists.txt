@@ -5,67 +5,43 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Options for component-based building
-option(BUILD_OBJECT_DETECTION "Build object detection components" ON)
-option(BUILD_INSTANCE_SEGMENTATION "Build instance segmentation components" OFF)
-option(BUILD_CLASSIFICATION "Build classification components" OFF)
-option(BUILD_OPTICAL_FLOW "Build optical flow components" OFF)
+# Options for testing
 option(BUILD_TESTS "Build tests" OFF)
 
 # Find OpenCV
 find_package(OpenCV REQUIRED)
 
-# Core library sources (always built)
+# All library sources
 set(CORE_SOURCES
+    # Core
     src/core/bbox_processor.cpp
+    # Object Detection
+    src/object_detection/yolo_postprocessor.cpp
+    src/object_detection/rtdetr_postprocessor.cpp
+    src/object_detection/yolo_nas_postprocessor.cpp
+    src/object_detection/dfine_postprocessor.cpp
+    src/object_detection/rfdetr_postprocessor.cpp
+    # Instance Segmentation
+    src/instance_segmentation/yolo_segmentation_postprocessor.cpp
+    # Classification
+    src/classification/classifier_postprocessor.cpp
 )
 
 set(CORE_HEADERS
+    # Core
     include/vision-core/core/detection.hpp
     include/vision-core/core/bbox_processor.hpp
+    # Object Detection
+    include/vision-core/object_detection/yolo_postprocessor.hpp
+    include/vision-core/object_detection/rtdetr_postprocessor.hpp
+    include/vision-core/object_detection/yolo_nas_postprocessor.hpp
+    include/vision-core/object_detection/dfine_postprocessor.hpp
+    include/vision-core/object_detection/rfdetr_postprocessor.hpp
+    # Instance Segmentation
+    include/vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp
+    # Classification
+    include/vision-core/classification/classifier_postprocessor.hpp
 )
-
-# Object Detection sources
-if(BUILD_OBJECT_DETECTION)
-    list(APPEND CORE_SOURCES
-        src/object_detection/yolo_postprocessor.cpp
-        src/object_detection/rtdetr_postprocessor.cpp
-    )
-    list(APPEND CORE_HEADERS
-        include/vision-core/object_detection/yolo_postprocessor.hpp
-        include/vision-core/object_detection/rtdetr_postprocessor.hpp
-    )
-endif()
-
-# Instance Segmentation sources
-if(BUILD_INSTANCE_SEGMENTATION)
-    list(APPEND CORE_SOURCES
-        src/instance_segmentation/yolo_segmentation_postprocessor.cpp
-    )
-    list(APPEND CORE_HEADERS
-        include/vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp
-    )
-endif()
-
-# Classification sources
-if(BUILD_CLASSIFICATION)
-    list(APPEND CORE_SOURCES
-        src/classification/classifier_postprocessor.cpp
-    )
-    list(APPEND CORE_HEADERS
-        include/vision-core/classification/classifier_postprocessor.hpp
-    )
-endif()
-
-# Optical Flow sources
-if(BUILD_OPTICAL_FLOW)
-    list(APPEND CORE_SOURCES
-        src/optical_flow/raft_postprocessor.cpp
-    )
-    list(APPEND CORE_HEADERS
-        include/vision-core/optical_flow/raft_postprocessor.hpp
-    )
-endif()
 
 # Create library
 add_library(vision-core ${CORE_SOURCES} ${CORE_HEADERS})
@@ -147,8 +123,4 @@ endif()
 message(STATUS "vision-core configuration:")
 message(STATUS "  Version: ${PROJECT_VERSION}")
 message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
-message(STATUS "  Build object detection: ${BUILD_OBJECT_DETECTION}")
-message(STATUS "  Build instance segmentation: ${BUILD_INSTANCE_SEGMENTATION}")
-message(STATUS "  Build classification: ${BUILD_CLASSIFICATION}")
-message(STATUS "  Build optical flow: ${BUILD_OPTICAL_FLOW}")
 message(STATUS "  Build tests: ${BUILD_TESTS}")

@@ -42,6 +42,44 @@ cv::Rect BBoxProcessor::calculate_bounding_box(
     return result;
 }
 
+cv::Rect BBoxProcessor::calculate_bounding_box_from_xyxy(
+    const cv::Size& image_size,
+    const std::vector<float>& bbox,
+    int network_width,
+    int network_height)
+{
+    if (bbox.size() < 4) {
+        throw std::invalid_argument("Bbox must have at least 4 elements");
+    }
+
+    const float ratio_width = network_width / static_cast<float>(image_size.width);
+    const float ratio_height = network_height / static_cast<float>(image_size.height);
+    
+    int left, right, top, bottom;
+    
+    if (ratio_height > ratio_width) {
+        // Letterbox padding on top/bottom
+        const float padding = (network_height - ratio_width * image_size.height) / 2.0f;
+        
+        left = static_cast<int>(bbox[0] / ratio_width);
+        top = static_cast<int>((bbox[1] - padding) / ratio_width);
+        right = static_cast<int>(bbox[2] / ratio_width);
+        bottom = static_cast<int>((bbox[3] - padding) / ratio_width);
+    } else {
+        // Letterbox padding on left/right
+        const float padding = (network_width - ratio_height * image_size.width) / 2.0f;
+        
+        left = static_cast<int>((bbox[0] - padding) / ratio_height);
+        top = static_cast<int>(bbox[1] / ratio_height);
+        right = static_cast<int>((bbox[2] - padding) / ratio_height);
+        bottom = static_cast<int>(bbox[3] / ratio_height);
+    }
+
+    cv::Rect result(left, top, right - left, bottom - top);
+    clamp_to_bounds(result, image_size);
+    return result;
+}
+
 cv::Rect BBoxProcessor::scale_to_original(
     const cv::Rect& bbox,
     const cv::Size& original_size,

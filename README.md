@@ -4,10 +4,23 @@ Framework-agnostic computer vision algorithms: object detection, instance segmen
 
 ## Features
 
-- **Object Detection**: YOLO (v5-v12), RT-DETR, RT-DETRv2, YOLO-NAS, RF-DETR, D-FINE, DEIM
+- **Object Detection**: YOLO (v5-v12), RT-DETR, RT-DETRv2, YOLO-NAS, D-FINE, RF-DETR
+  - ✅ Auto-detects YOLO format (v5-v7 vs v8+)
+  - ✅ NMS and confidence filtering
+  - ✅ Letterbox coordinate transformation
+  - ✅ Support for anchor-free and transformer-based detectors
+  
 - **Instance Segmentation**: YOLOv5-seg, YOLOv8-seg, YOLO11-seg
-- **Classification**: Generic classifier postprocessing
-- **Optical Flow**: RAFT
+  - ✅ Mask prototype decoding
+  - ✅ Mask resizing and thresholding
+  - ✅ Integrated with detection pipeline
+  
+- **Classification**: Generic top-k classifier
+  - ✅ Softmax activation
+  - ✅ Top-k predictions
+  - ✅ Works with any classification model
+  
+- **Optical Flow**: RAFT (planned)
 
 ## Design Philosophy
 
@@ -64,20 +77,43 @@ add_subdirectory(vision-core)
 
 ```cpp
 #include <vision-core/object_detection/yolo_postprocessor.hpp>
+#include <vision-core/classification/classifier_postprocessor.hpp>
+#include <vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp>
 #include <vision-core/core/detection.hpp>
 
 using namespace vision_core;
 
-// Process YOLO output
+// Object Detection Example
 std::vector<Detection> detections = YoloPostprocessor::postprocess(
     output_data, shape, frame_size, 640, 640, 0.25f, 0.45f
 );
 
-// Access results with modern naming
 for (const auto& det : detections) {
     std::cout << "Class: " << det.class_id 
               << " Confidence: " << det.confidence
               << " BBox: " << det.bbox << std::endl;
+}
+
+// Classification Example
+std::vector<ClassificationResult> predictions = ClassifierPostprocessor::postprocess(
+    output_data, shape, /*top_k=*/5, /*apply_softmax=*/true
+);
+
+for (const auto& pred : predictions) {
+    std::cout << "Class: " << pred.class_id 
+              << " Confidence: " << pred.confidence << std::endl;
+}
+
+// Instance Segmentation Example
+std::vector<InstanceSegmentation> segments = YoloSegmentationPostprocessor::postprocess(
+    detection_output, mask_output, 
+    detection_shape, mask_shape,
+    frame_size, 640, 640, 0.25f, 0.45f, 0.5f
+);
+
+for (const auto& seg : segments) {
+    std::cout << "Class: " << seg.class_id 
+              << " Mask size: " << seg.mask_width << "x" << seg.mask_height << std::endl;
 }
 ```
 
@@ -149,8 +185,26 @@ MIT License
 
 ## Roadmap
 
-- [ ] YOLOv8 instance segmentation support
+### Completed ✅
+- [x] Core data structures (Detection, ClassificationResult)
+- [x] Bounding box utilities with letterbox support
+- [x] YOLO postprocessor (v5-v12, auto-format detection)
+- [x] RT-DETR postprocessor
+- [x] YOLO-NAS postprocessor
+- [x] D-FINE postprocessor
+- [x] RF-DETR postprocessor
+- [x] Classification postprocessor (top-k, softmax)
+- [x] Instance segmentation (YOLO-seg with mask decoding)
+- [x] Modern C++ conventions and documentation
+
+### In Progress 🚧
+- [ ] Comprehensive unit tests
+- [ ] CI/CD pipeline setup
+- [ ] Migration guides for tritonic and object-detection-inference
+
+### Planned 📋
+- [ ] Additional detector variants (YOLO-NAS, RF-DETR, D-FINE)
 - [ ] RAFT optical flow implementation
-- [ ] Generic classification postprocessor
 - [ ] Batch processing utilities
 - [ ] Python bindings (pybind11)
+- [ ] Performance benchmarks and optimizations
