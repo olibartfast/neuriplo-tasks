@@ -4,27 +4,39 @@ Framework-agnostic computer vision algorithms: object detection, instance segmen
 
 ## Features
 
-- **Object Detection**: YOLO (v5-v12), RT-DETR, RT-DETRv2, YOLO-NAS, D-FINE, RF-DETR
+- **Object Detection**: YOLO (v5-v12), YOLOv10, RT-DETR, RT-DETRv2, YOLO-NAS, D-FINE, RF-DETR
   - ✅ Auto-detects YOLO format (v5-v7 vs v8+)
+  - ✅ YOLOv10 end-to-end detection (no NMS needed)
   - ✅ NMS and confidence filtering
   - ✅ Letterbox coordinate transformation
   - ✅ Support for anchor-free and transformer-based detectors
   
-- **Instance Segmentation**: YOLOv5-seg, YOLOv8-seg, YOLO11-seg
+- **Instance Segmentation**: YOLOv5-seg, YOLOv8-seg, YOLO11-seg, RF-DETR-Seg
   - ✅ Mask prototype decoding
   - ✅ Mask resizing and thresholding
   - ✅ Integrated with detection pipeline
+  - ✅ RF-DETR segmentation with sigmoid activation
   
 - **Classification**: Generic top-k classifier
   - ✅ Softmax activation
   - ✅ Top-k predictions
   - ✅ Works with any classification model
   
-- **Optical Flow**: RAFT (planned)
+- **Video Classification**: TimeSformer
+  - ✅ Temporal transformer models
+  - ✅ Softmax activation
+  - ✅ Top-k predictions
+  
+- **Optical Flow**: RAFT
+  - ✅ Flow field extraction
+  - ✅ Color-coded visualization
+  - ✅ Magnitude calculation
 
 ## Design Philosophy
 
-Pure algorithm implementations with:
+Complete task implementations with:
+- ✅ Preprocessing for all models
+- ✅ Postprocessing algorithms
 - ✅ No inference engine dependencies
 - ✅ Framework-agnostic interfaces
 - ✅ Reusable across different projects
@@ -77,15 +89,23 @@ add_subdirectory(vision-core)
 
 ```cpp
 #include <vision-core/object_detection/yolo_postprocessor.hpp>
-#include <vision-core/classification/classifier_postprocessor.hpp>
-#include <vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp>
+#include <vision-core/object_detection/detection_preprocessor.hpp>
+#include <vision-core/classification/classification_preprocessor.hpp>
 #include <vision-core/core/detection.hpp>
 
 using namespace vision_core;
 
-// Object Detection Example
+// Object Detection with Preprocessing Example
+YoloPreprocessor yolo_prep(cv::Size(640, 640));
+cv::Mat image = cv::imread("image.jpg");
+
+// Preprocess
+auto preprocessed = yolo_prep.preprocess(image);
+// ... run inference with your engine ...
+
+// Postprocess
 std::vector<Detection> detections = YoloPostprocessor::postprocess(
-    output_data, shape, frame_size, 640, 640, 0.25f, 0.45f
+    output_data, shape, image.size(), 640, 640, 0.25f, 0.45f
 );
 
 for (const auto& det : detections) {
@@ -94,27 +114,27 @@ for (const auto& det : detections) {
               << " BBox: " << det.bbox << std::endl;
 }
 
-// Classification Example
+// Classification with Preprocessing Example
+ViTPreprocessor vit_prep(cv::Size(224, 224));
+auto preprocessed_cls = vit_prep.preprocess(image);
+// ... run inference ...
+
 std::vector<ClassificationResult> predictions = ClassifierPostprocessor::postprocess(
     output_data, shape, /*top_k=*/5, /*apply_softmax=*/true
 );
 
-for (const auto& pred : predictions) {
-    std::cout << "Class: " << pred.class_id 
-              << " Confidence: " << pred.confidence << std::endl;
-}
+// Optical Flow Example
+RaftPreprocessor raft_prep(cv::Size(960, 520));
+cv::Mat frame1 = cv::imread("frame1.jpg");
+cv::Mat frame2 = cv::imread("frame2.jpg");
 
-// Instance Segmentation Example
-std::vector<InstanceSegmentation> segments = YoloSegmentationPostprocessor::postprocess(
-    detection_output, mask_output, 
-    detection_shape, mask_shape,
-    frame_size, 640, 640, 0.25f, 0.45f, 0.5f
+auto preprocessed_frames = raft_prep.preprocess_pair(frame1, frame2);
+// ... run inference ...
+
+OpticalFlowResult flow = RaftPostprocessor::postprocess(
+    output_data, shape, frame1.size()
 );
-
-for (const auto& seg : segments) {
-    std::cout << "Class: " << seg.class_id 
-              << " Mask size: " << seg.mask_width << "x" << seg.mask_height << std::endl;
-}
+cv::imshow("Flow", flow.flow_visualization);
 ```
 
 ## Projects Using vision-core
@@ -187,14 +207,18 @@ MIT License
 
 ### Completed ✅
 - [x] Core data structures (Detection, ClassificationResult)
-- [x] Bounding box utilities with letterbox support
+- [x] Bounding box utilities with letterbox support (XYWH and XYXY)
 - [x] YOLO postprocessor (v5-v12, auto-format detection)
+- [x] YOLOv10 postprocessor (end-to-end, no NMS)
 - [x] RT-DETR postprocessor
 - [x] YOLO-NAS postprocessor
 - [x] D-FINE postprocessor
 - [x] RF-DETR postprocessor
 - [x] Classification postprocessor (top-k, softmax)
 - [x] Instance segmentation (YOLO-seg with mask decoding)
+- [x] RF-DETR segmentation postprocessor
+- [x] Video classification (TimeSformer)
+- [x] Optical flow (RAFT)
 - [x] Modern C++ conventions and documentation
 
 ### In Progress 🚧
@@ -203,8 +227,7 @@ MIT License
 - [ ] Migration guides for tritonic and object-detection-inference
 
 ### Planned 📋
-- [ ] Additional detector variants (YOLO-NAS, RF-DETR, D-FINE)
-- [ ] RAFT optical flow implementation
 - [ ] Batch processing utilities
 - [ ] Python bindings (pybind11)
 - [ ] Performance benchmarks and optimizations
+- [ ] Additional video classification models

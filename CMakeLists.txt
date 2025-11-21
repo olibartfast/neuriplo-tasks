@@ -15,32 +15,52 @@ find_package(OpenCV REQUIRED)
 set(CORE_SOURCES
     # Core
     src/core/bbox_processor.cpp
+    src/core/preprocessor.cpp
     # Object Detection
     src/object_detection/yolo_postprocessor.cpp
+    src/object_detection/yolov10_postprocessor.cpp
     src/object_detection/rtdetr_postprocessor.cpp
     src/object_detection/yolo_nas_postprocessor.cpp
     src/object_detection/dfine_postprocessor.cpp
     src/object_detection/rfdetr_postprocessor.cpp
+    src/object_detection/detection_preprocessor.cpp
     # Instance Segmentation
     src/instance_segmentation/yolo_segmentation_postprocessor.cpp
+    src/instance_segmentation/rfdetr_segmentation_postprocessor.cpp
     # Classification
     src/classification/classifier_postprocessor.cpp
+    src/classification/classification_preprocessor.cpp
+    # Video Classification
+    src/video_classification/timesformer_postprocessor.cpp
+    # Optical Flow
+    src/optical_flow/raft_postprocessor.cpp
+    src/optical_flow/optical_flow_preprocessor.cpp
 )
 
 set(CORE_HEADERS
     # Core
     include/vision-core/core/detection.hpp
     include/vision-core/core/bbox_processor.hpp
+    include/vision-core/core/preprocessor.hpp
     # Object Detection
     include/vision-core/object_detection/yolo_postprocessor.hpp
+    include/vision-core/object_detection/yolov10_postprocessor.hpp
     include/vision-core/object_detection/rtdetr_postprocessor.hpp
     include/vision-core/object_detection/yolo_nas_postprocessor.hpp
     include/vision-core/object_detection/dfine_postprocessor.hpp
     include/vision-core/object_detection/rfdetr_postprocessor.hpp
+    include/vision-core/object_detection/detection_preprocessor.hpp
     # Instance Segmentation
     include/vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp
+    include/vision-core/instance_segmentation/rfdetr_segmentation_postprocessor.hpp
     # Classification
     include/vision-core/classification/classifier_postprocessor.hpp
+    include/vision-core/classification/classification_preprocessor.hpp
+    # Video Classification
+    include/vision-core/video_classification/timesformer_postprocessor.hpp
+    # Optical Flow
+    include/vision-core/optical_flow/raft_postprocessor.hpp
+    include/vision-core/optical_flow/optical_flow_preprocessor.hpp
 )
 
 # Create library
