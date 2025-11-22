@@ -1,58 +1,15 @@
 # vision-core
 
-Framework-agnostic computer vision algorithms: object detection, instance segmentation, classification, and optical flow
+Framework-agnostic computer vision algorithms (pre and post processing steps) to be used in other inference engine projects like [tritonic](https://github.com/olibartfast/tritonic) and [object-detection-inference](https://github.com/olibartfast/object-detection-inference)
 
 ## Features
 
-- **Object Detection**: YOLO (v5-v12), YOLOv10, RT-DETR, RT-DETRv2, YOLO-NAS, D-FINE, RF-DETR
-  - ✅ Auto-detects YOLO format (v5-v7 vs v8+)
-  - ✅ YOLOv10 end-to-end detection (no NMS needed)
-  - ✅ NMS and confidence filtering
-  - ✅ Letterbox coordinate transformation
-  - ✅ Support for anchor-free and transformer-based detectors
-  
+- **Object Detection**: YOLO (v5-v12), YOLOv10, RT-DETR family (v1/v2), YOLO-NAS, D-FINE, RF-DETR
 - **Instance Segmentation**: YOLOv5-seg, YOLOv8-seg, YOLO11-seg, RF-DETR-Seg
-  - ✅ Mask prototype decoding
-  - ✅ Mask resizing and thresholding
-  - ✅ Integrated with detection pipeline
-  - ✅ RF-DETR segmentation with sigmoid activation
-  
-- **Classification**: Generic top-k classifier
-  - ✅ Softmax activation
-  - ✅ Top-k predictions
-  - ✅ Works with any classification model
-  
+- **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: TimeSformer
-  - ✅ Temporal transformer models
-  - ✅ Softmax activation
-  - ✅ Top-k predictions
-  
 - **Optical Flow**: RAFT
-  - ✅ Flow field extraction
-  - ✅ Color-coded visualization
-  - ✅ Magnitude calculation
 
-## Design Philosophy
-
-Complete task implementations with:
-- ✅ Preprocessing for all models
-- ✅ Postprocessing algorithms
-- ✅ No inference engine dependencies
-- ✅ Framework-agnostic interfaces
-- ✅ Reusable across different projects
-- ✅ Only depends on OpenCV
-- ✅ Modern C++17 with clear conventions
-
-## Modern C++ Conventions
-
-This library follows strict modern C++ naming conventions:
-
-- **Types (classes, structs, enums)**: `PascalCase`
-- **Functions and methods**: `snake_case`
-- **Variables and parameters**: `snake_case`
-- **Member variables**: `snake_case` (public) or `snake_case_` (private)
-- **Constants**: `kConstantName` (static const) or inline variables
-- **Attributes**: `[[nodiscard]]`, `noexcept` where appropriate
 
 Example:
 ```cpp
@@ -146,19 +103,10 @@ cv::imshow("Flow", flow.flow_visualization);
 
 ```bash
 mkdir build && cd build
-cmake -DBUILD_OBJECT_DETECTION=ON -DBUILD_TESTS=ON ..
+cmake -DBUILD_TESTS=ON ..
 cmake --build .
 ```
 
-### CMake Options
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `BUILD_OBJECT_DETECTION` | ON | Build object detection components |
-| `BUILD_INSTANCE_SEGMENTATION` | OFF | Build instance segmentation |
-| `BUILD_CLASSIFICATION` | OFF | Build classification components |
-| `BUILD_OPTICAL_FLOW` | OFF | Build optical flow algorithms |
-| `BUILD_TESTS` | OFF | Build unit tests |
 
 ## Directory Structure
 
@@ -180,14 +128,6 @@ vision-core/
 ├── CMakeLists.txt
 └── README.md
 ```
-
-## API Design Principles
-
-1. **Header-only where possible** for templates and small utilities
-2. **Static factory methods** for postprocessors (stateless operations)
-3. **Clear ownership** using smart pointers when needed
-4. **Exception safety** with strong exception guarantee
-5. **Const correctness** throughout the API
 
 ## Contributing
 
