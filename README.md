@@ -164,7 +164,7 @@ MIT License
 ### In Progress 🚧
 - [ ] Comprehensive unit tests
 - [ ] CI/CD pipeline setup
-- [ ] Migration guides for tritonic and object-detection-inference
+- [ ] Migration in tritonic and object-detection-inference
 
 ### Planned 📋
 - [ ] Batch processing utilities
