@@ -9,46 +9,17 @@ Framework-agnostic computer vision algorithms (pre and post processing steps) to
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: TimeSformer
 - **Optical Flow**: RAFT
+- **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
 
+## Two Ways to Use vision-core
 
-Example:
-```cpp
-struct Detection {
-    cv::Rect bbox;
-    float confidence;  // not 'score'
-    int class_id;      // not 'label'
-};
+### 1. Direct Preprocessor/Postprocessor Usage (Flexible)
 
-class YoloPostprocessor {
-    [[nodiscard]] static std::vector<Detection> postprocess(...);
-};
-```
-
-## Usage
-
-### As CMake Submodule
-
-```cmake
-add_subdirectory(vision-core)
-target_link_libraries(your_target vision-core::vision-core)
-```
-
-### Component-Based Building
-
-```cmake
-# Build only object detection
-set(BUILD_OBJECT_DETECTION ON CACHE BOOL "")
-set(BUILD_CLASSIFICATION OFF CACHE BOOL "")
-add_subdirectory(vision-core)
-```
-
-### Example
+Use individual preprocessors and postprocessors for maximum flexibility:
 
 ```cpp
 #include <vision-core/object_detection/yolo_postprocessor.hpp>
 #include <vision-core/object_detection/detection_preprocessor.hpp>
-#include <vision-core/classification/classification_preprocessor.hpp>
-#include <vision-core/core/detection.hpp>
 
 using namespace vision_core;
 
@@ -64,40 +35,125 @@ auto preprocessed = yolo_prep.preprocess(image);
 std::vector<Detection> detections = YoloPostprocessor::postprocess(
     output_data, shape, image.size(), 640, 640, 0.25f, 0.45f
 );
-
-for (const auto& det : detections) {
-    std::cout << "Class: " << det.class_id 
-              << " Confidence: " << det.confidence
-              << " BBox: " << det.bbox << std::endl;
-}
-
-// Classification with Preprocessing Example
-ViTPreprocessor vit_prep(cv::Size(224, 224));
-auto preprocessed_cls = vit_prep.preprocess(image);
-// ... run inference ...
-
-std::vector<ClassificationResult> predictions = ClassifierPostprocessor::postprocess(
-    output_data, shape, /*top_k=*/5, /*apply_softmax=*/true
-);
-
-// Optical Flow Example
-RaftPreprocessor raft_prep(cv::Size(960, 520));
-cv::Mat frame1 = cv::imread("frame1.jpg");
-cv::Mat frame2 = cv::imread("frame2.jpg");
-
-auto preprocessed_frames = raft_prep.preprocess_pair(frame1, frame2);
-// ... run inference ...
-
-OpticalFlowResult flow = RaftPostprocessor::postprocess(
-    output_data, shape, frame1.size()
-);
-cv::imshow("Flow", flow.flow_visualization);
 ```
+
+### 2. TaskInterface/TaskFactory Usage (Unified)
+
+Use the unified task interface for integrated preprocessing and postprocessing:
+
+```cpp
+#include <vision-core/core/task_factory.hpp>
+#include <vision-core/core/task_interface.hpp>
+#include <vision-core/core/model_info.hpp>
+
+using namespace vision_core;
+
+// Setup model info
+ModelInfo model_info;
+model_info.input_shapes = {{1, 3, 640, 640}};
+model_info.input_formats = {"FORMAT_NCHW"};
+model_info.input_names = {"images"};
+model_info.output_names = {"output0"};
+
+// Create task instance via factory
+auto task = TaskFactory::createTaskInstance("yolov8", model_info);
+
+// Preprocess
+std::vector<cv::Mat> images = {cv::imread("image.jpg")};
+auto preprocessed = task->preprocess(images);
+
+// ... run inference ...
+
+// Postprocess
+auto results = task->postprocess(
+    images[0].size(), 
+    inference_outputs, 
+    output_shapes
+);
+
+// Access results via std::variant
+for (const auto& result : results) {
+    if (std::holds_alternative<Detection>(result)) {
+        const auto& det = std::get<Detection>(result);
+        std::cout << "Class: " << det.class_id 
+                  << " Confidence: " << det.class_confidence << std::endl;
+    }
+}
+```
+
+## Usage
+
+### As CMake Submodule
+
+```cmake
+add_subdirectory(vision-core)
+target_link_libraries(your_target vision-core::vision-core)
+```
+
+### As Installed Package
+
+```bash
+# Install
+mkdir build && cd build
+cmake -DCMAKE_INSTALL_PREFIX=/usr/local ..
+cmake --build .
+sudo cmake --install .
+```
+
+```cmake
+# In your CMakeLists.txt
+find_package(vision-core REQUIRED)
+target_link_libraries(your_target vision-core::vision-core)
+```
+
+### Supported Model Types (TaskFactory)
+
+The TaskFactory supports the following model type strings:
+
+**Object Detection:**
+- `"yolov5"`, `"yolov6"`, `"yolov7"`, `"yolov8"`, `"yolov9"`, `"yolo11"`, `"yolov12"` - YOLO family
+- `"yolov10"` - YOLOv10 (end-to-end, no NMS)
+- `"yolonas"`, `"yolo-nas"` - YOLO-NAS
+- `"rtdetr"`, `"rtdetrv2"` - RT-DETR family
+- `"rtdetrul"`, `"rtdetr-ultralytics"` - RT-DETR Ultralytics variant
+- `"rfdetr"`, `"rf-detr"` - RF-DETR
+- `"dfine"`, `"deim"` - D-FINE and variants
+
+**Instance Segmentation:**
+- `"yoloseg"`, `"yolov8-seg"` - YOLO segmentation
+- `"rfdetrseg"`, `"rf-detr-seg"` - RF-DETR segmentation
+
+**Classification:**
+- `"torchvision-classifier"` - Torchvision models (ResNet, EfficientNet, etc.)
+- `"tensorflow-classifier"` - TensorFlow/Keras models
+- `"vit-classifier"` - Vision Transformers
+- `"resnet50"`, `"resnet"` - ResNet variants
+
+**Optical Flow:**
+- `"raft"` - RAFT optical flow
+
+**Video Classification:**
+- `"timesformer"` - TimeSformer video classification
 
 ## Projects Using vision-core
 
-- [tritonic](https://github.com/olibartfast/tritonic) - Triton Inference Server Client
-- [object-detection-inference](https://github.com/olibartfast/object-detection-inference) - Multi-backend object detection
+- [tritonic](https://github.com/olibartfast/tritonic) - Triton Inference
+    int batch_size_{1};                               ///< Current batch size
+    
+    ModelInfo() = default;
+};
+
+} // namespace vision_core
+ Server Client *(Integration guide: [docs/TRITONIC_INTEGRATION.md](docs/TRITONIC_INTEGRATION.md))*
+- [object-detection-inference](https://github.com/olibartfast/object-detection-inference) - Multi-backend object detection (ONNX Runtime, TensorRT, OpenVINO)
+- [deepstream-infer-lab](https://github.com/olibartfast/deepstream-infer-lab) - NVIDIA DeepStream inference experiments
+
+## Integration with Inference Frameworks
+
+vision-core is designed to work with any inference framework (Triton, ONNX Runtime, TensorRT, OpenVINO, DeepStream, etc.). See:
+- **Triton Integration**: [docs/TRITONIC_INTEGRATION.md](docs/TRITONIC_INTEGRATION.md) - Replace tritonic's task implementations with vision-core
+- **General Integration**: Use `ModelInfo` to describe your model, create tasks via `TaskFactory`, and process results
+- **Direct Usage**: Use individual preprocessors and postprocessors for maximum flexibility with your inference engine
 
 ## Building
 
@@ -113,17 +169,33 @@ cmake --build .
 ```
 vision-core/
 ├── include/vision-core/        # Public headers
-│   ├── core/                   # Core data structures
-│   │   ├── detection.hpp
-│   │   └── bbox_processor.hpp
+│   ├── core/                   # Core data structures and task interface
+│   │   ├── result_types.hpp    # Result structures (Detection, Classification, etc.)
+│   │   ├── model_info.hpp      # Model metadata structure
+│   │   ├── task_interface.hpp  # Base task interface
+│   │   ├── task_factory.hpp    # Task factory pattern
+│   │   ├── bbox_processor.hpp  # Bounding box utilities
+│   │   └── preprocessor.hpp    # Base preprocessor
 │   ├── object_detection/       # Object detection algorithms
 │   │   ├── yolo_postprocessor.hpp
-│   │   └── rtdetr_postprocessor.hpp
-│   └── ...
+│   │   ├── rtdetr_postprocessor.hpp
+│   │   ├── detection_preprocessor.hpp
+│   │   └── ...
+│   ├── instance_segmentation/  # Instance segmentation
+│   ├── classification/         # Classification
+│   ├── video_classification/   # Video classification
+│   └── optical_flow/          # Optical flow
 ├── src/                        # Implementation files
 │   ├── core/
+│   │   ├── task_interface.cpp
+│   │   ├── task_factory.cpp
+│   │   └── ...
 │   ├── object_detection/
 │   └── ...
+├── docs/                       # Documentation
+│   ├── TRITONIC_INTEGRATION.md # Tritonic integration guide
+│   ├── NAMING_CONVENTIONS.md
+│   └── DEVELOPMENT.md
 ├── tests/                      # Unit tests
 ├── CMakeLists.txt
 └── README.md
@@ -146,7 +218,11 @@ MIT License
 ## Roadmap
 
 ### Completed ✅
-- [x] Core data structures (Detection, ClassificationResult)
+- [x] Core data structures (Detection, Classification, InstanceSegmentation, etc.)
+- [x] Unified Result variant type
+- [x] TaskInterface base class
+- [x] TaskFactory with model type registration
+- [x] ModelInfo for framework-agnostic model metadata
 - [x] Bounding box utilities with letterbox support (XYWH and XYXY)
 - [x] YOLO postprocessor (v5-v12, auto-format detection)
 - [x] YOLOv10 postprocessor (end-to-end, no NMS)
@@ -160,14 +236,17 @@ MIT License
 - [x] Video classification (TimeSformer)
 - [x] Optical flow (RAFT)
 - [x] Modern C++ conventions and documentation
+- [x] Integration guide for tritonic
 
 ### In Progress 🚧
-- [ ] Comprehensive unit tests
+- [ ] Concrete TaskInterface implementations for all models
+- [ ] Comprehensive unit tests for TaskFactory
 - [ ] CI/CD pipeline setup
-- [ ] Migration guides for tritonic and object-detection-inference
+- [ ] Migration of tritonic to use vision-core
 
 ### Planned 📋
 - [ ] Batch processing utilities
 - [ ] Python bindings (pybind11)
 - [ ] Performance benchmarks and optimizations
 - [ ] Additional video classification models
+- [ ] Pose estimation support
