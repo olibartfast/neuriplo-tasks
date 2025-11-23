@@ -4,6 +4,25 @@
 
 using namespace vision_core;
 
+// Minimal test task for registration tests
+class TestTask : public TaskInterface {
+public:
+    TestTask(const ModelInfo& model_info) : TaskInterface(model_info) {}
+    
+    TaskType getTaskType() override { return TaskType::Detection; }
+    
+    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override {
+        return {};
+    }
+    
+    std::vector<Result> postprocess(
+        const cv::Size&,
+        const std::vector<std::vector<TensorElement>>&,
+        const std::vector<std::vector<int64_t>>&) override {
+        return {};
+    }
+};
+
 class TaskFactoryTest : public ::testing::Test {
 protected:
     ModelInfo createValidModelInfo() {
@@ -59,9 +78,41 @@ TEST_F(TaskFactoryTest, InvalidInputDimensions) {
     info.input_shapes = {{1, 0}};
     info.input_formats = {"FORMAT_NCHW"};
     
+    // Register a test task first
+    TaskFactory::registerTask("yolov8", 
+        [](const ModelInfo& model_info) { return std::make_unique<TestTask>(model_info); });
+    
     EXPECT_THROW({
         TaskFactory::createTaskInstance("yolov8", info);
     }, InputDimensionError);
+}
+
+TEST_F(TaskFactoryTest, CustomTaskRegistration) {
+    auto info = createValidModelInfo();
+
+    // Register custom task
+    TaskFactory::registerTask("custom-test-model", 
+        [](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
+            return std::make_unique<TestTask>(model_info);
+        });
+
+    // Should be able to create it
+    auto task = TaskFactory::createTaskInstance("custom-test-model", info);
+    ASSERT_NE(task, nullptr);
+    EXPECT_EQ(task->getTaskType(), TaskType::Detection);
+}
+
+TEST_F(TaskFactoryTest, RegisterEmptyModelTypeThrows) {
+    EXPECT_THROW({
+        TaskFactory::registerTask("", 
+            [](const ModelInfo& info) { return std::make_unique<TestTask>(info); });
+    }, std::invalid_argument);
+}
+
+TEST_F(TaskFactoryTest, RegisterNullCreatorThrows) {
+    EXPECT_THROW({
+        TaskFactory::registerTask("test", nullptr);
+    }, std::invalid_argument);
 }
 
 // Note: Actual task creation tests would require implementing the concrete task classes

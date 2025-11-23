@@ -1,18 +1,29 @@
 #include "vision-core/core/task_factory.hpp"
 #include <algorithm>
 #include <stdexcept>
+#include <mutex>
 
 namespace vision_core {
 
-// Forward declarations of task implementations will be added here
-// as we implement each model type
+std::map<std::string, TaskFactory::TaskCreator>& TaskFactory::getRegistry() {
+    static std::map<std::string, TaskCreator> registry;
+    return registry;
+}
 
-std::map<std::string, TaskFactory::TaskCreator> TaskFactory::task_creators_ = {
-    // Detection models - to be implemented
-    // {"yolov8", [](const ModelInfo& info) { return std::make_unique<YoloTask>(info); }},
-    // {"rtdetr", [](const ModelInfo& info) { return std::make_unique<RtDetrTask>(info); }},
-    // ... more models
-};
+void TaskFactory::registerTask(const std::string& model_type, TaskCreator creator) {
+    if (model_type.empty()) {
+        throw std::invalid_argument("Cannot register task with empty model type");
+    }
+    if (!creator) {
+        throw std::invalid_argument("Cannot register null task creator");
+    }
+
+    const auto normalized = normalizeModelType(model_type);
+    static std::mutex registry_mutex;
+    std::lock_guard<std::mutex> lock(registry_mutex);
+    auto& registry = getRegistry();
+    registry[normalized] = std::move(creator);
+}
 
 void TaskFactory::validateInputSizes(const std::vector<std::vector<int64_t>>& input_sizes) {
     if (input_sizes.empty()) {
@@ -33,13 +44,41 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(
     const ModelInfo& model_info) {
     
     validateInputSizes(model_info.input_shapes);
-    
-    auto it = task_creators_.find(model_type);
-    if (it != task_creators_.end()) {
+
+    const auto normalized_type = normalizeModelType(model_type);
+    if (normalized_type.empty()) {
+        throw std::invalid_argument("Model type string is empty");
+    }
+
+    auto& registry = getRegistry();
+    auto it = registry.find(normalized_type);
+    if (it != registry.end()) {
         return it->second(model_info);
     }
     
     throw std::invalid_argument("Unrecognized model type: " + model_type);
+}
+
+std::string TaskFactory::normalizeModelType(const std::string& model_type) {
+    std::string normalized;
+    normalized.reserve(model_type.size());
+
+    for (char c : model_type) {
+        if (std::isspace(static_cast<unsigned char>(c))) {
+            continue;
+        }
+        if (c == '-' || c == '_' || c == '/') {
+            continue;
+        }
+        normalized.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+    }
+
+    // Normalize YOLO variants to base "yolo"
+    if (normalized.rfind("yolov", 0) == 0 || normalized.rfind("yolo", 0) == 0) {
+        return "yolo";
+    }
+
+    return normalized;
 }
 
 } // namespace vision_core
