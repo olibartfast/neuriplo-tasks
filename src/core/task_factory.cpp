@@ -16,14 +16,14 @@ std::map<std::string, TaskFactory::TaskCreator> TaskFactory::task_creators_ = {
 
 void TaskFactory::validateInputSizes(const std::vector<std::vector<int64_t>>& input_sizes) {
     if (input_sizes.empty()) {
-        throw std::invalid_argument("Input sizes vector is empty");
+        throw InputDimensionError("Input sizes vector is empty");
     }
     for (const auto& size : input_sizes) {
         if (size.empty()) {
-            throw std::invalid_argument("An input size vector is empty");
+            throw InputDimensionError("An input size vector is empty");
         }
-        if (std::any_of(size.begin(), size.end(), [](int64_t s) { return s < 0; })) {
-            throw std::invalid_argument("Negative input size detected");
+        if (std::any_of(size.begin(), size.end(), [](int64_t s) { return s <= 0; })) {
+            throw InputDimensionError("Non-positive input size detected");
         }
     }
 }
