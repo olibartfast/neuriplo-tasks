@@ -1,0 +1,199 @@
+#include <gtest/gtest.h>
+#include "vision-core/core/task_interface.hpp"
+#include "vision-core/core/model_info.hpp"
+#include <opencv2/opencv.hpp>
+
+using namespace vision_core;
+
+// Concrete implementation for testing
+class TestTask : public TaskInterface {
+public:
+    TestTask(const ModelInfo& model_info) : TaskInterface(model_info) {}
+    
+    TaskType getTaskType() override {
+        return TaskType::Detection;
+    }
+    
+    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override {
+        // Simple test implementation
+        std::vector<std::vector<uint8_t>> result;
+        for (const auto& img : imgs) {
+            result.push_back(std::vector<uint8_t>(img.total() * img.channels()));
+        }
+        return result;
+    }
+    
+    std::vector<Result> postprocess(
+        const cv::Size& frame_size,
+        const std::vector<std::vector<TensorElement>>& infer_results,
+        const std::vector<std::vector<int64_t>>& infer_shapes) override {
+        
+        // Simple test implementation - return one detection
+        Detection det(cv::Rect(10, 10, 50, 50), 0.9f, 0);
+        return {det};
+    }
+    
+    // Expose protected members for testing
+    int get_input_width() const { return input_width_; }
+    int get_input_height() const { return input_height_; }
+    int get_input_channels() const { return input_channels_; }
+};
+
+class TaskInterfaceTest : public ::testing::Test {
+protected:
+    ModelInfo createValidModelInfo() {
+        ModelInfo info;
+        info.input_shapes = {{1, 3, 640, 640}};
+        info.input_formats = {"FORMAT_NCHW"};
+        info.input_names = {"images"};
+        info.output_names = {"output0"};
+        info.input_types = {CV_32F};
+        return info;
+    }
+    
+    ModelInfo createInvalidModelInfo() {
+        ModelInfo info;
+        info.input_shapes = {{1, 0}};  // Invalid dimensions
+        info.input_formats = {"FORMAT_NCHW"};
+        return info;
+    }
+};
+
+TEST_F(TaskInterfaceTest, ConstructWithValidModelInfo) {
+    auto model_info = createValidModelInfo();
+    
+    EXPECT_NO_THROW({
+        TestTask task(model_info);
+        EXPECT_EQ(task.get_input_width(), 640);
+        EXPECT_EQ(task.get_input_height(), 640);
+        EXPECT_EQ(task.get_input_channels(), 3);
+    });
+}
+
+TEST_F(TaskInterfaceTest, ConstructWithInvalidModelInfoThrows) {
+    auto model_info = createInvalidModelInfo();
+    
+    EXPECT_THROW({
+        TestTask task(model_info);
+    }, InputDimensionError);
+}
+
+TEST_F(TaskInterfaceTest, NCHWFormatParsing) {
+    ModelInfo info;
+    info.input_shapes = {{1, 3, 480, 640}};
+    info.input_formats = {"FORMAT_NCHW"};
+    info.input_names = {"input"};
+    info.output_names = {"output"};
+    
+    TestTask task(info);
+    EXPECT_EQ(task.get_input_width(), 640);
+    EXPECT_EQ(task.get_input_height(), 480);
+    EXPECT_EQ(task.get_input_channels(), 3);
+}
+
+TEST_F(TaskInterfaceTest, NHWCFormatParsing) {
+    ModelInfo info;
+    info.input_shapes = {{1, 480, 640, 3}};
+    info.input_formats = {"FORMAT_NHWC"};
+    info.input_names = {"input"};
+    info.output_names = {"output"};
+    
+    TestTask task(info);
+    EXPECT_EQ(task.get_input_width(), 640);
+    EXPECT_EQ(task.get_input_height(), 480);
+    EXPECT_EQ(task.get_input_channels(), 3);
+}
+
+TEST_F(TaskInterfaceTest, GetTaskType) {
+    auto model_info = createValidModelInfo();
+    TestTask task(model_info);
+    
+    EXPECT_EQ(task.getTaskType(), TaskType::Detection);
+}
+
+TEST_F(TaskInterfaceTest, PreprocessReturnsData) {
+    auto model_info = createValidModelInfo();
+    TestTask task(model_info);
+    
+    cv::Mat image = cv::Mat::zeros(480, 640, CV_8UC3);
+    std::vector<cv::Mat> images = {image};
+    
+    auto result = task.preprocess(images);
+    
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_GT(result[0].size(), 0);
+}
+
+TEST_F(TaskInterfaceTest, PostprocessReturnsResults) {
+    auto model_info = createValidModelInfo();
+    TestTask task(model_info);
+    
+    cv::Size frame_size(640, 480);
+    std::vector<std::vector<TensorElement>> infer_results;
+    std::vector<std::vector<int64_t>> infer_shapes;
+    
+    auto results = task.postprocess(frame_size, infer_results, infer_shapes);
+    
+    EXPECT_EQ(results.size(), 1);
+    EXPECT_TRUE(std::holds_alternative<Detection>(results[0]));
+}
+
+TEST_F(TaskInterfaceTest, ReadLabelNamesNonExistentFile) {
+    auto model_info = createValidModelInfo();
+    TestTask task(model_info);
+    
+    auto labels = task.readLabelNames("nonexistent_file.txt");
+    EXPECT_TRUE(labels.empty());
+}
+
+TEST_F(TaskInterfaceTest, ReadLabelNamesValidFile) {
+    // Create a temporary labels file
+    std::string temp_file = "/tmp/test_labels.txt";
+    std::ofstream ofs(temp_file);
+    ofs << "person\n";
+    ofs << "car\n";
+    ofs << "dog\n";
+    ofs.close();
+    
+    auto model_info = createValidModelInfo();
+    TestTask task(model_info);
+    
+    auto labels = task.readLabelNames(temp_file);
+    EXPECT_EQ(labels.size(), 3);
+    EXPECT_EQ(labels[0], "person");
+    EXPECT_EQ(labels[1], "car");
+    EXPECT_EQ(labels[2], "dog");
+    
+    // Cleanup
+    std::remove(temp_file.c_str());
+}
+
+TEST_F(TaskInterfaceTest, InputDimensionErrorMessage) {
+    try {
+        auto model_info = createInvalidModelInfo();
+        TestTask task(model_info);
+        FAIL() << "Expected InputDimensionError";
+    } catch (const InputDimensionError& e) {
+        std::string msg = e.what();
+        EXPECT_FALSE(msg.empty());
+    }
+}
+
+TEST_F(TaskInterfaceTest, MultipleImagesPreprocess) {
+    auto model_info = createValidModelInfo();
+    TestTask task(model_info);
+    
+    std::vector<cv::Mat> images;
+    images.push_back(cv::Mat::zeros(480, 640, CV_8UC3));
+    images.push_back(cv::Mat::zeros(480, 640, CV_8UC3));
+    images.push_back(cv::Mat::zeros(480, 640, CV_8UC3));
+    
+    auto result = task.preprocess(images);
+    
+    EXPECT_EQ(result.size(), 3);
+}
+
+int main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
