@@ -125,7 +125,7 @@ OpticalFlowResult RaftPostprocessor::postprocess(
 
     const int64_t height = shape[2];
     const int64_t width = shape[3];
-    const size_t expected_size = height * width * 2;
+    [[maybe_unused]] const size_t expected_size = height * width * 2;
 
     // Channel offsets (NCHW format: u channel, then v channel)
     const int64_t u_channel_offset = 0;

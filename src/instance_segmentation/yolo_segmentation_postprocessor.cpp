@@ -46,7 +46,8 @@ cv::Mat YoloSegmentationPostprocessor::decode_mask(
     // Matrix multiplication: coefficients @ prototypes
     cv::Mat coeffs_mat(1, mask_coefficients.size(), CV_32F, 
                        const_cast<float*>(mask_coefficients.data()));
-    cv::Mat mask = (coeffs_mat * mask_prototypes).reshape(1, mask_size.height);
+    cv::Mat mask_result = coeffs_mat * mask_prototypes;
+    cv::Mat mask = mask_result.reshape(1, mask_size.height);
 
     // Apply sigmoid activation
     cv::exp(-mask, mask);
@@ -202,8 +203,8 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocess(
     }
     cv::Mat prototypes(num_mask_coeffs, mask_height * mask_width, CV_32F, proto_data.data());
 
-    // Calculate padding for mask processing
-    cv::Rect padding = calculate_padding(network_width, network_height, frame_size);
+    // Calculate padding for mask processing (reserved for future use)
+    [[maybe_unused]] cv::Rect padding = calculate_padding(network_width, network_height, frame_size);
 
     // Build final results with masks
     std::vector<InstanceSegmentation> results;

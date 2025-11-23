@@ -38,6 +38,9 @@ struct InstanceSegmentation : public Detection {
     int mask_width{0};                 ///< Mask width
     
     InstanceSegmentation() = default;
+    
+    InstanceSegmentation(const cv::Rect& box, float conf, int cls)
+        : Detection(box, conf, cls) {}
 };
 
 /**

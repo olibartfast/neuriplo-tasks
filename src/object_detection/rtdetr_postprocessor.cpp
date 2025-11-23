@@ -11,16 +11,6 @@ float get_float(const TensorElement& elem) {
     }, elem);
 }
 
-int get_int(const TensorElement& elem) {
-    return std::visit([](auto&& arg) -> int {
-        using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, int32_t> || std::is_same_v<T, int64_t>) {
-            return static_cast<int>(arg);
-        }
-        return -1;
-    }, elem);
-}
-
 } // anonymous namespace
 
 std::vector<Detection> RtDetrPostprocessor::postprocess(

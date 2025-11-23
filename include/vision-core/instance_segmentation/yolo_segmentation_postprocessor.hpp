@@ -11,20 +11,6 @@ namespace vision_core {
 using TensorElement = std::variant<float, int32_t, int64_t, uint8_t>;
 
 /**
- * @brief Instance segmentation result with mask data
- */
-struct InstanceSegmentation : public Detection {
-    std::vector<uint8_t> mask_data;  ///< Binary mask data (row-major)
-    int mask_width{0};                ///< Mask width in pixels
-    int mask_height{0};               ///< Mask height in pixels
-    
-    InstanceSegmentation() = default;
-    
-    InstanceSegmentation(const cv::Rect& box, float conf, int cls)
-        : Detection(box, conf, cls) {}
-};
-
-/**
  * @brief YOLO instance segmentation postprocessor
  * 
  * Supports YOLOv5-seg, YOLOv8-seg, YOLO11-seg with mask processing.
