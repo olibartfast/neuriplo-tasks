@@ -16,6 +16,8 @@ set(CORE_SOURCES
     # Core
     src/core/bbox_processor.cpp
     src/core/preprocessor.cpp
+    src/core/task_interface.cpp
+    src/core/task_factory.cpp
     # Object Detection
     src/object_detection/yolo_postprocessor.cpp
     src/object_detection/yolov10_postprocessor.cpp
@@ -39,9 +41,12 @@ set(CORE_SOURCES
 
 set(CORE_HEADERS
     # Core
-    include/vision-core/core/detection.hpp
+    include/vision-core/core/result_types.hpp
     include/vision-core/core/bbox_processor.hpp
     include/vision-core/core/preprocessor.hpp
+    include/vision-core/core/model_info.hpp
+    include/vision-core/core/task_interface.hpp
+    include/vision-core/core/task_factory.hpp
     # Object Detection
     include/vision-core/object_detection/yolo_postprocessor.hpp
     include/vision-core/object_detection/yolov10_postprocessor.hpp
