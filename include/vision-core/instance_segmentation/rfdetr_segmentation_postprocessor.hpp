@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vision-core/core/detection.hpp"
+#include "vision-core/core/result_types.hpp"
 #include <cstdint>
 #include <variant>
 #include <vector>
