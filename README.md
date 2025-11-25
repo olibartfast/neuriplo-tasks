@@ -1,6 +1,6 @@
 # vision-core
 
-Framework-agnostic computer vision algorithms (pre and post processing steps) to be used in other inference engine projects like [tritonic](https://github.com/olibartfast/tritonic) and [object-detection-inference](https://github.com/olibartfast/object-detection-inference)
+Framework-agnostic computer vision algorithms (pre and post processing steps) to be used in other inference engine projects like [tritonic](https://github.com/olibartfast/tritonic), [object-detection-inference](https://github.com/olibartfast/object-detection-inference) and [deep-stream-infer-lab](https://github.com/olibartfast/deepstream-infer-lab)
 
 ## Features
 
