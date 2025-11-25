@@ -1,6 +1,9 @@
 #include <gtest/gtest.h>
 #include "vision-core/core/task_factory.hpp"
 #include "vision-core/core/model_info.hpp"
+#include <thread>
+#include <future>
+#include <vector>
 
 using namespace vision_core;
 
@@ -113,6 +116,49 @@ TEST_F(TaskFactoryTest, RegisterNullCreatorThrows) {
     EXPECT_THROW({
         TaskFactory::registerTask("test", nullptr);
     }, std::invalid_argument);
+}
+
+TEST_F(TaskFactoryTest, ConcurrencyTest) {
+    auto info = createValidModelInfo();
+    const int num_threads = 10;
+    const int iterations = 100;
+    std::vector<std::future<void>> futures;
+
+    // Thread 1: Registers new tasks continuously
+    futures.push_back(std::async(std::launch::async, []() {
+        for (int i = 0; i < 100; ++i) {
+            std::string model_name = "concurrent-model-" + std::to_string(i);
+            TaskFactory::registerTask(model_name, 
+                [](const ModelInfo& info) { return std::make_unique<TestTask>(info); });
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }));
+
+    // Threads 2-N: Create task instances continuously
+    for (int t = 0; t < num_threads; ++t) {
+        futures.push_back(std::async(std::launch::async, [&info, iterations]() {
+            for (int i = 0; i < iterations; ++i) {
+                // Try to create instances of potentially registered tasks
+                try {
+                    auto task = TaskFactory::createTaskInstance("concurrent-model-0", info);
+                } catch (...) {
+                    // It's okay if it fails because registration might not be done yet,
+                    // but it shouldn't crash.
+                }
+                
+                // Also try to create instance of a known task if registered
+                try {
+                     TaskFactory::registerTask("fixed-model", 
+                        [](const ModelInfo& info) { return std::make_unique<TestTask>(info); });
+                     auto task = TaskFactory::createTaskInstance("fixed-model", info);
+                } catch (...) {}
+            }
+        }));
+    }
+
+    for (auto& f : futures) {
+        f.wait();
+    }
 }
 
 // Note: Actual task creation tests would require implementing the concrete task classes
