@@ -5,6 +5,12 @@
 
 namespace vision_core {
 
+// Shared mutex for registry access
+static std::mutex& getRegistryMutex() {
+    static std::mutex registry_mutex;
+    return registry_mutex;
+}
+
 std::map<std::string, TaskFactory::TaskCreator>& TaskFactory::getRegistry() {
     static std::map<std::string, TaskCreator> registry;
     return registry;
@@ -19,8 +25,7 @@ void TaskFactory::registerTask(const std::string& model_type, TaskCreator creato
     }
 
     const auto normalized = normalizeModelType(model_type);
-    static std::mutex registry_mutex;
-    std::lock_guard<std::mutex> lock(registry_mutex);
+    std::lock_guard<std::mutex> lock(getRegistryMutex());
     auto& registry = getRegistry();
     registry[normalized] = std::move(creator);
 }
@@ -50,6 +55,7 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(
         throw std::invalid_argument("Model type string is empty");
     }
 
+    std::lock_guard<std::mutex> lock(getRegistryMutex());
     auto& registry = getRegistry();
     auto it = registry.find(normalized_type);
     if (it != registry.end()) {
