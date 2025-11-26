@@ -193,35 +193,6 @@ vision-core/
 MIT License
 
 ## Roadmap
-
-### Completed ✅
-- [x] Core data structures (Detection, Classification, InstanceSegmentation, etc.)
-- [x] Unified Result variant type
-- [x] TaskInterface base class
-- [x] TaskFactory with model type registration
-- [x] ModelInfo for framework-agnostic model metadata
-- [x] Bounding box utilities with letterbox support (XYWH and XYXY)
-- [x] YOLO postprocessor (v5-v12, auto-format detection)
-- [x] YOLOv10 postprocessor (end-to-end, no NMS)
-- [x] RT-DETR postprocessor
-- [x] YOLO-NAS postprocessor
-- [x] D-FINE postprocessor
-- [x] RF-DETR postprocessor
-- [x] Classification postprocessor (top-k, softmax)
-- [x] Instance segmentation (YOLO-seg with mask decoding)
-- [x] RF-DETR segmentation postprocessor
-- [x] Video classification (TimeSformer)
-- [x] Optical flow (RAFT)
-- [x] Modern C++ conventions and documentation
-- [x] Integration guide for tritonic
-- [x] Concrete TaskInterface implementations (YOLO, RT-DETR, Classification)
-- [x] Comprehensive unit tests for TaskFactory
-- [x] Thread-safe TaskFactory with custom task registration
-- [x] Instance segmentation task implementation (YOLO-Seg, RF-DETR-Seg)
-- [x] Transformer detection task implementation (RT-DETR, D-FINE, RF-DETR)
-- [x] Optical flow task implementation (RAFT)
-- [x] Video classification task implementation (TimeSformer)
-
 ### In Progress 🚧
 - [ ] CI/CD pipeline setup
 - [ ] Migration of tritonic/object-detection-inference/deep-stream-infer-lab to use vision-core
