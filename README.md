@@ -1,4 +1,4 @@
-# vision-core
+# vision-core (TODO / In Progress)
 
 Framework-agnostic computer vision algorithms (pre and post processing steps) planned to be used in other inference engine projects like [tritonic](https://github.com/olibartfast/tritonic), [object-detection-inference](https://github.com/olibartfast/object-detection-inference) and [deep-stream-infer-lab](https://github.com/olibartfast/deepstream-infer-lab)
 
@@ -222,7 +222,7 @@ MIT License
 
 ### In Progress 🚧
 - [ ] CI/CD pipeline setup
-- [ ] Migration of tritonic to use vision-core
+- [ ] Migration of tritonic/object-detection-inference/deep-stream-infer-lab to use vision-core
 
 ### Planned 📋
 - [ ] Batch processing utilities
