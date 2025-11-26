@@ -79,7 +79,16 @@ std::string TaskFactory::normalizeModelType(const std::string& model_type) {
         normalized.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
     }
 
-    // Normalize YOLO variants to base "yolo"
+    // Check for segmentation variants first (more specific)
+    if (normalized.find("seg") != std::string::npos || normalized.find("segmentation") != std::string::npos) {
+        // Keep segmentation variants distinct
+        if (normalized.rfind("yolo", 0) == 0) {
+            return "yoloseg";
+        }
+        return normalized;
+    }
+    
+    // Normalize YOLO detection variants to base "yolo" (only if not segmentation)
     if (normalized.rfind("yolov", 0) == 0 || normalized.rfind("yolo", 0) == 0) {
         return "yolo";
     }

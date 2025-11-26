@@ -48,9 +48,19 @@ target_link_libraries(test_task_factory ${TEST_LIBS})
 add_executable(test_bbox_processor test_bbox_processor.cpp)
 target_link_libraries(test_bbox_processor ${TEST_LIBS})
 
+# Concrete task implementation tests
+add_executable(test_concrete_tasks test_concrete_tasks.cpp)
+target_link_libraries(test_concrete_tasks
+    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    GTest::GTest
+    GTest::Main
+    ${OpenCV_LIBS}
+)
+
 # Add tests manually for better compatibility
 add_test(NAME test_result_types COMMAND test_result_types)
 add_test(NAME test_task_interface COMMAND test_task_interface)
 add_test(NAME test_task_factory COMMAND test_task_factory)
 # add_test(NAME test_yolo_postprocessor COMMAND test_yolo_postprocessor)
 add_test(NAME test_bbox_processor COMMAND test_bbox_processor)
+add_test(NAME test_concrete_tasks COMMAND test_concrete_tasks)

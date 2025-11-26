@@ -69,4 +69,12 @@ private:
     static std::string normalizeModelType(const std::string& model_type);
 };
 
+/**
+ * @brief Force registration of all built-in task types
+ * 
+ * Call this function to ensure all static task registrars are executed.
+ * This is mainly needed for testing or if using the library as a static library.
+ */
+void registerAllTasks();
+
 } // namespace vision_core
