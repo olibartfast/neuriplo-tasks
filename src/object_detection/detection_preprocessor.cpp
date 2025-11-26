@@ -2,19 +2,20 @@
 
 namespace vision_core {
 
-// YOLO Preprocessor (letterbox resize)
+// Unified YOLO Preprocessor (handles ALL YOLO variants: v5-v12, v10, NAS)
 YoloPreprocessor::YoloPreprocessor(const cv::Size& input_size)
     : Preprocessor(PreprocessConfig{
         input_size,
         ImageFormat::NCHW,
         DataType::FLOAT32,
         true,   // normalize to [0,1]
-        false,  // no ImageNet normalization
+        false,  // no ImageNet normalization (YOLO standard)
         true    // BGR to RGB
     }) {}
 
 std::vector<uint8_t> YoloPreprocessor::preprocess(const cv::Mat& image) const {
     // YOLO uses letterbox resizing - pad to maintain aspect ratio
+    // This works for ALL YOLO variants (v5-v12, v10, NAS)
     cv::Mat letterbox_image = cv::Mat::zeros(config_.input_size, CV_8UC3);
     
     // Calculate scale
@@ -38,38 +39,18 @@ std::vector<uint8_t> YoloPreprocessor::preprocess(const cv::Mat& image) const {
     return preprocess_image(letterbox_image, config_.input_size, config_.format, config_.data_type);
 }
 
-// YOLOv10 Preprocessor  
-Yolov10Preprocessor::Yolov10Preprocessor(const cv::Size& input_size)
-    : Preprocessor(PreprocessConfig{
-        input_size,
-        ImageFormat::NCHW,
-        DataType::FLOAT32,
-        true, false, true
-    }) {}
-
-// RT-DETR Preprocessor
+// RT-DETR Preprocessor (transformer-based detector)
 RtDetrPreprocessor::RtDetrPreprocessor(const cv::Size& input_size)
     : Preprocessor(PreprocessConfig{
         input_size,
         ImageFormat::NCHW,
         DataType::FLOAT32,
         true,  // normalize
-        true,  // ImageNet normalization
+        true,  // ImageNet normalization (transformer models expect this)
         true   // BGR to RGB
     }) {}
 
-// YOLO-NAS Preprocessor
-YoloNasPreprocessor::YoloNasPreprocessor(const cv::Size& input_size)
-    : Preprocessor(PreprocessConfig{
-        input_size,
-        ImageFormat::NCHW,
-        DataType::FLOAT32,
-        true,  // normalize
-        true,  // ImageNet normalization
-        true   // BGR to RGB
-    }) {}
-
-// D-FINE Preprocessor
+// D-FINE Preprocessor (DETR-based detector)
 DFinePreprocessor::DFinePreprocessor(const cv::Size& input_size)
     : Preprocessor(PreprocessConfig{
         input_size,
@@ -80,7 +61,7 @@ DFinePreprocessor::DFinePreprocessor(const cv::Size& input_size)
         true   // BGR to RGB
     }) {}
 
-// RF-DETR Preprocessor
+// RF-DETR Preprocessor (receptive field DETR)
 RfDetrPreprocessor::RfDetrPreprocessor(const cv::Size& input_size)
     : Preprocessor(PreprocessConfig{
         input_size,

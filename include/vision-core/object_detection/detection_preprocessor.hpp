@@ -5,9 +5,14 @@
 namespace vision_core {
 
 /**
- * @brief YOLO-specific preprocessor
+ * @brief Unified YOLO preprocessor
  * 
- * Handles letterbox resizing and normalization for YOLO models (v5-v12).
+ * Handles letterbox resizing and normalization for ALL YOLO variants:
+ * - YOLOv5, v6, v7, v8, v9, v11, v12 (standard YOLO models)
+ * - YOLOv10 (end-to-end detector)
+ * - YOLO-NAS (neural architecture search YOLO)
+ * 
+ * Uses consistent letterbox preprocessing across all variants.
  */
 class YoloPreprocessor : public Preprocessor {
 public:
@@ -17,15 +22,7 @@ public:
 };
 
 /**
- * @brief YOLOv10-specific preprocessor
- */
-class Yolov10Preprocessor : public Preprocessor {
-public:
-    explicit Yolov10Preprocessor(const cv::Size& input_size);
-};
-
-/**
- * @brief RT-DETR preprocessor
+ * @brief RT-DETR preprocessor (transformer-based detector)
  */
 class RtDetrPreprocessor : public Preprocessor {
 public:
@@ -33,15 +30,7 @@ public:
 };
 
 /**
- * @brief YOLO-NAS preprocessor
- */
-class YoloNasPreprocessor : public Preprocessor {
-public:
-    explicit YoloNasPreprocessor(const cv::Size& input_size);
-};
-
-/**
- * @brief D-FINE preprocessor
+ * @brief D-FINE preprocessor (DETR-based fine-grained detector)
  */
 class DFinePreprocessor : public Preprocessor {
 public:
@@ -49,7 +38,7 @@ public:
 };
 
 /**
- * @brief RF-DETR preprocessor
+ * @brief RF-DETR preprocessor (receptive field DETR)
  */
 class RfDetrPreprocessor : public Preprocessor {
 public:
