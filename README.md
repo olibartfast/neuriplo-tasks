@@ -194,6 +194,7 @@ MIT License
 
 ## Roadmap
 ### In Progress 🚧
+- [ ] Extend Unit Tests
 - [ ] CI/CD pipeline setup
 - [ ] Migration of tritonic/object-detection-inference/deep-stream-infer-lab to use vision-core
 
