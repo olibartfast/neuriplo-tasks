@@ -68,16 +68,11 @@ public:
     }
 };
 
-// Register the task
-namespace {
-    bool register_rtdetr_variants() {
-        auto creator = [](const ModelInfo& info) { return std::make_unique<RtDetrTask>(info); };
-        TaskFactory::registerTask("rtdetr", creator);
-        TaskFactory::registerTask("rtdetrv2", creator);
-        TaskFactory::registerTask("rtdetr-ultralytics", creator);
-        return true;
-    }
-    static bool registered = register_rtdetr_variants();
+// Explicit registration function for RT-DETR tasks
+void registerRtDetrTasks() {
+    auto creator = [](const ModelInfo& info) { return std::make_unique<RtDetrTask>(info); };
+    TaskFactory::registerTask("rtdetr", creator);
+    TaskFactory::registerTask("rtdetrv2", creator);
 }
 
 } // namespace vision_core

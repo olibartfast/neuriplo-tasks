@@ -130,26 +130,19 @@ public:
     }
 };
 
-// Static registration of video classification task variants
-namespace {
-    struct VideoClassificationTaskRegistrar {
-        VideoClassificationTaskRegistrar() {
-            std::vector<std::string> video_variants = {
-                "timesformer", "video-classification", "videoclassification", "action-recognition",
-                "activity-recognition", "video-transformer", "videotransformer",
-                "timesformer-base", "timesformer-large", "timesformer-huge"
-            };
-            
-            for (const auto& variant : video_variants) {
-                TaskFactory::registerTask(variant, [](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
-                    return std::make_unique<VideoClassificationTask>(model_info);
-                });
-            }
-        }
+// Explicit registration function for video classification tasks
+void registerVideoClassificationTasks() {
+    std::vector<std::string> video_variants = {
+        "timesformer", "video-classification", "videoclassification", "action-recognition",
+        "activity-recognition", "video-transformer", "videotransformer",
+        "timesformer-base", "timesformer-large", "timesformer-huge"
     };
     
-    // Static instance to ensure registration happens at library load time
-    static VideoClassificationTaskRegistrar video_classification_registrar;
+    for (const auto& variant : video_variants) {
+        TaskFactory::registerTask(variant, [](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
+            return std::make_unique<VideoClassificationTask>(model_info);
+        });
+    }
 }
 
 // Factory function for manual registration

@@ -161,51 +161,57 @@ public:
     }
 };
 
-// Static registration of transformer detection task variants
-namespace {
-    struct TransformerDetectionTaskRegistrar {
-        TransformerDetectionTaskRegistrar() {
-            // RT-DETR variants
-            std::vector<std::string> rtdetr_variants = {
-                "rtdetr", "rt-detr", "rtdetrv2", "rt-detrv2", "rt_detr", 
-                "rtdetr-l", "rtdetr-x", "rt-detr-l", "rt-detr-x"
-            };
-            
-            // D-FINE variants
-            std::vector<std::string> dfine_variants = {
-                "dfine", "d-fine", "dfine-s", "dfine-m", "dfine-l", "dfine-x",
-                "d-fine-s", "d-fine-m", "d-fine-l", "d-fine-x"
-            };
-            
-            // RF-DETR variants
-            std::vector<std::string> rfdetr_variants = {
-                "rfdetr", "rf-detr", "rf_detr", "rfdetr-s", "rfdetr-m", "rfdetr-l",
-                "rf-detr-s", "rf-detr-m", "rf-detr-l"
-            };
-            
-            // Register all variants
-            for (const auto& variant : rtdetr_variants) {
-                TaskFactory::registerTask(variant, [variant](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
-                    return std::make_unique<TransformerDetectionTask>(model_info, variant);
-                });
-            }
-            
-            for (const auto& variant : dfine_variants) {
-                TaskFactory::registerTask(variant, [variant](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
-                    return std::make_unique<TransformerDetectionTask>(model_info, variant);
-                });
-            }
-            
-            for (const auto& variant : rfdetr_variants) {
-                TaskFactory::registerTask(variant, [variant](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
-                    return std::make_unique<TransformerDetectionTask>(model_info, variant);
-                });
-            }
-        }
+// Explicit registration function for transformer detection tasks
+void registerTransformerDetectionTasks() {
+    // D-FINE variants (specific to this task)
+    std::vector<std::string> dfine_variants = {
+        "dfine"
     };
     
-    // Static instance to ensure registration happens at library load time
-    static TransformerDetectionTaskRegistrar transformer_detection_registrar;
+    // RF-DETR variants (specific to this task)  
+    std::vector<std::string> rfdetr_variants = {
+        "rfdetr"
+    };
+    
+    // RT-DETR Ultralytics variants (different postprocessing from regular RT-DETR)
+    std::vector<std::string> rtdetrul_variants = {
+        "rtdetrul"
+    };
+    
+    // DEIM variants  
+    std::vector<std::string> deim_variants = {
+        "deim"
+    };
+    
+    // Note: RT-DETR variants are handled by rtdetr_task.cpp to avoid conflicts
+    
+    // Register D-FINE variants
+    for (const auto& variant : dfine_variants) {
+        TaskFactory::registerTask(variant, [variant](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
+            return std::make_unique<TransformerDetectionTask>(model_info, variant);
+        });
+    }
+    
+    // Register RF-DETR variants
+    for (const auto& variant : rfdetr_variants) {
+        TaskFactory::registerTask(variant, [variant](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
+            return std::make_unique<TransformerDetectionTask>(model_info, variant);
+        });
+    }
+    
+    // Register RT-DETR Ultralytics variants
+    for (const auto& variant : rtdetrul_variants) {
+        TaskFactory::registerTask(variant, [variant](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
+            return std::make_unique<TransformerDetectionTask>(model_info, variant);
+        });
+    }
+    
+    // Register DEIM variants
+    for (const auto& variant : deim_variants) {
+        TaskFactory::registerTask(variant, [variant](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
+            return std::make_unique<TransformerDetectionTask>(model_info, variant);
+        });
+    }
 }
 
 // Factory function for manual registration

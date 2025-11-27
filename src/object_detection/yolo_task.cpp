@@ -68,23 +68,17 @@ public:
     }
 };
 
-// Register the task
-namespace {
-    // Helper to register multiple YOLO variants
-    bool register_yolo_variants() {
-        auto creator = [](const ModelInfo& info) { return std::make_unique<YoloTask>(info); };
-        TaskFactory::registerTask("yolo", creator);
-        TaskFactory::registerTask("yolov5", creator);
-        TaskFactory::registerTask("yolov6", creator);
-        TaskFactory::registerTask("yolov7", creator);
-        TaskFactory::registerTask("yolov8", creator);
-        TaskFactory::registerTask("yolov9", creator);
-        TaskFactory::registerTask("yolov10", creator); // YoloPostprocessor handles v10 too
-        TaskFactory::registerTask("yolo11", creator);
-        TaskFactory::registerTask("yolov12", creator);
-        return true;
-    }
-    static bool registered = register_yolo_variants();
+// Explicit registration function for YOLO tasks
+void registerYoloTasks() {
+    auto creator = [](const ModelInfo& info) { return std::make_unique<YoloTask>(info); };
+    TaskFactory::registerTask("yolov5", creator);
+    TaskFactory::registerTask("yolov6", creator);
+    TaskFactory::registerTask("yolov7", creator);
+    TaskFactory::registerTask("yolov8", creator);
+    TaskFactory::registerTask("yolov9", creator);
+    // Note: yolov10 is handled by registerYolov10Tasks()
+    TaskFactory::registerTask("yolo11", creator);
+    TaskFactory::registerTask("yolov12", creator);
 }
 
 } // namespace vision_core

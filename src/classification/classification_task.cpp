@@ -50,54 +50,43 @@ private:
     std::unique_ptr<Preprocessor> preprocessor_;
 };
 
-// Register the tasks
-namespace {
-    bool register_classification_variants() {
-        // Helper to create task with specific preprocessor
-        auto register_variant = [](const std::string& name, auto preprocessor_creator) {
-            TaskFactory::registerTask(name, [preprocessor_creator](const ModelInfo& info) {
-                // Determine input size from model info or default
-                int width = 224;
-                int height = 224;
-                if (!info.input_shapes.empty() && info.input_shapes[0].size() >= 3) {
-                    // Simplified logic
-                    if (info.input_formats[0] == "FORMAT_NCHW") {
-                        height = info.input_shapes[0][2];
-                        width = info.input_shapes[0][3];
-                    } else {
-                        height = info.input_shapes[0][1];
-                        width = info.input_shapes[0][2];
-                    }
+// Explicit registration function for classification tasks
+void registerClassificationTasks() {
+    // Helper to create task with specific preprocessor
+    auto register_variant = [](const std::string& name, auto preprocessor_creator) {
+        TaskFactory::registerTask(name, [preprocessor_creator](const ModelInfo& info) {
+            // Determine input size from model info or default
+            int width = 224;
+            int height = 224;
+            if (!info.input_shapes.empty() && info.input_shapes[0].size() >= 3) {
+                // Simplified logic
+                if (info.input_formats[0] == "FORMAT_NCHW") {
+                    height = info.input_shapes[0][2];
+                    width = info.input_shapes[0][3];
+                } else {
+                    height = info.input_shapes[0][1];
+                    width = info.input_shapes[0][2];
                 }
-                return std::make_unique<ClassificationTask>(
-                    info, 
-                    preprocessor_creator(cv::Size(width, height))
-                );
-            });
-        };
+            }
+            return std::make_unique<ClassificationTask>(
+                info, 
+                preprocessor_creator(cv::Size(width, height))
+            );
+        });
+    };
 
-        // Register Torchvision style (ImageNet norm)
-        register_variant("torchvision-classifier", [](cv::Size s) { 
-            return std::make_unique<TorchvisionPreprocessor>(s); 
-        });
-        register_variant("resnet", [](cv::Size s) { 
-            return std::make_unique<TorchvisionPreprocessor>(s); 
-        });
-        register_variant("resnet50", [](cv::Size s) { 
-            return std::make_unique<TorchvisionPreprocessor>(s); 
-        });
-        register_variant("vit-classifier", [](cv::Size s) { 
-            return std::make_unique<ViTPreprocessor>(s); 
-        });
+    // Register Torchvision style (ImageNet norm)
+    register_variant("torchvision-classifier", [](cv::Size s) { 
+        return std::make_unique<TorchvisionPreprocessor>(s); 
+    });
+    register_variant("vit-classifier", [](cv::Size s) { 
+        return std::make_unique<ViTPreprocessor>(s); 
+    });
 
-        // Register TensorFlow style (no ImageNet norm)
-        register_variant("tensorflow-classifier", [](cv::Size s) { 
-            return std::make_unique<TensorflowPreprocessor>(s); 
-        });
-
-        return true;
-    }
-    static bool registered = register_classification_variants();
+    // Register TensorFlow style (no ImageNet norm)
+    register_variant("tensorflow-classifier", [](cv::Size s) { 
+        return std::make_unique<TensorflowPreprocessor>(s); 
+    });
 }
 
 } // namespace vision_core

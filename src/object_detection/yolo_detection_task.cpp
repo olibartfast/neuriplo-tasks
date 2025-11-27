@@ -78,29 +78,7 @@ private:
     std::unique_ptr<YoloPreprocessor> preprocessor_;
 };
 
-// Static registration of YOLO task variants
-namespace {
-    struct YoloTaskRegistrar {
-        YoloTaskRegistrar() {
-            auto creator = [](const ModelInfo& info) -> std::unique_ptr<TaskInterface> {
-                return std::make_unique<YoloDetectionTask>(info);
-            };
-
-            // Register all YOLO variants (except v10 which has its own task)
-            TaskFactory::registerTask("yolo", creator);
-            TaskFactory::registerTask("yolov5", creator);
-            TaskFactory::registerTask("yolov6", creator);
-            TaskFactory::registerTask("yolov7", creator);
-            TaskFactory::registerTask("yolov8", creator);
-            TaskFactory::registerTask("yolov9", creator);
-            TaskFactory::registerTask("yolo11", creator);
-            TaskFactory::registerTask("yolov11", creator);
-            TaskFactory::registerTask("yolov12", creator);
-        }
-    };
-    
-    // Static instance to trigger registration at library load time
-    static YoloTaskRegistrar yolo_registrar;
-}
+// Note: YOLO task registration is handled by yolo_task.cpp
+// This class remains for backward compatibility but does not register itself
 
 } // namespace vision_core
