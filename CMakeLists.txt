@@ -18,28 +18,38 @@ set(CORE_SOURCES
     src/core/preprocessor.cpp
     src/core/task_interface.cpp
     src/core/task_factory.cpp
+
     # Object Detection
     src/object_detection/yolo_postprocessor.cpp
-    src/object_detection/yolov10_postprocessor.cpp
     src/object_detection/rtdetr_postprocessor.cpp
-    src/object_detection/yolo_nas_postprocessor.cpp
     src/object_detection/dfine_postprocessor.cpp
     src/object_detection/rfdetr_postprocessor.cpp
     src/object_detection/detection_preprocessor.cpp
-    src/object_detection/yolo_detection_task.cpp
-    src/object_detection/yolov10_detection_task.cpp
-    src/object_detection/yolo_nas_detection_task.cpp
+    src/object_detection/yolo_task.cpp
+    src/object_detection/rtdetr_task.cpp
+    # Task Implementations
+    src/object_detection/yolo_task.cpp
+    src/object_detection/transformer_detection_task.cpp
     # Instance Segmentation
     src/instance_segmentation/yolo_segmentation_postprocessor.cpp
     src/instance_segmentation/rfdetr_segmentation_postprocessor.cpp
+    # Instance Segmentation Tasks
+    src/instance_segmentation/instance_segmentation_task.cpp
     # Classification
     src/classification/classifier_postprocessor.cpp
     src/classification/classification_preprocessor.cpp
+    src/classification/classification_task.cpp
+    # Classification Tasks
+    src/classification/classification_task.cpp
     # Video Classification
     src/video_classification/timesformer_postprocessor.cpp
+    # Video Classification Tasks
+    src/video_classification/video_classification_task.cpp
     # Optical Flow
     src/optical_flow/raft_postprocessor.cpp
     src/optical_flow/optical_flow_preprocessor.cpp
+    # Optical Flow Tasks
+    src/optical_flow/optical_flow_task.cpp
 )
 
 set(CORE_HEADERS
@@ -52,9 +62,7 @@ set(CORE_HEADERS
     include/vision-core/core/task_factory.hpp
     # Object Detection
     include/vision-core/object_detection/yolo_postprocessor.hpp
-    include/vision-core/object_detection/yolov10_postprocessor.hpp
     include/vision-core/object_detection/rtdetr_postprocessor.hpp
-    include/vision-core/object_detection/yolo_nas_postprocessor.hpp
     include/vision-core/object_detection/dfine_postprocessor.hpp
     include/vision-core/object_detection/rfdetr_postprocessor.hpp
     include/vision-core/object_detection/detection_preprocessor.hpp

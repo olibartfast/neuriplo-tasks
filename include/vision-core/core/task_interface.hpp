@@ -16,7 +16,7 @@ namespace vision_core {
  * @brief Tensor element variant type
  * Supports common inference engine output types
  */
-using TensorElement = std::variant<float, int32_t, int64_t>;
+using TensorElement = std::variant<float, int32_t, int64_t, uint8_t>;
 
 /**
  * @brief Input dimension error exception
