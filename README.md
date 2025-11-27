@@ -1,6 +1,8 @@
-# vision-core
-
-Framework-agnostic computer vision algorithms (pre and post processing steps) to be used in other inference engine projects like [tritonic](https://github.com/olibartfast/tritonic), [object-detection-inference](https://github.com/olibartfast/object-detection-inference) and [deep-stream-infer-lab](https://github.com/olibartfast/deepstream-infer-lab)
+# vision-core (TODO / In Progress)
+A set of framework-agnostic computer vision algorithms including common pre-processing and post-processing steps designed to be reused across multiple inference engine projects such as:
+* [tritonic](https://github.com/olibartfast/tritonic)
+* [object-detection-inference](https://github.com/olibartfast/object-detection-inference)
+* [deep-stream-infer-lab](https://github.com/olibartfast/deepstream-infer-lab)
 
 ## Features
 
@@ -10,6 +12,7 @@ Framework-agnostic computer vision algorithms (pre and post processing steps) to
 - **Video Classification**: TimeSformer
 - **Optical Flow**: RAFT
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
+- **Thread-Safe TaskFactory**: Custom task registration with thread-safe registry access
 
 ## Two Ways to Use vision-core
 
@@ -111,8 +114,7 @@ target_link_libraries(your_target vision-core::vision-core)
 The TaskFactory supports the following model type strings:
 
 **Object Detection:**
-- `"yolov5"`, `"yolov6"`, `"yolov7"`, `"yolov8"`, `"yolov9"`, `"yolo11"`, `"yolov12"` - YOLO family
-- `"yolov10"` - YOLOv10 (end-to-end, no NMS)
+- `"yolov5 to v12"` - YOLO family
 - `"yolonas"`, `"yolo-nas"` - YOLO-NAS
 - `"rtdetr"`, `"rtdetrv2"` - RT-DETR family
 - `"rtdetrul"`, `"rtdetr-ultralytics"` - RT-DETR Ultralytics variant
@@ -137,23 +139,10 @@ The TaskFactory supports the following model type strings:
 
 ## Projects Using vision-core
 
-- [tritonic](https://github.com/olibartfast/tritonic) - Triton Inference
-    int batch_size_{1};                               ///< Current batch size
-    
-    ModelInfo() = default;
-};
-
-} // namespace vision_core
- Server Client *(Integration guide: [docs/TRITONIC_INTEGRATION.md](docs/TRITONIC_INTEGRATION.md))*
+- [tritonic](https://github.com/olibartfast/tritonic) - Triton Inference Server Client
 - [object-detection-inference](https://github.com/olibartfast/object-detection-inference) - Multi-backend object detection (ONNX Runtime, TensorRT, OpenVINO)
 - [deepstream-infer-lab](https://github.com/olibartfast/deepstream-infer-lab) - NVIDIA DeepStream inference experiments
 
-## Integration with Inference Frameworks
-
-vision-core is designed to work with any inference framework (Triton, ONNX Runtime, TensorRT, OpenVINO, DeepStream, etc.). See:
-- **Triton Integration**: [docs/TRITONIC_INTEGRATION.md](docs/TRITONIC_INTEGRATION.md) - Replace tritonic's task implementations with vision-core
-- **General Integration**: Use `ModelInfo` to describe your model, create tasks via `TaskFactory`, and process results
-- **Direct Usage**: Use individual preprocessors and postprocessors for maximum flexibility with your inference engine
 
 ## Building
 
@@ -193,60 +182,24 @@ vision-core/
 │   ├── object_detection/
 │   └── ...
 ├── docs/                       # Documentation
-│   ├── TRITONIC_INTEGRATION.md # Tritonic integration guide
-│   ├── NAMING_CONVENTIONS.md
-│   └── DEVELOPMENT.md
+│   └── NAMING_CONVENTIONS.md
 ├── tests/                      # Unit tests
 ├── CMakeLists.txt
 └── README.md
 ```
-
-## Contributing
-
-When contributing, please follow:
-- Modern C++ naming conventions (see [NAMING_CONVENTIONS.md](docs/NAMING_CONVENTIONS.md))
-- Include comprehensive documentation
-- Add unit tests for new features
-- Use `clang-format` with the project style
-
-See [DEVELOPMENT.md](docs/DEVELOPMENT.md) for detailed development guidelines.
 
 ## License
 
 MIT License
 
 ## Roadmap
-
-### Completed ✅
-- [x] Core data structures (Detection, Classification, InstanceSegmentation, etc.)
-- [x] Unified Result variant type
-- [x] TaskInterface base class
-- [x] TaskFactory with model type registration
-- [x] ModelInfo for framework-agnostic model metadata
-- [x] Bounding box utilities with letterbox support (XYWH and XYXY)
-- [x] YOLO postprocessor (v5-v12, auto-format detection)
-- [x] YOLOv10 postprocessor (end-to-end, no NMS)
-- [x] RT-DETR postprocessor
-- [x] YOLO-NAS postprocessor
-- [x] D-FINE postprocessor
-- [x] RF-DETR postprocessor
-- [x] Classification postprocessor (top-k, softmax)
-- [x] Instance segmentation (YOLO-seg with mask decoding)
-- [x] RF-DETR segmentation postprocessor
-- [x] Video classification (TimeSformer)
-- [x] Optical flow (RAFT)
-- [x] Modern C++ conventions and documentation
-- [x] Integration guide for tritonic
-
 ### In Progress 🚧
-- [ ] Concrete TaskInterface implementations for all models
-- [ ] Comprehensive unit tests for TaskFactory
+- [ ] Extend Unit Tests
 - [ ] CI/CD pipeline setup
-- [ ] Migration of tritonic to use vision-core
+- [ ] Migration of tritonic/object-detection-inference/deep-stream-infer-lab to use vision-core
 
 ### Planned 📋
 - [ ] Batch processing utilities
-- [ ] Python bindings (pybind11)
 - [ ] Performance benchmarks and optimizations
 - [ ] Additional video classification models
 - [ ] Pose estimation support
