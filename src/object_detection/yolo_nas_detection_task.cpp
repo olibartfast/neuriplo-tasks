@@ -82,20 +82,13 @@ private:
     std::unique_ptr<YoloNasPreprocessor> preprocessor_;
 };
 
-// Static registration of YOLO-NAS task variants
-namespace {
-    struct YoloNasTaskRegistrar {
-        YoloNasTaskRegistrar() {
-            auto creator = [](const ModelInfo& info) -> std::unique_ptr<TaskInterface> {
-                return std::make_unique<YoloNasDetectionTask>(info);
-            };
-
-            TaskFactory::registerTask("yolonas", creator);
-            TaskFactory::registerTask("yolo-nas", creator);
-        }
+// Explicit registration function for YOLO-NAS tasks
+void registerYoloNasTasks() {
+    auto creator = [](const ModelInfo& info) -> std::unique_ptr<TaskInterface> {
+        return std::make_unique<YoloNasDetectionTask>(info);
     };
-    
-    static YoloNasTaskRegistrar yolonas_registrar;
+
+    TaskFactory::registerTask("yolonas", creator);
 }
 
 } // namespace vision_core

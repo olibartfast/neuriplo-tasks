@@ -48,6 +48,9 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(
     const std::string& model_type,
     const ModelInfo& model_info) {
     
+    // Ensure all tasks are registered before attempting to create instances
+    registerAllTasks();
+    
     validateInputSizes(model_info.input_shapes);
 
     const auto normalized_type = normalizeModelType(model_type);
@@ -94,6 +97,32 @@ std::string TaskFactory::normalizeModelType(const std::string& model_type) {
     }
 
     return normalized;
+}
+
+// Forward declarations for task registration functions
+void registerYoloTasks();
+void registerYoloNasTasks();
+void registerYolov10Tasks();
+void registerRtDetrTasks();  
+void registerTransformerDetectionTasks();
+void registerClassificationTasks();
+void registerInstanceSegmentationTasks();
+void registerVideoClassificationTasks();
+void registerOpticalFlowTasks();
+
+void registerAllTasks() {
+    static std::once_flag registered;
+    std::call_once(registered, []() {
+        registerYoloTasks();
+        registerYoloNasTasks();
+        registerYolov10Tasks();
+        registerRtDetrTasks();
+        registerTransformerDetectionTasks();
+        registerClassificationTasks();
+        registerInstanceSegmentationTasks();
+        registerVideoClassificationTasks();
+        registerOpticalFlowTasks();
+    });
 }
 
 } // namespace vision_core

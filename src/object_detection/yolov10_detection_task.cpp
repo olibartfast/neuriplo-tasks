@@ -73,19 +73,13 @@ private:
     std::unique_ptr<Yolov10Preprocessor> preprocessor_;
 };
 
-// Static registration of YOLOv10 task
-namespace {
-    struct Yolov10TaskRegistrar {
-        Yolov10TaskRegistrar() {
-            auto creator = [](const ModelInfo& info) -> std::unique_ptr<TaskInterface> {
-                return std::make_unique<Yolov10DetectionTask>(info);
-            };
-
-            TaskFactory::registerTask("yolov10", creator);
-        }
+// Explicit registration function for YOLOv10 tasks
+void registerYolov10Tasks() {
+    auto creator = [](const ModelInfo& info) -> std::unique_ptr<TaskInterface> {
+        return std::make_unique<Yolov10DetectionTask>(info);
     };
-    
-    static Yolov10TaskRegistrar yolov10_registrar;
+
+    TaskFactory::registerTask("yolov10", creator);
 }
 
 } // namespace vision_core

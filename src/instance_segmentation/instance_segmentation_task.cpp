@@ -241,40 +241,31 @@ private:
     }
 };
 
-// Static registration of instance segmentation task variants
-namespace {
-    struct InstanceSegmentationTaskRegistrar {
-        InstanceSegmentationTaskRegistrar() {
-            // YOLO segmentation variants
-            std::vector<std::string> yolo_seg_variants = {
-                "yolo-seg", "yolov5-seg", "yolov8-seg", "yolov11-seg", "yolo11-seg",
-                "yoloseg", "yolov5seg", "yolov8seg", "yolov11seg", "yolo11seg",
-                "segmentation", "instance-segmentation", "instancesegmentation"
-            };
-            
-            // RF-DETR segmentation variants
-            std::vector<std::string> rfdetr_seg_variants = {
-                "rfdetr-seg", "rf-detr-seg", "rfdetr-segmentation", "rf-detr-segmentation"
-            };
-            
-            // Register YOLO segmentation variants
-            for (const auto& variant : yolo_seg_variants) {
-                TaskFactory::registerTask(variant, [variant](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
-                    return std::make_unique<InstanceSegmentationTask>(model_info, variant);
-                });
-            }
-            
-            // Register RF-DETR segmentation variants
-            for (const auto& variant : rfdetr_seg_variants) {
-                TaskFactory::registerTask(variant, [variant](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
-                    return std::make_unique<InstanceSegmentationTask>(model_info, variant);
-                });
-            }
-        }
+// Explicit registration function for instance segmentation tasks
+void registerInstanceSegmentationTasks() {
+    // YOLO segmentation variants
+    std::vector<std::string> yolo_seg_variants = {
+        "yoloseg"
     };
     
-    // Static instance to ensure registration happens at library load time
-    static InstanceSegmentationTaskRegistrar instance_segmentation_registrar;
+    // RF-DETR segmentation variants
+    std::vector<std::string> rfdetr_seg_variants = {
+        "rfdetr"
+    };
+    
+    // Register YOLO segmentation variants
+    for (const auto& variant : yolo_seg_variants) {
+        TaskFactory::registerTask(variant, [variant](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
+            return std::make_unique<InstanceSegmentationTask>(model_info, variant);
+        });
+    }
+    
+    // Register RF-DETR segmentation variants
+    for (const auto& variant : rfdetr_seg_variants) {
+        TaskFactory::registerTask(variant, [variant](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
+            return std::make_unique<InstanceSegmentationTask>(model_info, variant);
+        });
+    }
 }
 
 // Factory function for manual registration

@@ -110,25 +110,17 @@ public:
     }
 };
 
-// Static registration of optical flow task variants
-namespace {
-    struct OpticalFlowTaskRegistrar {
-        OpticalFlowTaskRegistrar() {
-            std::vector<std::string> optical_flow_variants = {
-                "raft", "optical-flow", "opticalflow", "flow", "raft-small", "raft-large",
-                "raft-things", "raft-sintel", "raft-kitti", "raft-chairs"
-            };
-            
-            for (const auto& variant : optical_flow_variants) {
-                TaskFactory::registerTask(variant, [](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
-                    return std::make_unique<OpticalFlowTask>(model_info);
-                });
-            }
-        }
+// Explicit registration function for optical flow tasks
+void registerOpticalFlowTasks() {
+    std::vector<std::string> optical_flow_variants = {
+        "raft"
     };
     
-    // Static instance to ensure registration happens at library load time
-    static OpticalFlowTaskRegistrar optical_flow_registrar;
+    for (const auto& variant : optical_flow_variants) {
+        TaskFactory::registerTask(variant, [](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
+            return std::make_unique<OpticalFlowTask>(model_info);
+        });
+    }
 }
 
 // Factory function for manual registration
