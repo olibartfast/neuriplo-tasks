@@ -73,15 +73,10 @@ std::string TaskFactory::normalizeModelType(const std::string& model_type) {
         if (std::isspace(static_cast<unsigned char>(c))) {
             continue;
         }
-        if (c == '-' || c == '_' || c == '/') {
+        if (c == '-' || c == '_') {
             continue;
         }
         normalized.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
-    }
-
-    // Normalize YOLO variants to base "yolo"
-    if (normalized.rfind("yolov", 0) == 0 || normalized.rfind("yolo", 0) == 0) {
-        return "yolo";
     }
 
     return normalized;

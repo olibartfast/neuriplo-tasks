@@ -26,6 +26,9 @@ set(CORE_SOURCES
     src/object_detection/dfine_postprocessor.cpp
     src/object_detection/rfdetr_postprocessor.cpp
     src/object_detection/detection_preprocessor.cpp
+    src/object_detection/yolo_detection_task.cpp
+    src/object_detection/yolov10_detection_task.cpp
+    src/object_detection/yolo_nas_detection_task.cpp
     # Instance Segmentation
     src/instance_segmentation/yolo_segmentation_postprocessor.cpp
     src/instance_segmentation/rfdetr_segmentation_postprocessor.cpp
