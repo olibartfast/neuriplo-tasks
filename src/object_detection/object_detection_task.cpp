@@ -1,5 +1,7 @@
 #include "vision-core/object_detection/object_detection_task.hpp"
 #include "vision-core/object_detection/detection_preprocessor.hpp"
+#include "vision-core/object_detection/yolo_postprocessor.hpp"
+#include "vision-core/object_detection/rtdetr_postprocessor.hpp"
 #include "vision-core/core/task_factory.hpp"
 #include <algorithm>
 #include <stdexcept>
@@ -28,6 +30,13 @@ ObjectDetectionTask::ObjectDetectionTask(const ModelInfo& model_info,
     if (!preprocessor_) {
         throw std::runtime_error("Failed to create preprocessor for model: " + model_name);
     }
+
+    // Create appropriate postprocessor
+    postprocessor_ = createPostprocessor(model_type_);
+    
+    if (!postprocessor_) {
+        throw std::runtime_error("Failed to create postprocessor for model: " + model_name);
+    }
 }
 
 std::vector<std::vector<uint8_t>> ObjectDetectionTask::preprocess(const std::vector<cv::Mat>& imgs) {
@@ -54,51 +63,7 @@ std::vector<Result> ObjectDetectionTask::postprocess(
         return {};
     }
     
-    std::vector<Detection> detections;
-    
-    // Route to appropriate postprocessing based on model type
-    switch (model_type_) {
-        case ModelType::YOLO_STANDARD: {
-            detections = postprocessYoloStandard(infer_results[0], infer_shapes[0], frame_size);
-            break;
-        }
-        
-        case ModelType::YOLO_V10: {
-            detections = postprocessYoloV10(infer_results[0], infer_shapes[0], frame_size);
-            break;
-        }
-        
-        case ModelType::YOLO_NAS: {
-            if (infer_results.size() < 2) {
-                throw std::runtime_error("YOLO-NAS requires 2 output tensors");
-            }
-            detections = postprocessYoloNAS(infer_results[0], infer_results[1], 
-                                          infer_shapes[0], infer_shapes[1], frame_size);
-            break;
-        }
-        
-        case ModelType::RT_DETR_STYLE:
-        case ModelType::RT_DETR_UL: {
-            if (infer_results.size() < 2) {
-                throw std::runtime_error("RT-DETR style models require 2 output tensors");
-            }
-            detections = postprocessRTDETR(infer_results[0], infer_results[1],
-                                         infer_shapes[0], infer_shapes[1], frame_size);
-            break;
-        }
-        
-        case ModelType::RF_DETR: {
-            if (infer_results.size() < 2) {
-                throw std::runtime_error("RF-DETR requires 2 output tensors");
-            }
-            detections = postprocessRFDETR(infer_results[0], infer_results[1],
-                                         infer_shapes[0], infer_shapes[1], frame_size);
-            break;
-        }
-        
-        default:
-            throw std::runtime_error("Unsupported model type for: " + model_name_);
-    }
+    std::vector<Detection> detections = postprocessor_->postprocess(infer_results, infer_shapes, frame_size);
     
     // Convert detections to results
     std::vector<Result> results;
@@ -160,6 +125,23 @@ std::unique_ptr<Preprocessor> ObjectDetectionTask::createPreprocessor(ModelType 
     }
 }
 
+std::unique_ptr<Postprocessor> ObjectDetectionTask::createPostprocessor(ModelType type) {
+    switch (type) {
+        case ModelType::YOLO_STANDARD:
+        case ModelType::YOLO_V10:
+        case ModelType::YOLO_NAS:
+            return std::make_unique<YoloPostprocessor>(type, confidence_threshold_, nms_threshold_);
+            
+        case ModelType::RT_DETR_STYLE:
+        case ModelType::RT_DETR_UL:
+        case ModelType::RF_DETR:
+            return std::make_unique<RtDetrPostprocessor>(type, confidence_threshold_);
+            
+        default:
+            return nullptr;
+    }
+}
+
 cv::Size ObjectDetectionTask::extractInputSize(const ModelInfo& model_info) {
     int width = 640;  // default
     int height = 640; // default
@@ -203,124 +185,17 @@ bool ObjectDetectionTask::validateTensorInputs(
     }
 }
 
-// Helper method implementations
-float ObjectDetectionTask::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float {
-        return static_cast<float>(value);
-    }, element);
-}
-
-void ObjectDetectionTask::applyNMS(std::vector<Detection>& detections) {
-    if (detections.empty()) return;
-    
-    // Simple NMS implementation - can be optimized
-    std::vector<bool> suppress(detections.size(), false);
-    
-    for (size_t i = 0; i < detections.size(); ++i) {
-        if (suppress[i]) continue;
-        
-        for (size_t j = i + 1; j < detections.size(); ++j) {
-            if (suppress[j]) continue;
-            
-            // Calculate IoU
-            cv::Rect intersection = detections[i].bbox & detections[j].bbox;
-            float intersection_area = intersection.area();
-            float union_area = detections[i].bbox.area() + detections[j].bbox.area() - intersection_area;
-            
-            if (union_area > 0) {
-                float iou = intersection_area / union_area;
-                if (iou > nms_threshold_) {
-                    // Suppress the detection with lower confidence
-                    if (detections[i].class_confidence > detections[j].class_confidence) {
-                        suppress[j] = true;
-                    } else {
-                        suppress[i] = true;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    
-    // Remove suppressed detections
-    detections.erase(
-        std::remove_if(detections.begin(), detections.end(),
-                      [&](const Detection& det) {
-                          size_t idx = &det - &detections[0];
-                          return suppress[idx];
-                      }),
-        detections.end()
-    );
-}
-
-std::vector<Detection> ObjectDetectionTask::postprocessYoloStandard(
-    const std::vector<TensorElement>& output,
-    const std::vector<int64_t>& shape,
-    const cv::Size& frame_size) {
-    
-    std::vector<Detection> detections;
-    // TODO: Implement YOLO standard postprocessing
-    // This would include parsing the YOLO output format and applying NMS
-    return detections;
-}
-
-std::vector<Detection> ObjectDetectionTask::postprocessYoloV10(
-    const std::vector<TensorElement>& output,
-    const std::vector<int64_t>& shape,
-    const cv::Size& frame_size) {
-    
-    std::vector<Detection> detections;
-    // TODO: Implement YOLOv10 postprocessing (end-to-end, no NMS)
-    return detections;
-}
-
-std::vector<Detection> ObjectDetectionTask::postprocessYoloNAS(
-    const std::vector<TensorElement>& boxes,
-    const std::vector<TensorElement>& scores,
-    const std::vector<int64_t>& box_shape,
-    const std::vector<int64_t>& score_shape,
-    const cv::Size& frame_size) {
-    
-    std::vector<Detection> detections;
-    // TODO: Implement YOLO-NAS postprocessing
-    return detections;
-}
-
-std::vector<Detection> ObjectDetectionTask::postprocessRTDETR(
-    const std::vector<TensorElement>& boxes,
-    const std::vector<TensorElement>& scores,
-    const std::vector<int64_t>& box_shape,
-    const std::vector<int64_t>& score_shape,
-    const cv::Size& frame_size) {
-    
-    std::vector<Detection> detections;
-    // TODO: Implement RT-DETR style postprocessing
-    return detections;
-}
-
-std::vector<Detection> ObjectDetectionTask::postprocessRFDETR(
-    const std::vector<TensorElement>& boxes,
-    const std::vector<TensorElement>& scores,
-    const std::vector<int64_t>& box_shape,
-    const std::vector<int64_t>& score_shape,
-    const cv::Size& frame_size) {
-    
-    std::vector<Detection> detections;
-    // TODO: Implement RF-DETR postprocessing
-    return detections;
-}
-
 // Registration function for all detection models
 void registerObjectDetectionTasks() {
     // YOLO family
     std::vector<std::string> yolo_variants = {
-        "yolov5", "yolov6", "yolov7", "yolov8", "yolov9", "yolov10", 
+        "yolo", "yolov5", "yolov6", "yolov7", "yolov8", "yolov9", "yolov10", 
         "yolo11", "yolov12", "yolonas"
     };
     
     // Transformer-based
     std::vector<std::string> transformer_variants = {
-        "rtdetr", "rtdetrv2", "rtdetrul", "dfine", "deim", "rfdetr"
+        "rtdetr", "rtdetrv2", "rtdetrul", "rtdetr-ultralytics", "dfine", "deim", "rfdetr"
     };
     
     // Register all variants with unified ObjectDetectionTask

@@ -92,9 +92,10 @@ std::string TaskFactory::normalizeModelType(const std::string& model_type) {
     }
     
     // Normalize YOLO detection variants to base "yolo" (only if not segmentation)
-    if (normalized.rfind("yolov", 0) == 0 || normalized.rfind("yolo", 0) == 0) {
-        return "yolo";
-    }
+    // Removed aggressive normalization to allow specific variants like yolov10, yolonas
+    // if (normalized.rfind("yolov", 0) == 0 || normalized.rfind("yolo", 0) == 0) {
+    //     return "yolo";
+    // }
 
     return normalized;
 }

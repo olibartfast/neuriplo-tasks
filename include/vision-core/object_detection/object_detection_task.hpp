@@ -2,6 +2,7 @@
 
 #include "vision-core/core/task_interface.hpp"
 #include "vision-core/core/preprocessor.hpp"
+#include "vision-core/object_detection/postprocessor.hpp"
 #include <memory>
 #include <string>
 
@@ -61,6 +62,7 @@ private:
     ModelType model_type_;
     std::string model_name_;
     std::unique_ptr<Preprocessor> preprocessor_;
+    std::unique_ptr<Postprocessor> postprocessor_;
     float confidence_threshold_;
     float nms_threshold_;
     int input_width_;
@@ -77,6 +79,11 @@ private:
     std::unique_ptr<Preprocessor> createPreprocessor(ModelType type, const cv::Size& input_size);
     
     /**
+     * @brief Create appropriate postprocessor for model type
+     */
+    std::unique_ptr<Postprocessor> createPostprocessor(ModelType type);
+
+    /**
      * @brief Extract input dimensions from model info
      */
     cv::Size extractInputSize(const ModelInfo& model_info);
@@ -86,37 +93,6 @@ private:
      */
     bool validateTensorInputs(const std::vector<std::vector<TensorElement>>& infer_results,
                              const std::vector<std::vector<int64_t>>& infer_shapes) const;
-    
-    // Internal postprocessing methods
-    std::vector<Detection> postprocessYoloStandard(const std::vector<TensorElement>& output,
-                                                  const std::vector<int64_t>& shape,
-                                                  const cv::Size& frame_size);
-    
-    std::vector<Detection> postprocessYoloV10(const std::vector<TensorElement>& output,
-                                             const std::vector<int64_t>& shape,
-                                             const cv::Size& frame_size);
-    
-    std::vector<Detection> postprocessYoloNAS(const std::vector<TensorElement>& boxes,
-                                             const std::vector<TensorElement>& scores,
-                                             const std::vector<int64_t>& box_shape,
-                                             const std::vector<int64_t>& score_shape,
-                                             const cv::Size& frame_size);
-    
-    std::vector<Detection> postprocessRTDETR(const std::vector<TensorElement>& boxes,
-                                            const std::vector<TensorElement>& scores,
-                                            const std::vector<int64_t>& box_shape,
-                                            const std::vector<int64_t>& score_shape,
-                                            const cv::Size& frame_size);
-    
-    std::vector<Detection> postprocessRFDETR(const std::vector<TensorElement>& boxes,
-                                            const std::vector<TensorElement>& scores,
-                                            const std::vector<int64_t>& box_shape,
-                                            const std::vector<int64_t>& score_shape,
-                                            const cv::Size& frame_size);
-    
-    // Helper methods
-    float getTensorFloat(const TensorElement& element);
-    void applyNMS(std::vector<Detection>& detections);
 };
 
 } // namespace vision_core
