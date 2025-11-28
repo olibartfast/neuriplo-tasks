@@ -36,6 +36,7 @@ struct InstanceSegmentation : public Detection {
     std::vector<uint8_t> mask_data;    ///< Mask data as a vector
     int mask_height{0};                ///< Mask height
     int mask_width{0};                 ///< Mask width
+    cv::Mat mask;                      ///< Binary or soft mask
     
     InstanceSegmentation() = default;
     

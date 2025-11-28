@@ -52,7 +52,51 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETR(
     const cv::Size& frame_size) {
     
     std::vector<Detection> detections;
-    // Placeholder
+    
+    // Boxes: [1, 300, 4] (cx, cy, w, h), Scores: [1, 300, classes]
+    if (box_shape.size() < 3 || score_shape.size() < 3) return {};
+    
+    int num_dets = box_shape[1];
+    int num_classes = score_shape[2];
+    
+    const float* box_data = std::get_if<float>(&boxes[0]);
+    const float* score_data = std::get_if<float>(&scores[0]);
+    
+    if (!box_data || !score_data) return {};
+
+    for (int i = 0; i < num_dets; ++i) {
+        float max_score = 0.0f;
+        int class_id = -1;
+        
+        for (int c = 0; c < num_classes; ++c) {
+            float score = score_data[i * num_classes + c];
+            if (score > max_score) {
+                max_score = score;
+                class_id = c;
+            }
+        }
+        
+        if (max_score < confidence_threshold_) continue;
+        
+        float cx = box_data[i * 4 + 0];
+        float cy = box_data[i * 4 + 1];
+        float w = box_data[i * 4 + 2];
+        float h = box_data[i * 4 + 3];
+        
+        // RT-DETR usually outputs normalized coordinates
+        float x = (cx - w / 2.0f) * frame_size.width;
+        float y = (cy - h / 2.0f) * frame_size.height;
+        float width = w * frame_size.width;
+        float height = h * frame_size.height;
+        
+        Detection det;
+        det.class_id = class_id;
+        det.class_confidence = max_score;
+        det.bbox = cv::Rect(static_cast<int>(x), static_cast<int>(y), 
+                           static_cast<int>(width), static_cast<int>(height));
+        detections.push_back(det);
+    }
+    
     return detections;
 }
 
@@ -63,9 +107,12 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(
     const std::vector<int64_t>& score_shape,
     const cv::Size& frame_size) {
     
-    std::vector<Detection> detections;
-    // Placeholder
-    return detections;
+    // Ultralytics RT-DETR export often matches YOLO format or standard RT-DETR
+    // Assuming standard RT-DETR format for now, but checking shapes
+    // Sometimes UL exports as [1, 300, 4+cls] concatenated
+    
+    // If shapes match separate tensors:
+    return postprocessRTDETR(boxes, scores, box_shape, score_shape, frame_size);
 }
 
 std::vector<Detection> RtDetrPostprocessor::postprocessRFDETR(
@@ -75,9 +122,8 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRFDETR(
     const std::vector<int64_t>& score_shape,
     const cv::Size& frame_size) {
     
-    std::vector<Detection> detections;
-    // Placeholder
-    return detections;
+    // RF-DETR logic is similar to RT-DETR
+    return postprocessRTDETR(boxes, scores, box_shape, score_shape, frame_size);
 }
 
 float RtDetrPostprocessor::getTensorFloat(const TensorElement& element) {
