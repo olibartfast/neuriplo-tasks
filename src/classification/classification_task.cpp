@@ -1,6 +1,9 @@
 #include "vision-core/classification/classification_task.hpp"
 #include "vision-core/classification/classification_preprocessor.hpp"
 #include "vision-core/classification/classification_postprocessor.hpp"
+#include "vision-core/classification/torchvision_postprocessor.hpp"
+#include "vision-core/classification/vit_postprocessor.hpp"
+#include "vision-core/classification/tensorflow_postprocessor.hpp"
 #include "vision-core/core/task_factory.hpp"
 #include <algorithm>
 #include <stdexcept>
@@ -120,9 +123,20 @@ std::unique_ptr<Preprocessor> ClassificationTask::createPreprocessor(ModelType t
 }
 
 std::unique_ptr<ClassificationPostprocessor> ClassificationTask::createPostprocessor(ModelType type) {
-    // Currently all types use the same default postprocessor
-    // In the future, we can switch based on type if needed
-    return std::make_unique<DefaultClassificationPostprocessor>(top_k_, apply_softmax_);
+    switch (type) {
+        case ModelType::TORCHVISION:
+            return std::make_unique<TorchvisionPostprocessor>(top_k_, apply_softmax_);
+            
+        case ModelType::VIT:
+            return std::make_unique<ViTPostprocessor>(top_k_, apply_softmax_);
+            
+        case ModelType::TENSORFLOW:
+            return std::make_unique<TensorflowPostprocessor>(top_k_, apply_softmax_);
+            
+        default:
+            // Fallback to default for others for now
+            return std::make_unique<DefaultClassificationPostprocessor>(top_k_, apply_softmax_);
+    }
 }
 
 cv::Size ClassificationTask::extractInputSize(const ModelInfo& model_info) {

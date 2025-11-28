@@ -25,6 +25,9 @@ set(CORE_SOURCES
     src/object_detection/rtdetr_postprocessor.cpp
     src/classification/classification_task.cpp
     src/classification/classification_postprocessor.cpp
+    src/classification/torchvision_postprocessor.cpp
+    src/classification/vit_postprocessor.cpp
+    src/classification/tensorflow_postprocessor.cpp
     src/instance_segmentation/instance_segmentation_task.cpp
     src/instance_segmentation/yolo_segmentation_postprocessor.cpp
     src/instance_segmentation/rfdetr_segmentation_postprocessor.cpp
@@ -53,6 +56,9 @@ set(CORE_HEADERS
     include/vision-core/object_detection/rtdetr_postprocessor.hpp
     include/vision-core/classification/classification_task.hpp
     include/vision-core/classification/classification_postprocessor.hpp
+    include/vision-core/classification/torchvision_postprocessor.hpp
+    include/vision-core/classification/vit_postprocessor.hpp
+    include/vision-core/classification/tensorflow_postprocessor.hpp
     include/vision-core/instance_segmentation/instance_segmentation_task.hpp
     include/vision-core/instance_segmentation/segmentation_postprocessor.hpp
     include/vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp
