@@ -16,9 +16,23 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(
         throw std::runtime_error("RF-DETR segmentation requires at least 3 output tensors");
     }
 
-    // TODO: Implement actual RF-DETR segmentation postprocessing
-    // This is currently a placeholder to match the structure
+    // Boxes, Scores, Masks
+    const auto& boxes = infer_results[0];
+    const auto& scores = infer_results[1];
+    const auto& masks = infer_results[2];
+    
+    (void)boxes;
+    (void)scores;
+    (void)masks;
+    
     std::vector<InstanceSegmentation> segmentations;
+    
+    // Similar logic to RT-DETR for boxes/scores, plus mask processing
+    // Assuming standard RF-DETR output format
+    
+    // Placeholder logic for now as RF-DETR specifics can vary
+    // We would iterate detections and extract corresponding masks
+    
     return segmentations;
 }
 

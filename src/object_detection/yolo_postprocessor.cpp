@@ -52,13 +52,76 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(
     const cv::Size& frame_size) {
     
     std::vector<Detection> detections;
-    // Placeholder for actual implementation
-    // In a real scenario, we would parse the output tensor here
-    // For now, we'll just return an empty vector or mock data if needed for testing
-    // But since we are refactoring, we should keep the logic (even if it was empty before)
     
-    // Logic from original ObjectDetectionTask::postprocessYoloStandard
-    // ...
+    // Check shape dimensions
+    if (shape.size() < 3) return {};
+    
+    // int batch = shape[0]; // Unused
+    int channels = shape[1];
+    int anchors = shape[2];
+    
+    // Handle transposed output [1, anchors, channels] vs [1, channels, anchors]
+    // YOLOv8/v11 typically export as [1, 4+cls, 8400]
+    bool is_transposed = (channels < anchors && channels < 100); 
+    
+    if (!is_transposed) {
+        // Swap dimensions for easier processing if needed, or just adjust indexing
+        std::swap(channels, anchors);
+    }
+    
+    int num_classes = channels - 4;
+    if (num_classes <= 0) return {};
+
+    const float* data = std::get_if<float>(&output[0]);
+    if (!data) return {}; // Assuming float output for now
+
+    for (int i = 0; i < anchors; ++i) {
+        // Extract class scores
+        float max_score = 0.0f;
+        int class_id = -1;
+        
+        for (int c = 0; c < num_classes; ++c) {
+            float score;
+            if (is_transposed) {
+                // [batch, channels, anchors] -> data[c + 4][i]
+                score = data[(c + 4) * anchors + i];
+            } else {
+                // [batch, anchors, channels] -> data[i][c + 4]
+                score = data[i * channels + (c + 4)];
+            }
+            
+            if (score > max_score) {
+                max_score = score;
+                class_id = c;
+            }
+        }
+        
+        if (max_score < confidence_threshold_) continue;
+        
+        // Extract box
+        float cx, cy, w, h;
+        if (is_transposed) {
+            cx = data[0 * anchors + i];
+            cy = data[1 * anchors + i];
+            w  = data[2 * anchors + i];
+            h  = data[3 * anchors + i];
+        } else {
+            cx = data[i * channels + 0];
+            cy = data[i * channels + 1];
+            w  = data[i * channels + 2];
+            h  = data[i * channels + 3];
+        }
+        
+        float x = cx - w / 2.0f;
+        float y = cy - h / 2.0f;
+        
+        Detection det;
+        det.class_id = class_id;
+        det.class_confidence = max_score;
+        det.bbox = cv::Rect(static_cast<int>(x), static_cast<int>(y), 
+                           static_cast<int>(w), static_cast<int>(h));
+        detections.push_back(det);
+    }
     
     applyNMS(detections);
     return detections;
@@ -70,7 +133,36 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV10(
     const cv::Size& frame_size) {
     
     std::vector<Detection> detections;
-    // Placeholder
+    
+    // YOLOv10 output: [1, 300, 6] (x1, y1, x2, y2, score, class)
+    if (shape.size() < 3 || shape[2] < 6) return {};
+    
+    int num_dets = shape[1];
+    int dims = shape[2];
+    
+    const float* data = std::get_if<float>(&output[0]);
+    if (!data) return {};
+
+    for (int i = 0; i < num_dets; ++i) {
+        float score = data[i * dims + 4];
+        if (score < confidence_threshold_) continue;
+        
+        float x1 = data[i * dims + 0];
+        float y1 = data[i * dims + 1];
+        float x2 = data[i * dims + 2];
+        float y2 = data[i * dims + 3];
+        int class_id = static_cast<int>(data[i * dims + 5]);
+        
+        Detection det;
+        det.class_id = class_id;
+        det.class_confidence = score;
+        det.bbox = cv::Rect(static_cast<int>(x1), static_cast<int>(y1), 
+                           static_cast<int>(x2 - x1), static_cast<int>(y2 - y1));
+        detections.push_back(det);
+    }
+    
+    // YOLOv10 typically doesn't need NMS, but we can apply it if needed
+    // applyNMS(detections); 
     return detections;
 }
 
@@ -82,7 +174,47 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(
     const cv::Size& frame_size) {
     
     std::vector<Detection> detections;
-    // Placeholder
+    
+    // Boxes: [1, N, 4], Scores: [1, N, C]
+    if (box_shape.size() < 3 || score_shape.size() < 3) return {};
+    
+    int num_dets = box_shape[1];
+    int num_classes = score_shape[2];
+    
+    const float* box_data = std::get_if<float>(&boxes[0]);
+    const float* score_data = std::get_if<float>(&scores[0]);
+    
+    if (!box_data || !score_data) return {};
+
+    for (int i = 0; i < num_dets; ++i) {
+        // Find max score for this detection
+        float max_score = 0.0f;
+        int class_id = -1;
+        
+        for (int c = 0; c < num_classes; ++c) {
+            float score = score_data[i * num_classes + c];
+            if (score > max_score) {
+                max_score = score;
+                class_id = c;
+            }
+        }
+        
+        if (max_score < confidence_threshold_) continue;
+        
+        float x1 = box_data[i * 4 + 0];
+        float y1 = box_data[i * 4 + 1];
+        float x2 = box_data[i * 4 + 2];
+        float y2 = box_data[i * 4 + 3];
+        
+        Detection det;
+        det.class_id = class_id;
+        det.class_confidence = max_score;
+        det.bbox = cv::Rect(static_cast<int>(x1), static_cast<int>(y1), 
+                           static_cast<int>(x2 - x1), static_cast<int>(y2 - y1));
+        detections.push_back(det);
+    }
+    
+    applyNMS(detections);
     return detections;
 }
 
