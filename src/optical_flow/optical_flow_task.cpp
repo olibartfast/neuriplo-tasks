@@ -1,131 +1,162 @@
-#include "vision-core/core/task_interface.hpp"
-#include "vision-core/core/task_factory.hpp"
+#include "vision-core/optical_flow/optical_flow_task.hpp"
 #include "vision-core/optical_flow/optical_flow_preprocessor.hpp"
-#include "vision-core/optical_flow/raft_postprocessor.hpp"
-#include <memory>
+#include "vision-core/core/task_factory.hpp"
+#include <algorithm>
 #include <stdexcept>
 
 namespace vision_core {
 
-/**
- * @brief Optical flow task implementation
- * 
- * Handles RAFT (Recurrent All-Pairs Field Transforms) optical flow estimation.
- * Requires two consecutive frames as input and produces optical flow fields
- * with both raw flow data and colorized visualization.
- */
-class OpticalFlowTask : public TaskInterface {
-private:
-    std::unique_ptr<RaftPreprocessor> preprocessor_;
-
-public:
-    explicit OpticalFlowTask(const ModelInfo& model_info)
-        : TaskInterface(model_info) {
-        
-        if (input_width_ <= 0 || input_height_ <= 0 || input_channels_ != 3) {
-            throw InputDimensionError("Invalid optical flow model dimensions: expected 3-channel input");
-        }
-        
-        preprocessor_ = std::make_unique<RaftPreprocessor>(cv::Size(input_width_, input_height_));
+OpticalFlowTask::OpticalFlowTask(const ModelInfo& model_info, 
+                                const std::string& model_name)
+    : TaskInterface(model_info)
+    , model_type_(detectModelType(model_name))
+    , model_name_(model_name)
+{
+    // Extract input dimensions
+    cv::Size input_size = extractInputSize(model_info);
+    input_width_ = input_size.width;
+    input_height_ = input_size.height;
+    
+    // Create appropriate preprocessor
+    preprocessor_ = createPreprocessor(model_type_, input_size);
+    
+    if (!preprocessor_) {
+        throw std::runtime_error("Failed to create preprocessor for optical flow model: " + model_name);
     }
+}
 
-    TaskType getTaskType() override {
-        return TaskType::OpticalFlow;
+std::vector<std::vector<uint8_t>> OpticalFlowTask::preprocess(const std::vector<cv::Mat>& imgs) {
+    if (imgs.size() < 2) {
+        throw std::invalid_argument("Optical flow requires at least 2 frames");
     }
-
-    /**
-     * @brief Preprocess frame pairs for optical flow
-     * 
-     * Expects input images in pairs: [frame1, frame2, frame3, frame4, ...]
-     * Processes consecutive pairs: (frame1,frame2), (frame3,frame4), etc.
-     */
-    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override {
-        if (imgs.size() < 2) {
-            throw std::invalid_argument("Optical flow requires at least 2 frames");
-        }
-        
-        if (imgs.size() % 2 != 0) {
-            throw std::invalid_argument("Optical flow requires even number of frames (frame pairs)");
-        }
-        
-        std::vector<std::vector<uint8_t>> results;
-        
-        // Process consecutive frame pairs
-        for (size_t i = 0; i < imgs.size(); i += 2) {
-            if (imgs[i].empty() || imgs[i + 1].empty()) {
-                throw std::invalid_argument("Empty frame provided in pair");
-            }
-            
-            auto pair_results = preprocessor_->preprocess_pair(imgs[i], imgs[i + 1]);
-            
-            // Concatenate the two frames' data
-            std::vector<uint8_t> combined_data;
-            for (const auto& frame_data : pair_results) {
-                combined_data.insert(combined_data.end(), frame_data.begin(), frame_data.end());
-            }
-            results.push_back(std::move(combined_data));
-        }
-        
-        return results;
+    
+    if (imgs.size() % 2 != 0) {
+        throw std::invalid_argument("Optical flow requires even number of frames (frame pairs)");
     }
-
-    std::vector<Result> postprocess(
-        const cv::Size& frame_size,
-        const std::vector<std::vector<TensorElement>>& infer_results,
-        const std::vector<std::vector<int64_t>>& infer_shapes) override {
-        
-        if (infer_results.empty() || infer_shapes.empty()) {
-            return {};
-        }
-
-        if (infer_results.size() != infer_shapes.size()) {
-            throw std::invalid_argument("Mismatch between inference results and shapes");
-        }
-
-        std::vector<Result> results;
-        
-        for (size_t i = 0; i < infer_results.size(); ++i) {
-            if (infer_results[i].empty() || infer_shapes[i].empty()) {
-                continue;
-            }
-            
-            const TensorElement* output_data = infer_results[i].data();
-            
-            auto flow_result = RaftPostprocessor::postprocess(
-                output_data,
-                infer_shapes[i],
-                frame_size
-            );
-            
-            // Convert RaftPostprocessor result to standard OpticalFlow result
-            OpticalFlow optical_flow;
-            optical_flow.raw_flow = flow_result.raw_flow.clone();
-            optical_flow.flow = flow_result.flow_visualization.clone();
-            optical_flow.max_displacement = static_cast<float>(flow_result.max_displacement);
-            
-            results.emplace_back(std::move(optical_flow));
+    
+    std::vector<std::vector<uint8_t>> results;
+    
+    // Process consecutive frame pairs
+    for (size_t i = 0; i < imgs.size(); i += 2) {
+        if (imgs[i].empty() || imgs[i + 1].empty()) {
+            throw std::invalid_argument("Empty frame provided in pair");
         }
         
-        return results;
+        // Use RAFT's specialized preprocessing for frame pairs
+        auto raft_preprocessor = static_cast<RaftPreprocessor*>(preprocessor_.get());
+        auto pair_results = raft_preprocessor->preprocess_pair(imgs[i], imgs[i + 1]);
+        
+        // Add each result from the pair
+        for (const auto& result : pair_results) {
+            results.push_back(result);
+        }
     }
-};
+    
+    return results;
+}
 
-// Explicit registration function for optical flow tasks
+std::vector<Result> OpticalFlowTask::postprocess(
+    const cv::Size& frame_size,
+    const std::vector<std::vector<TensorElement>>& infer_results,
+    const std::vector<std::vector<int64_t>>& infer_shapes) {
+    
+    if (infer_results.empty() || infer_shapes.empty()) {
+        return {};
+    }
+    
+    std::vector<OpticalFlow> flows;
+    
+    // Route to appropriate postprocessor based on model type
+    switch (model_type_) {
+        case ModelType::RAFT: {
+            flows = postprocessRAFT(infer_results[0], infer_shapes[0], frame_size);
+            break;
+        }
+        
+        default:
+            throw std::runtime_error("Unsupported optical flow model type for: " + model_name_);
+    }
+    
+    // Convert flows to results
+    std::vector<Result> results;
+    results.reserve(flows.size());
+    for (const auto& flow : flows) {
+        results.emplace_back(flow);
+    }
+    
+    return results;
+}
+
+OpticalFlowTask::ModelType OpticalFlowTask::detectModelType(const std::string& model_name) {
+    std::string lower_name = model_name;
+    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+    
+    // All current models are RAFT-based
+    return ModelType::RAFT;
+}
+
+std::unique_ptr<Preprocessor> OpticalFlowTask::createPreprocessor(ModelType type, const cv::Size& input_size) {
+    switch (type) {
+        case ModelType::RAFT:
+            return std::make_unique<RaftPreprocessor>(input_size);
+            
+        default:
+            return nullptr;
+    }
+}
+
+cv::Size OpticalFlowTask::extractInputSize(const ModelInfo& model_info) {
+    int width = 512;  // default for RAFT
+    int height = 384; // default for RAFT
+    
+    if (!model_info.input_shapes.empty() && model_info.input_shapes[0].size() >= 3) {
+        const auto& shape = model_info.input_shapes[0];
+        if (model_info.input_formats[0] == "FORMAT_NCHW") {
+            height = static_cast<int>(shape[2]);
+            width = static_cast<int>(shape[3]);
+        } else if (model_info.input_formats[0] == "FORMAT_NHWC") {
+            height = static_cast<int>(shape[1]);
+            width = static_cast<int>(shape[2]);
+        }
+    }
+    
+    return cv::Size(width, height);
+}
+
+std::vector<OpticalFlow> OpticalFlowTask::postprocessRAFT(
+    const std::vector<TensorElement>& flow_output,
+    const std::vector<int64_t>& shape,
+    const cv::Size& frame_size) {
+    
+    std::vector<OpticalFlow> flows;
+    // TODO: Implement RAFT optical flow postprocessing
+    return flows;
+}
+
+float OpticalFlowTask::getTensorFloat(const TensorElement& element) {
+    return std::visit([](auto&& value) -> float {
+        return static_cast<float>(value);
+    }, element);
+}
+
+cv::Mat OpticalFlowTask::visualizeFlow(const cv::Mat& flow_x, const cv::Mat& flow_y) {
+    // TODO: Implement flow visualization
+    return cv::Mat();
+}
+
+// Registration function for all optical flow models
 void registerOpticalFlowTasks() {
+    // Optical flow variants
     std::vector<std::string> optical_flow_variants = {
         "raft"
     };
     
+    // Register all variants with unified OpticalFlowTask
     for (const auto& variant : optical_flow_variants) {
-        TaskFactory::registerTask(variant, [](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
-            return std::make_unique<OpticalFlowTask>(model_info);
+        TaskFactory::registerTask(variant, [variant](const ModelInfo& info) -> std::unique_ptr<TaskInterface> {
+            return std::make_unique<OpticalFlowTask>(info, variant);
         });
     }
-}
-
-// Factory function for manual registration
-std::unique_ptr<TaskInterface> createOpticalFlowTask(const ModelInfo& model_info) {
-    return std::make_unique<OpticalFlowTask>(model_info);
 }
 
 } // namespace vision_core

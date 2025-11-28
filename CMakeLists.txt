@@ -11,7 +11,7 @@ option(BUILD_TESTS "Build tests" OFF)
 # Find OpenCV
 find_package(OpenCV REQUIRED)
 
-# All library sources
+# All library sources - UNIFIED ARCHITECTURE
 set(CORE_SOURCES
     # Core
     src/core/bbox_processor.cpp
@@ -19,37 +19,16 @@ set(CORE_SOURCES
     src/core/task_interface.cpp
     src/core/task_factory.cpp
 
-    # Object Detection
-    src/object_detection/yolo_postprocessor.cpp
-    src/object_detection/rtdetr_postprocessor.cpp
-    src/object_detection/dfine_postprocessor.cpp
-    src/object_detection/rfdetr_postprocessor.cpp
-    src/object_detection/detection_preprocessor.cpp
-    src/object_detection/yolo_task.cpp
-    src/object_detection/rtdetr_task.cpp
-    # Task Implementations
-    src/object_detection/yolo_task.cpp
-    src/object_detection/transformer_detection_task.cpp
-    # Instance Segmentation
-    src/instance_segmentation/yolo_segmentation_postprocessor.cpp
-    src/instance_segmentation/rfdetr_segmentation_postprocessor.cpp
-    # Instance Segmentation Tasks
+    # Unified Tasks (no separate postprocessors - all internal)
+    src/object_detection/object_detection_task.cpp
+    src/classification/classification_task.cpp
     src/instance_segmentation/instance_segmentation_task.cpp
-    # Classification
-    src/classification/classifier_postprocessor.cpp
-    src/classification/classification_preprocessor.cpp
-    src/classification/classification_task.cpp
-    # Classification Tasks
-    src/classification/classification_task.cpp
-    # Video Classification
-    src/video_classification/timesformer_postprocessor.cpp
-    # Video Classification Tasks
-    src/video_classification/video_classification_task.cpp
-    # Optical Flow
-    src/optical_flow/raft_postprocessor.cpp
-    src/optical_flow/optical_flow_preprocessor.cpp
-    # Optical Flow Tasks
     src/optical_flow/optical_flow_task.cpp
+
+    # Preprocessors (still separate as they're reusable)
+    src/object_detection/detection_preprocessor.cpp
+    src/classification/classification_preprocessor.cpp
+    src/optical_flow/optical_flow_preprocessor.cpp
 )
 
 set(CORE_HEADERS
@@ -60,22 +39,16 @@ set(CORE_HEADERS
     include/vision-core/core/model_info.hpp
     include/vision-core/core/task_interface.hpp
     include/vision-core/core/task_factory.hpp
-    # Object Detection
-    include/vision-core/object_detection/yolo_postprocessor.hpp
-    include/vision-core/object_detection/rtdetr_postprocessor.hpp
-    include/vision-core/object_detection/dfine_postprocessor.hpp
-    include/vision-core/object_detection/rfdetr_postprocessor.hpp
+
+    # Unified Task Headers (postprocessing is internal)
+    include/vision-core/object_detection/object_detection_task.hpp
+    include/vision-core/classification/classification_task.hpp
+    include/vision-core/instance_segmentation/instance_segmentation_task.hpp
+    include/vision-core/optical_flow/optical_flow_task.hpp
+
+    # Preprocessor Headers (still separate as they're reusable)
     include/vision-core/object_detection/detection_preprocessor.hpp
-    # Instance Segmentation
-    include/vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp
-    include/vision-core/instance_segmentation/rfdetr_segmentation_postprocessor.hpp
-    # Classification
-    include/vision-core/classification/classifier_postprocessor.hpp
     include/vision-core/classification/classification_preprocessor.hpp
-    # Video Classification
-    include/vision-core/video_classification/timesformer_postprocessor.hpp
-    # Optical Flow
-    include/vision-core/optical_flow/raft_postprocessor.hpp
     include/vision-core/optical_flow/optical_flow_preprocessor.hpp
 )
 
