@@ -7,6 +7,8 @@
 
 namespace vision_core {
 
+class ClassificationPostprocessor;
+
 /**
  * @brief Unified classification task for all classifier architectures
  * 
@@ -56,6 +58,7 @@ private:
     ModelType model_type_;
     std::string model_name_;
     std::unique_ptr<Preprocessor> preprocessor_;
+    std::unique_ptr<ClassificationPostprocessor> postprocessor_;
     int top_k_;
     bool apply_softmax_;
     int input_width_;
@@ -72,26 +75,14 @@ private:
     std::unique_ptr<Preprocessor> createPreprocessor(ModelType type, const cv::Size& input_size);
     
     /**
+     * @brief Create appropriate postprocessor for model type
+     */
+    std::unique_ptr<ClassificationPostprocessor> createPostprocessor(ModelType type);
+
+    /**
      * @brief Extract input dimensions from model info
      */
     cv::Size extractInputSize(const ModelInfo& model_info);
-    
-    /**
-     * @brief Internal classification postprocessing
-     */
-    std::vector<Classification> postprocessClassification(
-        const std::vector<TensorElement>& output,
-        const std::vector<int64_t>& shape);
-    
-    /**
-     * @brief Helper to get float value from tensor element
-     */
-    float getTensorFloat(const TensorElement& element);
-    
-    /**
-     * @brief Apply softmax to logits
-     */
-    void applySoftmax(std::vector<float>& logits);
 };
 
 } // namespace vision_core

@@ -7,31 +7,14 @@
 
 namespace vision_core {
 
-/**
- * @brief Unified optical flow task for all optical flow architectures
- * 
- * Handles all optical flow model types with consistent architecture:
- * - RAFT (Recurrent All-Pairs Field Transforms)
- * - Future optical flow models
- * 
- * Design principles:
- * 1. Single task class for all optical flow models
- * 2. Model type enum for different architectures
- * 3. Specialized preprocessing for frame pairs
- * 4. Unified output format with flow fields and visualizations
- */
+class OpticalFlowPostprocessor;
+
 class OpticalFlowTask : public TaskInterface {
 public:
-    /**
-     * @brief Optical flow model types
-     */
     enum class ModelType {
         RAFT           // RAFT-based optical flow models
     };
 
-    /**
-     * @brief Create optical flow task for specified model type
-     */
     explicit OpticalFlowTask(const ModelInfo& model_info, 
                            const std::string& model_name);
 
@@ -49,41 +32,16 @@ private:
     ModelType model_type_;
     std::string model_name_;
     std::unique_ptr<Preprocessor> preprocessor_;
+    std::unique_ptr<OpticalFlowPostprocessor> postprocessor_;
     int input_width_;
     int input_height_;
 
-    /**
-     * @brief Detect model type from model name string
-     */
     static ModelType detectModelType(const std::string& model_name);
     
-    /**
-     * @brief Create appropriate preprocessor for model type
-     */
     std::unique_ptr<Preprocessor> createPreprocessor(ModelType type, const cv::Size& input_size);
+    std::unique_ptr<OpticalFlowPostprocessor> createPostprocessor(ModelType type);
     
-    /**
-     * @brief Extract input dimensions from model info
-     */
     cv::Size extractInputSize(const ModelInfo& model_info);
-    
-    /**
-     * @brief Internal optical flow postprocessing
-     */
-    std::vector<OpticalFlow> postprocessRAFT(
-        const std::vector<TensorElement>& flow_output,
-        const std::vector<int64_t>& shape,
-        const cv::Size& frame_size);
-    
-    /**
-     * @brief Helper to get float value from tensor element
-     */
-    float getTensorFloat(const TensorElement& element);
-    
-    /**
-     * @brief Generate flow visualization
-     */
-    cv::Mat visualizeFlow(const cv::Mat& flow_x, const cv::Mat& flow_y);
 };
 
 } // namespace vision_core

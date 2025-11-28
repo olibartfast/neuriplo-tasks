@@ -1,5 +1,6 @@
 #include "vision-core/classification/classification_task.hpp"
 #include "vision-core/classification/classification_preprocessor.hpp"
+#include "vision-core/classification/classification_postprocessor.hpp"
 #include "vision-core/core/task_factory.hpp"
 #include <algorithm>
 #include <stdexcept>
@@ -28,6 +29,13 @@ ClassificationTask::ClassificationTask(const ModelInfo& model_info,
     if (!preprocessor_) {
         throw std::runtime_error("Failed to create preprocessor for classifier: " + model_name);
     }
+
+    // Create appropriate postprocessor
+    postprocessor_ = createPostprocessor(model_type_);
+    
+    if (!postprocessor_) {
+        throw std::runtime_error("Failed to create postprocessor for classifier: " + model_name);
+    }
 }
 
 std::vector<std::vector<uint8_t>> ClassificationTask::preprocess(const std::vector<cv::Mat>& imgs) {
@@ -54,7 +62,7 @@ std::vector<Result> ClassificationTask::postprocess(
     }
     
     // Classify using unified postprocessing
-    auto classifications = postprocessClassification(infer_results[0], infer_shapes[0]);
+    auto classifications = postprocessor_->postprocess(infer_results[0], infer_shapes[0]);
     
     // Convert to results
     std::vector<Result> results;
@@ -111,6 +119,12 @@ std::unique_ptr<Preprocessor> ClassificationTask::createPreprocessor(ModelType t
     }
 }
 
+std::unique_ptr<ClassificationPostprocessor> ClassificationTask::createPostprocessor(ModelType type) {
+    // Currently all types use the same default postprocessor
+    // In the future, we can switch based on type if needed
+    return std::make_unique<DefaultClassificationPostprocessor>(top_k_, apply_softmax_);
+}
+
 cv::Size ClassificationTask::extractInputSize(const ModelInfo& model_info) {
     int width = 224;  // default for most classifiers
     int height = 224; // default for most classifiers
@@ -127,78 +141,6 @@ cv::Size ClassificationTask::extractInputSize(const ModelInfo& model_info) {
     }
     
     return cv::Size(width, height);
-}
-
-std::vector<Classification> ClassificationTask::postprocessClassification(
-    const std::vector<TensorElement>& output,
-    const std::vector<int64_t>& shape) {
-    
-    if (output.empty() || shape.empty()) {
-        return {};
-    }
-    
-    // Extract logits/probabilities
-    std::vector<float> scores;
-    scores.reserve(output.size());
-    for (const auto& element : output) {
-        scores.push_back(getTensorFloat(element));
-    }
-    
-    // Apply softmax if needed
-    if (apply_softmax_) {
-        applySoftmax(scores);
-    }
-    
-    // Get top-k classifications
-    std::vector<std::pair<int, float>> indexed_scores;
-    for (size_t i = 0; i < scores.size(); ++i) {
-        indexed_scores.emplace_back(static_cast<int>(i), scores[i]);
-    }
-    
-    // Sort by score (highest first)
-    std::partial_sort(indexed_scores.begin(), 
-                     indexed_scores.begin() + std::min(top_k_, static_cast<int>(indexed_scores.size())),
-                     indexed_scores.end(),
-                     [](const auto& a, const auto& b) { return a.second > b.second; });
-    
-    // Create classifications
-    std::vector<Classification> classifications;
-    int limit = std::min(top_k_, static_cast<int>(indexed_scores.size()));
-    for (int i = 0; i < limit; ++i) {
-        Classification cls;
-        cls.class_id = indexed_scores[i].first;
-        cls.class_confidence = indexed_scores[i].second;
-        classifications.push_back(cls);
-    }
-    
-    return classifications;
-}
-
-float ClassificationTask::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float {
-        return static_cast<float>(value);
-    }, element);
-}
-
-void ClassificationTask::applySoftmax(std::vector<float>& logits) {
-    if (logits.empty()) return;
-    
-    // Find max value for numerical stability
-    float max_val = *std::max_element(logits.begin(), logits.end());
-    
-    // Compute softmax
-    float sum = 0.0f;
-    for (auto& logit : logits) {
-        logit = std::exp(logit - max_val);
-        sum += logit;
-    }
-    
-    // Normalize
-    if (sum > 0.0f) {
-        for (auto& logit : logits) {
-            logit /= sum;
-        }
-    }
 }
 
 // Registration function for all classification models

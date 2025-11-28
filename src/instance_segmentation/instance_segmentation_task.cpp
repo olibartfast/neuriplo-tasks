@@ -1,4 +1,6 @@
 #include "vision-core/instance_segmentation/instance_segmentation_task.hpp"
+#include "vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp"
+#include "vision-core/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
 #include "vision-core/object_detection/detection_preprocessor.hpp"
 #include "vision-core/core/task_factory.hpp"
 #include <algorithm>
@@ -29,6 +31,13 @@ InstanceSegmentationTask::InstanceSegmentationTask(const ModelInfo& model_info,
     if (!preprocessor_) {
         throw std::runtime_error("Failed to create preprocessor for segmentation model: " + model_name);
     }
+
+    // Create appropriate postprocessor
+    postprocessor_ = createPostprocessor(model_type_);
+    
+    if (!postprocessor_) {
+        throw std::runtime_error("Failed to create postprocessor for segmentation model: " + model_name);
+    }
 }
 
 std::vector<std::vector<uint8_t>> InstanceSegmentationTask::preprocess(const std::vector<cv::Mat>& imgs) {
@@ -55,35 +64,8 @@ std::vector<Result> InstanceSegmentationTask::postprocess(
         return {};
     }
     
-    std::vector<InstanceSegmentation> segmentations;
-    
-    // Route to appropriate postprocessor based on model type
-    switch (model_type_) {
-        case ModelType::YOLO_SEG: {
-            if (infer_results.size() < 2) {
-                throw std::runtime_error("YOLO segmentation requires 2 output tensors");
-            }
-            segmentations = postprocessYoloSeg(
-                infer_results[0], infer_results[1],
-                infer_shapes[0], infer_shapes[1],
-                frame_size);
-            break;
-        }
-        
-        case ModelType::RF_DETR_SEG: {
-            if (infer_results.size() < 3) {
-                throw std::runtime_error("RF-DETR segmentation requires 3 output tensors");
-            }
-            segmentations = postprocessRFDETRSeg(
-                infer_results[0], infer_results[1], infer_results[2],
-                infer_shapes[0], infer_shapes[1], infer_shapes[2],
-                frame_size);
-            break;
-        }
-        
-        default:
-            throw std::runtime_error("Unsupported segmentation model type for: " + model_name_);
-    }
+    // Delegate to postprocessor
+    auto segmentations = postprocessor_->postprocess(infer_results, infer_shapes, frame_size);
     
     // Convert segmentations to results
     std::vector<Result> results;
@@ -115,6 +97,21 @@ std::unique_ptr<Preprocessor> InstanceSegmentationTask::createPreprocessor(Model
             
         case ModelType::RF_DETR_SEG:
             return std::make_unique<RfDetrPreprocessor>(input_size);
+            
+        default:
+            return nullptr;
+    }
+}
+
+std::unique_ptr<SegmentationPostprocessor> InstanceSegmentationTask::createPostprocessor(ModelType type) {
+    switch (type) {
+        case ModelType::YOLO_SEG:
+            return std::make_unique<YoloSegmentationPostprocessor>(
+                confidence_threshold_, nms_threshold_, mask_threshold_);
+            
+        case ModelType::RF_DETR_SEG:
+            return std::make_unique<RfDetrSegmentationPostprocessor>(
+                confidence_threshold_, mask_threshold_);
             
         default:
             return nullptr;
@@ -158,42 +155,6 @@ bool InstanceSegmentationTask::validateTensorInputs(
         default:
             return false;
     }
-}
-
-std::vector<InstanceSegmentation> InstanceSegmentationTask::postprocessYoloSeg(
-    const std::vector<TensorElement>& detections,
-    const std::vector<TensorElement>& mask_protos,
-    const std::vector<int64_t>& det_shape,
-    const std::vector<int64_t>& mask_shape,
-    const cv::Size& frame_size) {
-    
-    std::vector<InstanceSegmentation> segmentations;
-    // TODO: Implement YOLO segmentation postprocessing
-    return segmentations;
-}
-
-std::vector<InstanceSegmentation> InstanceSegmentationTask::postprocessRFDETRSeg(
-    const std::vector<TensorElement>& boxes,
-    const std::vector<TensorElement>& labels,
-    const std::vector<TensorElement>& masks,
-    const std::vector<int64_t>& box_shape,
-    const std::vector<int64_t>& label_shape,
-    const std::vector<int64_t>& mask_shape,
-    const cv::Size& frame_size) {
-    
-    std::vector<InstanceSegmentation> segmentations;
-    // TODO: Implement RF-DETR segmentation postprocessing
-    return segmentations;
-}
-
-float InstanceSegmentationTask::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float {
-        return static_cast<float>(value);
-    }, element);
-}
-
-void InstanceSegmentationTask::applyNMS(std::vector<InstanceSegmentation>& segmentations) {
-    // TODO: Implement NMS for segmentation results
 }
 
 // Registration function for all instance segmentation models

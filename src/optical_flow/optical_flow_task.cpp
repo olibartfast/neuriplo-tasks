@@ -1,4 +1,5 @@
 #include "vision-core/optical_flow/optical_flow_task.hpp"
+#include "vision-core/optical_flow/raft_postprocessor.hpp"
 #include "vision-core/optical_flow/optical_flow_preprocessor.hpp"
 #include "vision-core/core/task_factory.hpp"
 #include <algorithm>
@@ -22,6 +23,13 @@ OpticalFlowTask::OpticalFlowTask(const ModelInfo& model_info,
     
     if (!preprocessor_) {
         throw std::runtime_error("Failed to create preprocessor for optical flow model: " + model_name);
+    }
+
+    // Create appropriate postprocessor
+    postprocessor_ = createPostprocessor(model_type_);
+    
+    if (!postprocessor_) {
+        throw std::runtime_error("Failed to create postprocessor for optical flow model: " + model_name);
     }
 }
 
@@ -64,18 +72,9 @@ std::vector<Result> OpticalFlowTask::postprocess(
         return {};
     }
     
-    std::vector<OpticalFlow> flows;
-    
-    // Route to appropriate postprocessor based on model type
-    switch (model_type_) {
-        case ModelType::RAFT: {
-            flows = postprocessRAFT(infer_results[0], infer_shapes[0], frame_size);
-            break;
-        }
-        
-        default:
-            throw std::runtime_error("Unsupported optical flow model type for: " + model_name_);
-    }
+    // Delegate to postprocessor
+    // Note: RAFT typically has 1 output tensor for flow
+    auto flows = postprocessor_->postprocess(infer_results[0], infer_shapes[0], frame_size);
     
     // Convert flows to results
     std::vector<Result> results;
@@ -105,6 +104,16 @@ std::unique_ptr<Preprocessor> OpticalFlowTask::createPreprocessor(ModelType type
     }
 }
 
+std::unique_ptr<OpticalFlowPostprocessor> OpticalFlowTask::createPostprocessor(ModelType type) {
+    switch (type) {
+        case ModelType::RAFT:
+            return std::make_unique<RaftPostprocessor>();
+            
+        default:
+            return nullptr;
+    }
+}
+
 cv::Size OpticalFlowTask::extractInputSize(const ModelInfo& model_info) {
     int width = 512;  // default for RAFT
     int height = 384; // default for RAFT
@@ -121,27 +130,6 @@ cv::Size OpticalFlowTask::extractInputSize(const ModelInfo& model_info) {
     }
     
     return cv::Size(width, height);
-}
-
-std::vector<OpticalFlow> OpticalFlowTask::postprocessRAFT(
-    const std::vector<TensorElement>& flow_output,
-    const std::vector<int64_t>& shape,
-    const cv::Size& frame_size) {
-    
-    std::vector<OpticalFlow> flows;
-    // TODO: Implement RAFT optical flow postprocessing
-    return flows;
-}
-
-float OpticalFlowTask::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float {
-        return static_cast<float>(value);
-    }, element);
-}
-
-cv::Mat OpticalFlowTask::visualizeFlow(const cv::Mat& flow_x, const cv::Mat& flow_y) {
-    // TODO: Implement flow visualization
-    return cv::Mat();
 }
 
 // Registration function for all optical flow models
