@@ -1,0 +1,97 @@
+#pragma once
+
+#include "vision-core/core/task_interface.hpp"
+#include "vision-core/core/preprocessor.hpp"
+#include <memory>
+#include <string>
+
+namespace vision_core {
+
+/**
+ * @brief Unified classification task for all classifier architectures
+ * 
+ * Handles all classification model types with consistent architecture:
+ * - Torchvision classifiers (ResNet, etc.) with ImageNet normalization
+ * - TensorFlow classifiers with [0,1] normalization  
+ * - Vision Transformer (ViT) classifiers
+ * - Video classification models (TimeSformer, etc.)
+ * 
+ * Design principles:
+ * 1. Single task class for all classification models
+ * 2. Model type enum based on preprocessing requirements
+ * 3. Factory pattern for preprocessor creation
+ * 4. Unified postprocessing with configurable parameters
+ */
+class ClassificationTask : public TaskInterface {
+public:
+    /**
+     * @brief Classification model types grouped by preprocessing requirements
+     */
+    enum class ModelType {
+        TORCHVISION,        // ImageNet normalization (mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
+        TENSORFLOW,         // [0,1] normalization only
+        VIT,                // ViT-specific preprocessing
+        VIDEO_CLASSIFIER    // Video models (temporal sequences)
+    };
+
+    /**
+     * @brief Create classification task for specified model type
+     */
+    explicit ClassificationTask(const ModelInfo& model_info, 
+                              const std::string& model_name,
+                              int top_k = 5,
+                              bool apply_softmax = true);
+
+    // TaskInterface implementation
+    TaskType getTaskType() override { return TaskType::Classification; }
+    
+    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override;
+    
+    std::vector<Result> postprocess(
+        const cv::Size& frame_size,
+        const std::vector<std::vector<TensorElement>>& infer_results,
+        const std::vector<std::vector<int64_t>>& infer_shapes) override;
+
+private:
+    ModelType model_type_;
+    std::string model_name_;
+    std::unique_ptr<Preprocessor> preprocessor_;
+    int top_k_;
+    bool apply_softmax_;
+    int input_width_;
+    int input_height_;
+
+    /**
+     * @brief Detect model type from model name string
+     */
+    static ModelType detectModelType(const std::string& model_name);
+    
+    /**
+     * @brief Create appropriate preprocessor for model type
+     */
+    std::unique_ptr<Preprocessor> createPreprocessor(ModelType type, const cv::Size& input_size);
+    
+    /**
+     * @brief Extract input dimensions from model info
+     */
+    cv::Size extractInputSize(const ModelInfo& model_info);
+    
+    /**
+     * @brief Internal classification postprocessing
+     */
+    std::vector<Classification> postprocessClassification(
+        const std::vector<TensorElement>& output,
+        const std::vector<int64_t>& shape);
+    
+    /**
+     * @brief Helper to get float value from tensor element
+     */
+    float getTensorFloat(const TensorElement& element);
+    
+    /**
+     * @brief Apply softmax to logits
+     */
+    void applySoftmax(std::vector<float>& logits);
+};
+
+} // namespace vision_core

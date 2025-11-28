@@ -99,29 +99,19 @@ std::string TaskFactory::normalizeModelType(const std::string& model_type) {
     return normalized;
 }
 
-// Forward declarations for task registration functions
-void registerYoloTasks();
-void registerYoloNasTasks();
-void registerYolov10Tasks();
-void registerRtDetrTasks();  
-void registerTransformerDetectionTasks();
-void registerClassificationTasks();
-void registerInstanceSegmentationTasks();
-void registerVideoClassificationTasks();
-void registerOpticalFlowTasks();
+// Forward declarations for unified task registration functions
+void registerObjectDetectionTasks();      // Unified object detection registration
+void registerClassificationTasks();       // Unified classification registration (includes video)
+void registerInstanceSegmentationTasks(); // Unified instance segmentation registration
+void registerOpticalFlowTasks();         // Unified optical flow registration
 
 void registerAllTasks() {
     static std::once_flag registered;
     std::call_once(registered, []() {
-        registerYoloTasks();
-        registerYoloNasTasks();
-        registerYolov10Tasks();
-        registerRtDetrTasks();
-        registerTransformerDetectionTasks();
-        registerClassificationTasks();
-        registerInstanceSegmentationTasks();
-        registerVideoClassificationTasks();
-        registerOpticalFlowTasks();
+        registerObjectDetectionTasks();       // All detection models
+        registerClassificationTasks();        // All classification models (including video)
+        registerInstanceSegmentationTasks();  // All segmentation models
+        registerOpticalFlowTasks();          // All optical flow models
     });
 }
 
