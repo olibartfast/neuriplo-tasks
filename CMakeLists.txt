@@ -24,8 +24,12 @@ set(CORE_SOURCES
     src/object_detection/yolo_postprocessor.cpp
     src/object_detection/rtdetr_postprocessor.cpp
     src/classification/classification_task.cpp
+    src/classification/classification_postprocessor.cpp
     src/instance_segmentation/instance_segmentation_task.cpp
+    src/instance_segmentation/yolo_segmentation_postprocessor.cpp
+    src/instance_segmentation/rfdetr_segmentation_postprocessor.cpp
     src/optical_flow/optical_flow_task.cpp
+    src/optical_flow/raft_postprocessor.cpp
 
     # Preprocessors (still separate as they're reusable)
     src/object_detection/detection_preprocessor.cpp
@@ -48,8 +52,14 @@ set(CORE_HEADERS
     include/vision-core/object_detection/yolo_postprocessor.hpp
     include/vision-core/object_detection/rtdetr_postprocessor.hpp
     include/vision-core/classification/classification_task.hpp
+    include/vision-core/classification/classification_postprocessor.hpp
     include/vision-core/instance_segmentation/instance_segmentation_task.hpp
+    include/vision-core/instance_segmentation/segmentation_postprocessor.hpp
+    include/vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp
+    include/vision-core/instance_segmentation/rfdetr_segmentation_postprocessor.hpp
     include/vision-core/optical_flow/optical_flow_task.hpp
+    include/vision-core/optical_flow/optical_flow_postprocessor.hpp
+    include/vision-core/optical_flow/raft_postprocessor.hpp
 
     # Preprocessor Headers (still separate as they're reusable)
     include/vision-core/object_detection/detection_preprocessor.hpp
