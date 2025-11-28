@@ -21,6 +21,8 @@ set(CORE_SOURCES
 
     # Unified Tasks (no separate postprocessors - all internal)
     src/object_detection/object_detection_task.cpp
+    src/object_detection/yolo_postprocessor.cpp
+    src/object_detection/rtdetr_postprocessor.cpp
     src/classification/classification_task.cpp
     src/instance_segmentation/instance_segmentation_task.cpp
     src/optical_flow/optical_flow_task.cpp
@@ -42,6 +44,9 @@ set(CORE_HEADERS
 
     # Unified Task Headers (postprocessing is internal)
     include/vision-core/object_detection/object_detection_task.hpp
+    include/vision-core/object_detection/postprocessor.hpp
+    include/vision-core/object_detection/yolo_postprocessor.hpp
+    include/vision-core/object_detection/rtdetr_postprocessor.hpp
     include/vision-core/classification/classification_task.hpp
     include/vision-core/instance_segmentation/instance_segmentation_task.hpp
     include/vision-core/optical_flow/optical_flow_task.hpp

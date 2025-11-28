@@ -205,7 +205,7 @@ void ClassificationTask::applySoftmax(std::vector<float>& logits) {
 void registerClassificationTasks() {
     // Classification variants
     std::vector<std::string> classification_variants = {
-        "torchvision-classifier", "tensorflow-classifier", "vit-classifier"
+        "torchvision-classifier", "tensorflow-classifier", "vit-classifier", "resnet", "resnet50"
     };
     
     // Video classification variants  
