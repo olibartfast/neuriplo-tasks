@@ -59,17 +59,12 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETR(
     int num_dets = box_shape[1];
     int num_classes = score_shape[2];
     
-    const float* box_data = std::get_if<float>(&boxes[0]);
-    const float* score_data = std::get_if<float>(&scores[0]);
-    
-    if (!box_data || !score_data) return {};
-
     for (int i = 0; i < num_dets; ++i) {
         float max_score = 0.0f;
         int class_id = -1;
         
         for (int c = 0; c < num_classes; ++c) {
-            float score = score_data[i * num_classes + c];
+            float score = getTensorFloat(scores[i * num_classes + c]);
             if (score > max_score) {
                 max_score = score;
                 class_id = c;
@@ -78,10 +73,10 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETR(
         
         if (max_score < confidence_threshold_) continue;
         
-        float cx = box_data[i * 4 + 0];
-        float cy = box_data[i * 4 + 1];
-        float w = box_data[i * 4 + 2];
-        float h = box_data[i * 4 + 3];
+        float cx = getTensorFloat(boxes[i * 4 + 0]);
+        float cy = getTensorFloat(boxes[i * 4 + 1]);
+        float w = getTensorFloat(boxes[i * 4 + 2]);
+        float h = getTensorFloat(boxes[i * 4 + 3]);
         
         // RT-DETR usually outputs normalized coordinates
         float x = (cx - w / 2.0f) * frame_size.width;

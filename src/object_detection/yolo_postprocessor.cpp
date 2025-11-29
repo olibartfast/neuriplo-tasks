@@ -72,9 +72,6 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(
     int num_classes = channels - 4;
     if (num_classes <= 0) return {};
 
-    const float* data = std::get_if<float>(&output[0]);
-    if (!data) return {}; // Assuming float output for now
-
     for (int i = 0; i < anchors; ++i) {
         // Extract class scores
         float max_score = 0.0f;
@@ -84,10 +81,10 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(
             float score;
             if (is_transposed) {
                 // [batch, channels, anchors] -> data[c + 4][i]
-                score = data[(c + 4) * anchors + i];
+                score = getTensorFloat(output[(c + 4) * anchors + i]);
             } else {
                 // [batch, anchors, channels] -> data[i][c + 4]
-                score = data[i * channels + (c + 4)];
+                score = getTensorFloat(output[i * channels + (c + 4)]);
             }
             
             if (score > max_score) {
@@ -101,15 +98,15 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(
         // Extract box
         float cx, cy, w, h;
         if (is_transposed) {
-            cx = data[0 * anchors + i];
-            cy = data[1 * anchors + i];
-            w  = data[2 * anchors + i];
-            h  = data[3 * anchors + i];
+            cx = getTensorFloat(output[0 * anchors + i]);
+            cy = getTensorFloat(output[1 * anchors + i]);
+            w  = getTensorFloat(output[2 * anchors + i]);
+            h  = getTensorFloat(output[3 * anchors + i]);
         } else {
-            cx = data[i * channels + 0];
-            cy = data[i * channels + 1];
-            w  = data[i * channels + 2];
-            h  = data[i * channels + 3];
+            cx = getTensorFloat(output[i * channels + 0]);
+            cy = getTensorFloat(output[i * channels + 1]);
+            w  = getTensorFloat(output[i * channels + 2]);
+            h  = getTensorFloat(output[i * channels + 3]);
         }
         
         float x = cx - w / 2.0f;
@@ -140,18 +137,15 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV10(
     int num_dets = shape[1];
     int dims = shape[2];
     
-    const float* data = std::get_if<float>(&output[0]);
-    if (!data) return {};
-
     for (int i = 0; i < num_dets; ++i) {
-        float score = data[i * dims + 4];
+        float score = getTensorFloat(output[i * dims + 4]);
         if (score < confidence_threshold_) continue;
         
-        float x1 = data[i * dims + 0];
-        float y1 = data[i * dims + 1];
-        float x2 = data[i * dims + 2];
-        float y2 = data[i * dims + 3];
-        int class_id = static_cast<int>(data[i * dims + 5]);
+        float x1 = getTensorFloat(output[i * dims + 0]);
+        float y1 = getTensorFloat(output[i * dims + 1]);
+        float x2 = getTensorFloat(output[i * dims + 2]);
+        float y2 = getTensorFloat(output[i * dims + 3]);
+        int class_id = static_cast<int>(getTensorFloat(output[i * dims + 5]));
         
         Detection det;
         det.class_id = class_id;
@@ -181,18 +175,13 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(
     int num_dets = box_shape[1];
     int num_classes = score_shape[2];
     
-    const float* box_data = std::get_if<float>(&boxes[0]);
-    const float* score_data = std::get_if<float>(&scores[0]);
-    
-    if (!box_data || !score_data) return {};
-
     for (int i = 0; i < num_dets; ++i) {
         // Find max score for this detection
         float max_score = 0.0f;
         int class_id = -1;
         
         for (int c = 0; c < num_classes; ++c) {
-            float score = score_data[i * num_classes + c];
+            float score = getTensorFloat(scores[i * num_classes + c]);
             if (score > max_score) {
                 max_score = score;
                 class_id = c;
@@ -201,10 +190,10 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(
         
         if (max_score < confidence_threshold_) continue;
         
-        float x1 = box_data[i * 4 + 0];
-        float y1 = box_data[i * 4 + 1];
-        float x2 = box_data[i * 4 + 2];
-        float y2 = box_data[i * 4 + 3];
+        float x1 = getTensorFloat(boxes[i * 4 + 0]);
+        float y1 = getTensorFloat(boxes[i * 4 + 1]);
+        float x2 = getTensorFloat(boxes[i * 4 + 2]);
+        float y2 = getTensorFloat(boxes[i * 4 + 3]);
         
         Detection det;
         det.class_id = class_id;

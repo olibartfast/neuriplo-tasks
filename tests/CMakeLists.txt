@@ -42,8 +42,11 @@ add_executable(test_task_factory test_task_factory.cpp)
 target_link_libraries(test_task_factory ${TEST_LIBS})
 
 # Postprocessor tests
-# add_executable(test_yolo_postprocessor test_yolo_postprocessor.cpp)
-# target_link_libraries(test_yolo_postprocessor ${TEST_LIBS})
+add_executable(test_yolo_postprocessor test_yolo_postprocessor.cpp)
+target_link_libraries(test_yolo_postprocessor ${TEST_LIBS})
+
+add_executable(test_rtdetr_postprocessor test_rtdetr_postprocessor.cpp)
+target_link_libraries(test_rtdetr_postprocessor ${TEST_LIBS})
 
 add_executable(test_bbox_processor test_bbox_processor.cpp)
 target_link_libraries(test_bbox_processor ${TEST_LIBS})
@@ -61,6 +64,7 @@ target_link_libraries(test_concrete_tasks
 add_test(NAME test_result_types COMMAND test_result_types)
 add_test(NAME test_task_interface COMMAND test_task_interface)
 add_test(NAME test_task_factory COMMAND test_task_factory)
-# add_test(NAME test_yolo_postprocessor COMMAND test_yolo_postprocessor)
+add_test(NAME test_yolo_postprocessor COMMAND test_yolo_postprocessor)
+add_test(NAME test_rtdetr_postprocessor COMMAND test_rtdetr_postprocessor)
 add_test(NAME test_bbox_processor COMMAND test_bbox_processor)
 add_test(NAME test_concrete_tasks COMMAND test_concrete_tasks)
