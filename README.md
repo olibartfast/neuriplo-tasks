@@ -23,20 +23,30 @@ Use individual preprocessors and postprocessors for maximum flexibility:
 ```cpp
 #include <vision-core/object_detection/yolo_postprocessor.hpp>
 #include <vision-core/object_detection/detection_preprocessor.hpp>
+#include <vision-core/object_detection/object_detection_task.hpp>
 
 using namespace vision_core;
 
 // Object Detection with Preprocessing Example
-YoloPreprocessor yolo_prep(cv::Size(640, 640));
+DetectionPreprocessor yolo_prep(cv::Size(640, 640));
 cv::Mat image = cv::imread("image.jpg");
 
 // Preprocess
-auto preprocessed = yolo_prep.preprocess(image);
+auto preprocessed = yolo_prep.preprocess({image});
 // ... run inference with your engine ...
 
 // Postprocess
-std::vector<Detection> detections = YoloPostprocessor::postprocess(
-    output_data, shape, image.size(), 640, 640, 0.25f, 0.45f
+// Create postprocessor instance (reusable)
+YoloPostprocessor postprocessor(
+    ObjectDetectionTask::ModelType::YOLO_STANDARD, 
+    0.25f, // confidence threshold
+    0.45f  // NMS threshold
+);
+
+std::vector<Detection> detections = postprocessor.postprocess(
+    inference_outputs, // std::vector<std::vector<TensorElement>>
+    output_shapes,     // std::vector<std::vector<int64_t>>
+    image.size()
 );
 ```
 
@@ -114,7 +124,8 @@ target_link_libraries(your_target vision-core::vision-core)
 The TaskFactory supports the following model type strings:
 
 **Object Detection:**
-- `"yolov5 to v12"` - YOLO family
+- `"yolov5"`, `"yolov6"`, `"yolov7"`, `"yolov8"`, `"yolov9"`, `"yolov11"`, `"yolov12"` - Standard YOLO models
+- `"yolov10"` - YOLOv10 (end-to-end)
 - `"yolonas"`, `"yolo-nas"` - YOLO-NAS
 - `"rtdetr"`, `"rtdetrv2"` - RT-DETR family
 - `"rtdetrul"`, `"rtdetr-ultralytics"` - RT-DETR Ultralytics variant
@@ -126,16 +137,13 @@ The TaskFactory supports the following model type strings:
 - `"rfdetrseg"`, `"rf-detr-seg"` - RF-DETR segmentation
 
 **Classification:**
-- `"torchvision-classifier"` - Torchvision models (ResNet, EfficientNet, etc.)
-- `"tensorflow-classifier"` - TensorFlow/Keras models
-- `"vit-classifier"` - Vision Transformers
-- `"resnet50"`, `"resnet"` - ResNet variants
+- `"torchvision"`, `"resnet"`, `"efficientnet"`, `"mobilenet"` - Torchvision models (ImageNet normalization)
+- `"tensorflow"`, `"keras"` - TensorFlow/Keras models (0-1 normalization, NHWC)
+- `"vit"`, `"vision-transformer"` - Vision Transformers
+- `"video-classifier"`, `"timesformer"` - Video classification models
 
 **Optical Flow:**
 - `"raft"` - RAFT optical flow
-
-**Video Classification:**
-- `"timesformer"` - TimeSformer video classification
 
 ## Projects Using vision-core
 
