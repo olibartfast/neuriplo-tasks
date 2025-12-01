@@ -5,10 +5,51 @@
 
 namespace vision_core {
 
-YoloPostprocessor::YoloPostprocessor(ObjectDetectionTask::ModelType model_type, float confidence_threshold, float nms_threshold)
+YoloPostprocessor::YoloPostprocessor(ObjectDetectionTask::ModelType model_type, 
+                                     const cv::Size& input_size,
+                                     float confidence_threshold, 
+                                     float nms_threshold)
     : model_type_(model_type)
+    , input_size_(input_size)
     , confidence_threshold_(confidence_threshold)
     , nms_threshold_(nms_threshold) {}
+
+cv::Rect YoloPostprocessor::scaleToOriginal(float cx, float cy, float w, float h, const cv::Size& frame_size) const {
+    // Apply letterbox inverse transformation
+    // This converts coordinates from letterboxed model space to original frame space
+    float r_w = static_cast<float>(input_size_.width) / frame_size.width;
+    float r_h = static_cast<float>(input_size_.height) / frame_size.height;
+    
+    int x, y, width, height;
+    
+    if (r_h > r_w) {
+        // Width is the limiting factor - padding is on top/bottom
+        float pad_h = (input_size_.height - r_w * frame_size.height) / 2.0f;
+        float x_min = cx - w / 2.0f;
+        float x_max = cx + w / 2.0f;
+        float y_min = cy - h / 2.0f - pad_h;
+        float y_max = cy + h / 2.0f - pad_h;
+        
+        x = static_cast<int>(x_min / r_w);
+        y = static_cast<int>(y_min / r_w);
+        width = static_cast<int>((x_max - x_min) / r_w);
+        height = static_cast<int>((y_max - y_min) / r_w);
+    } else {
+        // Height is the limiting factor - padding is on left/right
+        float pad_w = (input_size_.width - r_h * frame_size.width) / 2.0f;
+        float x_min = cx - w / 2.0f - pad_w;
+        float x_max = cx + w / 2.0f - pad_w;
+        float y_min = cy - h / 2.0f;
+        float y_max = cy + h / 2.0f;
+        
+        x = static_cast<int>(x_min / r_h);
+        y = static_cast<int>(y_min / r_h);
+        width = static_cast<int>((x_max - x_min) / r_h);
+        height = static_cast<int>((y_max - y_min) / r_h);
+    }
+    
+    return cv::Rect(x, y, width, height);
+}
 
 std::vector<Detection> YoloPostprocessor::postprocess(
     const std::vector<std::vector<TensorElement>>& infer_results,
@@ -109,14 +150,10 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(
             h  = getTensorFloat(output[i * channels + 3]);
         }
         
-        float x = cx - w / 2.0f;
-        float y = cy - h / 2.0f;
-        
         Detection det;
         det.class_id = class_id;
         det.class_confidence = max_score;
-        det.bbox = cv::Rect(static_cast<int>(x), static_cast<int>(y), 
-                           static_cast<int>(w), static_cast<int>(h));
+        det.bbox = scaleToOriginal(cx, cy, w, h, frame_size);
         detections.push_back(det);
     }
     
@@ -137,6 +174,10 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV10(
     int num_dets = shape[1];
     int dims = shape[2];
     
+    // Calculate scale ratios for letterbox inverse
+    float r_w = static_cast<float>(input_size_.width) / frame_size.width;
+    float r_h = static_cast<float>(input_size_.height) / frame_size.height;
+    
     for (int i = 0; i < num_dets; ++i) {
         float score = getTensorFloat(output[i * dims + 4]);
         if (score < confidence_threshold_) continue;
@@ -146,6 +187,21 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV10(
         float x2 = getTensorFloat(output[i * dims + 2]);
         float y2 = getTensorFloat(output[i * dims + 3]);
         int class_id = static_cast<int>(getTensorFloat(output[i * dims + 5]));
+        
+        // Apply letterbox inverse transformation
+        if (r_h > r_w) {
+            float pad_h = (input_size_.height - r_w * frame_size.height) / 2.0f;
+            y1 = (y1 - pad_h) / r_w;
+            y2 = (y2 - pad_h) / r_w;
+            x1 = x1 / r_w;
+            x2 = x2 / r_w;
+        } else {
+            float pad_w = (input_size_.width - r_h * frame_size.width) / 2.0f;
+            x1 = (x1 - pad_w) / r_h;
+            x2 = (x2 - pad_w) / r_h;
+            y1 = y1 / r_h;
+            y2 = y2 / r_h;
+        }
         
         Detection det;
         det.class_id = class_id;
@@ -175,6 +231,10 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(
     int num_dets = box_shape[1];
     int num_classes = score_shape[2];
     
+    // Calculate scale ratios for letterbox inverse
+    float r_w = static_cast<float>(input_size_.width) / frame_size.width;
+    float r_h = static_cast<float>(input_size_.height) / frame_size.height;
+    
     for (int i = 0; i < num_dets; ++i) {
         // Find max score for this detection
         float max_score = 0.0f;
@@ -194,6 +254,21 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(
         float y1 = getTensorFloat(boxes[i * 4 + 1]);
         float x2 = getTensorFloat(boxes[i * 4 + 2]);
         float y2 = getTensorFloat(boxes[i * 4 + 3]);
+        
+        // Apply letterbox inverse transformation
+        if (r_h > r_w) {
+            float pad_h = (input_size_.height - r_w * frame_size.height) / 2.0f;
+            y1 = (y1 - pad_h) / r_w;
+            y2 = (y2 - pad_h) / r_w;
+            x1 = x1 / r_w;
+            x2 = x2 / r_w;
+        } else {
+            float pad_w = (input_size_.width - r_h * frame_size.width) / 2.0f;
+            x1 = (x1 - pad_w) / r_h;
+            x2 = (x2 - pad_w) / r_h;
+            y1 = y1 / r_h;
+            y2 = y2 / r_h;
+        }
         
         Detection det;
         det.class_id = class_id;

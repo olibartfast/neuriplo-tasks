@@ -7,7 +7,9 @@ namespace vision_core {
 
 class RtDetrPostprocessor : public Postprocessor {
 public:
-    RtDetrPostprocessor(ObjectDetectionTask::ModelType model_type, float confidence_threshold);
+    RtDetrPostprocessor(ObjectDetectionTask::ModelType model_type, 
+                        const cv::Size& input_size,
+                        float confidence_threshold);
 
     std::vector<Detection> postprocess(
         const std::vector<std::vector<TensorElement>>& infer_results,
@@ -16,6 +18,7 @@ public:
 
 private:
     ObjectDetectionTask::ModelType model_type_;
+    cv::Size input_size_;  // Model input dimensions from ModelInfo
     float confidence_threshold_;
 
     std::vector<Detection> postprocessRTDETR(

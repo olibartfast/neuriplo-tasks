@@ -81,7 +81,7 @@ private:
     /**
      * @brief Create appropriate postprocessor for model type
      */
-    std::unique_ptr<Postprocessor> createPostprocessor(ModelType type);
+    std::unique_ptr<Postprocessor> createPostprocessor(ModelType type, const cv::Size& input_size);
 
     /**
      * @brief Extract input dimensions from model info
