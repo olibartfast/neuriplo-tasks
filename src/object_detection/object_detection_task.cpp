@@ -31,8 +31,8 @@ ObjectDetectionTask::ObjectDetectionTask(const ModelInfo& model_info,
         throw std::runtime_error("Failed to create preprocessor for model: " + model_name);
     }
 
-    // Create appropriate postprocessor
-    postprocessor_ = createPostprocessor(model_type_);
+    // Create appropriate postprocessor with input_size for coordinate transformation
+    postprocessor_ = createPostprocessor(model_type_, input_size);
     
     if (!postprocessor_) {
         throw std::runtime_error("Failed to create postprocessor for model: " + model_name);
@@ -125,17 +125,17 @@ std::unique_ptr<Preprocessor> ObjectDetectionTask::createPreprocessor(ModelType 
     }
 }
 
-std::unique_ptr<Postprocessor> ObjectDetectionTask::createPostprocessor(ModelType type) {
+std::unique_ptr<Postprocessor> ObjectDetectionTask::createPostprocessor(ModelType type, const cv::Size& input_size) {
     switch (type) {
         case ModelType::YOLO_STANDARD:
         case ModelType::YOLO_V10:
         case ModelType::YOLO_NAS:
-            return std::make_unique<YoloPostprocessor>(type, confidence_threshold_, nms_threshold_);
+            return std::make_unique<YoloPostprocessor>(type, input_size, confidence_threshold_, nms_threshold_);
             
         case ModelType::RT_DETR_STYLE:
         case ModelType::RT_DETR_UL:
         case ModelType::RF_DETR:
-            return std::make_unique<RtDetrPostprocessor>(type, confidence_threshold_);
+            return std::make_unique<RtDetrPostprocessor>(type, input_size, confidence_threshold_);
             
         default:
             return nullptr;

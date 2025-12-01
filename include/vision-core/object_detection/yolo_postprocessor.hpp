@@ -7,7 +7,10 @@ namespace vision_core {
 
 class YoloPostprocessor : public Postprocessor {
 public:
-    YoloPostprocessor(ObjectDetectionTask::ModelType model_type, float confidence_threshold, float nms_threshold);
+    YoloPostprocessor(ObjectDetectionTask::ModelType model_type, 
+                      const cv::Size& input_size,
+                      float confidence_threshold, 
+                      float nms_threshold);
 
     std::vector<Detection> postprocess(
         const std::vector<std::vector<TensorElement>>& infer_results,
@@ -16,8 +19,20 @@ public:
 
 private:
     ObjectDetectionTask::ModelType model_type_;
+    cv::Size input_size_;  // Model input dimensions from ModelInfo
     float confidence_threshold_;
     float nms_threshold_;
+
+    /**
+     * @brief Convert letterboxed coordinates back to original frame coordinates
+     * @param cx Center X in model space
+     * @param cy Center Y in model space  
+     * @param w Width in model space
+     * @param h Height in model space
+     * @param frame_size Original frame dimensions
+     * @return Bounding box in original frame coordinates
+     */
+    cv::Rect scaleToOriginal(float cx, float cy, float w, float h, const cv::Size& frame_size) const;
 
     std::vector<Detection> postprocessYoloStandard(
         const std::vector<TensorElement>& output,

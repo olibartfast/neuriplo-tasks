@@ -3,8 +3,11 @@
 
 namespace vision_core {
 
-RtDetrPostprocessor::RtDetrPostprocessor(ObjectDetectionTask::ModelType model_type, float confidence_threshold)
+RtDetrPostprocessor::RtDetrPostprocessor(ObjectDetectionTask::ModelType model_type, 
+                                         const cv::Size& input_size,
+                                         float confidence_threshold)
     : model_type_(model_type)
+    , input_size_(input_size)
     , confidence_threshold_(confidence_threshold) {}
 
 std::vector<Detection> RtDetrPostprocessor::postprocess(
