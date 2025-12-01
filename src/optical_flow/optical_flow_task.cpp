@@ -1,7 +1,6 @@
 #include "vision-core/optical_flow/optical_flow_task.hpp"
 #include "vision-core/optical_flow/raft_postprocessor.hpp"
 #include "vision-core/optical_flow/optical_flow_preprocessor.hpp"
-#include "vision-core/core/task_factory.hpp"
 #include <algorithm>
 #include <stdexcept>
 
@@ -130,21 +129,6 @@ cv::Size OpticalFlowTask::extractInputSize(const ModelInfo& model_info) {
     }
     
     return cv::Size(width, height);
-}
-
-// Registration function for all optical flow models
-void registerOpticalFlowTasks() {
-    // Optical flow variants
-    std::vector<std::string> optical_flow_variants = {
-        "raft"
-    };
-    
-    // Register all variants with unified OpticalFlowTask
-    for (const auto& variant : optical_flow_variants) {
-        TaskFactory::registerTask(variant, [variant](const ModelInfo& info) -> std::unique_ptr<TaskInterface> {
-            return std::make_unique<OpticalFlowTask>(info, variant);
-        });
-    }
 }
 
 } // namespace vision_core

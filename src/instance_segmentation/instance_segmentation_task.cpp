@@ -2,7 +2,6 @@
 #include "vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp"
 #include "vision-core/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
 #include "vision-core/object_detection/detection_preprocessor.hpp"
-#include "vision-core/core/task_factory.hpp"
 #include <algorithm>
 #include <stdexcept>
 
@@ -154,21 +153,6 @@ bool InstanceSegmentationTask::validateTensorInputs(
             
         default:
             return false;
-    }
-}
-
-// Registration function for all instance segmentation models
-void registerInstanceSegmentationTasks() {
-    // Segmentation variants
-    std::vector<std::string> segmentation_variants = {
-        "yoloseg", "rfdetr"
-    };
-    
-    // Register all variants with unified InstanceSegmentationTask
-    for (const auto& variant : segmentation_variants) {
-        TaskFactory::registerTask(variant, [variant](const ModelInfo& info) -> std::unique_ptr<TaskInterface> {
-            return std::make_unique<InstanceSegmentationTask>(info, variant);
-        });
     }
 }
 

@@ -4,7 +4,6 @@
 #include "vision-core/classification/torchvision_postprocessor.hpp"
 #include "vision-core/classification/vit_postprocessor.hpp"
 #include "vision-core/classification/tensorflow_postprocessor.hpp"
-#include "vision-core/core/task_factory.hpp"
 #include <algorithm>
 #include <stdexcept>
 #include <cmath>
@@ -155,32 +154,6 @@ cv::Size ClassificationTask::extractInputSize(const ModelInfo& model_info) {
     }
     
     return cv::Size(width, height);
-}
-
-// Registration function for all classification models
-void registerClassificationTasks() {
-    // Classification variants
-    std::vector<std::string> classification_variants = {
-        "torchvision-classifier", "tensorflow-classifier", "vit-classifier", "resnet", "resnet50"
-    };
-    
-    // Video classification variants  
-    std::vector<std::string> video_classification_variants = {
-        "timesformer", "video-classifier"
-    };
-    
-    // Register all variants with unified ClassificationTask
-    for (const auto& variant : classification_variants) {
-        TaskFactory::registerTask(variant, [variant](const ModelInfo& info) -> std::unique_ptr<TaskInterface> {
-            return std::make_unique<ClassificationTask>(info, variant);
-        });
-    }
-    
-    for (const auto& variant : video_classification_variants) {
-        TaskFactory::registerTask(variant, [variant](const ModelInfo& info) -> std::unique_ptr<TaskInterface> {
-            return std::make_unique<ClassificationTask>(info, variant);
-        });
-    }
 }
 
 } // namespace vision_core

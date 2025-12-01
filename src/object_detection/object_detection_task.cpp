@@ -2,7 +2,7 @@
 #include "vision-core/object_detection/detection_preprocessor.hpp"
 #include "vision-core/object_detection/yolo_postprocessor.hpp"
 #include "vision-core/object_detection/rtdetr_postprocessor.hpp"
-#include "vision-core/core/task_factory.hpp"
+#include "vision-core/object_detection/rfdetr_postprocessor.hpp"
 #include <algorithm>
 #include <stdexcept>
 #include <cmath>
@@ -41,13 +41,52 @@ ObjectDetectionTask::ObjectDetectionTask(const ModelInfo& model_info,
 
 std::vector<std::vector<uint8_t>> ObjectDetectionTask::preprocess(const std::vector<cv::Mat>& imgs) {
     std::vector<std::vector<uint8_t>> results;
-    results.reserve(imgs.size());
     
-    for (const auto& img : imgs) {
-        if (img.empty()) {
+    // For models with multiple inputs (like RT-DETR/DEIM/DFINE with orig_target_sizes),
+    // we need to return one result per model input, not per image
+    // Note: RT_DETR_UL (Ultralytics) has single input like YOLO
+    if (model_type_ == ModelType::RT_DETR_STYLE) {
+        // These models may have multiple inputs (images + orig_target_sizes)
+        results.reserve(model_info_.input_shapes.size());
+        
+        if (imgs.empty() || imgs[0].empty()) {
             throw std::invalid_argument("Empty input image provided");
         }
-        results.push_back(preprocessor_->preprocess(img));
+        
+        const cv::Mat& img = imgs[0]; // For now, single image
+        
+        for (size_t i = 0; i < model_info_.input_names.size(); ++i) {
+            const auto& input_name = model_info_.input_names[i];
+            const auto& input_shape = model_info_.input_shapes[i];
+            
+            if (input_shape.size() >= 3) {
+                // This is the image input
+                results.push_back(preprocessor_->preprocess(img));
+            } else if (input_name == "orig_target_sizes" || input_name == "orig_size") {
+                // Handle original image size input - use input dimensions, not original frame
+                std::vector<int64_t> orig_sizes = {
+                    static_cast<int64_t>(input_height_),
+                    static_cast<int64_t>(input_width_)
+                };
+                results.emplace_back(
+                    reinterpret_cast<uint8_t*>(orig_sizes.data()),
+                    reinterpret_cast<uint8_t*>(orig_sizes.data()) + orig_sizes.size() * sizeof(int64_t)
+                );
+            } else {
+                // Unknown input - send empty for now
+                results.emplace_back();
+            }
+        }
+    } else {
+        // Standard path for YOLO and RF-DETR (single input)
+        results.reserve(imgs.size());
+        
+        for (const auto& img : imgs) {
+            if (img.empty()) {
+                throw std::invalid_argument("Empty input image provided");
+            }
+            results.push_back(preprocessor_->preprocess(img));
+        }
     }
     
     return results;
@@ -134,8 +173,10 @@ std::unique_ptr<Postprocessor> ObjectDetectionTask::createPostprocessor(ModelTyp
             
         case ModelType::RT_DETR_STYLE:
         case ModelType::RT_DETR_UL:
+            return std::make_unique<RtDetrPostprocessor>(type, input_size, confidence_threshold_, model_info_.output_names);
+            
         case ModelType::RF_DETR:
-            return std::make_unique<RtDetrPostprocessor>(type, input_size, confidence_threshold_);
+            return std::make_unique<RfDetrPostprocessor>(input_size, confidence_threshold_, model_info_.output_names);
             
         default:
             return nullptr;
@@ -182,33 +223,6 @@ bool ObjectDetectionTask::validateTensorInputs(
             
         default:
             return false;
-    }
-}
-
-// Registration function for all detection models
-void registerObjectDetectionTasks() {
-    // YOLO family
-    std::vector<std::string> yolo_variants = {
-        "yolo", "yolov5", "yolov6", "yolov7", "yolov8", "yolov9", "yolov10", 
-        "yolo11", "yolov12", "yolonas"
-    };
-    
-    // Transformer-based
-    std::vector<std::string> transformer_variants = {
-        "rtdetr", "rtdetrv2", "rtdetrul", "rtdetr-ultralytics", "dfine", "deim", "rfdetr"
-    };
-    
-    // Register all variants with unified ObjectDetectionTask
-    for (const auto& variant : yolo_variants) {
-        TaskFactory::registerTask(variant, [variant](const ModelInfo& info) -> std::unique_ptr<TaskInterface> {
-            return std::make_unique<ObjectDetectionTask>(info, variant);
-        });
-    }
-    
-    for (const auto& variant : transformer_variants) {
-        TaskFactory::registerTask(variant, [variant](const ModelInfo& info) -> std::unique_ptr<TaskInterface> {
-            return std::make_unique<ObjectDetectionTask>(info, variant);
-        });
     }
 }
 
