@@ -81,7 +81,9 @@ InstanceSegmentationTask::ModelType InstanceSegmentationTask::detectModelType(co
     std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
     
     // RF-DETR segmentation
-    if (lower_name == "rfdetr" || lower_name == "rf-detr") {
+    if (lower_name.find("rfdetr") != std::string::npos || 
+        lower_name.find("rf-detr") != std::string::npos ||
+        lower_name.find("rfdetrseg") != std::string::npos) {
         return ModelType::RF_DETR_SEG;
     }
     
@@ -103,14 +105,16 @@ std::unique_ptr<Preprocessor> InstanceSegmentationTask::createPreprocessor(Model
 }
 
 std::unique_ptr<SegmentationPostprocessor> InstanceSegmentationTask::createPostprocessor(ModelType type) {
+    cv::Size input_size(input_width_, input_height_);
+    
     switch (type) {
         case ModelType::YOLO_SEG:
             return std::make_unique<YoloSegmentationPostprocessor>(
-                confidence_threshold_, nms_threshold_, mask_threshold_);
+                input_size, confidence_threshold_, nms_threshold_, mask_threshold_);
             
         case ModelType::RF_DETR_SEG:
             return std::make_unique<RfDetrSegmentationPostprocessor>(
-                confidence_threshold_, mask_threshold_);
+                input_size, confidence_threshold_, mask_threshold_, model_info_.output_names);
             
         default:
             return nullptr;
