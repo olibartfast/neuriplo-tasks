@@ -148,11 +148,6 @@ The TaskFactory supports the following model type strings:
 **Optical Flow:**
 - `"raft"` - RAFT optical flow
 
-## Projects Using vision-core
-
-- [tritonic](https://github.com/olibartfast/tritonic) - Triton Inference Server Client
-- [object-detection-inference](https://github.com/olibartfast/object-detection-inference) - Multi-backend object detection (ONNX Runtime, TensorRT, OpenVINO)
-- [deepstream-infer-lab](https://github.com/olibartfast/deepstream-infer-lab) - NVIDIA DeepStream inference experiments
 
 
 ## Building
