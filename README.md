@@ -1,4 +1,7 @@
-# vision-core (TODO / In Progress)
+# vision-core
+
+> 🚧 Status: Under Development — expect frequent updates.
+
 A set of framework-agnostic computer vision algorithms including common pre-processing and post-processing steps designed to be reused across multiple inference engine projects such as:
 * [tritonic](https://github.com/olibartfast/tritonic)
 * [object-detection-inference](https://github.com/olibartfast/object-detection-inference)
