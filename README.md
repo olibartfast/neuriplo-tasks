@@ -163,42 +163,6 @@ cmake -DBUILD_TESTS=ON ..
 cmake --build .
 ```
 
-
-## Directory Structure
-
-```
-vision-core/
-├── include/vision-core/        # Public headers
-│   ├── core/                   # Core data structures and task interface
-│   │   ├── result_types.hpp    # Result structures (Detection, Classification, etc.)
-│   │   ├── model_info.hpp      # Model metadata structure
-│   │   ├── task_interface.hpp  # Base task interface
-│   │   ├── task_factory.hpp    # Task factory pattern
-│   │   ├── bbox_processor.hpp  # Bounding box utilities
-│   │   └── preprocessor.hpp    # Base preprocessor
-│   ├── object_detection/       # Object detection algorithms
-│   │   ├── yolo_postprocessor.hpp
-│   │   ├── rtdetr_postprocessor.hpp
-│   │   ├── detection_preprocessor.hpp
-│   │   └── ...
-│   ├── instance_segmentation/  # Instance segmentation
-│   ├── classification/         # Classification
-│   ├── video_classification/   # Video classification
-│   └── optical_flow/          # Optical flow
-├── src/                        # Implementation files
-│   ├── core/
-│   │   ├── task_interface.cpp
-│   │   ├── task_factory.cpp
-│   │   └── ...
-│   ├── object_detection/
-│   └── ...
-├── docs/                       # Documentation
-│   └── NAMING_CONVENTIONS.md
-├── tests/                      # Unit tests
-├── CMakeLists.txt
-└── README.md
-```
-
 ## License
 
 MIT License
