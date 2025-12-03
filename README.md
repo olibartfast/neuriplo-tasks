@@ -127,27 +127,25 @@ target_link_libraries(your_target vision-core::vision-core)
 The TaskFactory supports the following model type strings:
 
 **Object Detection:**
-- `"yolov5"`, `"yolov6"`, `"yolov7"`, `"yolov8"`, `"yolov9"`, `"yolov11"`, `"yolov12"` - Standard YOLO models
-- `"yolov10"` - YOLOv10 (end-to-end)
-- `"yolo"`, `"yolov5"` to `"yolov12"`, `"yolo11"` - YOLO family (v5-v12)
+- `"yolov5 to v12"` - YOLO family
 - `"yolonas"`, `"yolo-nas"` - YOLO-NAS
-- `"rtdetr"`, `"rtdetrv2"`, `"rtdetr-ultralytics"` - RT-DETR family
-- `"rfdetr"`, `"rf-detr"`, `"rfdetr-s/m/l"` - RF-DETR variants
-- `"dfine"`, `"d-fine"`, `"dfine-s/m/l/x"` - D-FINE variants
+- `"rtdetr"`, `"rtdetrv2"` - RT-DETR family
+- `"rtdetrul"`, `"rtdetr-ultralytics"` - RT-DETR Ultralytics variant
+- `"rfdetr"`, `"rf-detr"` - RF-DETR
+- `"dfine"`, `"deim"` - D-FINE and variants
 
 **Instance Segmentation:**
-- `"yolo-seg"`, `"yolov5-seg"`, `"yolov8-seg"`, `"yolov11-seg"` - YOLO segmentation
-- `"rfdetr-seg"`, `"rf-detr-seg"` - RF-DETR segmentation
+- `"yoloseg"`, `"yolov8-seg"` - YOLO segmentation
+- `"rfdetrseg"`, `"rf-detr-seg"` - RF-DETR segmentation
 
 **Classification:**
-- `"torchvision-classifier"`, `"resnet"`, `"resnet50"` - Torchvision models (ImageNet norm)
+- `"torchvision-classifier"` - Torchvision models (ResNet, EfficientNet, etc.)
 - `"tensorflow-classifier"` - TensorFlow/Keras models
 - `"vit-classifier"` - Vision Transformers
+- `"resnet50"`, `"resnet"` - ResNet variants
 
 **Optical Flow:**
-- `"raft"`, `"optical-flow"`, `"raft-small/large"` - RAFT optical flow
-
-
+- `"raft"` - RAFT optical flow
 
 ## Building
 
