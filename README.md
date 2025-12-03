@@ -1,4 +1,7 @@
-# vision-core (TODO / In Progress)
+# vision-core
+
+> 🚧 Status: Under Development — expect frequent updates.
+
 A set of framework-agnostic computer vision algorithms including common pre-processing and post-processing steps designed to be reused across multiple inference engine projects such as:
 * [tritonic](https://github.com/olibartfast/tritonic)
 * [object-detection-inference](https://github.com/olibartfast/object-detection-inference)
@@ -23,20 +26,30 @@ Use individual preprocessors and postprocessors for maximum flexibility:
 ```cpp
 #include <vision-core/object_detection/yolo_postprocessor.hpp>
 #include <vision-core/object_detection/detection_preprocessor.hpp>
+#include <vision-core/object_detection/object_detection_task.hpp>
 
 using namespace vision_core;
 
 // Object Detection with Preprocessing Example
-YoloPreprocessor yolo_prep(cv::Size(640, 640));
+DetectionPreprocessor yolo_prep(cv::Size(640, 640));
 cv::Mat image = cv::imread("image.jpg");
 
 // Preprocess
-auto preprocessed = yolo_prep.preprocess(image);
+auto preprocessed = yolo_prep.preprocess({image});
 // ... run inference with your engine ...
 
 // Postprocess
-std::vector<Detection> detections = YoloPostprocessor::postprocess(
-    output_data, shape, image.size(), 640, 640, 0.25f, 0.45f
+// Create postprocessor instance (reusable)
+YoloPostprocessor postprocessor(
+    ObjectDetectionTask::ModelType::YOLO_STANDARD, 
+    0.25f, // confidence threshold
+    0.45f  // NMS threshold
+);
+
+std::vector<Detection> detections = postprocessor.postprocess(
+    inference_outputs, // std::vector<std::vector<TensorElement>>
+    output_shapes,     // std::vector<std::vector<int64_t>>
+    image.size()
 );
 ```
 
@@ -114,6 +127,8 @@ target_link_libraries(your_target vision-core::vision-core)
 The TaskFactory supports the following model type strings:
 
 **Object Detection:**
+- `"yolov5"`, `"yolov6"`, `"yolov7"`, `"yolov8"`, `"yolov9"`, `"yolov11"`, `"yolov12"` - Standard YOLO models
+- `"yolov10"` - YOLOv10 (end-to-end)
 - `"yolo"`, `"yolov5"` to `"yolov12"`, `"yolo11"` - YOLO family (v5-v12)
 - `"yolonas"`, `"yolo-nas"` - YOLO-NAS
 - `"rtdetr"`, `"rtdetrv2"`, `"rtdetr-ultralytics"` - RT-DETR family
@@ -132,8 +147,6 @@ The TaskFactory supports the following model type strings:
 **Optical Flow:**
 - `"raft"`, `"optical-flow"`, `"raft-small/large"` - RAFT optical flow
 
-**Video Classification:**
-- `"timesformer"`, `"video-classification"`, `"action-recognition"` - TimeSformer
 
 
 ## Building
@@ -142,42 +155,6 @@ The TaskFactory supports the following model type strings:
 mkdir build && cd build
 cmake -DBUILD_TESTS=ON ..
 cmake --build .
-```
-
-
-## Directory Structure
-
-```
-vision-core/
-├── include/vision-core/        # Public headers
-│   ├── core/                   # Core data structures and task interface
-│   │   ├── result_types.hpp    # Result structures (Detection, Classification, etc.)
-│   │   ├── model_info.hpp      # Model metadata structure
-│   │   ├── task_interface.hpp  # Base task interface
-│   │   ├── task_factory.hpp    # Task factory pattern
-│   │   ├── bbox_processor.hpp  # Bounding box utilities
-│   │   └── preprocessor.hpp    # Base preprocessor
-│   ├── object_detection/       # Object detection algorithms
-│   │   ├── yolo_postprocessor.hpp
-│   │   ├── rtdetr_postprocessor.hpp
-│   │   ├── detection_preprocessor.hpp
-│   │   └── ...
-│   ├── instance_segmentation/  # Instance segmentation
-│   ├── classification/         # Classification
-│   ├── video_classification/   # Video classification
-│   └── optical_flow/          # Optical flow
-├── src/                        # Implementation files
-│   ├── core/
-│   │   ├── task_interface.cpp
-│   │   ├── task_factory.cpp
-│   │   └── ...
-│   ├── object_detection/
-│   └── ...
-├── docs/                       # Documentation
-│   └── NAMING_CONVENTIONS.md
-├── tests/                      # Unit tests
-├── CMakeLists.txt
-└── README.md
 ```
 
 ## License

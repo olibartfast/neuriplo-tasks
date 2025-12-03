@@ -1,34 +1,15 @@
 #include "vision-core/core/task_factory.hpp"
+#include "vision-core/object_detection/object_detection_task.hpp"
+#include "vision-core/classification/classification_task.hpp"
+#include "vision-core/classification/classification_postprocessor.hpp"
+#include "vision-core/instance_segmentation/instance_segmentation_task.hpp"
+#include "vision-core/instance_segmentation/segmentation_postprocessor.hpp"
+#include "vision-core/optical_flow/optical_flow_task.hpp"
+#include "vision-core/optical_flow/optical_flow_postprocessor.hpp"
 #include <algorithm>
 #include <stdexcept>
-#include <mutex>
 
 namespace vision_core {
-
-// Shared mutex for registry access
-static std::mutex& getRegistryMutex() {
-    static std::mutex registry_mutex;
-    return registry_mutex;
-}
-
-std::map<std::string, TaskFactory::TaskCreator>& TaskFactory::getRegistry() {
-    static std::map<std::string, TaskCreator> registry;
-    return registry;
-}
-
-void TaskFactory::registerTask(const std::string& model_type, TaskCreator creator) {
-    if (model_type.empty()) {
-        throw std::invalid_argument("Cannot register task with empty model type");
-    }
-    if (!creator) {
-        throw std::invalid_argument("Cannot register null task creator");
-    }
-
-    const auto normalized = normalizeModelType(model_type);
-    std::lock_guard<std::mutex> lock(getRegistryMutex());
-    auto& registry = getRegistry();
-    registry[normalized] = std::move(creator);
-}
 
 void TaskFactory::validateInputSizes(const std::vector<std::vector<int64_t>>& input_sizes) {
     if (input_sizes.empty()) {
@@ -42,27 +23,6 @@ void TaskFactory::validateInputSizes(const std::vector<std::vector<int64_t>>& in
             throw InputDimensionError("Non-positive input size detected");
         }
     }
-}
-
-std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(
-    const std::string& model_type,
-    const ModelInfo& model_info) {
-    
-    validateInputSizes(model_info.input_shapes);
-
-    const auto normalized_type = normalizeModelType(model_type);
-    if (normalized_type.empty()) {
-        throw std::invalid_argument("Model type string is empty");
-    }
-
-    std::lock_guard<std::mutex> lock(getRegistryMutex());
-    auto& registry = getRegistry();
-    auto it = registry.find(normalized_type);
-    if (it != registry.end()) {
-        return it->second(model_info);
-    }
-    
-    throw std::invalid_argument("Unrecognized model type: " + model_type);
 }
 
 std::string TaskFactory::normalizeModelType(const std::string& model_type) {
@@ -79,21 +39,55 @@ std::string TaskFactory::normalizeModelType(const std::string& model_type) {
         normalized.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
     }
 
-    // Check for segmentation variants first (more specific)
-    if (normalized.find("seg") != std::string::npos || normalized.find("segmentation") != std::string::npos) {
-        // Keep segmentation variants distinct
-        if (normalized.rfind("yolo", 0) == 0) {
-            return "yoloseg";
-        }
-        return normalized;
-    }
+    return normalized;
+}
+
+std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(
+    const std::string& model_type,
+    const ModelInfo& model_info) {
     
-    // Normalize YOLO detection variants to base "yolo" (only if not segmentation)
-    if (normalized.rfind("yolov", 0) == 0 || normalized.rfind("yolo", 0) == 0) {
-        return "yolo";
+    validateInputSizes(model_info.input_shapes);
+
+    const auto normalized = normalizeModelType(model_type);
+    
+    if (normalized.empty()) {
+        throw std::invalid_argument("Model type string is empty");
     }
 
-    return normalized;
+    // ============ OBJECT DETECTION ============
+    // YOLO variants
+    if (normalized == "yolo" || normalized == "yolov5" || normalized == "yolov6" ||
+        normalized == "yolov7" || normalized == "yolov8" || normalized == "yolov9" ||
+        normalized == "yolov10" || normalized == "yolo11" || normalized == "yolov12" ||
+        normalized == "yolonas") {
+        return std::make_unique<ObjectDetectionTask>(model_info, normalized);
+    }
+    
+    // Transformer-based detectors
+    if (normalized == "rtdetr" || normalized == "rtdetrv2" || normalized == "rtdetrul" ||
+        normalized == "rtdetrultralytics" || normalized == "dfine" || normalized == "deim" ||
+        normalized == "rfdetr") {
+        return std::make_unique<ObjectDetectionTask>(model_info, normalized);
+    }
+
+    // ============ CLASSIFICATION ============
+    if (normalized == "resnet" || normalized == "resnet50" || normalized == "torchvisionclassifier" ||
+        normalized == "tensorflowclassifier" || normalized == "vitclassifier" ||
+        normalized == "timesformer" || normalized == "videoclassifier") {
+        return std::make_unique<ClassificationTask>(model_info, normalized);
+    }
+
+    // ============ INSTANCE SEGMENTATION ============
+    if (normalized == "yoloseg" || normalized.find("seg") != std::string::npos) {
+        return std::make_unique<InstanceSegmentationTask>(model_info, normalized);
+    }
+
+    // ============ OPTICAL FLOW ============
+    if (normalized == "raft") {
+        return std::make_unique<OpticalFlowTask>(model_info, normalized);
+    }
+
+    throw std::invalid_argument("Unrecognized model type: " + model_type);
 }
 
 } // namespace vision_core

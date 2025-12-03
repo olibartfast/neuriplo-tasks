@@ -1,83 +1,113 @@
 #include "vision-core/object_detection/rfdetr_postprocessor.hpp"
-#include "vision-core/core/bbox_processor.hpp"
-#include <algorithm>
 #include <stdexcept>
+#include <cmath>
+#include <iostream>
 
 namespace vision_core {
 
-namespace {
-
-float get_float(const TensorElement& elem) {
-    return std::visit([](auto&& arg) -> float { 
-        return static_cast<float>(arg); 
-    }, elem);
+RfDetrPostprocessor::RfDetrPostprocessor(const cv::Size& input_size,
+                                         float confidence_threshold,
+                                         const std::vector<std::string>& output_names)
+    : input_size_(input_size)
+    , confidence_threshold_(confidence_threshold) 
+{
+    findOutputIndices(output_names);
 }
 
-} // anonymous namespace
+void RfDetrPostprocessor::findOutputIndices(const std::vector<std::string>& output_names) {
+    // RF-DETR default: dets at 0, labels at 1
+    dets_idx_ = 0;
+    labels_idx_ = 1;
+    
+    if (output_names.empty()) {
+        return;
+    }
+    
+    for (size_t i = 0; i < output_names.size(); ++i) {
+        const auto& name = output_names[i];
+        if (name == "dets") {
+            dets_idx_ = static_cast<int>(i);
+        } else if (name == "labels") {
+            labels_idx_ = static_cast<int>(i);
+        }
+    }
+}
 
 std::vector<Detection> RfDetrPostprocessor::postprocess(
-    const TensorElement* bbox_output,
-    const TensorElement* score_output,
-    const std::vector<int64_t>& bbox_shape,
-    const std::vector<int64_t>& score_shape,
-    const cv::Size& frame_size,
-    int network_width,
-    int network_height,
-    float confidence_threshold)
-{
-    if (bbox_shape.size() < 3 || score_shape.size() < 3) {
-        throw std::invalid_argument("RF-DETR output shapes must have at least 3 dimensions");
+    const std::vector<std::vector<TensorElement>>& infer_results,
+    const std::vector<std::vector<int64_t>>& infer_shapes,
+    const cv::Size& frame_size) {
+    
+    if (infer_results.size() < 2 || infer_shapes.size() < 2) {
+        throw std::runtime_error("RF-DETR requires 2 output tensors (dets, labels)");
     }
 
-    const int64_t num_queries = bbox_shape[1];
-    const int64_t num_classes = score_shape[2];
-
-    if (score_shape[1] != num_queries) {
-        throw std::invalid_argument("Mismatch in number of queries between bbox and score tensors");
-    }
-
+    const auto& boxes = infer_results[dets_idx_];
+    const auto& logits = infer_results[labels_idx_];
+    const auto& box_shape = infer_shapes[dets_idx_];
+    const auto& logit_shape = infer_shapes[labels_idx_];
+    
     std::vector<Detection> detections;
-    detections.reserve(num_queries);
-
-    for (int64_t i = 0; i < num_queries; ++i) {
-        // Find best class score
+    
+    // RF-DETR outputs: dets [1, 300, 4] and labels [1, 300, num_classes] as logits
+    if (box_shape.size() < 3 || logit_shape.size() < 3) {
+        return {};
+    }
+    
+    int num_dets = static_cast<int>(box_shape[1]);
+    int num_classes = static_cast<int>(logit_shape[2]);
+    
+    // Scale factors from input size to frame size
+    float scale_w = static_cast<float>(frame_size.width) / static_cast<float>(input_size_.width);
+    float scale_h = static_cast<float>(frame_size.height) / static_cast<float>(input_size_.height);
+    
+    for (int i = 0; i < num_dets; ++i) {
         float max_score = 0.0f;
-        int best_class_id = -1;
-
-        for (int64_t c = 0; c < num_classes; ++c) {
-            float score = get_float(score_output[i * num_classes + c]);
+        int max_class_idx = -1;
+        
+        // Find max class score applying sigmoid to logits
+        for (int c = 0; c < num_classes; ++c) {
+            float logit = getTensorFloat(logits[i * num_classes + c]);
+            float score = 1.0f / (1.0f + std::exp(-logit));
             if (score > max_score) {
                 max_score = score;
-                best_class_id = static_cast<int>(c);
+                max_class_idx = c;
             }
         }
-
-        if (max_score >= confidence_threshold) {
-            // Extract bbox: [cx, cy, w, h]
-            float cx = get_float(bbox_output[i * 4 + 0]);
-            float cy = get_float(bbox_output[i * 4 + 1]);
-            float w  = get_float(bbox_output[i * 4 + 2]);
-            float h  = get_float(bbox_output[i * 4 + 3]);
-
-            // Heuristic check for normalized coordinates
-            // If all values are <= 1.0, assume normalized and scale to network size
-            if (cx <= 1.0f && cy <= 1.0f && w <= 1.0f && h <= 1.0f && w > 0 && h > 0) {
-                cx *= network_width;
-                cy *= network_height;
-                w *= network_width;
-                h *= network_height;
-            }
-
-            std::vector<float> bbox = {cx, cy, w, h};
-            cv::Rect rect = BBoxProcessor::calculate_bounding_box(
-                frame_size, bbox, network_width, network_height
-            );
-
-            detections.push_back({rect, max_score, best_class_id});
-        }
+        
+        if (max_score < confidence_threshold_) continue;
+        
+        // RF-DETR class indices are 1-based
+        max_class_idx -= 1;
+        if (max_class_idx < 0) continue;
+        
+        // Boxes are normalized cx,cy,w,h format
+        float cx = getTensorFloat(boxes[i * 4 + 0]) * input_size_.width;
+        float cy = getTensorFloat(boxes[i * 4 + 1]) * input_size_.height;
+        float w = getTensorFloat(boxes[i * 4 + 2]) * input_size_.width;
+        float h = getTensorFloat(boxes[i * 4 + 3]) * input_size_.height;
+        
+        // Convert to x,y,w,h and scale to frame size
+        float x = (cx - w / 2.0f) * scale_w;
+        float y = (cy - h / 2.0f) * scale_h;
+        float width = w * scale_w;
+        float height = h * scale_h;
+        
+        Detection det;
+        det.class_id = max_class_idx;
+        det.class_confidence = max_score;
+        det.bbox = cv::Rect(static_cast<int>(x), static_cast<int>(y), 
+                           static_cast<int>(width), static_cast<int>(height));
+        detections.push_back(det);
     }
-
+    
     return detections;
+}
+
+float RfDetrPostprocessor::getTensorFloat(const TensorElement& element) {
+    return std::visit([](auto&& value) -> float {
+        return static_cast<float>(value);
+    }, element);
 }
 
 } // namespace vision_core
