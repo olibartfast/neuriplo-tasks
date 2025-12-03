@@ -114,34 +114,26 @@ target_link_libraries(your_target vision-core::vision-core)
 The TaskFactory supports the following model type strings:
 
 **Object Detection:**
-- `"yolov5 to v12"` - YOLO family
+- `"yolo"`, `"yolov5"` to `"yolov12"`, `"yolo11"` - YOLO family (v5-v12)
 - `"yolonas"`, `"yolo-nas"` - YOLO-NAS
-- `"rtdetr"`, `"rtdetrv2"` - RT-DETR family
-- `"rtdetrul"`, `"rtdetr-ultralytics"` - RT-DETR Ultralytics variant
-- `"rfdetr"`, `"rf-detr"` - RF-DETR
-- `"dfine"`, `"deim"` - D-FINE and variants
+- `"rtdetr"`, `"rtdetrv2"`, `"rtdetr-ultralytics"` - RT-DETR family
+- `"rfdetr"`, `"rf-detr"`, `"rfdetr-s/m/l"` - RF-DETR variants
+- `"dfine"`, `"d-fine"`, `"dfine-s/m/l/x"` - D-FINE variants
 
 **Instance Segmentation:**
-- `"yoloseg"`, `"yolov8-seg"` - YOLO segmentation
-- `"rfdetrseg"`, `"rf-detr-seg"` - RF-DETR segmentation
+- `"yolo-seg"`, `"yolov5-seg"`, `"yolov8-seg"`, `"yolov11-seg"` - YOLO segmentation
+- `"rfdetr-seg"`, `"rf-detr-seg"` - RF-DETR segmentation
 
 **Classification:**
-- `"torchvision-classifier"` - Torchvision models (ResNet, EfficientNet, etc.)
+- `"torchvision-classifier"`, `"resnet"`, `"resnet50"` - Torchvision models (ImageNet norm)
 - `"tensorflow-classifier"` - TensorFlow/Keras models
 - `"vit-classifier"` - Vision Transformers
-- `"resnet50"`, `"resnet"` - ResNet variants
 
 **Optical Flow:**
-- `"raft"` - RAFT optical flow
+- `"raft"`, `"optical-flow"`, `"raft-small/large"` - RAFT optical flow
 
 **Video Classification:**
-- `"timesformer"` - TimeSformer video classification
-
-## Projects Using vision-core
-
-- [tritonic](https://github.com/olibartfast/tritonic) - Triton Inference Server Client
-- [object-detection-inference](https://github.com/olibartfast/object-detection-inference) - Multi-backend object detection (ONNX Runtime, TensorRT, OpenVINO)
-- [deepstream-infer-lab](https://github.com/olibartfast/deepstream-infer-lab) - NVIDIA DeepStream inference experiments
+- `"timesformer"`, `"video-classification"`, `"action-recognition"` - TimeSformer
 
 
 ## Building
