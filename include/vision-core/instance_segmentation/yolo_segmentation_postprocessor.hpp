@@ -1,72 +1,24 @@
 #pragma once
 
-#include "vision-core/core/result_types.hpp"
-#include <cstdint>
-#include <variant>
-#include <vector>
+#include "vision-core/instance_segmentation/segmentation_postprocessor.hpp"
 
 namespace vision_core {
 
-/// Generic tensor element type
-using TensorElement = std::variant<float, int32_t, int64_t, uint8_t>;
-
-/**
- * @brief YOLO instance segmentation postprocessor
- * 
- * Supports YOLOv5-seg, YOLOv8-seg, YOLO11-seg with mask processing.
- * Handles both anchor-based (v5) and anchor-free (v8+) variants.
- */
-class YoloSegmentationPostprocessor {
+class YoloSegmentationPostprocessor : public SegmentationPostprocessor {
 public:
-    /**
-     * @brief Process YOLO segmentation output
-     * 
-     * @param detection_output Detection tensor (boxes + class + mask coefficients)
-     * @param mask_output Mask prototype tensor
-     * @param detection_shape Detection tensor shape
-     * @param mask_shape Mask tensor shape [batch, num_protos, height, width]
-     * @param frame_size Original image size
-     * @param network_width Network input width
-     * @param network_height Network input height
-     * @param confidence_threshold Confidence threshold
-     * @param nms_threshold NMS IoU threshold
-     * @param mask_threshold Mask binarization threshold
-     * @return Vector of instance segmentation results
-     */
-    [[nodiscard]] static std::vector<InstanceSegmentation> postprocess(
-        const TensorElement* detection_output,
-        const TensorElement* mask_output,
-        const std::vector<int64_t>& detection_shape,
-        const std::vector<int64_t>& mask_shape,
-        const cv::Size& frame_size,
-        int network_width,
-        int network_height,
-        float confidence_threshold = 0.25f,
-        float nms_threshold = 0.45f,
-        float mask_threshold = 0.5f
-    );
+    YoloSegmentationPostprocessor(float confidence_threshold, float nms_threshold, float mask_threshold);
+
+    std::vector<InstanceSegmentation> postprocess(
+        const std::vector<std::vector<TensorElement>>& infer_results,
+        const std::vector<std::vector<int64_t>>& infer_shapes,
+        const cv::Size& frame_size) override;
 
 private:
-    /**
-     * @brief Calculate letterbox padding for segmentation
-     */
-    [[nodiscard]] static cv::Rect calculate_padding(
-        int network_width,
-        int network_height,
-        const cv::Size& frame_size
-    ) noexcept;
+    float confidence_threshold_;
+    float nms_threshold_;
+    float mask_threshold_;
 
-    /**
-     * @brief Decode mask from coefficients and prototypes
-     */
-    [[nodiscard]] static cv::Mat decode_mask(
-        const std::vector<float>& mask_coefficients,
-        const cv::Mat& mask_prototypes,
-        const cv::Rect& bbox,
-        const cv::Size& frame_size,
-        const cv::Size& mask_size,
-        float mask_threshold
-    );
+    float getTensorFloat(const TensorElement& element);
 };
 
 } // namespace vision_core

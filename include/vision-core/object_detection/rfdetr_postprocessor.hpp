@@ -1,48 +1,35 @@
 #pragma once
 
-#include "vision-core/core/result_types.hpp"
-#include <cstdint>
-#include <variant>
-#include <vector>
+#include "vision-core/object_detection/postprocessor.hpp"
 
 namespace vision_core {
 
-using TensorElement = std::variant<float, int32_t, int64_t, uint8_t>;
-
 /**
- * @brief RF-DETR postprocessing algorithms
+ * @brief RF-DETR postprocessor
  * 
- * Supports RF-DETR (Receptive Field DETR) models.
- * 
- * Outputs:
- * - Boxes: [batch, num_queries, 4] (cx, cy, w, h)
- * - Scores: [batch, num_queries, num_classes]
+ * RF-DETR outputs:
+ * - dets: [1, 300, 4] - boxes in normalized cx,cy,w,h format
+ * - labels: [1, 300, num_classes] - class logits (need sigmoid)
  */
-class RfDetrPostprocessor {
+class RfDetrPostprocessor : public Postprocessor {
 public:
-    /**
-     * @brief Process RF-DETR output tensors
-     * 
-     * @param bbox_output Bounding box predictions
-     * @param score_output Class score predictions
-     * @param bbox_shape Shape of bbox tensor
-     * @param score_shape Shape of score tensor
-     * @param frame_size Original image size
-     * @param network_width Network input width
-     * @param network_height Network input height
-     * @param confidence_threshold Minimum confidence threshold
-     * @return Vector of filtered detections
-     */
-    [[nodiscard]] static std::vector<Detection> postprocess(
-        const TensorElement* bbox_output,
-        const TensorElement* score_output,
-        const std::vector<int64_t>& bbox_shape,
-        const std::vector<int64_t>& score_shape,
-        const cv::Size& frame_size,
-        int network_width,
-        int network_height,
-        float confidence_threshold = 0.5f
-    );
+    RfDetrPostprocessor(const cv::Size& input_size,
+                        float confidence_threshold,
+                        const std::vector<std::string>& output_names = {});
+
+    std::vector<Detection> postprocess(
+        const std::vector<std::vector<TensorElement>>& infer_results,
+        const std::vector<std::vector<int64_t>>& infer_shapes,
+        const cv::Size& frame_size) override;
+
+private:
+    cv::Size input_size_;
+    float confidence_threshold_;
+    int dets_idx_{0};      // Index for dets (boxes) output
+    int labels_idx_{1};    // Index for labels (logits) output
+
+    void findOutputIndices(const std::vector<std::string>& output_names);
+    float getTensorFloat(const TensorElement& element);
 };
 
 } // namespace vision_core
