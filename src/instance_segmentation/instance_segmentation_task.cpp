@@ -110,7 +110,7 @@ std::unique_ptr<SegmentationPostprocessor> InstanceSegmentationTask::createPostp
     switch (type) {
         case ModelType::YOLO_SEG:
             return std::make_unique<YoloSegmentationPostprocessor>(
-                input_size, confidence_threshold_, nms_threshold_, mask_threshold_);
+                confidence_threshold_, nms_threshold_, mask_threshold_);
             
         case ModelType::RF_DETR_SEG:
             return std::make_unique<RfDetrSegmentationPostprocessor>(

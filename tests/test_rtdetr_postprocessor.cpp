@@ -31,7 +31,7 @@ protected:
 };
 
 TEST_F(RtDetrPostprocessorTest, StandardRtDetr) {
-    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_STYLE, 0.5f);
+    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_STYLE, cv::Size(640, 640), 0.5f);
     
     int num_queries = 300;
     int num_classes = 80;
@@ -57,7 +57,7 @@ TEST_F(RtDetrPostprocessorTest, StandardRtDetr) {
 }
 
 TEST_F(RtDetrPostprocessorTest, UltralyticsRtDetr) {
-    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_UL, 0.5f);
+    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_UL, cv::Size(640, 640), 0.5f);
     
     // Ultralytics RT-DETR output is similar to YOLO: [1, 4+num_classes, num_queries]
     // But our implementation expects 2 tensors for all RT-DETR types currently
@@ -83,7 +83,7 @@ TEST_F(RtDetrPostprocessorTest, UltralyticsRtDetr) {
 }
 
 TEST_F(RtDetrPostprocessorTest, EmptyInput) {
-    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_STYLE, 0.5f);
+    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_STYLE, cv::Size(640, 640), 0.5f);
     
     // Should throw because RT-DETR requires 2 tensors
     EXPECT_THROW({

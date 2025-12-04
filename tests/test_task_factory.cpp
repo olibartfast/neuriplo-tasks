@@ -81,84 +81,38 @@ TEST_F(TaskFactoryTest, InvalidInputDimensions) {
     info.input_shapes = {{1, 0}};
     info.input_formats = {"FORMAT_NCHW"};
     
-    // Register a test task first
-    TaskFactory::registerTask("yolov8", 
-        [](const ModelInfo& model_info) { return std::make_unique<TestTask>(model_info); });
-    
     EXPECT_THROW({
         TaskFactory::createTaskInstance("yolov8", info);
     }, InputDimensionError);
 }
 
-TEST_F(TaskFactoryTest, CustomTaskRegistration) {
+TEST_F(TaskFactoryTest, CreateValidYoloTask) {
     auto info = createValidModelInfo();
 
-    // Register custom task
-    TaskFactory::registerTask("custom-test-model", 
-        [](const ModelInfo& model_info) -> std::unique_ptr<TaskInterface> {
-            return std::make_unique<TestTask>(model_info);
-        });
-
-    // Should be able to create it
-    auto task = TaskFactory::createTaskInstance("custom-test-model", info);
+    // Should be able to create YOLOv8 task
+    auto task = TaskFactory::createTaskInstance("yolov8", info);
     ASSERT_NE(task, nullptr);
     EXPECT_EQ(task->getTaskType(), TaskType::Detection);
 }
 
-TEST_F(TaskFactoryTest, RegisterEmptyModelTypeThrows) {
-    EXPECT_THROW({
-        TaskFactory::registerTask("", 
-            [](const ModelInfo& info) { return std::make_unique<TestTask>(info); });
-    }, std::invalid_argument);
-}
-
-TEST_F(TaskFactoryTest, RegisterNullCreatorThrows) {
-    EXPECT_THROW({
-        TaskFactory::registerTask("test", nullptr);
-    }, std::invalid_argument);
-}
-
-TEST_F(TaskFactoryTest, ConcurrencyTest) {
+TEST_F(TaskFactoryTest, CreateValidRtDetrTask) {
     auto info = createValidModelInfo();
-    const int num_threads = 10;
-    const int iterations = 100;
-    std::vector<std::future<void>> futures;
 
-    // Thread 1: Registers new tasks continuously
-    futures.push_back(std::async(std::launch::async, []() {
-        for (int i = 0; i < 100; ++i) {
-            std::string model_name = "concurrent-model-" + std::to_string(i);
-            TaskFactory::registerTask(model_name, 
-                [](const ModelInfo& info) { return std::make_unique<TestTask>(info); });
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-    }));
+    // Should be able to create RT-DETR task
+    auto task = TaskFactory::createTaskInstance("rtdetr", info);
+    ASSERT_NE(task, nullptr);
+    EXPECT_EQ(task->getTaskType(), TaskType::Detection);
+}
 
-    // Threads 2-N: Create task instances continuously
-    for (int t = 0; t < num_threads; ++t) {
-        futures.push_back(std::async(std::launch::async, [&info, iterations]() {
-            for (int i = 0; i < iterations; ++i) {
-                // Try to create instances of potentially registered tasks
-                try {
-                    auto task = TaskFactory::createTaskInstance("concurrent-model-0", info);
-                } catch (...) {
-                    // It's okay if it fails because registration might not be done yet,
-                    // but it shouldn't crash.
-                }
-                
-                // Also try to create instance of a known task if registered
-                try {
-                     TaskFactory::registerTask("fixed-model", 
-                        [](const ModelInfo& info) { return std::make_unique<TestTask>(info); });
-                     auto task = TaskFactory::createTaskInstance("fixed-model", info);
-                } catch (...) {}
-            }
-        }));
-    }
+TEST_F(TaskFactoryTest, CreateValidClassificationTask) {
+    auto info = createValidModelInfo();
+    // Update for classification
+    info.input_shapes = {{1, 3, 224, 224}};
 
-    for (auto& f : futures) {
-        f.wait();
-    }
+    // Should be able to create ResNet task
+    auto task = TaskFactory::createTaskInstance("resnet50", info);
+    ASSERT_NE(task, nullptr);
+    EXPECT_EQ(task->getTaskType(), TaskType::Classification);
 }
 
 // Note: Actual task creation tests would require implementing the concrete task classes
