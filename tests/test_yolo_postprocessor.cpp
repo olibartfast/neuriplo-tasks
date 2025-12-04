@@ -42,7 +42,7 @@ protected:
 };
 
 TEST_F(YoloPostprocessorTest, EmptyOutputReturnsNoDetections) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, 0.25f, 0.45f);
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, cv::Size(640, 640), 0.25f, 0.45f);
     
     std::vector<std::vector<TensorElement>> results = {};
     std::vector<std::vector<int64_t>> shapes = {};
@@ -54,7 +54,7 @@ TEST_F(YoloPostprocessorTest, EmptyOutputReturnsNoDetections) {
 }
 
 TEST_F(YoloPostprocessorTest, HighConfidenceDetected) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, 0.25f, 0.45f);
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, cv::Size(640, 640), 0.25f, 0.45f);
     
     int num_boxes = 8400;
     int num_classes = 80;
@@ -74,7 +74,7 @@ TEST_F(YoloPostprocessorTest, HighConfidenceDetected) {
 }
 
 TEST_F(YoloPostprocessorTest, LowConfidenceFiltered) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, 0.99f, 0.45f); // Very high threshold
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, cv::Size(640, 640), 0.99f, 0.45f); // Very high threshold
     
     int num_boxes = 8400;
     int num_classes = 80;
@@ -90,7 +90,7 @@ TEST_F(YoloPostprocessorTest, LowConfidenceFiltered) {
 }
 
 TEST_F(YoloPostprocessorTest, YoloV10Format) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_V10, 0.25f, 0.45f);
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_V10, cv::Size(640, 640), 0.25f, 0.45f);
     
     // YOLOv10 output: [1, 300, 6] (x1, y1, x2, y2, score, class)
     int num_dets = 300;
