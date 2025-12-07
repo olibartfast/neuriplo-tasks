@@ -15,7 +15,6 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Video Classification**: TimeSformer
 - **Optical Flow**: RAFT
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
-- **Thread-Safe TaskFactory**: Custom task registration with thread-safe registry access
 
 ## Two Ways to Use vision-core
 
