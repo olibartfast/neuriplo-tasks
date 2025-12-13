@@ -87,9 +87,6 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(
     std::cout << "Testing interleaved layout..." << std::endl;
     std::cout << "Interleaved samples: " << data[0] << "(u), " << data[1] << "(v), " << data[2] << "(u), " << data[3] << "(v)" << std::endl;
     
-    // Try different scaling to see if that helps
-    float scale_factor = 1.0f; // Try 1.0, 10.0, 100.0, etc.
-    
     // Let's try the exact pattern from master branch
     // Since we know there are significant values (max magnitude 4.3383), they must be somewhere
     
