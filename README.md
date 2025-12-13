@@ -134,7 +134,7 @@ The TaskFactory supports the following model type strings:
 - `"dfine"`, `"deim"` - D-FINE and variants
 
 **Instance Segmentation:**
-- `"yoloseg"`, `"yolov8-seg"` - YOLO segmentation
+- `"yoloseg"` - YOLO segmentation
 - `"rfdetrseg"`, `"rf-detr-seg"` - RF-DETR segmentation
 
 **Classification:**
