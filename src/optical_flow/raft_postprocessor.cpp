@@ -23,20 +23,16 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(
     
     if (channels != 2) return {};
     
-    // Robust tensor data access - try different data types
-    const float* data = nullptr;
-    if (const float* float_data = std::get_if<float>(&flow_output[0])) {
-        data = float_data;
-    } else if (const double* double_data = std::get_if<double>(&flow_output[0])) {
-        // Convert if needed - this is a fallback, should create temp buffer
+    // Robust tensor data access - handle float tensors
+    const float* data = std::get_if<float>(&flow_output[0]);
+    if (!data) {
+        // Fallback: convert other types to float
         static std::vector<float> temp_buffer;
         temp_buffer.resize(flow_output.size());
         for (size_t i = 0; i < flow_output.size(); ++i) {
             temp_buffer[i] = getTensorFloat(flow_output[i]);
         }
         data = temp_buffer.data();
-    } else {
-        return {}; // Unsupported data type
     }
     
     // Create flow matrix [H, W, 2] like master branch
@@ -95,33 +91,33 @@ float RaftPostprocessor::getTensorFloat(const TensorElement& element) {
 }
 
 cv::Mat RaftPostprocessor::makeColorwheel() {
-    // Constants for color wheel (based on Middlebury flow color coding)
+    // Constants for color wheel (matching master branch exactly)
     const int RY = 15, YG = 6, GC = 4, CB = 11, BM = 13, MR = 6;
     const int ncols = RY + YG + GC + CB + BM + MR;
     cv::Mat colorwheel(ncols, 1, CV_8UC3);
 
     int col = 0;
-    // RY - Red to Yellow
+    // RY - Red to Yellow (BGR format: Blue=255, Green=increasing, Red=0)
     for (int i = 0; i < RY; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(0, 255 * i / RY, 255);
+        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255, 255 * i / RY, 0);
     }
-    // YG - Yellow to Green
+    // YG - Yellow to Green (BGR format: Blue=255-decreasing, Green=255, Red=0)
     for (int i = 0; i < YG; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(0, 255, 255 - 255 * i / YG);
+        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255 - 255 * i / YG, 255, 0);
     }
-    // GC - Green to Cyan
+    // GC - Green to Cyan (BGR format: Blue=0, Green=255, Red=increasing)
     for (int i = 0; i < GC; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255 * i / GC, 255, 0);
+        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(0, 255, 255 * i / GC);
     }
-    // CB - Cyan to Blue
+    // CB - Cyan to Blue (BGR format: Blue=0, Green=255-decreasing, Red=255)
     for (int i = 0; i < CB; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255, 255 - 255 * i / CB, 0);
+        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(0, 255 - 255 * i / CB, 255);
     }
-    // BM - Blue to Magenta
+    // BM - Blue to Magenta (BGR format: Blue=increasing, Green=0, Red=255)
     for (int i = 0; i < BM; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255, 0, 255 * i / BM);
+        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255 * i / BM, 0, 255);
     }
-    // MR - Magenta to Red
+    // MR - Magenta to Red (BGR format: Blue=255-decreasing, Green=0, Red=255)
     for (int i = 0; i < MR; ++i, ++col) {
         colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255 - 255 * i / MR, 0, 255);
     }
@@ -145,8 +141,9 @@ cv::Mat RaftPostprocessor::visualizeFlow(const cv::Mat& flow_x, const cv::Mat& f
         magnitude /= mag_max;
     }
 
-    // Convert angle to [0, 1] range
+    // Convert angle to [0, 1] range (matching master branch)
     angle *= (1.0 / (2.0 * CV_PI));
+    angle += 0.5; // Shift angle for proper color wheel mapping
 
     // Apply color wheel
     cv::Mat colorwheel = makeColorwheel();
@@ -158,7 +155,7 @@ cv::Mat RaftPostprocessor::visualizeFlow(const cv::Mat& flow_x, const cv::Mat& f
             float mag = magnitude.at<float>(i, j);
             float ang = angle.at<float>(i, j);
 
-            // Handle negative angles
+            // Handle angles outside [0,1] range after shift
             while (ang < 0) ang += 1.0f;
             while (ang >= 1.0f) ang -= 1.0f;
 
