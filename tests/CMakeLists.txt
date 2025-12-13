@@ -60,6 +60,15 @@ target_link_libraries(test_concrete_tasks
     ${OpenCV_LIBS}
 )
 
+# Optical flow tests
+add_executable(test_optical_flow test_optical_flow.cpp)
+target_link_libraries(test_optical_flow
+    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    GTest::GTest
+    GTest::Main
+    ${OpenCV_LIBS}
+)
+
 # Add tests manually for better compatibility
 add_test(NAME test_result_types COMMAND test_result_types)
 add_test(NAME test_task_interface COMMAND test_task_interface)
@@ -68,3 +77,4 @@ add_test(NAME test_yolo_postprocessor COMMAND test_yolo_postprocessor)
 add_test(NAME test_rtdetr_postprocessor COMMAND test_rtdetr_postprocessor)
 add_test(NAME test_bbox_processor COMMAND test_bbox_processor)
 add_test(NAME test_concrete_tasks COMMAND test_concrete_tasks)
+add_test(NAME test_optical_flow COMMAND test_optical_flow)
