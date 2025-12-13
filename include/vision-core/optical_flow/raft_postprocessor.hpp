@@ -17,6 +17,7 @@ public:
 private:
     float getTensorFloat(const TensorElement& element);
     cv::Mat visualizeFlow(const cv::Mat& flow_x, const cv::Mat& flow_y);
+    cv::Mat makeColorwheel();
 };
 
 } // namespace vision_core
