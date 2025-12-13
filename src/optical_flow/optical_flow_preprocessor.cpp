@@ -7,8 +7,8 @@ RaftPreprocessor::RaftPreprocessor(const cv::Size& input_size)
         input_size,
         ImageFormat::NCHW,
         DataType::FLOAT32,
-        true,   // normalize to [0,1]
-        false,  // no ImageNet norm (RAFT uses different normalization)
+        false,  // NO base normalization (RAFT does custom [-1,1] normalization)
+        false,  // no ImageNet norm
         true    // BGR to RGB
     }) {}
 
