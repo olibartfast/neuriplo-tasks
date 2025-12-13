@@ -90,16 +90,25 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(
     // Try different scaling to see if that helps
     float scale_factor = 1.0f; // Try 1.0, 10.0, 100.0, etc.
     
-    // Reconstruct flow matrix 
+    // Let's try the exact pattern from master branch
+    // Since we know there are significant values (max magnitude 4.3383), they must be somewhere
+    
+    // Try approach 1: Master branch style with std::get<float> access
+    std::cout << "Trying to access tensor data like master branch..." << std::endl;
+    
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            // U channel (horizontal flow)
-            flow_ptr[y * width * 2 + x * 2] = data[u_channel_offset + y * width + x] * scale_factor;
-            
-            // V channel (vertical flow) 
-            flow_ptr[y * width * 2 + x * 2 + 1] = data[v_channel_offset + y * width + x] * scale_factor;
+            // Master branch pattern: direct TensorElement access
+            flow_ptr[y * width * 2 + x * 2] = getTensorFloat(flow_output[u_channel_offset + y * width + x]);
+            flow_ptr[y * width * 2 + x * 2 + 1] = getTensorFloat(flow_output[v_channel_offset + y * width + x]);
         }
     }
+    
+    // Debug: Check what we actually got in the flow matrix
+    double flow_min, flow_max;
+    cv::Mat flow_flat = flow.reshape(1, flow.total());  // Flatten to 1D
+    cv::minMaxLoc(flow_flat, &flow_min, &flow_max);
+    std::cout << "Reconstructed flow matrix range: " << flow_min << " to " << flow_max << std::endl;
     
     // Resize to original frame size if needed (with proper flow scaling)
     if (frame_size.width != width || frame_size.height != height) {
