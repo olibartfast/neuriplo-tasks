@@ -25,20 +25,9 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(
     
     if (channels != 2) return {};
     
-    // Debug: Check what type we actually have
-    std::cout << "First element type index: " << flow_output[0].index() << std::endl;
-    if (std::holds_alternative<float>(flow_output[0])) {
-        std::cout << "Data is float type" << std::endl;
-    } else if (std::holds_alternative<int>(flow_output[0])) {
-        std::cout << "Data is int type" << std::endl;
-    } else {
-        std::cout << "Data is other type" << std::endl;
-    }
-    
     // Robust tensor data access - handle float tensors  
     const float* data = std::get_if<float>(&flow_output[0]);
     if (!data) {
-        std::cout << "Converting non-float tensor data" << std::endl;
         // Fallback: convert other types to float
         static std::vector<float> temp_buffer;
         temp_buffer.resize(flow_output.size());
@@ -46,66 +35,23 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(
             temp_buffer[i] = getTensorFloat(flow_output[i]);
         }
         data = temp_buffer.data();
-        std::cout << "First converted values: ";
-        for (int i = 0; i < std::min(5, (int)temp_buffer.size()); ++i) {
-            std::cout << temp_buffer[i] << " ";
-        }
-        std::cout << std::endl;
-    } else {
-        std::cout << "Using direct float data, first values: ";
-        for (int i = 0; i < std::min(5, (int)flow_output.size()); ++i) {
-            std::cout << data[i] << " ";
-        }
-        std::cout << std::endl;
     }
     
     // Create flow matrix [H, W, 2] like master branch
     cv::Mat flow(height, width, CV_32FC2);
     float* flow_ptr = reinterpret_cast<float*>(flow.data);
     
-    // Try different tensor interpretations to find the right one
-    std::cout << "Trying different tensor layouts..." << std::endl;
-    
-    // Interpretation 1: Original approach
+    // Channel offset logic matching master branch
     const int u_channel_offset = 0;
     const int v_channel_offset = height * width;
     
-    std::cout << "Testing interpretation 1: u_offset=0, v_offset=" << v_channel_offset << std::endl;
-    std::cout << "Sample values - U: " << data[0] << ", " << data[1] << ", " << data[2] << std::endl;
-    std::cout << "Sample values - V: " << data[v_channel_offset] << ", " << data[v_channel_offset+1] << ", " << data[v_channel_offset+2] << std::endl;
-    
-    // Find where the significant flow values are located
-    std::cout << "Scanning tensor for significant values..." << std::endl;
-    int total_size = height * width * 2;
-    for (int i = 0; i < total_size && i < 100; i++) {
-        if (std::abs(data[i]) > 0.1f) {
-            std::cout << "Significant value at index " << i << ": " << data[i] << std::endl;
-        }
-    }
-    
-    // Try alternative tensor layout: interleaved channels [u,v,u,v,u,v...]
-    std::cout << "Testing interleaved layout..." << std::endl;
-    std::cout << "Interleaved samples: " << data[0] << "(u), " << data[1] << "(v), " << data[2] << "(u), " << data[3] << "(v)" << std::endl;
-    
-    // Let's try the exact pattern from master branch
-    // Since we know there are significant values (max magnitude 4.3383), they must be somewhere
-    
-    // Try approach 1: Master branch style with std::get<float> access
-    std::cout << "Trying to access tensor data like master branch..." << std::endl;
-    
+    // Reconstruct flow matrix using direct TensorElement access (like master branch)
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            // Master branch pattern: direct TensorElement access
             flow_ptr[y * width * 2 + x * 2] = getTensorFloat(flow_output[u_channel_offset + y * width + x]);
             flow_ptr[y * width * 2 + x * 2 + 1] = getTensorFloat(flow_output[v_channel_offset + y * width + x]);
         }
     }
-    
-    // Debug: Check what we actually got in the flow matrix
-    double flow_min, flow_max;
-    cv::Mat flow_flat = flow.reshape(1, flow.total());  // Flatten to 1D
-    cv::minMaxLoc(flow_flat, &flow_min, &flow_max);
-    std::cout << "Reconstructed flow matrix range: " << flow_min << " to " << flow_max << std::endl;
     
     // Resize to original frame size if needed (with proper flow scaling)
     if (frame_size.width != width || frame_size.height != height) {
@@ -192,20 +138,12 @@ cv::Mat RaftPostprocessor::visualizeFlow(const cv::Mat& flow_x, const cv::Mat& f
     cv::Mat magnitude, angle;
     cv::cartToPolar(flow_x, flow_y, magnitude, angle);
 
-    // Debug: Check magnitude values before normalization
-    double mag_min, mag_max;
-    cv::minMaxLoc(magnitude, &mag_min, &mag_max);
-    std::cout << "Magnitude range before normalization: " << mag_min << " to " << mag_max << std::endl;
-    
-    // Normalize magnitude (but clamp to reasonable range first)
+    // Normalize magnitude
+    double mag_max;
+    cv::minMaxLoc(magnitude, nullptr, &mag_max);
     if (mag_max > 0) {
-        // Apply magnitude clamp like master branch might do
         magnitude /= mag_max;
     }
-    
-    // Debug: Check magnitude after normalization
-    cv::minMaxLoc(magnitude, &mag_min, &mag_max);
-    std::cout << "Magnitude range after normalization: " << mag_min << " to " << mag_max << std::endl;
 
     // Convert angle to [0, 1] range (matching master branch)
     angle *= (1.0 / (2.0 * CV_PI));
