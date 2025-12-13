@@ -74,6 +74,19 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(
     std::cout << "Sample values - U: " << data[0] << ", " << data[1] << ", " << data[2] << std::endl;
     std::cout << "Sample values - V: " << data[v_channel_offset] << ", " << data[v_channel_offset+1] << ", " << data[v_channel_offset+2] << std::endl;
     
+    // Find where the significant flow values are located
+    std::cout << "Scanning tensor for significant values..." << std::endl;
+    int total_size = height * width * 2;
+    for (int i = 0; i < total_size && i < 100; i++) {
+        if (std::abs(data[i]) > 0.1f) {
+            std::cout << "Significant value at index " << i << ": " << data[i] << std::endl;
+        }
+    }
+    
+    // Try alternative tensor layout: interleaved channels [u,v,u,v,u,v...]
+    std::cout << "Testing interleaved layout..." << std::endl;
+    std::cout << "Interleaved samples: " << data[0] << "(u), " << data[1] << "(v), " << data[2] << "(u), " << data[3] << "(v)" << std::endl;
+    
     // Try different scaling to see if that helps
     float scale_factor = 1.0f; // Try 1.0, 10.0, 100.0, etc.
     
