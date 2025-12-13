@@ -114,10 +114,10 @@ std::unique_ptr<OpticalFlowPostprocessor> OpticalFlowTask::createPostprocessor(M
 }
 
 cv::Size OpticalFlowTask::extractInputSize(const ModelInfo& model_info) {
-    int width = 512;  // default for RAFT
-    int height = 384; // default for RAFT
+    int width = 960;  // standard RAFT input width
+    int height = 520; // standard RAFT input height
     
-    if (!model_info.input_shapes.empty() && model_info.input_shapes[0].size() >= 3) {
+    if (!model_info.input_shapes.empty() && model_info.input_shapes[0].size() >= 4) {
         const auto& shape = model_info.input_shapes[0];
         if (model_info.input_formats[0] == "FORMAT_NCHW") {
             height = static_cast<int>(shape[2]);

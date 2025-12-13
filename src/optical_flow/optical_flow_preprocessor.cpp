@@ -22,27 +22,44 @@ std::vector<std::vector<uint8_t>> RaftPreprocessor::preprocess_pair(
     preprocessed_frames.reserve(2);
     
     for (const auto& frame : frames) {
-        cv::Mat processed = frame.clone();
+        cv::Mat processed;
         
+        // Color space conversion (BGR to RGB)
         if (config_.bgr_to_rgb && frame.channels() == 3) {
-            cv::cvtColor(processed, processed, cv::COLOR_BGR2RGB);
+            cv::cvtColor(frame, processed, cv::COLOR_BGR2RGB);
+        } else {
+            processed = frame.clone();
         }
         
-        cv::resize(processed, processed, config_.input_size, 0, 0, cv::INTER_LINEAR);
+        // Resize with appropriate interpolation
+        int interpolation = cv::INTER_LINEAR;
+        if (frame.size().width > config_.input_size.width || frame.size().height > config_.input_size.height) {
+            interpolation = cv::INTER_AREA;  // Better for downsampling
+        }
+        cv::resize(processed, processed, config_.input_size, 0, 0, interpolation);
         
-        // RAFT-specific normalization: (pixel / 255.0 - 0.5) / 0.5
+        // Normalization: (pixel / 255.0 - 0.5) / 0.5 -> [-1, 1] range
         processed.convertTo(processed, CV_32FC3, 1.0 / 255.0);
         processed = (processed - 0.5) / 0.5;
         
-        // Convert to NCHW
-        std::vector<cv::Mat> channels;
-        cv::split(processed, channels);
-        
+        // Convert to NCHW format if required
         std::vector<uint8_t> output;
-        for (const auto& channel : channels) {
-            const uint8_t* data = channel.data;
-            const size_t channel_size = channel.total() * sizeof(float);
-            output.insert(output.end(), data, data + channel_size);
+        if (config_.format == ImageFormat::NCHW) {
+            std::vector<cv::Mat> channels;
+            cv::split(processed, channels);
+            
+            for (const auto& channel : channels) {
+                const float* data = reinterpret_cast<const float*>(channel.data);
+                const size_t channel_size = channel.total() * sizeof(float);
+                const uint8_t* byte_data = reinterpret_cast<const uint8_t*>(data);
+                output.insert(output.end(), byte_data, byte_data + channel_size);
+            }
+        } else {
+            // HWC format
+            const float* data = reinterpret_cast<const float*>(processed.data);
+            const size_t total_size = processed.total() * processed.channels() * sizeof(float);
+            const uint8_t* byte_data = reinterpret_cast<const uint8_t*>(data);
+            output.insert(output.end(), byte_data, byte_data + total_size);
         }
         
         preprocessed_frames.push_back(std::move(output));
