@@ -23,43 +23,67 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(
     
     if (channels != 2) return {};
     
-    const float* data = std::get_if<float>(&flow_output[0]);
-    if (!data) return {};
+    // Robust tensor data access - try different data types
+    const float* data = nullptr;
+    if (const float* float_data = std::get_if<float>(&flow_output[0])) {
+        data = float_data;
+    } else if (const double* double_data = std::get_if<double>(&flow_output[0])) {
+        // Convert if needed - this is a fallback, should create temp buffer
+        static std::vector<float> temp_buffer;
+        temp_buffer.resize(flow_output.size());
+        for (size_t i = 0; i < flow_output.size(); ++i) {
+            temp_buffer[i] = getTensorFloat(flow_output[i]);
+        }
+        data = temp_buffer.data();
+    } else {
+        return {}; // Unsupported data type
+    }
     
-    cv::Mat flow_x(height, width, CV_32F);
-    cv::Mat flow_y(height, width, CV_32F);
+    // Create flow matrix [H, W, 2] like master branch
+    cv::Mat flow(height, width, CV_32FC2);
+    float* flow_ptr = reinterpret_cast<float*>(flow.data);
     
+    // Reconstruct flow matrix using master branch logic
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            flow_x.at<float>(y, x) = data[0 * height * width + y * width + x];
-            flow_y.at<float>(y, x) = data[1 * height * width + y * width + x];
+            int idx = y * width + x;
+            // RAFT format: [batch, 2, H, W] -> U: channel 0, V: channel 1
+            flow_ptr[y * width * 2 + x * 2] = data[0 * height * width + idx];     // U (horizontal)
+            flow_ptr[y * width * 2 + x * 2 + 1] = data[1 * height * width + idx]; // V (vertical)
         }
     }
     
-    // Resize to original frame size if needed
+    // Resize to original frame size if needed (with proper flow scaling)
     if (frame_size.width != width || frame_size.height != height) {
-        cv::resize(flow_x, flow_x, frame_size);
-        cv::resize(flow_y, flow_y, frame_size);
+        cv::Mat resized_flow;
+        cv::resize(flow, resized_flow, frame_size);
         
-        // Scale flow values
-        flow_x *= static_cast<float>(frame_size.width) / width;
-        flow_y *= static_cast<float>(frame_size.height) / height;
+        // Scale flow values proportionally
+        std::vector<cv::Mat> flow_channels;
+        cv::split(resized_flow, flow_channels);
+        flow_channels[0] *= static_cast<float>(frame_size.width) / width;   // Scale U
+        flow_channels[1] *= static_cast<float>(frame_size.height) / height; // Scale V
+        cv::merge(flow_channels, flow);
     }
     
+    // Split flow into separate U and V components for visualization
+    std::vector<cv::Mat> flow_channels;
+    cv::split(flow, flow_channels);
+    cv::Mat flow_u = flow_channels[0];
+    cv::Mat flow_v = flow_channels[1];
+    
     OpticalFlow result;
+    result.raw_flow = flow.clone();
     
-    // Merge x and y flows into 2-channel raw_flow
-    std::vector<cv::Mat> flow_channels = {flow_x, flow_y};
-    cv::merge(flow_channels, result.raw_flow);
-    
-    // Calculate max displacement
+    // Calculate magnitude and max displacement
     cv::Mat magnitude, angle;
-    cv::cartToPolar(flow_x, flow_y, magnitude, angle);
+    cv::cartToPolar(flow_u, flow_v, magnitude, angle);
     double max_disp;
     cv::minMaxLoc(magnitude, nullptr, &max_disp);
     result.max_displacement = static_cast<float>(max_disp);
     
-    result.flow = visualizeFlow(flow_x, flow_y);
+    // Create color visualization using master branch approach
+    result.flow = visualizeFlow(flow_u, flow_v);
     
     return {result};
 }
