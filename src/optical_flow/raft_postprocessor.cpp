@@ -41,26 +41,18 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(
     cv::Mat flow(height, width, CV_32FC2);
     float* flow_ptr = reinterpret_cast<float*>(flow.data);
     
-    // Debug: Print some tensor info
-    std::cout << "Tensor shape: [" << shape[0] << ", " << shape[1] << ", " << shape[2] << ", " << shape[3] << "]" << std::endl;
-    std::cout << "First 10 tensor values: ";
-    for (int i = 0; i < std::min(10, (int)flow_output.size()); ++i) {
-        std::cout << data[i] << " ";
-    }
-    std::cout << std::endl;
+    // Master branch channel offset logic
+    const int u_channel_offset = 0;
+    const int v_channel_offset = height * width;
     
-    // Reconstruct flow matrix - debug different tensor layouts
+    // Reconstruct flow matrix exactly like master branch
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            int output_idx = y * width * 2 + x * 2;
+            // U channel (horizontal flow)
+            flow_ptr[y * width * 2 + x * 2] = data[u_channel_offset + y * width + x];
             
-            // Try different RAFT tensor interpretations:
-            // Layout 1: [batch, 2, H, W] - channels first, then spatial
-            int u_idx = 0 * height * width + y * width + x;  // Channel 0: U flow
-            int v_idx = 1 * height * width + y * width + x;  // Channel 1: V flow
-            
-            flow_ptr[output_idx] = data[u_idx];       // U (horizontal)
-            flow_ptr[output_idx + 1] = data[v_idx];   // V (vertical)
+            // V channel (vertical flow) 
+            flow_ptr[y * width * 2 + x * 2 + 1] = data[v_channel_offset + y * width + x];
         }
     }
     
