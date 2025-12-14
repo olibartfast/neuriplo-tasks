@@ -98,61 +98,82 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(
     if (shape.size() < 3) return {};
     
     // int batch = shape[0]; // Unused
-    int channels = shape[1];
-    int anchors = shape[2];
+    int dim1 = shape[1];
+    int dim2 = shape[2];
     
-    // Handle transposed output [1, anchors, channels] vs [1, channels, anchors]
-    // YOLOv8/v11 typically export as [1, 4+cls, 8400]
-    bool is_transposed = (channels < anchors && channels < 100); 
+    // Detect format by shape:
+    // YOLOv5/v6/v7: [batch, anchors, 4+1+classes] where dim2 < dim1, has objectness at index 4
+    // YOLOv8+:      [batch, 4+classes, anchors] where dim1 < dim2, no objectness
+    bool has_objectness = (dim2 < dim1);  // YOLOv5/v6/v7 format
     
-    if (!is_transposed) {
-        // Swap dimensions for easier processing if needed, or just adjust indexing
-        std::swap(channels, anchors);
+    int channels, anchors;
+    if (has_objectness) {
+        // YOLOv5/v6/v7: [batch, anchors, channels]
+        anchors = dim1;
+        channels = dim2;
+    } else {
+        // YOLOv8+: [batch, channels, anchors]
+        channels = dim1;
+        anchors = dim2;
     }
     
-    int num_classes = channels - 4;
+    int num_classes = has_objectness ? (channels - 5) : (channels - 4);
+    int class_offset = has_objectness ? 5 : 4;
+    
     if (num_classes <= 0) return {};
 
     for (int i = 0; i < anchors; ++i) {
+        // For YOLOv5/v6/v7, check objectness score first (index 4)
+        float objectness = 1.0f;
+        if (has_objectness) {
+            objectness = getTensorFloat(output[i * channels + 4]);
+            if (objectness < confidence_threshold_) continue;
+        }
+        
         // Extract class scores
-        float max_score = 0.0f;
+        float max_class_score = 0.0f;
         int class_id = -1;
         
         for (int c = 0; c < num_classes; ++c) {
             float score;
-            if (is_transposed) {
-                // [batch, channels, anchors] -> data[c + 4][i]
-                score = getTensorFloat(output[(c + 4) * anchors + i]);
+            if (has_objectness) {
+                // YOLOv5/v6/v7: [batch, anchors, channels] -> data[i * channels + (c + 5)]
+                score = getTensorFloat(output[i * channels + (c + class_offset)]);
             } else {
-                // [batch, anchors, channels] -> data[i][c + 4]
-                score = getTensorFloat(output[i * channels + (c + 4)]);
+                // YOLOv8+: [batch, channels, anchors] -> data[(c + 4) * anchors + i]
+                score = getTensorFloat(output[(c + class_offset) * anchors + i]);
             }
             
-            if (score > max_score) {
-                max_score = score;
+            if (score > max_class_score) {
+                max_class_score = score;
                 class_id = c;
             }
         }
         
-        if (max_score < confidence_threshold_) continue;
+        // For YOLOv5/v6/v7, multiply objectness with class score
+        float final_score = has_objectness ? (objectness * max_class_score) : max_class_score;
         
-        // Extract box
+        if (final_score < confidence_threshold_) continue;
+        
+        // Extract box coordinates
         float cx, cy, w, h;
-        if (is_transposed) {
-            cx = getTensorFloat(output[0 * anchors + i]);
-            cy = getTensorFloat(output[1 * anchors + i]);
-            w  = getTensorFloat(output[2 * anchors + i]);
-            h  = getTensorFloat(output[3 * anchors + i]);
-        } else {
+        if (has_objectness) {
+            // YOLOv5/v6/v7: [batch, anchors, channels]
             cx = getTensorFloat(output[i * channels + 0]);
             cy = getTensorFloat(output[i * channels + 1]);
             w  = getTensorFloat(output[i * channels + 2]);
             h  = getTensorFloat(output[i * channels + 3]);
+        } else {
+            // YOLOv8+: [batch, channels, anchors]
+            cx = getTensorFloat(output[0 * anchors + i]);
+            cy = getTensorFloat(output[1 * anchors + i]);
+            w  = getTensorFloat(output[2 * anchors + i]);
+            h  = getTensorFloat(output[3 * anchors + i]);
         }
         
         Detection det;
         det.class_id = class_id;
-        det.class_confidence = max_score;
+        det.class_confidence = final_score;
         det.bbox = scaleToOriginal(cx, cy, w, h, frame_size);
         detections.push_back(det);
     }
