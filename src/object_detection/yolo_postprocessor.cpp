@@ -359,8 +359,6 @@ float YoloPostprocessor::getTensorFloat(const TensorElement& element) {
     }, element);
 }
 
-} // namespace vision_core
-
 std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(
     const std::vector<TensorElement>& num_dets_tensor,
     const std::vector<TensorElement>& boxes,
@@ -430,3 +428,5 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(
     // YOLOv7 end-to-end already has NMS applied, so no need to apply it again
     return detections;
 }
+
+} // namespace vision_core
