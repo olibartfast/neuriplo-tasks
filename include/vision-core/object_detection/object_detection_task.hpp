@@ -33,6 +33,7 @@ public:
         // YOLO variants with different output formats
         YOLO_V10,          // YOLOv10: [batch, detections, 6] - end-to-end, no NMS
         YOLO_NAS,          // YOLO-NAS: separate boxes + scores tensors
+        YOLO_V7_E2E,       // YOLOv7 end-to-end: 4 outputs (num_dets, det_boxes, det_scores, det_classes)
         
         // Transformer-based with RT-DETR style postprocessing
         RT_DETR_STYLE,     // RT-DETR, RT-DETRv2, D-FINE, DEIM - same postprocessing
