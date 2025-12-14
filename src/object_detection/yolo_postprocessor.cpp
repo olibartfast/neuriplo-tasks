@@ -80,6 +80,17 @@ std::vector<Detection> YoloPostprocessor::postprocess(
             break;
         }
         
+        case ObjectDetectionTask::ModelType::YOLO_V7_E2E: {
+            if (infer_results.size() < 4) {
+                throw std::runtime_error("YOLOv7 end-to-end requires 4 output tensors");
+            }
+            // Outputs: num_dets, det_boxes, det_scores, det_classes
+            detections = postprocessYoloV7E2E(infer_results[0], infer_results[1],
+                                            infer_results[2], infer_results[3],
+                                            infer_shapes[1], frame_size);
+            break;
+        }
+        
         default:
             throw std::runtime_error("Unsupported YOLO model type");
     }
@@ -349,3 +360,73 @@ float YoloPostprocessor::getTensorFloat(const TensorElement& element) {
 }
 
 } // namespace vision_core
+
+std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(
+    const std::vector<TensorElement>& num_dets_tensor,
+    const std::vector<TensorElement>& boxes,
+    const std::vector<TensorElement>& scores,
+    const std::vector<TensorElement>& classes,
+    const std::vector<int64_t>& boxes_shape,
+    const cv::Size& frame_size) {
+    
+    std::vector<Detection> detections;
+    
+    // YOLOv7 end-to-end format:
+    // num_dets: [1,1] - number of valid detections
+    // boxes: [1, max_dets, 4] - bounding boxes in [x1, y1, x2, y2] format (model space)
+    // scores: [1, max_dets] - confidence scores
+    // classes: [1, max_dets] - class IDs
+    
+    if (num_dets_tensor.empty() || boxes.empty() || scores.empty() || classes.empty()) {
+        return detections;
+    }
+    
+    // Get actual number of detections
+    int num_dets = static_cast<int>(getTensorFloat(num_dets_tensor[0]));
+    
+    // boxes_shape is [1, max_dets, 4]
+    int max_dets = boxes_shape.size() >= 2 ? boxes_shape[1] : 100;
+    num_dets = std::min(num_dets, max_dets);  // Clamp to max_dets
+    
+    // Calculate scale ratios for letterbox inverse
+    float r_w = static_cast<float>(input_size_.width) / frame_size.width;
+    float r_h = static_cast<float>(input_size_.height) / frame_size.height;
+    
+    for (int i = 0; i < num_dets; ++i) {
+        float score = getTensorFloat(scores[i]);
+        if (score < confidence_threshold_) continue;
+        
+        // Extract box coordinates in model space
+        float x1 = getTensorFloat(boxes[i * 4 + 0]);
+        float y1 = getTensorFloat(boxes[i * 4 + 1]);
+        float x2 = getTensorFloat(boxes[i * 4 + 2]);
+        float y2 = getTensorFloat(boxes[i * 4 + 3]);
+        
+        // Apply letterbox inverse transformation
+        if (r_h > r_w) {
+            float pad_h = (input_size_.height - r_w * frame_size.height) / 2.0f;
+            y1 = (y1 - pad_h) / r_w;
+            y2 = (y2 - pad_h) / r_w;
+            x1 = x1 / r_w;
+            x2 = x2 / r_w;
+        } else {
+            float pad_w = (input_size_.width - r_h * frame_size.width) / 2.0f;
+            x1 = (x1 - pad_w) / r_h;
+            x2 = (x2 - pad_w) / r_h;
+            y1 = y1 / r_h;
+            y2 = y2 / r_h;
+        }
+        
+        int class_id = static_cast<int>(getTensorFloat(classes[i]));
+        
+        Detection det;
+        det.class_id = class_id;
+        det.class_confidence = score;
+        det.bbox = cv::Rect(static_cast<int>(x1), static_cast<int>(y1), 
+                           static_cast<int>(x2 - x1), static_cast<int>(y2 - y1));
+        detections.push_back(det);
+    }
+    
+    // YOLOv7 end-to-end already has NMS applied, so no need to apply it again
+    return detections;
+}

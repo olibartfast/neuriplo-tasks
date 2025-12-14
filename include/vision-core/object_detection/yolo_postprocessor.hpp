@@ -50,6 +50,14 @@ private:
         const std::vector<int64_t>& box_shape,
         const std::vector<int64_t>& score_shape,
         const cv::Size& frame_size);
+    
+    std::vector<Detection> postprocessYoloV7E2E(
+        const std::vector<TensorElement>& num_dets,
+        const std::vector<TensorElement>& boxes,
+        const std::vector<TensorElement>& scores,
+        const std::vector<TensorElement>& classes,
+        const std::vector<int64_t>& boxes_shape,
+        const cv::Size& frame_size);
         
     void applyNMS(std::vector<Detection>& detections);
     float getTensorFloat(const TensorElement& element);

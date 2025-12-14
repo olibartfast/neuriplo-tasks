@@ -122,6 +122,9 @@ ObjectDetectionTask::ModelType ObjectDetectionTask::detectModelType(const std::s
     if (lower_name == "yolov10") {
         return ModelType::YOLO_V10;
     }
+    if (lower_name == "yolov7e2e" || lower_name == "yolov7-e2e") {
+        return ModelType::YOLO_V7_E2E;
+    }
     if (lower_name == "yolonas" || lower_name == "yolo-nas") {
         return ModelType::YOLO_NAS;
     }
@@ -150,6 +153,7 @@ std::unique_ptr<Preprocessor> ObjectDetectionTask::createPreprocessor(ModelType 
         case ModelType::YOLO_STANDARD:
         case ModelType::YOLO_V10:
         case ModelType::YOLO_NAS:
+        case ModelType::YOLO_V7_E2E:
             return std::make_unique<YoloPreprocessor>(input_size);
             
         case ModelType::RT_DETR_STYLE:
@@ -169,6 +173,7 @@ std::unique_ptr<Postprocessor> ObjectDetectionTask::createPostprocessor(ModelTyp
         case ModelType::YOLO_STANDARD:
         case ModelType::YOLO_V10:
         case ModelType::YOLO_NAS:
+        case ModelType::YOLO_V7_E2E:
             return std::make_unique<YoloPostprocessor>(type, input_size, confidence_threshold_, nms_threshold_);
             
         case ModelType::RT_DETR_STYLE:
@@ -216,6 +221,7 @@ bool ObjectDetectionTask::validateTensorInputs(
             return infer_results.size() >= 1 && infer_shapes.size() >= 1;
             
         case ModelType::YOLO_NAS:
+        case ModelType::YOLO_V7_E2E:
         case ModelType::RT_DETR_STYLE:
         case ModelType::RT_DETR_UL:
         case ModelType::RF_DETR:
