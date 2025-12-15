@@ -127,7 +127,7 @@ The TaskFactory supports the following model type strings:
 
 **Object Detection:**
 - `"yolov5 to v12"` - YOLO family
-- `"yolonas"`, `"yolo-nas"` - YOLO-NAS
+- `"yolonas"` - YOLO-NAS
 - `"rtdetrv1 to v4"`, `"deim, deimv2"`, `"dfine"` - RT-DETR family
 - `"rtdetrul"` - RT-DETR Ultralytics variant
 - `"rfdetr"` - RF-DETR
