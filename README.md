@@ -9,8 +9,8 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 
 ## Features
 
-- **Object Detection**: YOLO (v5-v12), RT-DETR family (v1/v2), YOLO-NAS, D-FINE, RF-DETR, DEIM
-- **Instance Segmentation**: YOLOv5-seg, YOLOv8-seg, YOLO11-seg, RF-DETR-Seg
+- **Object Detection**: YOLO (v5-v12), RT-DETR family (RT-DETR v1-v4, D-FINE, DEIM v1/v2), YOLO-NAS, D-FINE
+- **Instance Segmentation**: YOLOv5/v8/v11-seg, RF-DETR-Seg
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: TimeSformer
 - **Optical Flow**: RAFT
@@ -128,14 +128,13 @@ The TaskFactory supports the following model type strings:
 **Object Detection:**
 - `"yolov5 to v12"` - YOLO family
 - `"yolonas"`, `"yolo-nas"` - YOLO-NAS
-- `"rtdetr"`, `"rtdetrv2"` - RT-DETR family
-- `"rtdetrul"`, `"rtdetr-ultralytics"` - RT-DETR Ultralytics variant
-- `"rfdetr"`, `"rf-detr"` - RF-DETR
-- `"dfine"`, `"deim"` - D-FINE and variants
+- `"rtdetrv1 to v4"`, `"deim, deimv2"`, `"dfine"` - RT-DETR family
+- `"rtdetrul"` - RT-DETR Ultralytics variant
+- `"rfdetr"` - RF-DETR
 
 **Instance Segmentation:**
 - `"yoloseg"` - YOLO segmentation
-- `"rfdetrseg"`, `"rf-detr-seg"` - RF-DETR segmentation
+- `"rfdetrseg"` - RF-DETR segmentation
 
 **Classification:**
 - `"torchvision-classifier"` - Torchvision models (ResNet, EfficientNet, etc.)
