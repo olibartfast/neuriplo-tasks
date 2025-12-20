@@ -1,0 +1,32 @@
+# Vision-Core Export Dependencies
+# Core dependencies for model export functionality
+
+# Common ML frameworks
+torch>=1.13.0
+torchvision>=0.14.0
+tensorflow>=2.10.0
+onnx>=1.12.0
+onnxruntime>=1.13.0
+
+# Model libraries
+ultralytics>=8.0.0      # YOLO v8+
+transformers>=4.20.0    # Hugging Face models (ViT, etc.)
+timm>=0.6.0            # Torch image models
+super-gradients>=3.0.0  # YOLO-NAS
+rfdetr>=0.1.0          # RF-DETR models
+
+# ONNX utilities
+onnxsim>=0.4.0         # ONNX simplification
+onnx-graphsurgeon>=0.3.0  # ONNX graph manipulation
+
+# Computer vision utilities
+opencv-python>=4.6.0
+numpy>=1.21.0
+pillow>=8.3.0
+
+# Optional dependencies (install as needed)
+# tensorrt>=8.0.0       # TensorRT (NVIDIA only)
+# openvino>=2022.1.0    # Intel OpenVINO
+
+# Development/testing
+pytest>=7.0.0
