@@ -126,21 +126,21 @@ target_link_libraries(your_target vision-core::vision-core)
 The TaskFactory supports the following model type strings:
 
 **Object Detection:**
-- `"yolov5 to v12"` - YOLO family
+- `"yolo"`, `"yolov7e2e"`, `"yolov10"`, `"yolov4"` - YOLO variants
 - `"yolonas"` - YOLO-NAS
-- `"rtdetrv1 to v4"`, `"deim, deimv2"`, `"dfine"` - RT-DETR family
+- `"rtdetr"` - RT-DETR
 - `"rtdetrul"` - RT-DETR Ultralytics variant
 - `"rfdetr"` - RF-DETR
 
 **Instance Segmentation:**
 - `"yoloseg"` - YOLO segmentation
-- `"rfdetrseg"` - RF-DETR segmentation
+- Any string containing `"seg"` - Generic segmentation models
 
 **Classification:**
 - `"torchvision-classifier"` - Torchvision models (ResNet, EfficientNet, etc.)
 - `"tensorflow-classifier"` - TensorFlow/Keras models
 - `"vit-classifier"` - Vision Transformers
-- `"resnet50"`, `"resnet"` - ResNet variants
+- `"timesformer"` - Video classification models
 
 **Optical Flow:**
 - `"raft"` - RAFT optical flow
