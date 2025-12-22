@@ -56,24 +56,19 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(
 
     // ============ OBJECT DETECTION ============
     // YOLO variants
-    if (normalized == "yolo" || normalized == "yolov5" || normalized == "yolov6" ||
-        normalized == "yolov7" || normalized == "yolov7e2e" || normalized == "yolov8" || normalized == "yolov9" ||
-        normalized == "yolov10" || normalized == "yolo11" || normalized == "yolov12" ||
-        normalized == "yolonas") {
+    if (normalized == "yolo" || normalized == "yolov7e2e" || normalized == "yolov10" || normalized == "yolonas" || normalized == "yolov4") {
         return std::make_unique<ObjectDetectionTask>(model_info, normalized);
     }
     
     // Transformer-based detectors
-    if (normalized == "rtdetr" || normalized == "rtdetrv2" || normalized == "rtdetrul" ||
-        normalized == "rtdetrultralytics" || normalized == "dfine" || normalized == "deim" ||
-        normalized == "rfdetr") {
+    if (normalized == "rtdetr" || normalized == "rtdetrul" || normalized == "rfdetr") {
         return std::make_unique<ObjectDetectionTask>(model_info, normalized);
     }
 
     // ============ CLASSIFICATION ============
-    if (normalized == "resnet" || normalized == "resnet50" || normalized == "torchvisionclassifier" ||
+    if (normalized == "torchvisionclassifier" ||
         normalized == "tensorflowclassifier" || normalized == "vitclassifier" ||
-        normalized == "timesformer" || normalized == "videoclassifier") {
+        normalized == "timesformer") {
         return std::make_unique<ClassificationTask>(model_info, normalized);
     }
 
