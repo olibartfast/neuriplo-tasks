@@ -354,8 +354,8 @@ main() {
     log_success "Repository setup complete!"
     echo
     log_info "Next steps:"
-    echo "  1. Set up virtual environment: ./setup_env.sh --framework ${FRAMEWORKS[$VERSION]}"
-    echo "  2. Run export: ./export.sh --repo-dir $OUTPUT_DIR/${FRAMEWORKS[$VERSION]}/${REPO_NAMES[$VERSION]}"
+    echo "  1. cd vision-core && export/detection/rtdetr/setup_env.sh --framework ${FRAMEWORKS[$VERSION]}"
+    echo "  2. Run export: export/detection/rtdetr/export.sh --repo-dir $OUTPUT_DIR/${FRAMEWORKS[$VERSION]}/${REPO_NAMES[$VERSION]}"
 }
 
 # Execute main function
