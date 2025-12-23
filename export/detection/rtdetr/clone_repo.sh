@@ -6,8 +6,9 @@
 # and sets up the directory structure for export pipelines.
 #
 # Usage:
-#   ./clone_repo.sh --version v4 --output-dir ./3rdparty/repositories
-#   ./clone_repo.sh --help
+#   cd vision-core
+#   export/detection/rtdetr/clone_repo.sh --version v4 --output-dir ./3rdparty/repositories
+#   export/detection/rtdetr/clone_repo.sh --help for more information.
 
 set -e  # Exit on any error
 
