@@ -209,14 +209,26 @@ validate_arguments() {
 
 # Check dependencies
 check_dependencies() {
-    # Check Python
-    if ! command -v python3 &> /dev/null; then
-        log_error "Python 3 is not installed"
-        exit 1
+    local python_cmd="python${PYTHON_VERSION}"
+    
+    # Check if specific python version exists
+    if ! command -v "$python_cmd" &> /dev/null; then
+        log_warning "$python_cmd not found, checking for python3..."
+        if ! command -v python3 &> /dev/null; then
+            log_error "Python 3 is not installed"
+            exit 1
+        fi
+        
+        # Check if python3 is the right version
+        local ver=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
+        if [[ "$ver" != "$PYTHON_VERSION" ]]; then
+            log_warning "System python3 is version $ver, but $PYTHON_VERSION was requested."
+            log_warning "This might cause issues if binary wheels are not available for $ver."
+        fi
     fi
 
     # Check pip
-    if ! command -v pip3 &> /dev/null && ! python3 -m pip --version &> /dev/null; then
+    if ! "$python_cmd" -m pip --version &> /dev/null && ! python3 -m pip --version &> /dev/null; then
         log_error "pip is not installed"
         exit 1
     fi
@@ -225,7 +237,7 @@ check_dependencies() {
     if command -v conda &> /dev/null; then
         ENV_MANAGER="conda"
         log_info "Using conda for environment management"
-    elif python3 -m venv --help &> /dev/null; then
+    elif "$python_cmd" -m venv --help &> /dev/null || python3 -m venv --help &> /dev/null; then
         ENV_MANAGER="venv"
         log_info "Using venv for environment management"
     else
@@ -316,9 +328,9 @@ get_paddlepaddle_commands() {
 get_export_commands() {
     local has_gpu="$1"
     local commands=(
-        "pip install onnx==1.13.0"
+        "pip install 'onnx>=1.15.0'"
         "pip install onnxsim"
-        "pip install numpy==1.24.3"
+        "pip install 'numpy>=1.24.3'"
         "pip install PyYAML"
         "pip install tqdm"
         "pip install matplotlib"
@@ -381,7 +393,40 @@ create_environment() {
             conda create -y -p "$env_path" python="$PYTHON_VERSION"
             ;;
         "venv")
-            python3 -m venv "$env_path"
+            # Try to use specific python version
+            local python_cmd="python${PYTHON_VERSION}"
+            if ! command -v "$python_cmd" &> /dev/null; then
+                log_warning "$python_cmd not found, falling back to python3"
+                python_cmd="python3"
+            fi
+            
+            log_info "Using $python_cmd to create venv"
+            
+            # Try standard creation
+            if ! "$python_cmd" -m venv "$env_path"; then
+                log_warning "Standard venv creation failed (likely missing ensurepip). Retrying without pip..."
+                
+                # Try without pip
+                if "$python_cmd" -m venv --without-pip "$env_path"; then
+                    log_step "Bootstrapping pip..."
+                    local pip_script="/tmp/get-pip.py"
+                    if curl -sS https://bootstrap.pypa.io/get-pip.py -o "$pip_script"; then
+                        if "$env_path/bin/python" "$pip_script"; then
+                            log_success "Pip bootstrapped successfully"
+                            rm -f "$pip_script"
+                        else
+                            log_error "Failed to install pip via get-pip.py"
+                            exit 1
+                        fi
+                    else
+                        log_error "Failed to download get-pip.py"
+                        exit 1
+                    fi
+                else
+                    log_error "Failed to create environment even without pip"
+                    exit 1
+                fi
+            fi
             ;;
     esac
     
