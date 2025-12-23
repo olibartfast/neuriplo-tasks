@@ -64,4 +64,4 @@ These exported models can be used with:
 - OpenVINO
 - Custom inference implementations
 
-For Triton-specific deployment tools, see the parent inference engine repository.
+For Triton-specific deployment tools, see [tritonic](https://github.com/olibartfast/tritonic/tree/master/deploy) repository.
