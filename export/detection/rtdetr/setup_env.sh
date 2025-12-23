@@ -43,7 +43,6 @@ log_step() {
 }
 
 # Default values
-FRAMEWORK=""
 ENV_NAME=""
 PYTHON_VERSION="3.11"
 CUDA_VERSION="11.8"
@@ -59,15 +58,12 @@ RT-DETR Virtual Environment Setup Script
 
 DESCRIPTION:
     Create optimized virtual environments for RT-DETR export pipelines.
-    Supports both PyTorch and PaddlePaddle frameworks with export dependencies.
+    Supports PyTorch framework with export dependencies for RT-DETR v1, v2, v4.
 
 USAGE:
     $0 [OPTIONS]
 
-REQUIRED OPTIONS:
-    -f, --framework FRAMEWORK    Framework: pytorch or paddlepaddle
-
-OPTIONAL OPTIONS:
+OPTIONS:
     -n, --env-name NAME         Environment name (auto-generated if not specified)
     -p, --python-version VER    Python version (default: 3.11)
     -c, --cuda-version VER      CUDA version for GPU support (default: 11.8)
@@ -76,13 +72,6 @@ OPTIONAL OPTIONS:
     --no-extras                 Skip optional export tools installation
     --dry-run                   Show what would be installed without executing
     -h, --help                  Show this help message
-
-FRAMEWORKS:
-    pytorch      - PyTorch pipeline: PyTorch → ONNX → TensorRT
-                   Supports: RT-DETR v1, v2, v4, D-FINE, DEIM
-                   
-    paddlepaddle - PaddlePaddle pipeline: PaddlePaddle → ONNX → TensorRT
-                   Supports: RT-DETR v3
 
 PIPELINE COMPONENTS:
 
@@ -94,44 +83,29 @@ PyTorch Pipeline:
     ├── TensorRT Python bindings
     └── Export utilities
 
-PaddlePaddle Pipeline:
-    ├── PaddlePaddle (GPU version)
-    ├── Paddle2ONNX (conversion tool)
-    ├── ONNX & ONNX Runtime
-    ├── TensorRT Python bindings
-    └── Export utilities
-
 EXAMPLES:
-    # Create PyTorch environment with defaults
-    $0 --framework pytorch
+    # Create environment with defaults
+    $0
 
-    # Create PaddlePaddle environment with custom name
-    $0 --framework paddlepaddle --env-name rtdetr-paddle-v3
+    # Create with custom name
+    $0 --env-name my-rtdetr-env
 
     # Create with specific Python/CUDA versions
-    $0 --framework pytorch --python-version 3.10 --cuda-version 12.1
+    $0 --python-version 3.10 --cuda-version 12.1
 
     # Force recreate environment
-    $0 --framework pytorch --force
+    $0 --force
 
     # Dry run to see what would be installed
-    $0 --framework paddlepaddle --dry-run
+    $0 --dry-run
 
 ENVIRONMENT STRUCTURE:
     environments/
-    ├── pytorch/
-    │   ├── rtdetr-pytorch-py311-cuda118/
-    │   └── activation_scripts/
-    └── paddlepaddle/
-        ├── rtdetr-paddle-py311-cuda118/
-        └── activation_scripts/
+    └── rtdetr-py311-cuda118/
 
 USAGE AFTER SETUP:
-    # Activate PyTorch environment
-    source environments/pytorch/rtdetr-pytorch-py311-cuda118/bin/activate
-    
-    # Activate PaddlePaddle environment  
-    source environments/paddlepaddle/rtdetr-paddle-py311-cuda118/bin/activate
+    # Activate environment
+    source environments/rtdetr-py311-cuda118/bin/activate
 
 EOF
 }
@@ -140,10 +114,6 @@ EOF
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
         case $1 in
-            -f|--framework)
-                FRAMEWORK="$2"
-                shift 2
-                ;;
             -n|--env-name)
                 ENV_NAME="$2"
                 shift 2
@@ -187,23 +157,11 @@ parse_arguments() {
 
 # Validate arguments
 validate_arguments() {
-    if [[ -z "$FRAMEWORK" ]]; then
-        log_error "Framework is required. Use -f/--framework to specify."
-        echo "Supported frameworks: pytorch, paddlepaddle"
-        exit 1
-    fi
-
-    if [[ "$FRAMEWORK" != "pytorch" && "$FRAMEWORK" != "paddlepaddle" ]]; then
-        log_error "Unsupported framework: $FRAMEWORK"
-        echo "Supported frameworks: pytorch, paddlepaddle"
-        exit 1
-    fi
-
     # Generate environment name if not provided
     if [[ -z "$ENV_NAME" ]]; then
         local python_short=$(echo "$PYTHON_VERSION" | tr -d '.')
         local cuda_short=$(echo "$CUDA_VERSION" | tr -d '.')
-        ENV_NAME="rtdetr-${FRAMEWORK}-py${python_short}-cuda${cuda_short}"
+        ENV_NAME="rtdetr-py${python_short}-cuda${cuda_short}"
     fi
 }
 
@@ -303,26 +261,6 @@ get_pytorch_commands() {
     printf '%s\n' "${commands[@]}"
 }
 
-# Get PaddlePaddle installation commands  
-get_paddlepaddle_commands() {
-    local cuda_version="$1"
-    local has_gpu="$2"
-    local commands=()
-    
-    # Install PaddlePaddle based on GPU availability
-    if [[ "$has_gpu" == "true" ]]; then
-        commands+=("pip install paddlepaddle-gpu")
-    else
-        commands+=("pip install paddlepaddle")
-    fi
-    
-    commands+=(
-        "pip install paddle2onnx==1.3.1"
-        "pip install paddleslim"
-    )
-    
-    printf '%s\n' "${commands[@]}"
-}
 
 # Get common export dependencies
 get_export_commands() {
@@ -330,7 +268,7 @@ get_export_commands() {
     local commands=(
         "pip install 'onnx>=1.15.0'"
         "pip install onnxsim"
-        "pip install 'numpy>=1.24.3'"
+        "pip install 'numpy<2.0'"
         "pip install PyYAML"
         "pip install tqdm"
         "pip install matplotlib"
@@ -360,14 +298,13 @@ get_export_commands() {
     printf '%s\n' "${commands[@]}"
 }
 
+
 # Create environment
 create_environment() {
-    local framework="$1"
-    local env_name="$2"
-    local framework_dir="$OUTPUT_DIR/$framework"
-    local env_path="$framework_dir/$env_name"
+    local env_name="$1"
+    local env_path="$OUTPUT_DIR/$env_name"
     
-    mkdir -p "$framework_dir"
+    mkdir -p "$OUTPUT_DIR"
     
     # Check if environment exists
     if [[ -d "$env_path" ]]; then
@@ -435,17 +372,16 @@ create_environment() {
 
 # Install packages
 install_packages() {
-    local framework="$1"
-    local env_name="$2"
-    local env_path="$OUTPUT_DIR/$framework/$env_name"
+    local env_name="$1"
+    local env_path="$OUTPUT_DIR/$env_name"
     
     if [[ "$DRY_RUN" == true ]]; then
         log_info "DRY RUN: Would install packages in $env_path"
-        show_installation_plan "$framework"
+        show_installation_plan
         return
     fi
     
-    log_step "Installing packages for $framework pipeline"
+    log_step "Installing packages for PyTorch pipeline"
     
     # Activate environment
     case "$ENV_MANAGER" in
@@ -464,23 +400,12 @@ install_packages() {
     # Check GPU availability
     local has_gpu=$(check_gpu_availability)
     
-    # Install framework-specific packages
-    case "$framework" in
-        "pytorch")
-            log_info "Installing PyTorch pipeline dependencies..."
-            while IFS= read -r cmd; do
-                log_info "Running: $cmd"
-                eval "$cmd"
-            done < <(get_pytorch_commands "$CUDA_VERSION" "$has_gpu")
-            ;;
-        "paddlepaddle")
-            log_info "Installing PaddlePaddle pipeline dependencies..."
-            while IFS= read -r cmd; do
-                log_info "Running: $cmd"
-                eval "$cmd"
-            done < <(get_paddlepaddle_commands "$CUDA_VERSION" "$has_gpu")
-            ;;
-    esac
+    # Install PyTorch pipeline dependencies
+    log_info "Installing PyTorch pipeline dependencies..."
+    while IFS= read -r cmd; do
+        log_info "Running: $cmd"
+        eval "$cmd"
+    done < <(get_pytorch_commands "$CUDA_VERSION" "$has_gpu")
     
     # Install common export dependencies
     log_info "Installing export dependencies..."
@@ -494,22 +419,14 @@ install_packages() {
 
 # Show installation plan for dry run
 show_installation_plan() {
-    local framework="$1"
     local has_gpu=$(check_gpu_availability)
     
     echo
-    log_info "Installation Plan for $framework Pipeline:"
+    log_info "Installation Plan for PyTorch Pipeline:"
     echo
     
-    echo "Framework-specific packages:"
-    case "$framework" in
-        "pytorch")
-            get_pytorch_commands "$CUDA_VERSION" "$has_gpu" | grep -E '^pip install' | sed 's/^/  /'
-            ;;
-        "paddlepaddle")
-            get_paddlepaddle_commands "$CUDA_VERSION" "$has_gpu" | grep -E '^pip install' | sed 's/^/  /'
-            ;;
-    esac
+    echo "PyTorch packages:"
+    get_pytorch_commands "$CUDA_VERSION" "$has_gpu" | grep -E '^pip install' | sed 's/^/  /'
     
     echo
     echo "Export dependencies:"
@@ -519,11 +436,9 @@ show_installation_plan() {
 
 # Create activation script
 create_activation_script() {
-    local framework="$1"
-    local env_name="$2"
-    local framework_dir="$OUTPUT_DIR/$framework"
-    local env_path="$framework_dir/$env_name"
-    local scripts_dir="$framework_dir/activation_scripts"
+    local env_name="$1"
+    local env_path="$OUTPUT_DIR/$env_name"
+    local scripts_dir="$OUTPUT_DIR/activation_scripts"
     
     mkdir -p "$scripts_dir"
     
@@ -536,7 +451,7 @@ create_activation_script() {
     
     cat > "$script_path" << EOF
 #!/bin/bash
-# RT-DETR $framework Environment Activation Script
+# RT-DETR Environment Activation Script
 # Generated on $(date)
 
 # Colors for output
@@ -544,39 +459,29 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "\${BLUE}[INFO]\${NC} Activating RT-DETR $framework environment: $env_name"
+echo -e "\${BLUE}[INFO]\${NC} Activating RT-DETR environment: $env_name"
 
 # Activate environment
 source "$env_path/bin/activate"
 
 # Set environment variables
-export RTDETR_FRAMEWORK="$framework"
 export RTDETR_ENV_NAME="$env_name"
 export RTDETR_ENV_PATH="$env_path"
 
 # Show environment info
 echo -e "\${GREEN}[SUCCESS]\${NC} Environment activated!"
-echo "  Framework: $framework"
 echo "  Environment: $env_name"
 echo "  Python: \$(python --version)"
 echo "  Location: $env_path"
 echo
 
 # Show pipeline info
-case "$framework" in
-    "pytorch")
-        echo "PyTorch Pipeline: PyTorch → ONNX → TensorRT"
-        echo "Supported models: RT-DETR v1, v2, v4, D-FINE, DEIM"
-        ;;
-    "paddlepaddle")
-        echo "PaddlePaddle Pipeline: PaddlePaddle → ONNX → TensorRT"
-        echo "Supported models: RT-DETR v3"
-        ;;
-esac
+echo "PyTorch Pipeline: PyTorch → ONNX → TensorRT"
+echo "Supported models: RT-DETR v1, v2, v4, D-FINE, DEIM"
 echo
 
 echo "Usage:"
-echo "  Export models: ./export.sh --framework $framework ..."
+echo "  Export models: ./export.sh ..."
 echo "  Deactivate: deactivate"
 echo
 EOF
@@ -588,9 +493,8 @@ EOF
 
 # Create environment info file
 create_env_info() {
-    local framework="$1" 
-    local env_name="$2"
-    local env_path="$OUTPUT_DIR/$framework/$env_name"
+    local env_name="$1"
+    local env_path="$OUTPUT_DIR/$env_name"
     
     if [[ "$DRY_RUN" == true ]]; then
         return
@@ -602,7 +506,6 @@ create_env_info() {
 # RT-DETR Environment Information
 # Generated on $(date)
 
-framework=$framework
 env_name=$env_name
 python_version=$PYTHON_VERSION
 cuda_version=$CUDA_VERSION
@@ -610,17 +513,10 @@ created_date=$(date -Iseconds)
 extras_installed=$INSTALL_EXTRAS
 
 # Pipeline
-pipeline_type=${framework}_to_onnx_to_tensorrt
+pipeline_type=pytorch_to_onnx_to_tensorrt
 
 # Supported models
-$(case "$framework" in
-    "pytorch")
-        echo "supported_models=v1,v2,v4,dfine,deim"
-        ;;
-    "paddlepaddle")
-        echo "supported_models=v3"
-        ;;
-esac)
+supported_models=v1,v2,v4,dfine,deim
 EOF
 
     log_info "Environment info created: $info_file"
@@ -628,17 +524,14 @@ EOF
 
 # Show final summary
 show_summary() {
-    local framework="$1"
-    local env_name="$2"
-    local framework_dir="$OUTPUT_DIR/$framework" 
-    local env_path="$framework_dir/$env_name"
-    local script_path="$framework_dir/activation_scripts/activate_${env_name}.sh"
+    local env_name="$1"
+    local env_path="$OUTPUT_DIR/$env_name"
+    local script_path="$OUTPUT_DIR/activation_scripts/activate_${env_name}.sh"
     
     echo
     log_success "Environment setup completed!"
     echo
     log_info "Environment Details:"
-    echo "  Framework: $framework"
     echo "  Name: $env_name"
     echo "  Location: $env_path"
     echo "  Python: $PYTHON_VERSION"
@@ -653,17 +546,8 @@ show_summary() {
     log_info "Next Steps:"
     echo "  1. Activate environment: source $script_path"
     echo "  2. Clone repository: ./clone_repo.sh --version [VERSION]"
-    echo "  3. Export model: ./export.sh --framework $framework ..."
-    echo
-    
-    case "$framework" in
-        "pytorch")
-            echo "  Supported versions: v1, v2, v4, dfine, deim"
-            ;;
-        "paddlepaddle") 
-            echo "  Supported versions: v3"
-            ;;
-    esac
+    echo "  3. Export model: ./export.sh ..."
+    echo "  Supported versions: v1, v2, v4, dfine, deim"
     echo
 }
 
@@ -685,7 +569,6 @@ main() {
     check_dependencies
     
     log_info "Setup Configuration:"
-    echo "  Framework: $FRAMEWORK"
     echo "  Environment: $ENV_NAME"
     echo "  Python: $PYTHON_VERSION"
     echo "  CUDA: $CUDA_VERSION"
@@ -695,18 +578,18 @@ main() {
     
     if [[ "$DRY_RUN" == true ]]; then
         log_warning "DRY RUN MODE - No changes will be made"
-        show_installation_plan "$FRAMEWORK"
+        show_installation_plan
         exit 0
     fi
     
     # Create and setup environment
-    create_environment "$FRAMEWORK" "$ENV_NAME"
-    install_packages "$FRAMEWORK" "$ENV_NAME"
-    create_activation_script "$FRAMEWORK" "$ENV_NAME"
-    create_env_info "$FRAMEWORK" "$ENV_NAME"
+    create_environment "$ENV_NAME"
+    install_packages "$ENV_NAME"
+    create_activation_script "$ENV_NAME"
+    create_env_info "$ENV_NAME"
     
     # Show summary
-    show_summary "$FRAMEWORK" "$ENV_NAME"
+    show_summary "$ENV_NAME"
 }
 
 # Execute main function

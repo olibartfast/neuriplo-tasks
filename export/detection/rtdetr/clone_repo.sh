@@ -3,7 +3,7 @@
 # RT-DETR Repository Cloning Script
 # 
 # This script clones the appropriate RT-DETR repository based on version
-# and sets up the directory structure for export pipelines.
+# for export pipelines.
 #
 # Usage:
 #   cd vision-core
@@ -47,7 +47,6 @@ BRANCH=""
 declare -A REPO_URLS=(
     ["v1"]="https://github.com/lyuwenyu/RT-DETR.git"
     ["v2"]="https://github.com/lyuwenyu/RT-DETR.git"
-    ["v3"]="https://github.com/clxia12/RT-DETRv3.git"
     ["v4"]="https://github.com/RT-DETRs/RT-DETRv4.git"
     ["dfine"]="https://github.com/Peterande/D-FINE.git"
     ["deim"]="https://github.com/Intellindust-AI-Lab/DEIM.git"
@@ -56,20 +55,11 @@ declare -A REPO_URLS=(
 declare -A REPO_NAMES=(
     ["v1"]="RT-DETR"
     ["v2"]="RT-DETR"
-    ["v3"]="RT-DETRv3"
     ["v4"]="RT-DETRv4"
     ["dfine"]="D-FINE"
     ["deim"]="DEIM"
 )
 
-declare -A FRAMEWORKS=(
-    ["v1"]="pytorch"
-    ["v2"]="pytorch"
-    ["v3"]="paddlepaddle"
-    ["v4"]="pytorch"
-    ["dfine"]="pytorch"
-    ["deim"]="pytorch"
-)
 
 # Help function
 show_help() {
@@ -77,14 +67,14 @@ show_help() {
 RT-DETR Repository Cloning Script
 
 DESCRIPTION:
-    Clone RT-DETR repositories with proper directory structure for export pipelines.
-    Supports both PyTorch-based and PaddlePaddle-based versions.
+    Clone RT-DETR repositories for export pipelines.
+    Supports PyTorch-based versions (v1, v2, v4, dfine, deim).
 
 USAGE:
     $0 [OPTIONS]
 
 REQUIRED OPTIONS:
-    -v, --version VERSION   RT-DETR version to clone: v1, v2, v3, v4, dfine, deim
+    -v, --version VERSION   RT-DETR version to clone: v1, v2, v4, dfine, deim
 
 OPTIONAL OPTIONS:
     -o, --output-dir PATH   Output directory for repositories (default: ./repositories)
@@ -96,7 +86,6 @@ OPTIONAL OPTIONS:
 SUPPORTED VERSIONS:
     v1    - RT-DETR v1 (PyTorch)     - github.com/lyuwenyu/RT-DETR
     v2    - RT-DETR v2 (PyTorch)     - github.com/lyuwenyu/RT-DETR
-    v3    - RT-DETR v3 (PaddlePaddle) - github.com/clxia12/RT-DETRv3
     v4    - RT-DETR v4 (PyTorch)     - github.com/RT-DETRs/RT-DETRv4
     dfine - D-FINE (PyTorch)         - github.com/Peterande/D-FINE
     deim  - DEIM (PyTorch)           - github.com/Intellindust-AI-Lab/DEIM
@@ -105,8 +94,8 @@ EXAMPLES:
     # Clone RT-DETRv4 to default location
     $0 --version v4
 
-    # Clone RT-DETRv3 (PaddlePaddle) to custom directory
-    $0 --version v3 --output-dir /workspace/models
+    # Clone RT-DETR to custom directory
+    $0 --version v2 --output-dir /workspace/models
 
     # Force clone with full history
     $0 --version v2 --force --full-clone
@@ -118,13 +107,10 @@ OUTPUT STRUCTURE:
     The script creates organized directories:
     
     repositories/
-    ├── pytorch/           # PyTorch-based models (v1, v2, v4, dfine, deim)
-    │   ├── RT-DETR/       # v1, v2
-    │   ├── RT-DETRv4/     # v4
-    │   ├── D-FINE/        # dfine
-    │   └── DEIM/          # deim
-    └── paddlepaddle/      # PaddlePaddle-based models (v3)
-        └── RT-DETRv3/     # v3
+    ├── RT-DETR/       # v1, v2
+    ├── RT-DETRv4/     # v4
+    ├── D-FINE/        # dfine
+    └── DEIM/          # deim
 
 EOF
 }
@@ -170,13 +156,13 @@ parse_arguments() {
 validate_arguments() {
     if [[ -z "$VERSION" ]]; then
         log_error "Version is required. Use -v/--version to specify."
-        echo "Supported versions: v1, v2, v3, v4, dfine, deim"
+        echo "Supported versions: v1, v2, v4, dfine, deim"
         exit 1
     fi
 
     if [[ -z "${REPO_URLS[$VERSION]}" ]]; then
         log_error "Unsupported version: $VERSION"
-        echo "Supported versions: v1, v2, v3, v4, dfine, deim"
+        echo "Supported versions: v1, v2, v4, dfine, deim"
         exit 1
     fi
 }
@@ -194,18 +180,15 @@ clone_repository() {
     local version="$1"
     local repo_url="${REPO_URLS[$version]}"
     local repo_name="${REPO_NAMES[$version]}"
-    local framework="${FRAMEWORKS[$version]}"
     
-    # Create framework-specific directory structure
-    local framework_dir="$OUTPUT_DIR/$framework"
-    local target_dir="$framework_dir/$repo_name"
+    # Create target directory directly in output directory
+    local target_dir="$OUTPUT_DIR/$repo_name"
     
-    log_info "Framework: $framework"
     log_info "Repository: $repo_url"
     log_info "Target directory: $target_dir"
     
-    # Create framework directory
-    mkdir -p "$framework_dir"
+    # Create output directory
+    mkdir -p "$OUTPUT_DIR"
     
     # Check if directory already exists
     if [[ -d "$target_dir" ]]; then
