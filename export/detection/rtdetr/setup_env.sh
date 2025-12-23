@@ -6,9 +6,10 @@
 # Supports both PyTorch-based and PaddlePaddle-based workflows.
 #
 # Usage:
-#   ./setup_env.sh --framework pytorch --env-name rtdetr-pytorch
-#   ./setup_env.sh --framework paddlepaddle --env-name rtdetr-paddle
-#   ./setup_env.sh --help
+#   cd vision-core
+#   export/detection/rtdetr/setup_env.sh --framework pytorch --env-name rtdetr-pytorch  --output-dir ./environments
+#   export/detection/rtdetr/setup_env.sh --framework paddlepaddle --env-name rtdetr-paddle --output-dir ./environments
+#   export/detection/rtdetr/setup_env.sh --help for more information.
 
 set -e  # Exit on any error
 
