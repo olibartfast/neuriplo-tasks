@@ -228,7 +228,7 @@ clone_repository() {
         echo
         log_info "Repository Information:"
         echo "  Version: $version"
-        echo "  Framework: $framework"
+        echo "  Framework: PyTorch"
         echo "  Name: $repo_name"
         echo "  URL: $repo_url"
         echo "  Path: $target_dir"
@@ -244,7 +244,7 @@ clone_repository() {
         fi
         
         # Create info file
-        create_info_file "$target_dir" "$version" "$framework" "$repo_url"
+        create_info_file "$target_dir" "$version" "pytorch" "$repo_url"
         
     else
         log_error "Failed to clone repository"
@@ -284,24 +284,18 @@ list_repositories() {
     fi
     
     log_info "Existing repositories in $OUTPUT_DIR:"
+    echo
     
-    for framework in pytorch paddlepaddle; do
-        local framework_dir="$OUTPUT_DIR/$framework"
-        if [[ -d "$framework_dir" ]]; then
-            echo
-            echo "  $framework/"
-            for repo_dir in "$framework_dir"/*; do
-                if [[ -d "$repo_dir" ]]; then
-                    local repo_name=$(basename "$repo_dir")
-                    local info_file="$repo_dir/.rtdetr_info"
-                    if [[ -f "$info_file" ]]; then
-                        local version=$(grep "^version=" "$info_file" | cut -d'=' -f2)
-                        echo "    ├── $repo_name (version: $version)"
-                    else
-                        echo "    ├── $repo_name"
-                    fi
-                fi
-            done
+    for repo_dir in "$OUTPUT_DIR"/*; do
+        if [[ -d "$repo_dir" ]]; then
+            local repo_name=$(basename "$repo_dir")
+            local info_file="$repo_dir/.rtdetr_info"
+            if [[ -f "$info_file" ]]; then
+                local version=$(grep "^version=" "$info_file" | cut -d'=' -f2)
+                echo "  ├── $repo_name (version: $version)"
+            else
+                echo "  ├── $repo_name"
+            fi
         fi
     done
     echo
@@ -337,8 +331,8 @@ main() {
     log_success "Repository setup complete!"
     echo
     log_info "Next steps:"
-    echo "  1. cd vision-core && export/detection/rtdetr/setup_env.sh --framework ${FRAMEWORKS[$VERSION]}"
-    echo "  2. Run export: export/detection/rtdetr/export.sh --repo-dir $OUTPUT_DIR/${FRAMEWORKS[$VERSION]}/${REPO_NAMES[$VERSION]}"
+    echo "  1. cd vision-core && export/detection/rtdetr/setup_env.sh"
+    echo "  2. Run export: export/detection/rtdetr/export.sh --repo-dir $OUTPUT_DIR/${REPO_NAMES[$VERSION]}"
 }
 
 # Execute main function
