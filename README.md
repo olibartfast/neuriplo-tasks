@@ -126,10 +126,11 @@ target_link_libraries(your_target vision-core::vision-core)
 The TaskFactory supports the following model type strings:
 
 **Object Detection:**
-- `"yolo"`, `"yolov7e2e"`, `"yolov10"`, `"yolov4"` - YOLO variants
+
+- `"yolo"`, `"yolov7e2e"`, `"yolov10"`, `"yolov4"` - YOLO-based variants
 - `"yolonas"` - YOLO-NAS
-- `"rtdetr"` - RT-DETR variants (i.e. RT-DETR v1-v4, D-FINE, DEIM v1/v2)
-- `"rtdetrul"` - RT-DETR Ultralytics variant
+- `"rtdetr"` - RT-DETR family (RT-DETR v1, v2, and v4; excludes v3; includes D-FINE and DEIM v1/v2)
+- `"rtdetrul"` - RT-DETR (Ultralytics implementation)
 - `"rfdetr"` - RF-DETR
 
 **Instance Segmentation:**
