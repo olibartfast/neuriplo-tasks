@@ -33,6 +33,8 @@ Each subdirectory contains:
 ### Quick Start Examples
 
 ```bash
+cd /path/to/vision-core
+
 # Export YOLO model
 python export/detection/yolo/export.py --model yolov8n.pt --format onnx
 
