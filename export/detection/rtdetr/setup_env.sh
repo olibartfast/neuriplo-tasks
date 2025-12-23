@@ -234,58 +234,107 @@ check_dependencies() {
     fi
 }
 
+# Check GPU availability
+check_gpu_availability() {
+    local has_gpu=false
+    
+    # Check for nvidia-smi command and NVIDIA GPUs
+    if command -v nvidia-smi &> /dev/null; then
+        if nvidia-smi &> /dev/null; then
+            local gpu_count=$(nvidia-smi -L 2>/dev/null | wc -l)
+            if [[ "$gpu_count" -gt 0 ]]; then
+                has_gpu=true
+                log_info "NVIDIA GPU detected: $gpu_count GPU(s) available"
+            fi
+        fi
+    fi
+    
+    # Check for CUDA toolkit
+    if [[ "$has_gpu" == true ]] && command -v nvcc &> /dev/null; then
+        local cuda_ver=$(nvcc --version | grep -oP "release \K[0-9]+\.[0-9]+" || echo "unknown")
+        log_info "CUDA toolkit detected: version $cuda_ver"
+    fi
+    
+    if [[ "$has_gpu" == false ]]; then
+        log_warning "No NVIDIA GPU detected - will install CPU versions"
+    fi
+    
+    echo "$has_gpu"
+}
+
 # Get PyTorch installation commands
 get_pytorch_commands() {
     local cuda_version="$1"
+    local has_gpu="$2"
     local commands=()
     
-    # Convert CUDA version for PyTorch index
-    local torch_cuda
-    case "$cuda_version" in
-        "11.8") torch_cuda="cu118" ;;
-        "12.1") torch_cuda="cu121" ;;
-        "12.4") torch_cuda="cu124" ;;
-        *) torch_cuda="cu118" ;;  # default
-    esac
+    # Install PyTorch based on GPU availability
+    if [[ "$has_gpu" == "true" ]]; then
+        # Convert CUDA version for PyTorch index
+        local torch_cuda
+        case "$cuda_version" in
+            "11.8") torch_cuda="cu118" ;;
+            "12.1") torch_cuda="cu121" ;;
+            "12.4") torch_cuda="cu124" ;;
+            *) torch_cuda="cu118" ;;  # default
+        esac
+        commands+=("pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/$torch_cuda")
+    else
+        commands+=("pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu")
+    fi
     
     commands+=(
-        "pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/$torch_cuda"
         "pip install transformers timm"
         "pip install opencv-python pillow"
     )
     
-    echo "${commands[@]}"
+    printf '%s\n' "${commands[@]}"
 }
 
 # Get PaddlePaddle installation commands  
 get_paddlepaddle_commands() {
     local cuda_version="$1"
+    local has_gpu="$2"
     local commands=()
     
-    # PaddlePaddle GPU version
+    # Install PaddlePaddle based on GPU availability
+    if [[ "$has_gpu" == "true" ]]; then
+        commands+=("pip install paddlepaddle-gpu")
+    else
+        commands+=("pip install paddlepaddle")
+    fi
+    
     commands+=(
-        "pip install paddlepaddle-gpu"
-        "pip install paddle2onnx==1.0.5"
+        "pip install paddle2onnx==1.3.1"
         "pip install paddleslim"
     )
     
-    echo "${commands[@]}"
+    printf '%s\n' "${commands[@]}"
 }
 
 # Get common export dependencies
 get_export_commands() {
+    local has_gpu="$1"
     local commands=(
         "pip install onnx==1.13.0"
-        "pip install onnxruntime-gpu"
         "pip install onnxsim"
-        "pip install tensorrt"
-        "pip install pycuda"
         "pip install numpy==1.24.3"
         "pip install PyYAML"
         "pip install tqdm"
         "pip install matplotlib"
         "pip install pycocotools"
     )
+    
+    # Install GPU or CPU version of onnxruntime based on availability
+    if [[ "$has_gpu" == "true" ]]; then
+        commands+=(
+            "pip install onnxruntime-gpu"
+            "pip install tensorrt"
+            "pip install pycuda"
+        )
+    else
+        commands+=("pip install onnxruntime")
+    fi
     
     if [[ "$INSTALL_EXTRAS" == true ]]; then
         commands+=(
@@ -296,7 +345,7 @@ get_export_commands() {
         )
     fi
     
-    echo "${commands[@]}"
+    printf '%s\n' "${commands[@]}"
 }
 
 # Create environment
@@ -367,33 +416,33 @@ install_packages() {
     log_info "Upgrading pip..."
     python -m pip install --upgrade pip
     
+    # Check GPU availability
+    local has_gpu=$(check_gpu_availability)
+    
     # Install framework-specific packages
     case "$framework" in
         "pytorch")
             log_info "Installing PyTorch pipeline dependencies..."
-            local pytorch_cmds=($(get_pytorch_commands "$CUDA_VERSION"))
-            for cmd in "${pytorch_cmds[@]}"; do
+            while IFS= read -r cmd; do
                 log_info "Running: $cmd"
                 eval "$cmd"
-            done
+            done < <(get_pytorch_commands "$CUDA_VERSION" "$has_gpu")
             ;;
         "paddlepaddle")
             log_info "Installing PaddlePaddle pipeline dependencies..."
-            local paddle_cmds=($(get_paddlepaddle_commands "$CUDA_VERSION"))
-            for cmd in "${paddle_cmds[@]}"; do
+            while IFS= read -r cmd; do
                 log_info "Running: $cmd"
                 eval "$cmd"
-            done
+            done < <(get_paddlepaddle_commands "$CUDA_VERSION" "$has_gpu")
             ;;
     esac
     
     # Install common export dependencies
     log_info "Installing export dependencies..."
-    local export_cmds=($(get_export_commands))
-    for cmd in "${export_cmds[@]}"; do
+    while IFS= read -r cmd; do
         log_info "Running: $cmd"
         eval "$cmd"
-    done
+    done < <(get_export_commands "$has_gpu")
     
     log_success "Package installation completed"
 }
@@ -401,6 +450,7 @@ install_packages() {
 # Show installation plan for dry run
 show_installation_plan() {
     local framework="$1"
+    local has_gpu=$(check_gpu_availability)
     
     echo
     log_info "Installation Plan for $framework Pipeline:"
@@ -409,16 +459,16 @@ show_installation_plan() {
     echo "Framework-specific packages:"
     case "$framework" in
         "pytorch")
-            get_pytorch_commands "$CUDA_VERSION" | tr ' ' '\n' | grep -E '^pip install' | sed 's/^/  /'
+            get_pytorch_commands "$CUDA_VERSION" "$has_gpu" | grep -E '^pip install' | sed 's/^/  /'
             ;;
         "paddlepaddle")
-            get_paddlepaddle_commands "$CUDA_VERSION" | tr ' ' '\n' | grep -E '^pip install' | sed 's/^/  /'
+            get_paddlepaddle_commands "$CUDA_VERSION" "$has_gpu" | grep -E '^pip install' | sed 's/^/  /'
             ;;
     esac
     
     echo
     echo "Export dependencies:"
-    get_export_commands | tr ' ' '\n' | grep -E '^pip install' | sed 's/^/  /'
+    get_export_commands "$has_gpu" | grep -E '^pip install' | sed 's/^/  /'
     echo
 }
 
