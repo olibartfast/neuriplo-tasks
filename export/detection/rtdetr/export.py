@@ -2,7 +2,7 @@
 """
 RT-DETR Universal Model Export Script
 
-Export RT-DETR models (v1, v2, v3, v4) to ONNX and TensorRT formats for deployment.
+Export RT-DETR models (v1, v2, v4) to ONNX and TensorRT formats for deployment.
 Supports all RT-DETR model variants and versions including DEIM and D-FINE.
 Can automatically download model weights for supported RT-DETRv4 configs.
 
@@ -18,7 +18,6 @@ Usage:
     
     # Other RT-DETR versions
     python export.py --config configs/rtv2/rtv2_r50_coco.yml --checkpoint model.pth --format tensorrt
-    python export.py --config configs/rtdetrv3/rtdetrv3_r18vd_6x_coco.yml --checkpoint model.pdparams --format onnx
     python export.py --config configs/dfine/dfine_hgnetv2_l_coco.yml --checkpoint model.pth --format both
 """
 
@@ -73,7 +72,7 @@ def check_virtual_environment():
 
 
 class RTDETRExporter:
-    """Universal RT-DETR model exporter for ONNX and TensorRT formats (v1/v2/v3/v4)."""
+    """Universal RT-DETR model exporter for ONNX and TensorRT formats (v1/v2/v4)."""
     
     def __init__(self, config_path: str, checkpoint_path: str, output_dir: str = "./exported_models", repo_dir: str = ".", version: str = "v4"):
         self.config_path = config_path
@@ -91,9 +90,6 @@ class RTDETRExporter:
         if not self.repo_dir.exists():
             raise FileNotFoundError(f"Repository directory not found: {repo_dir}")
     
-    def _is_paddlepaddle_version(self) -> bool:
-        """Check if this is a PaddlePaddle-based RT-DETR version (v3)."""
-        return self.version == 'v3'
     
     def _patch_export_batch_size(self):
         """Runtime patch to fix hardcoded batch size 32 -> 1 in export_onnx.py to prevent OOM."""
@@ -162,10 +158,7 @@ class RTDETRExporter:
         config_name = Path(self.config_path).stem
         onnx_path = self.output_dir / f"{config_name}.onnx"
         
-        if self._is_paddlepaddle_version():
-            return self._export_onnx_v3(onnx_path)
-        else:
-            return self._export_onnx_pytorch(onnx_path, check_model, simplify)
+        return self._export_onnx_pytorch(onnx_path, check_model, simplify)
     
     def _export_onnx_pytorch(self, onnx_path: Path, check_model: bool, simplify: bool) -> str:
         """Export ONNX for PyTorch-based RT-DETR versions (v1, v2, v4)."""
@@ -178,7 +171,7 @@ class RTDETRExporter:
         
         # Build export command
         cmd = [
-            "python", "tools/deployment/export_onnx.py",
+            sys.executable, "tools/deployment/export_onnx.py",
             "--config", str(abs_config_path),
             "--resume", str(abs_checkpoint_path)
         ]
@@ -215,57 +208,6 @@ class RTDETRExporter:
         except subprocess.CalledProcessError as e:
             logger.error(f"ONNX export failed: {e.stderr}")
             raise RuntimeError(f"ONNX export failed: {e}")
-        finally:
-            os.chdir(original_dir)
-    
-    def _export_onnx_v3(self, onnx_path: Path) -> str:
-        """Export ONNX for RT-DETRv3 (PaddlePaddle-based) - Two-step process."""
-        logger.info("RT-DETRv3 uses PaddlePaddle - performing two-step export process...")
-        
-        # Step 1: Export PaddlePaddle model
-        inference_dir = self.output_dir / "paddle_inference"
-        inference_dir.mkdir(exist_ok=True)
-        
-        cmd1 = [
-            "python", "tools/export_model.py",
-            "-c", self.config_path,
-            "-o", f"weights={self.checkpoint_path}",
-            "trt=True",
-            f"--output_dir={inference_dir}"
-        ]
-        
-        try:
-            # Change to repository directory and run export command
-            original_dir = os.getcwd()
-            os.chdir(self.repo_dir)
-            
-            result1 = subprocess.run(cmd1, capture_output=True, text=True, check=True)
-            logger.info("PaddlePaddle model export successful")
-            
-            # Step 2: Convert to ONNX using paddle2onnx
-            config_name = Path(self.config_path).stem
-            model_dir = inference_dir / config_name
-            cmd2 = [
-                "paddle2onnx",
-                f"--model_dir={model_dir}",
-                "--model_filename=model.pdmodel",
-                "--params_filename=model.pdiparams",
-                "--opset_version=16",
-                f"--save_file={onnx_path}"
-            ]
-            
-            result2 = subprocess.run(cmd2, capture_output=True, text=True, check=True)
-            logger.info(f"ONNX conversion successful: {onnx_path}")
-            logger.info("Note: Make sure paddle2onnx is installed (pip install paddle2onnx==1.0.5)")
-            
-            return str(onnx_path)
-            
-        except subprocess.CalledProcessError as e:
-            logger.error(f"RT-DETRv3 export failed: {e.stderr}")
-            logger.error("Make sure PaddlePaddle and paddle2onnx are installed:")
-            logger.error("pip install paddlepaddle-gpu")
-            logger.error("pip install paddle2onnx==1.0.5")
-            raise RuntimeError(f"RT-DETRv3 export failed: {e}")
         finally:
             os.chdir(original_dir)
     
@@ -328,7 +270,7 @@ class RTDETRExporter:
         
         if format_type.lower() == "tensorrt" and coco_dir:
             cmd = [
-                "python", "tools/benchmark/trt_benchmark.py",
+                sys.executable, "tools/benchmark/trt_benchmark.py",
                 "--COCO_dir", coco_dir,
                 "--engine_dir", model_path
             ]
@@ -357,8 +299,6 @@ def detect_rtdetr_version(config_path: str) -> str:
     # Check for version indicators in path
     if 'rtv4' in config_str or 'rt-detrv4' in config_str:
         return 'v4'
-    elif 'rtv3' in config_str or 'rt-detrv3' in config_str or 'rtdetrv3' in config_str:
-        return 'v3'
     elif 'rtv2' in config_str or 'rt-detrv2' in config_str:
         return 'v2'
     elif 'dfine' in config_str or 'd-fine' in config_str:
@@ -378,7 +318,6 @@ def get_repo_info(version: str) -> tuple:
     repo_configs = {
         'v1': ('https://github.com/lyuwenyu/RT-DETR.git', 'RT-DETR'),
         'v2': ('https://github.com/lyuwenyu/RT-DETR.git', 'RT-DETR'), 
-        'v3': ('https://github.com/clxia12/RT-DETRv3.git', 'RT-DETRv3'),
         'v4': ('https://github.com/RT-DETRs/RT-DETRv4.git', 'RT-DETRv4'),
         'dfine': ('https://github.com/Peterande/D-FINE.git', 'D-FINE'),
         'deim': ('https://github.com/Intellindust-AI-Lab/DEIM.git', 'DEIM')
@@ -447,7 +386,7 @@ def get_model_info(config_path: str, repo_dir: str = "."):
         os.chdir(repo_dir)
         
         cmd = [
-            "python", "tools/benchmark/get_info.py",
+            sys.executable, "tools/benchmark/get_info.py",
             "-c", config_path
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)
@@ -481,7 +420,7 @@ def get_model_weights_info() -> dict:
             'url': 'https://drive.usercontent.google.com/download?id=19gnkMTgFveJsrOvSmEPQXCTG6v9oQHN3&export=download&confirm=t',
             'filename': 'rtv4_hgnetv2_x_model.pth',
             'size': '161M'
-        }
+        },
     }
 
 
@@ -540,7 +479,7 @@ def download_model_weights(config_path: str, output_dir: str = ".") -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Export RT-DETR models (v1/v2/v3/v4) to ONNX/TensorRT")
+    parser = argparse.ArgumentParser(description="Export RT-DETR models (v1/v2/v4) to ONNX/TensorRT")
     
     # Required arguments
     parser.add_argument("-c", "--config", required=True, help="Path to model config file")
@@ -586,7 +525,7 @@ def main():
                        help="Clone appropriate RT-DETR repository if it doesn't exist")
     parser.add_argument("--install-deps", action="store_true",
                        help="Install RT-DETR dependencies")
-    parser.add_argument("--version", choices=['v1', 'v2', 'v3', 'v4', 'dfine', 'deim'],
+    parser.add_argument("--version", choices=['v1', 'v2', 'v4', 'dfine', 'deim'],
                        help="RT-DETR version (auto-detected from config if not specified)")
     
     # Model weights

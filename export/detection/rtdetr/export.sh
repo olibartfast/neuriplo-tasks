@@ -50,7 +50,7 @@ show_help() {
 RT-DETR Universal Export Launcher
 
 DESCRIPTION:
-    Launch RT-DETR model export for all versions (v1, v2, v3, v4) with support for
+    Launch RT-DETR model export for all versions (v1, v2, v4) with support for
     ONNX and TensorRT formats. Handles automatic repository cloning and dependency
     installation.
 
@@ -69,7 +69,7 @@ REPOSITORY OPTIONS:
     --clone-repo           Clone appropriate RT-DETR repository if needed
     --install-deps         Install dependencies from requirements.txt
     --repo-dir PATH        Custom repository directory path
-    --version VERSION      Force specific version: v1, v2, v3, v4, dfine, deim
+    --version VERSION      Force specific version: v1, v2, v4, dfine, deim
 
 ONNX OPTIONS:
     --no-check             Skip ONNX model validation
