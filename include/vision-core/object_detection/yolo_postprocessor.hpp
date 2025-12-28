@@ -1,7 +1,7 @@
 #pragma once
 
-#include "vision-core/object_detection/postprocessor.hpp"
 #include "vision-core/object_detection/object_detection_task.hpp" // For ModelType enum
+#include "vision-core/object_detection/postprocessor.hpp"
 
 namespace vision_core {
 
@@ -19,7 +19,7 @@ public:
 
 private:
     ObjectDetectionTask::ModelType model_type_;
-    cv::Size input_size_;  // Model input dimensions from ModelInfo
+  cv::Size input_size_; // Model input dimensions from ModelInfo
     float confidence_threshold_;
     float nms_threshold_;
 
@@ -38,6 +38,11 @@ private:
         const std::vector<TensorElement>& output,
         const std::vector<int64_t>& shape,
         const cv::Size& frame_size);
+
+    std::vector<Detection> postprocessYoloV4(
+        const std::vector<std::vector<TensorElement>>& outputs,
+        const std::vector<std::vector<int64_t>>& shapes,
+        const cv::Size& frame_size);    
 
     std::vector<Detection> postprocessYoloV10(
         const std::vector<TensorElement>& output,
