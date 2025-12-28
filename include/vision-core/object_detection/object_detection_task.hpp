@@ -27,6 +27,9 @@ public:
      * @brief Detection model types grouped by postprocessing similarity
      */
     enum class ModelType {
+        // YOLOv4 (Darknet-based)
+        YOLO_V4,
+
         // YOLO family - standard format [batch, proposals, 4+1+classes] or [batch, 4+classes, proposals]
         YOLO_STANDARD,      // YOLOv5, v6, v7, v8, v9, v11, v12
         

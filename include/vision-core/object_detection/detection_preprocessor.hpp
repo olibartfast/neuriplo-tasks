@@ -8,6 +8,7 @@ namespace vision_core {
  * @brief Unified YOLO preprocessor
  * 
  * Handles letterbox resizing and normalization for ALL YOLO variants:
+ * - YOLOv4 (Darknet-based)
  * - YOLOv5, v6, v7, v8, v9, v11, v12 (standard YOLO models)
  * - YOLOv10 (end-to-end detector)
  * - YOLO-NAS (neural architecture search YOLO)
