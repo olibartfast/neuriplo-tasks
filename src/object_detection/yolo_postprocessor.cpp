@@ -64,7 +64,13 @@ std::vector<Detection> YoloPostprocessor::postprocess(
             detections = postprocessYoloStandard(infer_results[0], infer_shapes[0], frame_size);
             break;
         }
-        
+
+        case ObjectDetectionTask::ModelType::YOLO_V4: {
+            if (infer_results.empty() || infer_shapes.empty()) return {};
+            detections = postprocessYoloV4(infer_results, infer_shapes, frame_size);
+            break;
+        }
+
         case ObjectDetectionTask::ModelType::YOLO_V10: {
             if (infer_results.empty() || infer_shapes.empty()) return {};
             detections = postprocessYoloV10(infer_results[0], infer_shapes[0], frame_size);
@@ -191,6 +197,84 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(
     
     applyNMS(detections);
     return detections;
+}
+
+std::vector<Detection> YoloPostprocessor::postprocessYoloV4(
+    const std::vector<std::vector<TensorElement>> &outputs,
+    const std::vector<std::vector<int64_t>> &shapes,
+    const cv::Size &frame_size) {
+  std::vector<Detection> detections;
+
+  // Iterate over the output tensors
+  for (size_t i = 0; i < outputs.size(); ++i) {
+    const TensorElement *output = outputs[i].data();
+
+    // Iterate over the detections in the output tensor
+    for (int j = 0; j < shapes[i][0]; ++j, output += shapes[i][1]) {
+      // Find the class with the highest confidence
+      // Find the class with the highest confidence
+      auto maxSPtr = std::max_element(
+          output + 5, output + shapes[i][1],
+          [this](const TensorElement &a, const TensorElement &b) {
+            return this->getTensorFloat(a) < this->getTensorFloat(b);
+          });
+
+      float score = getTensorFloat(*maxSPtr);
+
+      // Check if the confidence is above the threshold
+      if (score > confidence_threshold_) {
+        float cx = getTensorFloat(output[0]);
+        float cy = getTensorFloat(output[1]);
+        float w = getTensorFloat(output[2]);
+        float h = getTensorFloat(output[3]);
+
+        int centerX = cx * frame_size.width;
+        int centerY = cy * frame_size.height;
+        int width = w * frame_size.width;
+        int height = h * frame_size.height;
+        int left = centerX - width / 2;
+        int top = centerY - height / 2;
+        int label = maxSPtr - (output + 5);
+
+        // Create a detection object
+        Detection detection;
+        detection.bbox = cv::Rect(left, top, width, height);
+        detection.class_confidence = score;
+        detection.class_id = label;
+
+        // Add the detection to the vector
+        detections.push_back(detection);
+      }
+    }
+  }
+
+  // Apply non-maximum suppression to the detections
+  std::vector<Detection> filtered_detections;
+  std::map<int, std::vector<size_t>> class2indices;
+  for (size_t i = 0; i < detections.size(); i++) {
+    if (detections[i].class_confidence >= confidence_threshold_) {
+      class2indices[detections[i].class_id].push_back(i);
+    }
+  }
+
+  for (std::map<int, std::vector<size_t>>::iterator it = class2indices.begin();
+       it != class2indices.end(); ++it) {
+    std::vector<cv::Rect> localBoxes;
+    std::vector<float> localConfidences;
+    std::vector<size_t> classIndices = it->second;
+    for (size_t i = 0; i < classIndices.size(); i++) {
+      localBoxes.push_back(detections[classIndices[i]].bbox);
+      localConfidences.push_back(detections[classIndices[i]].class_confidence);
+    }
+    std::vector<int> nmsIndices;
+    cv::dnn::NMSBoxes(localBoxes, localConfidences, confidence_threshold_,
+                      nms_threshold_, nmsIndices);
+    for (size_t i = 0; i < nmsIndices.size(); i++) {
+      filtered_detections.push_back(detections[classIndices[nmsIndices[i]]]);
+    }
+  }
+
+  return filtered_detections;
 }
 
 std::vector<Detection> YoloPostprocessor::postprocessYoloV10(
