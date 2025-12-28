@@ -222,6 +222,7 @@ bool ObjectDetectionTask::validateTensorInputs(
     // Model-specific validation
     switch (model_type_) {
         case ModelType::YOLO_STANDARD:
+        case ModelType::YOLO_V4:
         case ModelType::YOLO_V10:
             return infer_results.size() >= 1 && infer_shapes.size() >= 1;
             
