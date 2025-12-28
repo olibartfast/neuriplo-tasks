@@ -27,6 +27,9 @@ public:
      * @brief Detection model types grouped by postprocessing similarity
      */
     enum class ModelType {
+        // Placeholder for unknown model type
+        UKNOWN,
+
         // YOLOv4 (Darknet-based)
         YOLO_V4,
 
