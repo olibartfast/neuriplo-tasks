@@ -147,13 +147,14 @@ ObjectDetectionTask::ModelType ObjectDetectionTask::detectModelType(const std::s
         lower_name == "dfine" || lower_name == "deim") {
         return ModelType::RT_DETR_STYLE;
     }
-    
+
     return ModelType::UKNOWN;
 }
 
 std::unique_ptr<Preprocessor> ObjectDetectionTask::createPreprocessor(ModelType type, const cv::Size& input_size) {
     switch (type) {
         case ModelType::YOLO_STANDARD:
+        case ModelType::YOLO_V4:
         case ModelType::YOLO_V10:
         case ModelType::YOLO_NAS:
         case ModelType::YOLO_V7_E2E:
@@ -174,6 +175,7 @@ std::unique_ptr<Preprocessor> ObjectDetectionTask::createPreprocessor(ModelType 
 std::unique_ptr<Postprocessor> ObjectDetectionTask::createPostprocessor(ModelType type, const cv::Size& input_size) {
     switch (type) {
         case ModelType::YOLO_STANDARD:
+        case ModelType::YOLO_V4:
         case ModelType::YOLO_V10:
         case ModelType::YOLO_NAS:
         case ModelType::YOLO_V7_E2E:
