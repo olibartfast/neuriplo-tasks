@@ -228,12 +228,6 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV4(
         float w = getTensorFloat(output[2]);
         float h = getTensorFloat(output[3]);
 
-        int centerX = cx * frame_size.width;
-        int centerY = cy * frame_size.height;
-        int width = w * frame_size.width;
-        int height = h * frame_size.height;
-        int left = centerX - width / 2;
-        int top = centerY - height / 2;
         int label = maxSPtr - (output + 5);
 
         // Create a detection object
