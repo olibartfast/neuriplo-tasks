@@ -230,9 +230,20 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV4(
 
         int label = maxSPtr - (output + 5);
 
+        // YOLOv4 outputs normalized coordinates [0,1] relative to the model
+        // input Convert to model input pixel coordinates
+        float cx_model = cx * input_size_.width;
+        float cy_model = cy * input_size_.height;
+        float w_model = w * input_size_.width;
+        float h_model = h * input_size_.height;
+
+        // Apply letterbox inverse transformation using model-space coordinates
+        cv::Rect bbox =
+            scaleToOriginal(cx_model, cy_model, w_model, h_model, frame_size);
+
         // Create a detection object
         Detection detection;
-        detection.bbox = cv::Rect(left, top, width, height);
+        detection.bbox = bbox;
         detection.class_confidence = score;
         detection.class_id = label;
 
