@@ -119,6 +119,10 @@ ObjectDetectionTask::ModelType ObjectDetectionTask::detectModelType(const std::s
     std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
     
     // YOLO variants
+    if (lower_name == "yolov4") {
+        return ModelType::YOLO_V4;
+    }
+
     if (lower_name == "yolov10") {
         return ModelType::YOLO_V10;
     }
@@ -144,8 +148,7 @@ ObjectDetectionTask::ModelType ObjectDetectionTask::detectModelType(const std::s
         return ModelType::RT_DETR_STYLE;
     }
     
-    // Default to standard YOLO
-    return ModelType::YOLO_STANDARD;
+    return ModelType::UKNOWN;
 }
 
 std::unique_ptr<Preprocessor> ObjectDetectionTask::createPreprocessor(ModelType type, const cv::Size& input_size) {
