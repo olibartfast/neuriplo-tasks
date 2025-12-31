@@ -25,8 +25,7 @@ public:
     
     std::vector<Result> postprocess(
         const cv::Size& frame_size,
-        const std::vector<std::vector<TensorElement>>& infer_results,
-        const std::vector<std::vector<int64_t>>& infer_shapes) override {
+        const std::vector<Tensor>& tensors) override {
         
         // Simple test implementation - return one detection
         Detection det(cv::Rect(10, 10, 50, 50), 0.9f, 0);
@@ -129,10 +128,9 @@ TEST_F(TaskInterfaceTest, PostprocessReturnsResults) {
     TestTask task(model_info);
     
     cv::Size frame_size(640, 480);
-    std::vector<std::vector<TensorElement>> infer_results;
-    std::vector<std::vector<int64_t>> infer_shapes;
+    std::vector<Tensor> tensors;
     
-    auto results = task.postprocess(frame_size, infer_results, infer_shapes);
+    auto results = task.postprocess(frame_size, tensors);
     
     EXPECT_EQ(results.size(), 1);
     EXPECT_TRUE(std::holds_alternative<Detection>(results[0]));

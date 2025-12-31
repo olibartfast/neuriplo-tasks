@@ -51,8 +51,7 @@ public:
     
     std::vector<Result> postprocess(
         const cv::Size& frame_size,
-        const std::vector<std::vector<TensorElement>>& infer_results,
-        const std::vector<std::vector<int64_t>>& infer_shapes) override;
+        const std::vector<Tensor>& tensors) override;
 
 private:
     ModelType model_type_;

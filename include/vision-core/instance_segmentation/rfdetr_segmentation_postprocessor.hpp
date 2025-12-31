@@ -12,8 +12,7 @@ public:
                                      const std::vector<std::string>& output_names = {});
 
     std::vector<InstanceSegmentation> postprocess(
-        const std::vector<std::vector<TensorElement>>& infer_results,
-        const std::vector<std::vector<int64_t>>& infer_shapes,
+        const std::vector<Tensor>& tensors,
         const cv::Size& frame_size) override;
 
 private:
