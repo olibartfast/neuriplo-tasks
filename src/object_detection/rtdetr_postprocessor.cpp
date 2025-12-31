@@ -35,34 +35,30 @@ void RtDetrPostprocessor::findOutputIndices(const std::vector<std::string>& outp
 }
 
 std::vector<Detection> RtDetrPostprocessor::postprocess(
-    const std::vector<std::vector<TensorElement>>& infer_results,
-    const std::vector<std::vector<int64_t>>& infer_shapes,
+    const std::vector<Tensor>& tensors,
     const cv::Size& frame_size) {
 
     std::vector<Detection> detections;
 
     switch (model_type_) {
         case ObjectDetectionTask::ModelType::RT_DETR_STYLE: {
-            if (infer_results.size() < 3) {
+            if (tensors.size() < 3) {
                 throw std::runtime_error("RT-DETR style models require 3 output tensors");
             }
             detections = postprocessRTDETR(
-                infer_results[scores_idx_], 
-                infer_results[boxes_idx_],
-                infer_results[labels_idx_],
-                infer_shapes[scores_idx_], 
-                infer_shapes[boxes_idx_], 
+                tensors[scores_idx_], 
+                tensors[boxes_idx_],
+                tensors[labels_idx_],
                 frame_size);
             break;
         }
 
         case ObjectDetectionTask::ModelType::RT_DETR_UL: {
-            if (infer_results.empty()) {
+            if (tensors.empty()) {
                 throw std::runtime_error("RT-DETR UL requires at least 1 output tensor");
             }
             detections = postprocessRTDETRUL(
-                infer_results[0],
-                infer_shapes[0], 
+                tensors[0], 
                 frame_size);
             break;
         }
@@ -75,36 +71,34 @@ std::vector<Detection> RtDetrPostprocessor::postprocess(
 }
 
 std::vector<Detection> RtDetrPostprocessor::postprocessRTDETR(
-    const std::vector<TensorElement>& scores,
-    const std::vector<TensorElement>& boxes,
-    const std::vector<TensorElement>& labels,
-    const std::vector<int64_t>& score_shape,
-    const std::vector<int64_t>& box_shape,
+    const Tensor& scores,
+    const Tensor& boxes,
+    const Tensor& labels,
     const cv::Size& frame_size) {
     
     std::vector<Detection> detections;
     
-    if (score_shape.size() < 2 || box_shape.size() < 3) {
+    if (scores.shape.size() < 2 || boxes.shape.size() < 3) {
         return {};
     }
     
-    int num_dets = static_cast<int>(score_shape[1]);
+    int num_dets = static_cast<int>(scores.shape[1]);
     
     float r_w = static_cast<float>(frame_size.width) / static_cast<float>(input_size_.width);
     float r_h = static_cast<float>(frame_size.height) / static_cast<float>(input_size_.height);
     
     for (int i = 0; i < num_dets; ++i) {
-        float score = getTensorFloat(scores[i]);
+        float score = getTensorFloat(scores.data[i]);
         
         if (score < confidence_threshold_) continue;
         
-        int class_id = getTensorInt(labels[i]);
+        int class_id = getTensorInt(labels.data[i]);
         if (class_id < 0) continue;
         
-        float x1 = getTensorFloat(boxes[i * 4 + 0]) * r_w;
-        float y1 = getTensorFloat(boxes[i * 4 + 1]) * r_h;
-        float x2 = getTensorFloat(boxes[i * 4 + 2]) * r_w;
-        float y2 = getTensorFloat(boxes[i * 4 + 3]) * r_h;
+        float x1 = getTensorFloat(boxes.data[i * 4 + 0]) * r_w;
+        float y1 = getTensorFloat(boxes.data[i * 4 + 1]) * r_h;
+        float x2 = getTensorFloat(boxes.data[i * 4 + 2]) * r_w;
+        float y2 = getTensorFloat(boxes.data[i * 4 + 3]) * r_h;
         
         Detection det;
         det.class_id = class_id;
@@ -118,16 +112,15 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETR(
 }
 
 std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(
-    const std::vector<TensorElement>& output,
-    const std::vector<int64_t>& output_shape,
+    const Tensor& output,
     const cv::Size& frame_size) {
     
     std::vector<Detection> detections;
     
-    if (output_shape.size() < 3) return {};
+    if (output.shape.size() < 3) return {};
     
-    int num_dets = static_cast<int>(output_shape[1]);
-    int dims = static_cast<int>(output_shape[2]);
+    int num_dets = static_cast<int>(output.shape[1]);
+    int dims = static_cast<int>(output.shape[2]);
     int num_classes = dims - 4;
     
     if (num_classes <= 0) return {};
@@ -141,7 +134,7 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(
         float max_score = 0.0f;
         int class_id = -1;
         for (int c = 0; c < num_classes; ++c) {
-            float score = getTensorFloat(output[offset + 4 + c]);
+            float score = getTensorFloat(output.data[offset + 4 + c]);
             if (score > max_score) {
                 max_score = score;
                 class_id = c;
@@ -150,10 +143,10 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(
         
         if (max_score < confidence_threshold_) continue;
         
-        float x1 = getTensorFloat(output[offset + 0]) * r_w;
-        float y1 = getTensorFloat(output[offset + 1]) * r_h;
-        float x2 = getTensorFloat(output[offset + 2]) * r_w;
-        float y2 = getTensorFloat(output[offset + 3]) * r_h;
+        float x1 = getTensorFloat(output.data[offset + 0]) * r_w;
+        float y1 = getTensorFloat(output.data[offset + 1]) * r_h;
+        float x2 = getTensorFloat(output.data[offset + 2]) * r_w;
+        float y2 = getTensorFloat(output.data[offset + 3]) * r_h;
         
         Detection det;
         det.class_id = class_id;

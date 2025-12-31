@@ -21,8 +21,7 @@ public:
                         const std::vector<std::string>& output_names = {});
 
     std::vector<Detection> postprocess(
-        const std::vector<std::vector<TensorElement>>& infer_results,
-        const std::vector<std::vector<int64_t>>& infer_shapes,
+        const std::vector<Tensor>& tensors,
         const cv::Size& frame_size) override;
 
 private:
@@ -37,17 +36,14 @@ private:
     
     // RT-DETR/DEIM/DFINE: 3 separate outputs
     std::vector<Detection> postprocessRTDETR(
-        const std::vector<TensorElement>& scores,
-        const std::vector<TensorElement>& boxes,
-        const std::vector<TensorElement>& labels,
-        const std::vector<int64_t>& score_shape,
-        const std::vector<int64_t>& box_shape,
+        const Tensor& scores,
+        const Tensor& boxes,
+        const Tensor& labels,
         const cv::Size& frame_size);
 
     // RT-DETR Ultralytics: single combined output
     std::vector<Detection> postprocessRTDETRUL(
-        const std::vector<TensorElement>& output,
-        const std::vector<int64_t>& output_shape,
+        const Tensor& output,
         const cv::Size& frame_size);
         
     float getTensorFloat(const TensorElement& element);

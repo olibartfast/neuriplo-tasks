@@ -34,18 +34,17 @@ void RfDetrPostprocessor::findOutputIndices(const std::vector<std::string>& outp
 }
 
 std::vector<Detection> RfDetrPostprocessor::postprocess(
-    const std::vector<std::vector<TensorElement>>& infer_results,
-    const std::vector<std::vector<int64_t>>& infer_shapes,
+    const std::vector<Tensor>& tensors,
     const cv::Size& frame_size) {
     
-    if (infer_results.size() < 2 || infer_shapes.size() < 2) {
+    if (tensors.size() < 2) {
         throw std::runtime_error("RF-DETR requires 2 output tensors (dets, labels)");
     }
 
-    const auto& boxes = infer_results[dets_idx_];
-    const auto& logits = infer_results[labels_idx_];
-    const auto& box_shape = infer_shapes[dets_idx_];
-    const auto& logit_shape = infer_shapes[labels_idx_];
+    const auto& boxes = tensors[dets_idx_].data;
+    const auto& logits = tensors[labels_idx_].data;
+    const auto& box_shape = tensors[dets_idx_].shape;
+    const auto& logit_shape = tensors[labels_idx_].shape;
     
     std::vector<Detection> detections;
     

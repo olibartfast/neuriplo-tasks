@@ -40,20 +40,19 @@ void RfDetrSegmentationPostprocessor::findOutputIndices(const std::vector<std::s
 }
 
 std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(
-    const std::vector<std::vector<TensorElement>>& infer_results,
-    const std::vector<std::vector<int64_t>>& infer_shapes,
+    const std::vector<Tensor>& tensors,
     const cv::Size& frame_size) {
     
-    if (infer_results.size() < 3 || infer_shapes.size() < 3) {
+    if (tensors.size() < 3) {
         throw std::runtime_error("RF-DETR segmentation requires at least 3 output tensors");
     }
 
-    const auto& boxes = infer_results[boxes_idx_];
-    const auto& labels = infer_results[labels_idx_];
-    const auto& masks = infer_results[masks_idx_];
-    const auto& boxes_shape = infer_shapes[boxes_idx_];
-    const auto& labels_shape = infer_shapes[labels_idx_];
-    const auto& masks_shape = infer_shapes[masks_idx_];
+    const auto& boxes = tensors[boxes_idx_].data;
+    const auto& labels = tensors[labels_idx_].data;
+    const auto& masks = tensors[masks_idx_].data;
+    const auto& boxes_shape = tensors[boxes_idx_].shape;
+    const auto& labels_shape = tensors[labels_idx_].shape;
+    const auto& masks_shape = tensors[masks_idx_].shape;
     
     std::vector<InstanceSegmentation> segmentations;
     
