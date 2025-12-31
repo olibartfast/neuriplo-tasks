@@ -16,14 +16,12 @@ public:
 
     /**
      * @brief Postprocess inference results
-     * @param infer_results Vector of output tensors
-     * @param infer_shapes Vector of output tensor shapes
+     * @param tensors Vector of output tensors with data and shapes
      * @param frame_size Original frame size
      * @return Vector of InstanceSegmentation results
      */
     virtual std::vector<InstanceSegmentation> postprocess(
-        const std::vector<std::vector<TensorElement>>& infer_results,
-        const std::vector<std::vector<int64_t>>& infer_shapes,
+        const std::vector<Tensor>& tensors,
         const cv::Size& frame_size) = 0;
 };
 

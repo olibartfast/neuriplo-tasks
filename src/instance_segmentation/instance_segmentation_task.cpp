@@ -55,16 +55,15 @@ std::vector<std::vector<uint8_t>> InstanceSegmentationTask::preprocess(const std
 
 std::vector<Result> InstanceSegmentationTask::postprocess(
     const cv::Size& frame_size,
-    const std::vector<std::vector<TensorElement>>& infer_results,
-    const std::vector<std::vector<int64_t>>& infer_shapes) {
+    const std::vector<Tensor>& tensors) {
     
     // Validate inputs
-    if (!validateTensorInputs(infer_results, infer_shapes)) {
+    if (!validateTensorInputs(tensors)) {
         return {};
     }
     
     // Delegate to postprocessor
-    auto segmentations = postprocessor_->postprocess(infer_results, infer_shapes, frame_size);
+    auto segmentations = postprocessor_->postprocess(tensors, frame_size);
     
     // Convert segmentations to results
     std::vector<Result> results;
@@ -140,20 +139,19 @@ cv::Size InstanceSegmentationTask::extractInputSize(const ModelInfo& model_info)
 }
 
 bool InstanceSegmentationTask::validateTensorInputs(
-    const std::vector<std::vector<TensorElement>>& infer_results,
-    const std::vector<std::vector<int64_t>>& infer_shapes) const {
+    const std::vector<Tensor>& tensors) const {
     
-    if (infer_results.empty() || infer_shapes.empty()) {
+    if (tensors.empty()) {
         return false;
     }
     
     // Model-specific validation
     switch (model_type_) {
         case ModelType::YOLO_SEG:
-            return infer_results.size() >= 2 && infer_shapes.size() >= 2;
+            return tensors.size() >= 2;
             
         case ModelType::RF_DETR_SEG:
-            return infer_results.size() >= 3 && infer_shapes.size() >= 3;
+            return tensors.size() >= 3;
             
         default:
             return false;

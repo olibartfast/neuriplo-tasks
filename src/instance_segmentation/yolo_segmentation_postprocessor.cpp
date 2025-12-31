@@ -9,21 +9,20 @@ YoloSegmentationPostprocessor::YoloSegmentationPostprocessor(float confidence_th
     , mask_threshold_(mask_threshold) {}
 
 std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocess(
-    const std::vector<std::vector<TensorElement>>& infer_results,
-    const std::vector<std::vector<int64_t>>& infer_shapes,
+    const std::vector<Tensor>& tensors,
     const cv::Size& frame_size) {
     
-    if (infer_results.size() < 2 || infer_shapes.size() < 2) {
+    if (tensors.size() < 2) {
         throw std::runtime_error("YOLO segmentation requires at least 2 output tensors");
     }
 
     // Output 0: Detections [1, 4+cls+masks, 8400]
     // Output 1: Mask Protos [1, 32, 160, 160]
     
-    const auto& dets_tensor = infer_results[0];
-    const auto& protos_tensor = infer_results[1];
-    const auto& dets_shape = infer_shapes[0];
-    const auto& protos_shape = infer_shapes[1];
+    const auto& dets_tensor = tensors[0].data;
+    const auto& protos_tensor = tensors[1].data;
+    const auto& dets_shape = tensors[0].shape;
+    const auto& protos_shape = tensors[1].shape;
     
     std::vector<InstanceSegmentation> segmentations;
     

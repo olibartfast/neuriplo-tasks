@@ -64,16 +64,15 @@ std::vector<std::vector<uint8_t>> OpticalFlowTask::preprocess(const std::vector<
 
 std::vector<Result> OpticalFlowTask::postprocess(
     const cv::Size& frame_size,
-    const std::vector<std::vector<TensorElement>>& infer_results,
-    const std::vector<std::vector<int64_t>>& infer_shapes) {
+    const std::vector<Tensor>& tensors) {
     
-    if (infer_results.empty() || infer_shapes.empty()) {
+    if (tensors.empty()) {
         return {};
     }
     
     // Delegate to postprocessor
     // Note: RAFT typically has 1 output tensor for flow
-    auto flows = postprocessor_->postprocess(infer_results[0], infer_shapes[0], frame_size);
+    auto flows = postprocessor_->postprocess(tensors[0].data, tensors[0].shape, frame_size);
     
     // Convert flows to results
     std::vector<Result> results;
