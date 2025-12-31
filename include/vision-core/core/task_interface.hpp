@@ -19,6 +19,18 @@ namespace vision_core {
 using TensorElement = std::variant<float, int32_t, int64_t, uint8_t>;
 
 /**
+ * @brief Tensor structure combining data and shape
+ */
+struct Tensor {
+    std::vector<TensorElement> data;
+    std::vector<int64_t> shape;
+    
+    Tensor() = default;
+    Tensor(std::vector<TensorElement> data_, std::vector<int64_t> shape_)
+        : data(std::move(data_)), shape(std::move(shape_)) {}
+};
+
+/**
  * @brief Input dimension error exception
  */
 class InputDimensionError : public std::runtime_error {
@@ -53,14 +65,12 @@ public:
     /**
      * @brief Postprocess inference results
      * @param frame_size Original frame size
-     * @param infer_results Inference output tensors
-     * @param infer_shapes Output tensor shapes
+     * @param tensors Inference output tensors with shape information
      * @return Vector of Result variants
      */
     virtual std::vector<Result> postprocess(
         const cv::Size& frame_size,
-        const std::vector<std::vector<TensorElement>>& infer_results,
-        const std::vector<std::vector<int64_t>>& infer_shapes) = 0;
+        const std::vector<Tensor>& tensors) = 0;
 
     /**
      * @brief Read label names from file

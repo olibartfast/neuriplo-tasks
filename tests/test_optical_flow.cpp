@@ -185,15 +185,12 @@ TEST_F(OpticalFlowTest, FullPipelineSimulation) {
     // Simulate inference output
     int height = 52;
     int width = 96;
-    std::vector<std::vector<TensorElement>> infer_results = {
-        createMockFlowOutput(height, width)
-    };
-    std::vector<std::vector<int64_t>> infer_shapes = {
-        {1, 2, height, width}
+    std::vector<Tensor> tensors = {
+        Tensor(createMockFlowOutput(height, width), {1, 2, height, width})
     };
     
     // Postprocess
-    auto results = task->postprocess(frame1.size(), infer_results, infer_shapes);
+    auto results = task->postprocess(frame1.size(), tensors);
     
     ASSERT_FALSE(results.empty());
     ASSERT_EQ(results.size(), 1);
@@ -214,12 +211,10 @@ TEST_F(OpticalFlowTest, PostprocessEmptyResults) {
     auto task = TaskFactory::createTaskInstance("raft", info);
     ASSERT_NE(task, nullptr);
     
-    std::vector<std::vector<TensorElement>> empty_results;
-    std::vector<std::vector<int64_t>> empty_shapes;
-    
     cv::Size frame_size(200, 150);
+    std::vector<Tensor> empty_tensors;
     
-    auto results = task->postprocess(frame_size, empty_results, empty_shapes);
+    auto results = task->postprocess(frame_size, empty_tensors);
     
     EXPECT_TRUE(results.empty());
 }
@@ -231,17 +226,16 @@ TEST_F(OpticalFlowTest, PostprocessMismatchedShapes) {
     ASSERT_NE(task, nullptr);
     
     auto flow_output = createMockFlowOutput(52, 96);
-    std::vector<std::vector<TensorElement>> infer_results = {flow_output, flow_output}; // Extra result
-    std::vector<std::vector<int64_t>> infer_shapes = {
-        {1, 2, 52, 96},
-        {1, 2, 52, 96} // Extra shape - mismatch
+    std::vector<Tensor> tensors = {
+        Tensor(flow_output, {1, 2, 52, 96}),
+        Tensor(flow_output, {1, 2, 52, 96}) // Extra tensor
     };
     
     cv::Size frame_size(200, 150);
     
     // Current implementation doesn't validate matching sizes, it just uses the first tensor
     // So this should not throw
-    auto results = task->postprocess(frame_size, infer_results, infer_shapes);
+    auto results = task->postprocess(frame_size, tensors);
     EXPECT_FALSE(results.empty()); // Should still produce a result from first tensor
 }
 

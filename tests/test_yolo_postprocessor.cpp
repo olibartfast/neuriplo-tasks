@@ -44,11 +44,10 @@ protected:
 TEST_F(YoloPostprocessorTest, EmptyOutputReturnsNoDetections) {
     YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, cv::Size(640, 640), 0.25f, 0.45f);
     
-    std::vector<std::vector<TensorElement>> results = {};
-    std::vector<std::vector<int64_t>> shapes = {};
+    std::vector<Tensor> tensors = {};
     cv::Size frame_size(640, 480);
     
-    auto detections = processor.postprocess(results, shapes, frame_size);
+    auto detections = processor.postprocess(tensors, frame_size);
     
     EXPECT_TRUE(detections.empty());
 }
@@ -60,11 +59,10 @@ TEST_F(YoloPostprocessorTest, HighConfidenceDetected) {
     int num_classes = 80;
     auto output = createMockYoloOutput(num_boxes, num_classes);
     
-    std::vector<std::vector<TensorElement>> results = {output};
-    std::vector<std::vector<int64_t>> shapes = {{1, 4 + num_classes, num_boxes}};
+    std::vector<Tensor> tensors = {Tensor(output, {1, 4 + num_classes, num_boxes})};
     cv::Size frame_size(640, 480);
     
-    auto detections = processor.postprocess(results, shapes, frame_size);
+    auto detections = processor.postprocess(tensors, frame_size);
     
     EXPECT_FALSE(detections.empty());
     if (!detections.empty()) {
@@ -80,11 +78,10 @@ TEST_F(YoloPostprocessorTest, LowConfidenceFiltered) {
     int num_classes = 80;
     auto output = createMockYoloOutput(num_boxes, num_classes);
     
-    std::vector<std::vector<TensorElement>> results = {output};
-    std::vector<std::vector<int64_t>> shapes = {{1, 4 + num_classes, num_boxes}};
+    std::vector<Tensor> tensors = {Tensor(output, {1, 4 + num_classes, num_boxes})};
     cv::Size frame_size(640, 480);
     
-    auto detections = processor.postprocess(results, shapes, frame_size);
+    auto detections = processor.postprocess(tensors, frame_size);
     
     EXPECT_TRUE(detections.empty());
 }
@@ -105,11 +102,10 @@ TEST_F(YoloPostprocessorTest, YoloV10Format) {
     output[4] = 0.9f;   // score
     output[5] = 1.0f;   // class 1
     
-    std::vector<std::vector<TensorElement>> results = {output};
-    std::vector<std::vector<int64_t>> shapes = {{1, num_dets, dims}};
+    std::vector<Tensor> tensors = {Tensor(output, {1, num_dets, dims})};
     cv::Size frame_size(640, 480);
     
-    auto detections = processor.postprocess(results, shapes, frame_size);
+    auto detections = processor.postprocess(tensors, frame_size);
     
     ASSERT_EQ(detections.size(), 1);
     EXPECT_EQ(detections[0].class_id, 1);

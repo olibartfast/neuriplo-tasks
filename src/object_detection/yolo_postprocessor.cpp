@@ -52,48 +52,45 @@ cv::Rect YoloPostprocessor::scaleToOriginal(float cx, float cy, float w, float h
 }
 
 std::vector<Detection> YoloPostprocessor::postprocess(
-    const std::vector<std::vector<TensorElement>>& infer_results,
-    const std::vector<std::vector<int64_t>>& infer_shapes,
+    const std::vector<Tensor>& tensors,
     const cv::Size& frame_size) {
     
     std::vector<Detection> detections;
 
     switch (model_type_) {
         case ObjectDetectionTask::ModelType::YOLO_STANDARD: {
-            if (infer_results.empty() || infer_shapes.empty()) return {};
-            detections = postprocessYoloStandard(infer_results[0], infer_shapes[0], frame_size);
+            if (tensors.empty()) return {};
+            detections = postprocessYoloStandard(tensors[0].data, tensors[0].shape, frame_size);
             break;
         }
 
         case ObjectDetectionTask::ModelType::YOLO_V4: {
-            if (infer_results.empty() || infer_shapes.empty()) return {};
-            detections = postprocessYoloV4(infer_results, infer_shapes, frame_size);
+            if (tensors.empty()) return {};
+            detections = postprocessYoloV4(tensors, frame_size);
             break;
         }
 
         case ObjectDetectionTask::ModelType::YOLO_V10: {
-            if (infer_results.empty() || infer_shapes.empty()) return {};
-            detections = postprocessYoloV10(infer_results[0], infer_shapes[0], frame_size);
+            if (tensors.empty()) return {};
+            detections = postprocessYoloV10(tensors[0], frame_size);
             break;
         }
         
         case ObjectDetectionTask::ModelType::YOLO_NAS: {
-            if (infer_results.size() < 2) {
+            if (tensors.size() < 2) {
                 throw std::runtime_error("YOLO-NAS requires 2 output tensors");
             }
-            detections = postprocessYoloNAS(infer_results[0], infer_results[1], 
-                                          infer_shapes[0], infer_shapes[1], frame_size);
+            detections = postprocessYoloNAS(tensors[0], tensors[1], frame_size);
             break;
         }
         
         case ObjectDetectionTask::ModelType::YOLO_V7_E2E: {
-            if (infer_results.size() < 4) {
+            if (tensors.size() < 4) {
                 throw std::runtime_error("YOLOv7 end-to-end requires 4 output tensors");
             }
             // Outputs: num_dets, det_boxes, det_scores, det_classes
-            detections = postprocessYoloV7E2E(infer_results[0], infer_results[1],
-                                            infer_results[2], infer_results[3],
-                                            infer_shapes[1], frame_size);
+            detections = postprocessYoloV7E2E(tensors[0], tensors[1],
+                                            tensors[2], tensors[3], frame_size);
             break;
         }
         
@@ -200,21 +197,20 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(
 }
 
 std::vector<Detection> YoloPostprocessor::postprocessYoloV4(
-    const std::vector<std::vector<TensorElement>> &outputs,
-    const std::vector<std::vector<int64_t>> &shapes,
+    const std::vector<Tensor> &tensors,
     const cv::Size &frame_size) {
   std::vector<Detection> detections;
 
   // Iterate over the output tensors
-  for (size_t i = 0; i < outputs.size(); ++i) {
-    const TensorElement *output = outputs[i].data();
+  for (size_t i = 0; i < tensors.size(); ++i) {
+    const TensorElement *output = tensors[i].data.data();
 
     // Iterate over the detections in the output tensor
-    for (int j = 0; j < shapes[i][0]; ++j, output += shapes[i][1]) {
+    for (int j = 0; j < tensors[i].shape[0]; ++j, output += tensors[i].shape[1]) {
       // Find the class with the highest confidence
       // Find the class with the highest confidence
       auto maxSPtr = std::max_element(
-          output + 5, output + shapes[i][1],
+          output + 5, output + tensors[i].shape[1],
           [this](const TensorElement &a, const TensorElement &b) {
             return this->getTensorFloat(a) < this->getTensorFloat(b);
           });
@@ -283,31 +279,30 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV4(
 }
 
 std::vector<Detection> YoloPostprocessor::postprocessYoloV10(
-    const std::vector<TensorElement>& output,
-    const std::vector<int64_t>& shape,
+    const Tensor& output,
     const cv::Size& frame_size) {
     
     std::vector<Detection> detections;
     
     // YOLOv10 output: [1, 300, 6] (x1, y1, x2, y2, score, class)
-    if (shape.size() < 3 || shape[2] < 6) return {};
+    if (output.shape.size() < 3 || output.shape[2] < 6) return {};
     
-    int num_dets = shape[1];
-    int dims = shape[2];
+    int num_dets = output.shape[1];
+    int dims = output.shape[2];
     
     // Calculate scale ratios for letterbox inverse
     float r_w = static_cast<float>(input_size_.width) / frame_size.width;
     float r_h = static_cast<float>(input_size_.height) / frame_size.height;
     
     for (int i = 0; i < num_dets; ++i) {
-        float score = getTensorFloat(output[i * dims + 4]);
+        float score = getTensorFloat(output.data[i * dims + 4]);
         if (score < confidence_threshold_) continue;
         
-        float x1 = getTensorFloat(output[i * dims + 0]);
-        float y1 = getTensorFloat(output[i * dims + 1]);
-        float x2 = getTensorFloat(output[i * dims + 2]);
-        float y2 = getTensorFloat(output[i * dims + 3]);
-        int class_id = static_cast<int>(getTensorFloat(output[i * dims + 5]));
+        float x1 = getTensorFloat(output.data[i * dims + 0]);
+        float y1 = getTensorFloat(output.data[i * dims + 1]);
+        float x2 = getTensorFloat(output.data[i * dims + 2]);
+        float y2 = getTensorFloat(output.data[i * dims + 3]);
+        int class_id = static_cast<int>(getTensorFloat(output.data[i * dims + 5]));
         
         // Apply letterbox inverse transformation
         if (r_h > r_w) {
@@ -338,19 +333,17 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV10(
 }
 
 std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(
-    const std::vector<TensorElement>& boxes,
-    const std::vector<TensorElement>& scores,
-    const std::vector<int64_t>& box_shape,
-    const std::vector<int64_t>& score_shape,
+    const Tensor& boxes,
+    const Tensor& scores,
     const cv::Size& frame_size) {
     
     std::vector<Detection> detections;
     
     // Boxes: [1, N, 4], Scores: [1, N, C]
-    if (box_shape.size() < 3 || score_shape.size() < 3) return {};
+    if (boxes.shape.size() < 3 || scores.shape.size() < 3) return {};
     
-    int num_dets = box_shape[1];
-    int num_classes = score_shape[2];
+    int num_dets = boxes.shape[1];
+    int num_classes = scores.shape[2];
     
     // Calculate scale ratios for letterbox inverse
     float r_w = static_cast<float>(input_size_.width) / frame_size.width;
@@ -362,7 +355,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(
         int class_id = -1;
         
         for (int c = 0; c < num_classes; ++c) {
-            float score = getTensorFloat(scores[i * num_classes + c]);
+            float score = getTensorFloat(scores.data[i * num_classes + c]);
             if (score > max_score) {
                 max_score = score;
                 class_id = c;
@@ -371,10 +364,10 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(
         
         if (max_score < confidence_threshold_) continue;
         
-        float x1 = getTensorFloat(boxes[i * 4 + 0]);
-        float y1 = getTensorFloat(boxes[i * 4 + 1]);
-        float x2 = getTensorFloat(boxes[i * 4 + 2]);
-        float y2 = getTensorFloat(boxes[i * 4 + 3]);
+        float x1 = getTensorFloat(boxes.data[i * 4 + 0]);
+        float y1 = getTensorFloat(boxes.data[i * 4 + 1]);
+        float x2 = getTensorFloat(boxes.data[i * 4 + 2]);
+        float y2 = getTensorFloat(boxes.data[i * 4 + 3]);
         
         // Apply letterbox inverse transformation
         if (r_h > r_w) {
@@ -449,11 +442,10 @@ float YoloPostprocessor::getTensorFloat(const TensorElement& element) {
 }
 
 std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(
-    const std::vector<TensorElement>& num_dets_tensor,
-    const std::vector<TensorElement>& boxes,
-    const std::vector<TensorElement>& scores,
-    const std::vector<TensorElement>& classes,
-    const std::vector<int64_t>& boxes_shape,
+    const Tensor& num_dets_tensor,
+    const Tensor& boxes,
+    const Tensor& scores,
+    const Tensor& classes,
     const cv::Size& frame_size) {
     
     std::vector<Detection> detections;
@@ -464,15 +456,15 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(
     // scores: [1, max_dets] - confidence scores
     // classes: [1, max_dets] - class IDs
     
-    if (num_dets_tensor.empty() || boxes.empty() || scores.empty() || classes.empty()) {
+    if (num_dets_tensor.data.empty() || boxes.data.empty() || scores.data.empty() || classes.data.empty()) {
         return detections;
     }
     
     // Get actual number of detections
-    int num_dets = static_cast<int>(getTensorFloat(num_dets_tensor[0]));
+    int num_dets = static_cast<int>(getTensorFloat(num_dets_tensor.data[0]));
     
-    // boxes_shape is [1, max_dets, 4]
-    int max_dets = boxes_shape.size() >= 2 ? boxes_shape[1] : 100;
+    // boxes.shape is [1, max_dets, 4]
+    int max_dets = boxes.shape.size() >= 2 ? boxes.shape[1] : 100;
     num_dets = std::min(num_dets, max_dets);  // Clamp to max_dets
     
     // Calculate scale ratios for letterbox inverse
@@ -480,14 +472,14 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(
     float r_h = static_cast<float>(input_size_.height) / frame_size.height;
     
     for (int i = 0; i < num_dets; ++i) {
-        float score = getTensorFloat(scores[i]);
+        float score = getTensorFloat(scores.data[i]);
         if (score < confidence_threshold_) continue;
         
         // Extract box coordinates in model space
-        float x1 = getTensorFloat(boxes[i * 4 + 0]);
-        float y1 = getTensorFloat(boxes[i * 4 + 1]);
-        float x2 = getTensorFloat(boxes[i * 4 + 2]);
-        float y2 = getTensorFloat(boxes[i * 4 + 3]);
+        float x1 = getTensorFloat(boxes.data[i * 4 + 0]);
+        float y1 = getTensorFloat(boxes.data[i * 4 + 1]);
+        float x2 = getTensorFloat(boxes.data[i * 4 + 2]);
+        float y2 = getTensorFloat(boxes.data[i * 4 + 3]);
         
         // Apply letterbox inverse transformation
         if (r_h > r_w) {
@@ -504,7 +496,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(
             y2 = y2 / r_h;
         }
         
-        int class_id = static_cast<int>(getTensorFloat(classes[i]));
+        int class_id = static_cast<int>(getTensorFloat(classes.data[i]));
         
         Detection det;
         det.class_id = class_id;

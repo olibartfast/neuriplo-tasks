@@ -20,8 +20,7 @@ public:
     
     std::vector<Result> postprocess(
         const cv::Size&,
-        const std::vector<std::vector<TensorElement>>&,
-        const std::vector<std::vector<int64_t>>&) override {
+        const std::vector<Tensor>&) override {
         return {};
     }
 };

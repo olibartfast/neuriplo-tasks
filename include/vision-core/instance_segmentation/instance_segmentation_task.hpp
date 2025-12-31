@@ -29,8 +29,7 @@ public:
     
     std::vector<Result> postprocess(
         const cv::Size& frame_size,
-        const std::vector<std::vector<TensorElement>>& infer_results,
-        const std::vector<std::vector<int64_t>>& infer_shapes) override;
+        const std::vector<Tensor>& tensors) override;
 
 private:
     ModelType model_type_;
@@ -50,8 +49,7 @@ private:
     
     cv::Size extractInputSize(const ModelInfo& model_info);
     
-    bool validateTensorInputs(const std::vector<std::vector<TensorElement>>& infer_results,
-                             const std::vector<std::vector<int64_t>>& infer_shapes) const;
+    bool validateTensorInputs(const std::vector<Tensor>& tensors) const;
 };
 
 } // namespace vision_core

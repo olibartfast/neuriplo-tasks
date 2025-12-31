@@ -56,15 +56,14 @@ std::vector<std::vector<uint8_t>> ClassificationTask::preprocess(const std::vect
 
 std::vector<Result> ClassificationTask::postprocess(
     const cv::Size&, // frame_size unused for classification
-    const std::vector<std::vector<TensorElement>>& infer_results,
-    const std::vector<std::vector<int64_t>>& infer_shapes) {
+    const std::vector<Tensor>& tensors) {
     
-    if (infer_results.empty() || infer_shapes.empty()) {
+    if (tensors.empty()) {
         return {};
     }
     
     // Classify using unified postprocessing
-    auto classifications = postprocessor_->postprocess(infer_results[0], infer_shapes[0]);
+    auto classifications = postprocessor_->postprocess(tensors[0].data, tensors[0].shape);
     
     // Convert to results
     std::vector<Result> results;
