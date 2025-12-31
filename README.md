@@ -1,6 +1,6 @@
 # vision-core
 
-> 🚧 Status: Under Development — expect frequent updates.
+> 🚧 Status: Under Development — expect frequent updates.  
 
 A set of framework-agnostic computer vision algorithms including common pre-processing and post-processing steps designed to be reused across multiple inference engine projects such as:
 * [tritonic](https://github.com/olibartfast/tritonic)
@@ -14,6 +14,32 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Video Classification**: TimeSformer
 - **Optical Flow**: RAFT
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
+- **Unified Tensor Interface**: Simplified API using `Tensor` struct that encapsulates data and shape information
+
+## Tensor Interface
+
+Vision-core uses a unified `Tensor` struct to simplify API usage and improve type safety:
+
+```cpp
+struct Tensor {
+    std::vector<TensorElement> data;    // Tensor values (variant: float, int32_t, int64_t, uint8_t)
+    std::vector<int64_t> shape;         // Tensor dimensions
+    
+    // Constructors
+    Tensor() = default;
+    Tensor(std::vector<TensorElement> data_, std::vector<int64_t> shape_);
+};
+
+// Example usage:
+Tensor output_tensor(inference_data, {1, 25200, 85});  // YOLO output
+Tensor scores_tensor(scores_data, {1, 8400});          // Confidence scores
+```
+
+**Benefits:**
+- **Type Safety**: Data and shape are always paired together, preventing mismatched parameters
+- **Cleaner API**: Reduces parameter count in postprocessing functions
+- **Better Encapsulation**: Related tensor information is grouped in a single structure
+- **Consistency**: All postprocessors use the same tensor interface
 
 ## Two Ways to Use vision-core
 
@@ -44,9 +70,14 @@ YoloPostprocessor postprocessor(
     0.45f  // NMS threshold
 );
 
+// Convert inference outputs to Tensor format
+std::vector<Tensor> tensors;
+for (size_t i = 0; i < inference_outputs.size(); ++i) {
+    tensors.emplace_back(inference_outputs[i], output_shapes[i]);
+}
+
 std::vector<Detection> detections = postprocessor.postprocess(
-    inference_outputs, // std::vector<std::vector<TensorElement>>
-    output_shapes,     // std::vector<std::vector<int64_t>>
+    tensors,       // std::vector<Tensor>
     image.size()
 );
 ```
@@ -78,11 +109,16 @@ auto preprocessed = task->preprocess(images);
 
 // ... run inference ...
 
+// Convert inference outputs to Tensor format
+std::vector<Tensor> tensors;
+for (size_t i = 0; i < inference_outputs.size(); ++i) {
+    tensors.emplace_back(inference_outputs[i], output_shapes[i]);
+}
+
 // Postprocess
 auto results = task->postprocess(
     images[0].size(), 
-    inference_outputs, 
-    output_shapes
+    tensors  // std::vector<Tensor>
 );
 
 // Access results via std::variant
