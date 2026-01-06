@@ -48,13 +48,6 @@ python export/optical_flow/raft/raft_exporter.py --model-type large --format onn
 python export/video_classification/timesformer/export_timesformer_to_onnx.py
 ```
 
-## Supported Export Formats
-
-- **ONNX**: Cross-platform inference
-- **TorchScript**: PyTorch native format
-- **TensorRT**: NVIDIA GPU optimized (via ONNX conversion)
-- **SavedModel**: TensorFlow native format
-
 ## Integration with Inference Engines
 
 These exported models can be used with:
@@ -63,5 +56,10 @@ These exported models can be used with:
 - TensorRT
 - OpenVINO
 - Custom inference implementations
+
+For manual export refer to:
+[Object Detection](https://github.com/olibartfast/vision-core/blob/master/export/detection/ObjectDetection.md) 
+[Classification] (https://github.com/olibartfast/vision-core/blob/master/export/detection/Classification.md)
+
 
 For Triton-specific deployment tools, see [tritonic](https://github.com/olibartfast/tritonic/tree/master/deploy) repository.
