@@ -58,8 +58,8 @@ These exported models can be used with:
 - Custom inference implementations
 
 For manual export refer to:
-[Object Detection](https://github.com/olibartfast/vision-core/blob/master/export/detection/ObjectDetection.md) 
-[Classification] (https://github.com/olibartfast/vision-core/blob/master/export/detection/Classification.md)
+* [Object Detection](https://github.com/olibartfast/vision-core/blob/master/export/detection/ObjectDetection.md) 
+* [Classification](https://github.com/olibartfast/vision-core/blob/master/export/detection/Classification.md)
 
 
 For Triton-specific deployment tools, see [tritonic](https://github.com/olibartfast/tritonic/tree/master/deploy) repository.
