@@ -1,6 +1,6 @@
 
-- [ViT Classification](ViTClassification.md)
+- [ViT Classification](https://github.com/olibartfast/vision-core/blob/master/export/classification/ViTClassification.md)
 
-- [Torchvision Classification](export/classification/TorchvisionClassification.md)
+- [Torchvision Classification](https://github.com/olibartfast/vision-core/blob/master/export/classification/TorchVisionClassification.md)
 
-- [Tensorflow Classification](TensorflowClassification.md)
+- [Tensorflow Classification](https://github.com/olibartfast/vision-core/blob/master/export/classification/TensorflowClassification.md)
