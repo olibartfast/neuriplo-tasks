@@ -4,8 +4,6 @@ This guide explains how to deploy and use Hugging Face Vision Transformer models
 
 ## Overview
 
-**⚠️ Export tools have moved to vision-core for reusability across inference engines.**
-
 ViT (Vision Transformer) models apply transformer architectures to image classification tasks by treating images as sequences of patches. TritonIC supports ViT models through three deployment methods:
 
 1. **Python Backend with Pipeline** - Simplest setup with automatic preprocessing
@@ -30,7 +28,7 @@ See [vision-core export documentation](https://github.com/olibartfast/vision-cor
 | **Python Standard** | ✅ More control<br>✅ Custom preprocessing<br>✅ Easy debugging | ❌ Moderate performance<br>❌ Python dependency | Development, Custom models |
 | **ONNX Backend** | ✅ Best performance<br>✅ TensorRT optimization<br>✅ Production ready | ❌ Export complexity<br>❌ Limited model support | Production, High throughput |
 
-## Server Deployment
+## Triton Inference Server Deployment
 
 #### Method 1: Python Pipeline
 ```bash
@@ -50,74 +48,7 @@ cd deploy/vit/onnx
 python deploy.py --model google/vit-base-patch16-224 --output ./model_repository/vit_onnx
 ```
 
-## Client Usage
-
-### Basic Classification
-
-Once your ViT model is deployed on Triton Server, use TritonIC client:
-
-```bash
-# Pipeline method (port 8000)
-./tritonic \
-    --source=data/images/cat.jpg \
-    --model_type=vit-classifier \
-    --model=vit_pipeline \
-    --labelsFile=data/labels/imagenet_labels.txt \
-    --protocol=http \
-    --serverAddress=localhost \
-    --port=8000
-
-# Standard method (port 8010)  
-./tritonic \
-    --source=data/images/cat.jpg \
-    --model_type=vit-classifier \
-    --model=vit_standard \
-    --labelsFile=data/labels/imagenet_labels.txt \
-    --protocol=http \
-    --serverAddress=localhost \
-    --port=8010
-
-# ONNX method (port 8020)
-./tritonic \
-    --source=data/images/cat.jpg \
-    --model_type=vit-classifier \
-    --model=vit_onnx \
-    --labelsFile=data/labels/imagenet_labels.txt \
-    --protocol=http \
-    --serverAddress=localhost \
-    --port=8020
-```
-
-### Advanced Usage
-
-#### Batch Processing
-```bash
-# Process multiple images
-./tritonic \
-    --source=data/images/ \
-    --model_type=vit-classifier \
-    --model=vit_onnx \
-    --labelsFile=data/labels/imagenet_labels.txt \
-    --protocol=grpc \
-    --serverAddress=localhost \
-    --port=8021
-```
-
-#### Custom Input Sizes
-```bash
-# For high-resolution ViT models (384x384)
-./tritonic \
-    --source=data/images/high_res.jpg \
-    --model_type=vit-classifier \
-    --model=vit_onnx_384 \
-    --input_sizes="3,384,384" \
-    --labelsFile=data/labels/imagenet_labels.txt \
-    --protocol=http \
-    --serverAddress=localhost \
-    --port=8020
-```
-
-## Supported Models
+### Supported Models
 
 ### Popular ViT Models
 
@@ -144,7 +75,7 @@ python deploy.py --model your_username/custom-vit-model --output ./custom_vit
 
 ## Preprocessing Details
 
-ViT models in TritonIC use standard ImageNet preprocessing:
+ViT models use standard ImageNet preprocessing:
 
 - **Input Size**: 224×224 (or 384×384 for high-res models)
 - **Normalization**: ImageNet statistics
@@ -176,24 +107,15 @@ Top 3: class 282 (tiger cat) with confidence 0.0456
 
 ### Common Issues
 
-1. **Server Not Ready**
-   ```bash
-   # Check server health
-   curl http://localhost:8000/v2/health/ready
-   
-   # Check server logs
-   docker logs triton-vit-onnx
-   ```
-
-2. **ONNX Export Fails**
+1. **ONNX Export Fails**
    - Ensure transformers library is up to date: `pip install transformers>=4.36.0`
    - Some models may require specific PyTorch versions
 
-3. **Wrong Predictions**
+2. **Wrong Predictions**
    - Verify the labels file matches the model's training dataset
    - Check if model expects different normalization parameters
 
-4. **Performance Issues**
+3. **Performance Issues**
    - Use ONNX backend for best performance
    - Enable TensorRT optimization
    - Consider batch processing for multiple images
