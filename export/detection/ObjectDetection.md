@@ -2,8 +2,6 @@
 
 ## Quick Start with Universal YOLO Exporter
 
-**⚠️ Export tools have moved to vision-core for reusability across inference engines.**
-
 Use the universal YOLO exporter supporting **all YOLO versions** (v5-v12, NAS):
 
 ```bash
@@ -142,8 +140,6 @@ models.convert_to_onnx(model=net, input_shape=(3,640,640), out_path="yolo_nas_s.
 From [lyuwenyu RT-DETR repository](https://github.com/lyuwenyu/RT-DETR/):
 
 ### Universal Export Launcher Script (Recommended for All Versions)
-
-**⚠️ Export tools have moved to vision-core for reusability across inference engines.**
 
 Use the universal export launcher that supports **all RT-DETR versions** (v1, v2, v3, v4) as well as **D-FINE** and **DEIM** models:
 
