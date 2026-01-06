@@ -61,5 +61,8 @@ For manual export refer to:
 * [Object Detection](https://github.com/olibartfast/vision-core/blob/master/export/detection/ObjectDetection.md) 
 * [Classification](https://github.com/olibartfast/vision-core/blob/master/export/classification/Classification.md)
 
+* [Instance Segmentation](https://github.com/olibartfast/vision-core/blob/master/export/segmentation/InstanceSegmentation.md)
+* [Optical Flow](https://github.com/olibartfast/vision-core/blob/master/export/optical_flow/OpticalFlow.md)
+
 
 For Triton-specific deployment tools, see [tritonic](https://github.com/olibartfast/tritonic/tree/master/deploy) repository.
