@@ -1,4 +1,4 @@
-# Object Detection Model Export Guide for Triton Server Deployment
+# Object Detection Model Export Guide
 
 ## Quick Start with Universal YOLO Exporter
 
