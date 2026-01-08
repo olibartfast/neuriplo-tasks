@@ -5,6 +5,7 @@
 A set of framework-agnostic computer vision algorithms including common pre-processing and post-processing steps designed to be reused across multiple inference engine projects such as:
 * [tritonic](https://github.com/olibartfast/tritonic)
 * [object-detection-inference](https://github.com/olibartfast/object-detection-inference)
+* [vision-tracking](https://github.com/olibartfast/vision-tracking)
 
 ## Features
 
