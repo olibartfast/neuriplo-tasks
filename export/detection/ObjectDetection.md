@@ -17,8 +17,6 @@ python3 export.py --model yolov8n.pt --version v8 --format onnx --download-weigh
 python3 export.py --model yolov5s.pt --version v5 --repo-dir ./repositories/yolov5 --format onnx
 ```
 
-See [vision-core export documentation](https://github.com/olibartfast/vision-core/tree/main/export) for detailed usage.
-
 ---
 ### Manual Export (Alternative)
 ## YOLOv8/YOLO11/YOLOv12
@@ -308,8 +306,6 @@ Follow the procedure described in the [RF-DETR documentation](https://github.com
 ### ONNX Export for ONNX Runtime
 
 #### Option 1 — Using the Python Script
-
-**⚠️ Export tools have moved to vision-core.**
 
 Run the export script with your desired parameters:
 
