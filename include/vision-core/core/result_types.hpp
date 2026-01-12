@@ -81,9 +81,5 @@ enum class TaskType {
     VideoClassification
 };
 
-/**
- * @brief Legacy compatibility: ClassificationResult (maps to Classification)
- */
-using ClassificationResult = Classification;
 
 } // namespace vision_core
