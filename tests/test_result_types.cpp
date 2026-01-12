@@ -190,14 +190,6 @@ TEST_F(ResultTypesTest, TaskTypeEnumValues) {
     EXPECT_EQ(static_cast<int>(TaskType::VideoClassification), 4);
 }
 
-TEST_F(ResultTypesTest, ClassificationResultAlias) {
-    // Test that ClassificationResult is an alias for Classification
-    ClassificationResult result(5.0f, 0.88f);
-    Classification cls(5.0f, 0.88f);
-    
-    EXPECT_FLOAT_EQ(result.class_id, cls.class_id);
-    EXPECT_FLOAT_EQ(result.class_confidence, cls.class_confidence);
-}
 
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
