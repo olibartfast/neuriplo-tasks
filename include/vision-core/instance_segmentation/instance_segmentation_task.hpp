@@ -37,8 +37,8 @@ private:
     std::unique_ptr<Preprocessor> preprocessor_;
     std::unique_ptr<SegmentationPostprocessor> postprocessor_;
     float confidence_threshold_;
-    float nms_threshold_;
-    float mask_threshold_;
+    [[maybe_unused]] float nms_threshold_;
+    [[maybe_unused]] float mask_threshold_;
     int input_width_;
     int input_height_;
 
