@@ -14,8 +14,8 @@ public:
 
 private:
     float confidence_threshold_;
-    float nms_threshold_;
-    float mask_threshold_;
+    [[maybe_unused]] float nms_threshold_;
+    [[maybe_unused]] float mask_threshold_;
 
     float getTensorFloat(const TensorElement& element);
 };
