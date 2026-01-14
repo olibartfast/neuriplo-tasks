@@ -86,10 +86,10 @@ TEST_F(YoloPostprocessorTest, LowConfidenceFiltered) {
     EXPECT_TRUE(detections.empty());
 }
 
-TEST_F(YoloPostprocessorTest, YoloV10Format) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_V10, cv::Size(640, 640), 0.25f, 0.45f);
+TEST_F(YoloPostprocessorTest, YoloNmsFreeFormat) {
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NMS_FREE, cv::Size(640, 640), 0.25f, 0.45f);
     
-    // YOLOv10 output: [1, 300, 6] (x1, y1, x2, y2, score, class)
+    // YOLOv10/YOLO26 output: [1, 300, 6] (x1, y1, x2, y2, score, class)
     int num_dets = 300;
     int dims = 6;
     std::vector<TensorElement> output(num_dets * dims, 0.0f);

@@ -70,9 +70,9 @@ std::vector<Detection> YoloPostprocessor::postprocess(
             break;
         }
 
-        case ObjectDetectionTask::ModelType::YOLO_V10: {
+        case ObjectDetectionTask::ModelType::YOLO_NMS_FREE: {
             if (tensors.empty()) return {};
-            detections = postprocessYoloV10(tensors[0], frame_size);
+            detections = postprocessYoloNmsFree(tensors[0], frame_size);
             break;
         }
         
@@ -278,13 +278,13 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV4(
   return filtered_detections;
 }
 
-std::vector<Detection> YoloPostprocessor::postprocessYoloV10(
+std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(
     const Tensor& output,
     const cv::Size& frame_size) {
     
     std::vector<Detection> detections;
     
-    // YOLOv10 output: [1, 300, 6] (x1, y1, x2, y2, score, class)
+    // YOLOv10/YOLO26 output: [1, 300, 6] (x1, y1, x2, y2, score, class)
     if (output.shape.size() < 3 || output.shape[2] < 6) return {};
     
     int num_dets = output.shape[1];
@@ -327,7 +327,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV10(
         detections.push_back(det);
     }
     
-    // YOLOv10 typically doesn't need NMS, but we can apply it if needed
+    // End-to-end models (YOLOv10/YOLO26) typically don't need NMS, but we can apply it if needed
     // applyNMS(detections); 
     return detections;
 }

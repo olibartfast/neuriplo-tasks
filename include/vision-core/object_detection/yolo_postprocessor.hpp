@@ -42,7 +42,7 @@ private:
         const std::vector<Tensor>& tensors,
         const cv::Size& frame_size);    
 
-    std::vector<Detection> postprocessYoloV10(
+    std::vector<Detection> postprocessYoloNmsFree(
         const Tensor& output,
         const cv::Size& frame_size);
 

@@ -122,8 +122,8 @@ ObjectDetectionTask::ModelType ObjectDetectionTask::detectModelType(const std::s
         return ModelType::YOLO_V4;
     }
 
-    if (lower_name == "yolov10") {
-        return ModelType::YOLO_V10;
+    if (lower_name == "yolov10" || lower_name == "yolo26") {
+        return ModelType::YOLO_NMS_FREE;
     }
     if (lower_name == "yolov7e2e" || lower_name == "yolov7-e2e") {
         return ModelType::YOLO_V7_E2E;
@@ -154,7 +154,7 @@ std::unique_ptr<Preprocessor> ObjectDetectionTask::createPreprocessor(ModelType 
     switch (type) {
         case ModelType::YOLO_STANDARD:
         case ModelType::YOLO_V4:
-        case ModelType::YOLO_V10:
+        case ModelType::YOLO_NMS_FREE:
         case ModelType::YOLO_NAS:
         case ModelType::YOLO_V7_E2E:
             return std::make_unique<YoloPreprocessor>(input_size);
@@ -175,7 +175,7 @@ std::unique_ptr<Postprocessor> ObjectDetectionTask::createPostprocessor(ModelTyp
     switch (type) {
         case ModelType::YOLO_STANDARD:
         case ModelType::YOLO_V4:
-        case ModelType::YOLO_V10:
+        case ModelType::YOLO_NMS_FREE:
         case ModelType::YOLO_NAS:
         case ModelType::YOLO_V7_E2E:
             return std::make_unique<YoloPostprocessor>(type, input_size, confidence_threshold_, nms_threshold_);
@@ -234,7 +234,7 @@ bool ObjectDetectionTask::validateTensorInputs(
     switch (model_type_) {
         case ModelType::YOLO_STANDARD:
         case ModelType::YOLO_V4:
-        case ModelType::YOLO_V10:
+        case ModelType::YOLO_NMS_FREE:
             return tensors.size() >= 1;
             
         case ModelType::YOLO_NAS:

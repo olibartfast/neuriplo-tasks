@@ -9,7 +9,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 
 ## Features
 
-- **Object Detection**: YOLO (v5-v12), RT-DETR family (RT-DETR v1/v2/v4, D-FINE, DEIM v1/v2), YOLO-NAS, D-FINE
+- **Object Detection**: YOLO (v5-v12, yolo26), RT-DETR family (RT-DETR v1/v2/v4, D-FINE, DEIM v1/v2), YOLO-NAS, D-FINE
 - **Instance Segmentation**: YOLOv5/v8/v11-seg, RF-DETR-Seg
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: TimeSformer
@@ -163,7 +163,7 @@ The TaskFactory supports the following model type strings:
 
 **Object Detection:**
 
-- `"yolo"`, `"yolov7e2e"`, `"yolov10"`, `"yolov4"` - YOLO-based variants
+- `"yolo"`, `"yolov7e2e"`, `"yolov10"`, `"yolo26"`, `"yolov4"` - YOLO-based variants
 - `"yolonas"` - YOLO-NAS
 - `"rtdetr"` - RT-DETR family (RT-DETR v1, v2, and v4; excludes v3; includes D-FINE and DEIM v1/v2)
 - `"rtdetrul"` - RT-DETR (Ultralytics implementation)
