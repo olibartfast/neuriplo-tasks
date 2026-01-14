@@ -99,16 +99,23 @@ private:
      */
     std::tuple<int, int, int> initializeInputDimensions(const ModelInfo& model_info) const {
         for (size_t i = 0; i < model_info.input_shapes.size(); i++) {
-            if (model_info.input_shapes[i].size() >= 3) {
-                int channels = model_info.input_formats[i] == "FORMAT_NHWC" 
-                    ? model_info.input_shapes[i][3] 
-                    : model_info.input_shapes[i][1];
-                int height = model_info.input_formats[i] == "FORMAT_NHWC" 
-                    ? model_info.input_shapes[i][1] 
-                    : model_info.input_shapes[i][2];
-                int width = model_info.input_formats[i] == "FORMAT_NHWC" 
-                    ? model_info.input_shapes[i][2] 
-                    : model_info.input_shapes[i][3];
+            const auto& shape = model_info.input_shapes[i];
+            const bool is_nhwc = (model_info.input_formats[i] == "FORMAT_NHWC");
+
+            if (shape.size() == 3) {
+                // Case for 3D inputs: CHW (default) or HWC
+                if (is_nhwc) {
+                    // HWC: 0->H, 1->W, 2->C
+                    return std::make_tuple(static_cast<int>(shape[1]), static_cast<int>(shape[0]), static_cast<int>(shape[2]));
+                } else {
+                    // CHW: 0->C, 1->H, 2->W
+                    return std::make_tuple(static_cast<int>(shape[2]), static_cast<int>(shape[1]), static_cast<int>(shape[0]));
+                }
+            } else if (shape.size() >= 4) {
+                // Case for 4D inputs: NCHW (default) or NHWC
+                int channels = is_nhwc ? shape[3] : shape[1];
+                int height = is_nhwc ? shape[1] : shape[2];
+                int width = is_nhwc ? shape[2] : shape[3];
                 return std::make_tuple(width, height, channels);
             }
         }

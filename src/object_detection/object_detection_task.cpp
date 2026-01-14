@@ -198,12 +198,25 @@ cv::Size ObjectDetectionTask::extractInputSize(const ModelInfo& model_info) {
     
     if (!model_info.input_shapes.empty() && model_info.input_shapes[0].size() >= 3) {
         const auto& shape = model_info.input_shapes[0];
-        if (model_info.input_formats[0] == "FORMAT_NCHW") {
-            height = static_cast<int>(shape[2]);
-            width = static_cast<int>(shape[3]);
-        } else if (model_info.input_formats[0] == "FORMAT_NHWC") {
-            height = static_cast<int>(shape[1]);
-            width = static_cast<int>(shape[2]);
+        if (shape.size() == 4) {
+            if (model_info.input_formats[0] == "FORMAT_NCHW") {
+                height = static_cast<int>(shape[2]);
+                width = static_cast<int>(shape[3]);
+            } else if (model_info.input_formats[0] == "FORMAT_NHWC") {
+                height = static_cast<int>(shape[1]);
+                width = static_cast<int>(shape[2]);
+            }
+        } else if (shape.size() == 3) {
+             // 3D case: CHW or HWC
+            if (model_info.input_formats[0] == "FORMAT_NCHW") {
+                 // CHW
+                height = static_cast<int>(shape[1]);
+                width = static_cast<int>(shape[2]);
+            } else if (model_info.input_formats[0] == "FORMAT_NHWC") {
+                 // HWC
+                 height = static_cast<int>(shape[0]);
+                 width = static_cast<int>(shape[1]);
+            }
         }
     }
     
