@@ -22,7 +22,7 @@ TEST_F(ConcreteTasksTest, CreateYoloTask) {
     
     // Test various YOLO strings
     std::vector<std::string> types = {
-        "yolo", "yolov5", "yolov8", "yolov10", "yolo11"
+        "yolo", "yolov5", "yolov8", "yolov10", "yolo26", "yolo11"
     };
 
     for (const auto& type : types) {

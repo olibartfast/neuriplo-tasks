@@ -12,7 +12,7 @@ namespace vision_core {
  * @brief Unified object detection task for all detection architectures
  * 
  * Handles all detection models with consistent architecture:
- * - YOLO family: v5, v6, v7, v8, v9, v10, v11, v12, NAS
+ * - YOLO family: v5, v6, v7, v8, v9, v10, v11, v12, yolo26, yolo-nas
  * - Transformer-based: RT-DETR, RT-DETRv2, RT-DETR Ultralytics, D-FINE, DEIM, RF-DETR
  * 
  * Design principles:
@@ -35,7 +35,7 @@ public:
         
         // YOLO variants with different output formats
         YOLO_V4,           // YOLOv4 (Darknet-based)
-        YOLO_V10,          // YOLOv10: [batch, detections, 6] - end-to-end, no NMS
+        YOLO_NMS_FREE,     // YOLOv10/YOLO26: [batch, detections, 6] - NMS-free detection
         YOLO_NAS,          // YOLO-NAS: separate boxes + scores tensors
         YOLO_V7_E2E,       // YOLOv7 end-to-end: 4 outputs (num_dets, det_boxes, det_scores, det_classes)
         

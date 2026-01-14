@@ -56,7 +56,7 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(
 
     // ============ OBJECT DETECTION ============
     // YOLO variants
-    if (normalized == "yolo" || normalized == "yolov7e2e" || normalized == "yolov10" || normalized == "yolonas" || normalized == "yolov4") {
+    if (normalized == "yolo" || normalized == "yolov7e2e" || normalized == "yolov10" || normalized == "yolo26" || normalized == "yolonas" || normalized == "yolov4") {
         return std::make_unique<ObjectDetectionTask>(model_info, normalized);
     }
     
