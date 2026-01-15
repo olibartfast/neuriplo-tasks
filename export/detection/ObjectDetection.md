@@ -41,14 +41,15 @@ yolo export model=best.pt format=engine
 trtexec --onnx=best.onnx --saveEngine=best.engine
 ```
 
-## YOLOv10
-From [yolov10 repo](https://github.com/THU-MIG/yolov10) or [ultralytics package](https://pypi.org/project/ultralytics/):
+## YOLOv10/YOLO26
+- `YOLOv10`: from [yolov10 repo](https://github.com/THU-MIG/yolov10) or [ultralytics package](https://pypi.org/project/ultralytics/)
+- `YOLO26`: from [ultralytics package](https://pypi.org/project/ultralytics/)
 
 ### OnnxRuntime/TorchScript
 ```bash
-yolo export format=onnx model=yolov10model.pt   # for ONNX format
+yolo export format=onnx model=model.pt   # for ONNX format
 # OR
-yolo export format=torchscript model=yolov10model.pt   # for TorchScript format
+yolo export format=torchscript model=model.pt   # for TorchScript format
 ```
 
 **Output Format**: `[1, 300, 6]` where 6 = [x1, y1, x2, y2, confidence, class_id] (end-to-end with NMS)
@@ -56,7 +57,7 @@ yolo export format=torchscript model=yolov10model.pt   # for TorchScript format
 
 ### TensorRT
 ```bash
-trtexec --onnx=yolov10model.onnx --saveEngine=yolov10model.engine --fp16
+trtexec --onnx=yolov10model.onnx --saveEngine=model.engine --fp16
 ```
 
 ## YOLOv9
