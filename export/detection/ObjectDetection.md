@@ -29,8 +29,8 @@ yolo export model=best.pt format=onnx   # for ONNX format
 yolo export model=best.pt format=torchscript   # for TorchScript format
 ```
 
-**Output Format**: `[1, 84, 8400]` where 84 = 4 bbox coords + 80 class scores (no objectness score)
-**Model Type**: `yolo`
+- **Output Format**: `[1, 84, 8400]` where 84 = 4 bbox coords + 80 class scores (no objectness score)
+- **Model Type**: `yolo`
 
 ### TensorRT
 ```bash
@@ -52,8 +52,8 @@ yolo export format=onnx model=model.pt   # for ONNX format
 yolo export format=torchscript model=model.pt   # for TorchScript format
 ```
 
-**Output Format**: `[1, 300, 6]` where 6 = [x1, y1, x2, y2, confidence, class_id] (end-to-end with NMS)
-**Model Type**: `yolov10`, `yolo26`
+- **Output Format**: `[1, 300, 6]` where 6 = [x1, y1, x2, y2, confidence, class_id] (end-to-end with NMS)
+- **Model Type**: `yolov10`, `yolo26`
 
 ### TensorRT
 ```bash
@@ -74,8 +74,8 @@ python export.py --weights yolov9-c/e-converted.pt --include onnx   # for ONNX f
 python export.py --weights yolov9-c/e-converted.pt --include torchscript   # for TorchScript format
 ```
 
-**Output Format**: `[1, 84, 8400]` where 84 = 4 bbox coords + 80 class scores (no objectness score)
-**Model Type**: `yolo`
+- **Output Format**: `[1, 84, 8400]` where 84 = 4 bbox coords + 80 class scores (no objectness score)
+- **Model Type**: `yolo`
 
 ### TensorRT
 ```bash
@@ -89,9 +89,9 @@ From [yolov5 repo](https://github.com/ultralytics/yolov5/issues/251):
 python export.py --weights <yolov5_version>.pt --include onnx
 ```
 
-**Output Format**: `[1, 25200, 85]` where 85 = 4 bbox coords + 1 objectness + 80 class scores
-**Model Type**: `yolo`
-**Note**: YOLOv5/v6/v7 have objectness score at index 4, which is handled automatically by vision-core
+- **Output Format**: `[1, 25200, 85]` where 85 = 4 bbox coords + 1 objectness + 80 class scores
+- **Model Type**: `yolo`
+- **Note**: YOLOv5/v6/v7 have objectness score at index 4, which is handled automatically by vision-core
 
 ### Libtorch
 ```bash
@@ -102,9 +102,9 @@ python export.py --weights <yolov5_version>.pt --include torchscript
 ### OnnxRuntime
 Export weights to ONNX format or download from [yolov6 repo](https://github.com/meituan/YOLOv6/tree/main/deploy/ONNX).
 
-**Output Format**: `[1, 25200, 85]` where 85 = 4 bbox coords + 1 objectness + 80 class scores
-**Model Type**: `yolo`
-**Note**: Postprocessing code is identical to YOLOv5/v7
+- **Output Format**: `[1, 25200, 85]` where 85 = 4 bbox coords + 1 objectness + 80 class scores
+- **Model Type**: `yolo`
+- **Note**: Postprocessing code is identical to YOLOv5/v7
 
 ## YOLOv7
 ### OnnxRuntime/Libtorch
@@ -113,8 +113,8 @@ From [yolov7 repo](https://github.com/WongKinYiu/yolov7#export):
 python export.py --weights <yolov7_version>.pt --grid --simplify --topk-all 100 --iou-thres 0.65 --conf-thres 0.35 --img-size 640 640 --max-wh 640
 ```
 
-**Output Format**: `[1, 25200, 85]` where 85 = 4 bbox coords + 1 objectness + 80 class scores
-**Model Type**: `yolo`
+- **Output Format**: `[1, 25200, 85]` where 85 = 4 bbox coords + 1 objectness + 80 class scores
+- **Model Type**: `yolo`
 
 **Important Notes**:
 - Use `--grid` to combine multi-scale outputs into single tensor
