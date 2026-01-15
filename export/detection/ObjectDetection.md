@@ -53,7 +53,7 @@ yolo export format=torchscript model=model.pt   # for TorchScript format
 ```
 
 **Output Format**: `[1, 300, 6]` where 6 = [x1, y1, x2, y2, confidence, class_id] (end-to-end with NMS)
-**Model Type**: `yolov10`
+**Model Type**: `yolov10`, `yolo26`
 
 ### TensorRT
 ```bash
