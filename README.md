@@ -170,8 +170,10 @@ The TaskFactory supports the following model type strings:
 - `"rfdetr"` - RF-DETR
 
 **Instance Segmentation:**
-- `"yoloseg"` - YOLO segmentation
-- `"rfdetrseg"` - RF-DETR segmentation models
+- `"yoloseg"` - YOLOv5/YOLOv8/YOLO11
+- `"yolov10seg"`- YOLO11
+- `"yolo26seg"` - YOLO26
+- `"rfdetrseg"` - RF-DETR 
 
 **Classification:**
 - `"torchvision-classifier"` - Torchvision models (ResNet, EfficientNet, etc.)
