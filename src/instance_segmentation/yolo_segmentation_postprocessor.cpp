@@ -35,13 +35,15 @@ YoloSegmentationPostprocessor::postprocessYoloSeg(
         "YOLO segmentation requires at least 2 output tensors");
   }
 
-  // Output 0: Detections [1, 4+cls+32, 8400]
-  // Output 1: Mask Protos [1, 32, 160, 160]
+  // Find output indices dynamically
+  auto indices = findOutputIndices(tensors);
+  int det_idx = indices.first;
+  int proto_idx = indices.second;
 
-  const auto& dets_tensor = tensors[0].data;
-  const auto& protos_tensor = tensors[1].data;
-  const auto& dets_shape = tensors[0].shape;
-  const auto& protos_shape = tensors[1].shape;
+  const auto& dets_data = tensors[det_idx].data;
+  const auto& protos_data_raw = tensors[proto_idx].data;
+  const auto& dets_shape = tensors[det_idx].shape;
+  const auto& protos_shape = tensors[proto_idx].shape;
 
   if (dets_shape.size() < 3 || protos_shape.size() < 4) {
     return {};
@@ -59,11 +61,10 @@ YoloSegmentationPostprocessor::postprocessYoloSeg(
   int proto_h = protos_shape[2];
   int proto_w = protos_shape[3];
 
-  const float* dets_data = std::get_if<float>(&dets_tensor[0]);
-  const float* protos_data = std::get_if<float>(&protos_tensor[0]);
-
-  if (!dets_data || !protos_data) {
-    return {};
+  // Extract prototype data to contiguous float vector for efficient access in generateMask
+  std::vector<float> protos_data(protos_data_raw.size());
+  for (size_t i = 0; i < protos_data.size(); ++i) {
+      protos_data[i] = getTensorFloat(protos_data_raw[i]);
   }
 
   // Collect all detections before NMS
@@ -75,7 +76,7 @@ YoloSegmentationPostprocessor::postprocessYoloSeg(
     int class_id = -1;
 
     for (int c = 0; c < num_classes; ++c) {
-      float score = dets_data[(c + 4) * anchors + i];
+      float score = getTensorFloat(dets_data[(c + 4) * anchors + i]);
       if (score > max_score) {
         max_score = score;
         class_id = c;
@@ -87,10 +88,10 @@ YoloSegmentationPostprocessor::postprocessYoloSeg(
     }
 
     // Extract box (cx, cy, w, h)
-    float cx = dets_data[0 * anchors + i];
-    float cy = dets_data[1 * anchors + i];
-    float w = dets_data[2 * anchors + i];
-    float h = dets_data[3 * anchors + i];
+    float cx = getTensorFloat(dets_data[0 * anchors + i]);
+    float cy = getTensorFloat(dets_data[1 * anchors + i]);
+    float w = getTensorFloat(dets_data[2 * anchors + i]);
+    float h = getTensorFloat(dets_data[3 * anchors + i]);
 
     float x1 = cx - w / 2.0f;
     float y1 = cy - h / 2.0f;
@@ -101,7 +102,7 @@ YoloSegmentationPostprocessor::postprocessYoloSeg(
     std::vector<float> mask_coeffs;
     mask_coeffs.reserve(num_mask_coeffs);
     for (int m = 0; m < num_mask_coeffs; ++m) {
-      mask_coeffs.push_back(dets_data[(4 + num_classes + m) * anchors + i]);
+      mask_coeffs.push_back(getTensorFloat(dets_data[(4 + num_classes + m) * anchors + i]));
     }
 
     Detection det;
@@ -124,7 +125,7 @@ YoloSegmentationPostprocessor::postprocessYoloSeg(
 
   for (const auto& det : nms_detections) {
     // Generate mask from coefficients and prototypes
-    cv::Mat mask = generateMask(det.mask_coeffs, protos_data, proto_h, proto_w);
+    cv::Mat mask = generateMask(det.mask_coeffs, protos_data.data(), proto_h, proto_w);
 
     // Scale bbox to original image coordinates
     cv::Rect bbox = scaleToOriginal(det.x1, det.y1, det.x2, det.y2, frame_size);
@@ -163,11 +164,13 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(
         "YOLO NMS-free segmentation requires 2 output tensors");
   }
 
-  // Output 0: Detections [1, 300, 38] (x1, y1, x2, y2, score, class, 32 coeffs)
-  // Output 1: Mask Prototypes [1, 32, 160, 160]
+  // Find output indices dynamically
+  auto indices = findOutputIndices(tensors);
+  int det_idx = indices.first;
+  int proto_idx = indices.second;
 
-  const auto& dets_tensor = tensors[0];
-  const auto& protos_tensor = tensors[1];
+  const auto& dets_tensor = tensors[det_idx];
+  const auto& protos_tensor = tensors[proto_idx];
   const auto& dets_shape = dets_tensor.shape;
   const auto& protos_shape = protos_tensor.shape;
 
@@ -302,6 +305,28 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(
   return segmentations;
 }
 
+std::pair<int, int> YoloSegmentationPostprocessor::findOutputIndices(const std::vector<Tensor>& tensors) {
+  int det_idx = -1;
+  int proto_idx = -1;
+
+  for (size_t i = 0; i < tensors.size(); ++i) {
+    // Prototype mask tensor is typically 4D [Batch, Channels, Height, Width]
+    if (tensors[i].shape.size() == 4) {
+      proto_idx = static_cast<int>(i);
+    } 
+    // Detection tensor is typically 3D [Batch, Channels/Anchors, Anchors/Channels]
+    else if (tensors[i].shape.size() == 3) {
+      det_idx = static_cast<int>(i);
+    }
+  }
+
+  // Fallback if autodetection fails (maintain legacy behavior)
+  if (det_idx == -1) det_idx = 0;
+  if (proto_idx == -1) proto_idx = 1;
+
+  return {det_idx, proto_idx};
+}
+
 cv::Rect YoloSegmentationPostprocessor::scaleToOriginal(
     float x1, float y1, float x2, float y2, const cv::Size& frame_size) const {
 
@@ -383,7 +408,16 @@ cv::Mat YoloSegmentationPostprocessor::cropAndResizeMask(
   // Crop mask to bbox region
   cv::Rect proto_bbox(proto_x1, proto_y1, proto_x2 - proto_x1,
                       proto_y2 - proto_y1);
+
+  if (proto_bbox.width <= 0 || proto_bbox.height <= 0) {
+      return cv::Mat::zeros(frame_size, CV_8UC1);
+  }
+  
   cv::Mat mask_cropped = mask(proto_bbox).clone();
+
+  if (bbox.width <= 0 || bbox.height <= 0) {
+       return cv::Mat::zeros(frame_size, CV_8UC1);
+  }
 
   // Resize to bbox size
   cv::Mat mask_resized;
