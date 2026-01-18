@@ -59,6 +59,11 @@ private:
   cv::Rect scaleToOriginal(float x1, float y1, float x2, float y2,
                            const cv::Size& frame_size) const;
 
+  /// Identifies indices for detection and prototype tensors based on dimensions
+  /// @param tensors Input tensors
+  /// @return Pair of indices {detection_idx, proto_idx}
+  std::pair<int, int> findOutputIndices(const std::vector<Tensor>& tensors);
+
   /// Extracts float value from TensorElement variant
   float getTensorFloat(const TensorElement& element);
 
