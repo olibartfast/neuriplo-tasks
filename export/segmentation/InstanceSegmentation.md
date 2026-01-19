@@ -1,5 +1,5 @@
-## YOLOv8/YOLO11/YOLOv12
-* Install  [following Ultralytics official documentation (pip ultralytics package version >= 8.3.0)](]https://docs.ultralytics.com/tasks/segment/) and export the model in different formats, you can use the following commands:
+## YOLOv8/YOLOv10/YOLO11/YOLOv12/YOLO26
+* Install  [following Ultralytics official documentation (pip ultralytics package version >= 8.4.0)](]https://docs.ultralytics.com/tasks/segment/) and export the model in different formats, you can use the following commands:
 
 #### OnnxRuntime/Torchscript/Openvino
 
