@@ -46,7 +46,7 @@ show_help() {
 YOLO Universal Export Launcher
 
 DESCRIPTION:
-    Launch YOLO model export for all versions (v5, v6, v7, v8, v9, v10, v11, v12, NAS)
+    Launch YOLO model export for all versions (v5, v6, v7, v8, v9, v10, v11, v12, NAS, 26)
     with support for ONNX and TensorRT formats.
 
 USAGE:
@@ -56,7 +56,7 @@ REQUIRED OPTIONS:
     -m, --model PATH        Path to model weights or model name
 
 VERSION OPTIONS:
-    -v, --version VERSION   Force specific version: auto, v5, v6, v7, v8, v9, v10, v11, v12, nas
+    -v, --version VERSION   Force specific version: auto, v5, v6, v7, v8, v9, v10, v11, v12, nas, 26
                            (default: auto-detect from model name)
 
 EXPORT OPTIONS:
@@ -110,12 +110,13 @@ EXAMPLES:
     $0 --model yolov8n.pt --format onnx --dynamic
 
 SUPPORTED MODELS:
-    Ultralytics pip (v8, v9, v10, v11, v12) - No repo required:
+    Ultralytics pip (v8, v9, v10, v11, v12, 26) - No repo required:
         yolov8n, yolov8s, yolov8m, yolov8l, yolov8x
         yolov9t, yolov9s, yolov9m, yolov9c, yolov9e
         yolov10n, yolov10s, yolov10m, yolov10l, yolov10x
         yolo11n, yolo11s, yolo11m, yolo11l, yolo11x
         yolov12n, yolov12s, yolov12m, yolov12l, yolov12x
+        yolo26n, yolo26s, yolo26m, yolo26l, yolo26x
 
     YOLOv5 (ultralytics/yolov5 repo) - Requires --repo-dir:
         yolov5n, yolov5s, yolov5m, yolov5l, yolov5x
