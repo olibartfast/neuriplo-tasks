@@ -2,11 +2,11 @@
 """
 YOLO Universal Model Export Script
 
-Export YOLO models (v5, v6, v7, v8, v9, v10, v11, v12, NAS) to ONNX and TensorRT formats.
+Export YOLO models (v5, v6, v7, v8, v9, v10, v11, v12, NAS, 26) to ONNX and TensorRT formats.
 Supports all major YOLO variants from different repositories.
 
 Usage:
-    # Ultralytics models (v5, v8, v9, v10, v11, v12)
+    # Ultralytics models (v5, v8, v9, v10, v11, v12, 26)
     python export.py --model yolov8n.pt --format onnx
     python export.py --model yolo11s.pt --format onnx --imgsz 640
     
@@ -111,6 +111,11 @@ class YOLOExporter:
             'package': 'ultralytics',
             'export_method': 'ultralytics'
         },
+        '26': {
+            'url': None,
+            'package': 'ultralytics',
+            'export_method': 'ultralytics'
+        },        
         'nas': {
             'url': None,
             'package': 'super-gradients',
@@ -158,6 +163,12 @@ class YOLOExporter:
         'yolo11m': 'https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11m.pt',
         'yolo11l': 'https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11l.pt',
         'yolo11x': 'https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11x.pt',
+        # YOLO26
+        'yolo26n': 'https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n.pt',
+        'yolo26s': 'https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26s.pt',
+        'yolo26m': 'https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26m.pt',
+        'yolo26l': 'https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26l.pt',
+        'yolo26x': 'https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26x.pt',        
         # YOLOv12
         'yolov12n': 'https://github.com/sunsmarterjie/yolov12/releases/download/v1.0/yolov12n.pt',
         'yolov12s': 'https://github.com/sunsmarterjie/yolov12/releases/download/v1.0/yolov12s.pt',
@@ -210,6 +221,8 @@ class YOLOExporter:
             return 'v12'
         elif 'yolo11' in model_name:
             return 'v11'
+        elif 'yolo26' in model_name:
+            return '26'    
         elif 'yolov10' in model_name:
             return 'v10'
         elif 'yolov9' in model_name:
@@ -238,7 +251,7 @@ class YOLOExporter:
         weight_url = None
         if self.version == 'v5':
             weight_url = self.YOLOV5_WEIGHTS.get(model_name)
-        elif self.version in ['v8', 'v9', 'v10', 'v11', 'v12']:
+        elif self.version in ['v8', 'v9', 'v10', 'v11', 'v12', '26']:
             weight_url = self.ULTRALYTICS_WEIGHTS.get(model_name)
         elif self.version == 'v6':
             weight_url = self.YOLOV6_WEIGHTS.get(model_name)
@@ -283,7 +296,7 @@ class YOLOExporter:
             raise ValueError(f"Unknown export method: {export_method}")
     
     def _export_ultralytics_onnx(self, simplify: bool, opset: int, dynamic: bool) -> str:
-        """Export using ultralytics library (v8, v9, v10, v11, v12)."""
+        """Export using ultralytics library (v8, v9, v10, v11, v12, 26)."""
         try:
             from ultralytics import YOLO
         except ImportError:
@@ -608,7 +621,7 @@ class YOLOExporter:
     
     def get_model_info(self):
         """Display model information (FLOPs, parameters)."""
-        if self.version in ['v8', 'v9', 'v10', 'v11', 'v12']:
+        if self.version in ['v8', 'v9', 'v10', '', 'v12']:
             try:
                 from ultralytics import YOLO
                 model = YOLO(self.model_path)
@@ -651,7 +664,7 @@ Examples:
     
     # Version selection
     parser.add_argument('--version', '-v', default='auto',
-                        choices=['auto', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10', 'v11', 'v12', 'nas'],
+                        choices=['auto', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10', 'v11', 'v12', 'nas', '26'],
                         help='YOLO version (default: auto-detect)')
     
     # Export options
