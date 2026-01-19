@@ -2,15 +2,19 @@
 
 ## Quick Start with Universal YOLO Exporter
 
-Use the universal YOLO exporter supporting **all YOLO versions** (v5-v12, NAS):
+Use the universal YOLO exporter supporting **all YOLO versions** (v5-v12, NAS, yolo26):
 
 ```bash
 # Clone vision-core if not already available
 git clone https://github.com/olibartfast/vision-core.git
 cd vision-core/export/detection/yolo
 
-# For ultralytics-based models (v8, v9, v10, v11, v12)
+# For ultralytics-based models (v8, v9, v10, v11, v12, 26), i.e.
+# yolov8
 python3 export.py --model yolov8n.pt --version v8 --format onnx --download-weights
+
+# yolo26
+python3 export.py --model yolo26x.pt --version 26 --format onnx --download-weights
 
 # For repository-based models (v5, v6, v7)
 ./clone_repo.sh --version v5 --output-dir ./repositories
@@ -43,7 +47,7 @@ trtexec --onnx=best.onnx --saveEngine=best.engine
 
 ## YOLOv10/YOLO26
 - `YOLOv10`: from [yolov10 repo](https://github.com/THU-MIG/yolov10) or [ultralytics package](https://pypi.org/project/ultralytics/)
-- `YOLO26`: from [ultralytics package](https://pypi.org/project/ultralytics/)
+- `YOLO26`: from [ultralytics package >= 8.4.0](https://pypi.org/project/ultralytics/)
 
 ### OnnxRuntime/TorchScript
 ```bash
