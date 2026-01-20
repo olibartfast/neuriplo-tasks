@@ -171,7 +171,7 @@ The TaskFactory supports the following model type strings:
 
 **Instance Segmentation:**
 - `"yoloseg"` - YOLOv5/YOLOv8/YOLO11
-- `"yolov10seg"`- YOLO11
+- `"yolov10seg"`- YOLOv10
 - `"yolo26seg"` - YOLO26
 - `"rfdetrseg"` - RF-DETR 
 
