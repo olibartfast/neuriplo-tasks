@@ -66,9 +66,28 @@ struct VideoClassification : public Classification {
 };
 
 /**
+ * @brief Keypoint structure
+ */
+struct Keypoint {
+    float x{0.0f};
+    float y{0.0f};
+    float confidence{0.0f};
+};
+
+/**
+ * @brief Pose estimation result structure
+ */
+struct PoseEstimation {
+    std::vector<Keypoint> keypoints;
+    float score{0.0f}; 
+    
+    PoseEstimation() = default;
+};
+
+/**
  * @brief Result variant type to hold any task result
  */
-using Result = std::variant<Classification, Detection, InstanceSegmentation, OpticalFlow, VideoClassification>;
+using Result = std::variant<Classification, Detection, InstanceSegmentation, OpticalFlow, VideoClassification, PoseEstimation>;
 
 /**
  * @brief Task type enumeration
@@ -78,7 +97,8 @@ enum class TaskType {
     Classification,
     Detection,
     InstanceSegmentation,
-    VideoClassification
+    VideoClassification,
+    PoseEstimation
 };
 
 
