@@ -9,7 +9,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 
 ## Features
 
-- **Object Detection**: YOLO (v5-v12, yolo26), RT-DETR family (RT-DETR v1/v2/v4, D-FINE, DEIM v1/v2), YOLO-NAS, D-FINE
+- **Object Detection**: YOLO (v5-v12, yolo26), RT-DETR family (RT-DETR v1/v2/v4, D-FINE, DEIM v1/v2), YOLO-NAS
 - **Instance Segmentation**: YOLOv5/v8/v11-seg, RF-DETR-Seg
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: TimeSformer
