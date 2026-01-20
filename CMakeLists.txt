@@ -34,6 +34,8 @@ set(CORE_SOURCES
     src/instance_segmentation/rfdetr_segmentation_postprocessor.cpp
     src/optical_flow/optical_flow_task.cpp
     src/optical_flow/raft_postprocessor.cpp
+    src/pose_estimation/pose_estimation_task.cpp
+    src/pose_estimation/vit_pose_postprocessor.cpp
 
     # Preprocessors (still separate as they're reusable)
     src/object_detection/detection_preprocessor.cpp
@@ -68,6 +70,9 @@ set(CORE_HEADERS
     include/vision-core/optical_flow/optical_flow_task.hpp
     include/vision-core/optical_flow/optical_flow_postprocessor.hpp
     include/vision-core/optical_flow/raft_postprocessor.hpp
+    include/vision-core/pose_estimation/pose_estimation_task.hpp
+    include/vision-core/pose_estimation/pose_postprocessor.hpp
+    include/vision-core/pose_estimation/vit_pose_postprocessor.hpp
 
     # Preprocessor Headers (still separate as they're reusable)
     include/vision-core/object_detection/detection_preprocessor.hpp

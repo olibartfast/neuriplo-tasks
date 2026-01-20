@@ -6,6 +6,7 @@
 #include "vision-core/object_detection/object_detection_task.hpp"
 #include "vision-core/optical_flow/optical_flow_postprocessor.hpp"
 #include "vision-core/optical_flow/optical_flow_task.hpp"
+#include "vision-core/pose_estimation/pose_estimation_task.hpp"
 #include <algorithm>
 #include <stdexcept>
 
@@ -85,6 +86,11 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(
   // ============ OPTICAL FLOW ============
   if (normalized == "raft") {
     return std::make_unique<OpticalFlowTask>(model_info, normalized);
+  }
+
+  // ============ POSE ESTIMATION ============
+  if (normalized == "vitpose") {
+    return std::make_unique<PoseEstimationTask>(model_info, normalized);
   }
 
   throw std::invalid_argument("Unrecognized model type: " + model_type);

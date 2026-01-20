@@ -72,6 +72,15 @@ target_link_libraries(test_optical_flow
     ${OpenCV_LIBS}
 )
 
+# Pose estimation tests
+add_executable(test_pose_estimation test_pose_estimation.cpp)
+target_link_libraries(test_pose_estimation
+    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    GTest::GTest
+    GTest::Main
+    ${OpenCV_LIBS}
+)
+
 # Add tests manually for better compatibility
 add_test(NAME test_result_types COMMAND test_result_types)
 add_test(NAME test_task_interface COMMAND test_task_interface)
@@ -82,3 +91,4 @@ add_test(NAME test_yolo_segmentation_postprocessor COMMAND test_yolo_segmentatio
 add_test(NAME test_bbox_processor COMMAND test_bbox_processor)
 add_test(NAME test_concrete_tasks COMMAND test_concrete_tasks)
 add_test(NAME test_optical_flow COMMAND test_optical_flow)
+add_test(NAME test_pose_estimation COMMAND test_pose_estimation)
