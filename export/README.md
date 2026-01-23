@@ -19,6 +19,8 @@ export/
 ├── optical_flow/
 │   └── raft/               # RAFT optical flow export
 └── video_classification/
+    ├── videomae/           # VideoMAE video classification export
+    ├── vivit/              # ViViT video classification export
     └── timesformer/        # TimeSFormer video classification export
 ```
 
@@ -44,6 +46,12 @@ python export/classification/vit/onnx/export.py
 # Export RAFT optical flow
 python export/optical_flow/raft/raft_exporter.py --model-type large --format onnx
 
+# Export VideoMAE
+python export/video_classification/videomae/export_videomae_to_onnx.py
+
+# Export ViViT
+python export/video_classification/vivit/export_vivit_to_onnx.py
+
 # Export TimeSFormer
 python export/video_classification/timesformer/export_timesformer_to_onnx.py
 ```
@@ -63,6 +71,7 @@ Refer to:
 
 * [Instance Segmentation](https://github.com/olibartfast/vision-core/blob/master/export/segmentation/InstanceSegmentation.md)
 * [Optical Flow](https://github.com/olibartfast/vision-core/blob/master/export/optical_flow/OpticalFlow.md)
+* [Video Classification](https://github.com/olibartfast/vision-core/blob/master/export/video_classification/VideoClassification.md)
 
 
 For Triton-specific deployment tools, see [tritonic](https://github.com/olibartfast/tritonic/tree/master/deploy) repository.

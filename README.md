@@ -12,7 +12,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Object Detection**: YOLO (v5-v12, yolo26), RT-DETR family (RT-DETR v1/v2/v4, D-FINE, DEIM v1/v2), YOLO-NAS
 - **Instance Segmentation**: YOLOv5/v8/v11-seg, RF-DETR-Seg
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
-- **Video Classification**: TimeSformer
+- **Video Classification**: VideoMAE, ViViT, TimeSformer
 - **Optical Flow**: RAFT
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
 - **Unified Tensor Interface**: Simplified API using `Tensor` struct that encapsulates data and shape information
@@ -179,7 +179,11 @@ The TaskFactory supports the following model type strings:
 - `"torchvision-classifier"` - Torchvision models (ResNet, EfficientNet, etc.)
 - `"tensorflow-classifier"` - TensorFlow/Keras models
 - `"vit-classifier"` - Vision Transformers
-- `"timesformer"` - Video classification models
+
+**Video Classification:**
+- `"videomae"` - VideoMAE
+- `"vivit"` - ViViT
+- `"timesformer"` - TimeSformer
 
 **Optical Flow:**
 - `"raft"` - RAFT optical flow
@@ -205,5 +209,5 @@ MIT License
 ### Planned 📋
 - [ ] Batch processing utilities
 - [ ] Performance benchmarks and optimizations
-- [ ] Additional video classification models
+- [x] Additional video classification models (VideoMAE, ViViT)
 - [ ] Pose estimation support
