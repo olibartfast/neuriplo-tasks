@@ -14,6 +14,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: VideoMAE, ViViT, TimeSformer
 - **Optical Flow**: RAFT
+- **Pose Estimation**: ViTPose
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
 - **Unified Tensor Interface**: Simplified API using `Tensor` struct that encapsulates data and shape information
 
@@ -188,6 +189,9 @@ The TaskFactory supports the following model type strings:
 **Optical Flow:**
 - `"raft"` - RAFT optical flow
 
+**Pose Estimation:**
+- `"vitpose"` - ViTPose
+
 ## Building
 
 ```bash
@@ -210,4 +214,4 @@ MIT License
 - [ ] Batch processing utilities
 - [ ] Performance benchmarks and optimizations
 - [x] Additional video classification models (VideoMAE, ViViT)
-- [ ] Pose estimation support
+- [x] Pose estimation support (ViTPose)

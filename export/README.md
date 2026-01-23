@@ -18,6 +18,8 @@ export/
 │   └── rfdetr/             # RF-DETR segmentation export
 ├── optical_flow/
 │   └── raft/               # RAFT optical flow export
+├── pose_estimation/
+│   └── vitpose/            # ViTPose pose estimation export
 └── video_classification/
     ├── videomae/           # VideoMAE video classification export
     ├── vivit/              # ViViT video classification export
@@ -46,6 +48,9 @@ python export/classification/vit/onnx/export.py
 # Export RAFT optical flow
 python export/optical_flow/raft/raft_exporter.py --model-type large --format onnx
 
+# Export ViTPose
+python export/pose_estimation/vitpose/export_vitpose_to_onnx.py
+
 # Export VideoMAE
 python export/video_classification/videomae/export_videomae_to_onnx.py
 
@@ -71,6 +76,7 @@ Refer to:
 
 * [Instance Segmentation](https://github.com/olibartfast/vision-core/blob/master/export/segmentation/InstanceSegmentation.md)
 * [Optical Flow](https://github.com/olibartfast/vision-core/blob/master/export/optical_flow/OpticalFlow.md)
+* [Pose Estimation](https://github.com/olibartfast/vision-core/blob/master/export/pose_estimation/PoseEstimation.md)
 * [Video Classification](https://github.com/olibartfast/vision-core/blob/master/export/video_classification/VideoClassification.md)
 
 
