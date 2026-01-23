@@ -79,12 +79,6 @@ ClassificationTask::ModelType ClassificationTask::detectModelType(const std::str
     std::string lower_name = model_name;
     std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
     
-    // Video classification models
-    if (lower_name.find("timesformer") != std::string::npos ||
-        lower_name.find("video") != std::string::npos) {
-        return ModelType::VIDEO_CLASSIFIER;
-    }
-    
     // ViT models
     if (lower_name.find("vit") != std::string::npos ||
         lower_name == "vit-classifier") {
@@ -111,10 +105,7 @@ std::unique_ptr<Preprocessor> ClassificationTask::createPreprocessor(ModelType t
             
         case ModelType::VIT:
             return std::make_unique<ViTPreprocessor>(input_size);
-            
-        case ModelType::VIDEO_CLASSIFIER:
-            return std::make_unique<ClassifierPreprocessor>(input_size, true); // ImageNet norm
-            
+
         default:
             return nullptr;
     }

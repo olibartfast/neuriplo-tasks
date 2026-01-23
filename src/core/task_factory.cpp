@@ -7,6 +7,7 @@
 #include "vision-core/optical_flow/optical_flow_postprocessor.hpp"
 #include "vision-core/optical_flow/optical_flow_task.hpp"
 #include "vision-core/pose_estimation/pose_estimation_task.hpp"
+#include "vision-core/video_classification/video_classification_task.hpp"
 #include <algorithm>
 #include <stdexcept>
 
@@ -71,9 +72,14 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(
 
   // ============ CLASSIFICATION ============
   if (normalized == "torchvisionclassifier" ||
-      normalized == "tensorflowclassifier" || normalized == "vitclassifier" ||
-      normalized == "timesformer") {
+      normalized == "tensorflowclassifier" || normalized == "vitclassifier") {
     return std::make_unique<ClassificationTask>(model_info, normalized);
+  }
+
+  // ============ VIDEO CLASSIFICATION ============
+  if (normalized == "videomae" || normalized == "vivit" ||
+      normalized == "timesformer") {
+    return std::make_unique<VideoClassificationTask>(model_info, normalized);
   }
 
   // ============ INSTANCE SEGMENTATION ============

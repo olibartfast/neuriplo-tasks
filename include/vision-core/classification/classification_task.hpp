@@ -14,9 +14,8 @@ class ClassificationPostprocessor;
  * 
  * Handles all classification model types with consistent architecture:
  * - Torchvision classifiers (ResNet, etc.) with ImageNet normalization
- * - TensorFlow classifiers with [0,1] normalization  
+ * - TensorFlow classifiers with [0,1] normalization
  * - Vision Transformer (ViT) classifiers
- * - Video classification models (TimeSformer, etc.)
  * 
  * Design principles:
  * 1. Single task class for all classification models
@@ -32,8 +31,7 @@ public:
     enum class ModelType {
         TORCHVISION,        // ImageNet normalization (mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
         TENSORFLOW,         // [0,1] normalization only
-        VIT,                // ViT-specific preprocessing
-        VIDEO_CLASSIFIER    // Video models (temporal sequences)
+        VIT                 // ViT-specific preprocessing
     };
 
     /**
