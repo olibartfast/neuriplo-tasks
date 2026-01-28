@@ -208,7 +208,7 @@ MIT License
 ### In Progress 🚧
 - [ ] Extend Unit Tests
 - [ ] CI/CD pipeline setup
-- [ ] Migration of tritonic/object-detection-inference/deep-stream-infer-lab to use vision-core
+- [ ] Migration of tritonic/vision-inference/deep-stream-infer-lab to use vision-core
 
 ### Planned 📋
 - [ ] Batch processing utilities
