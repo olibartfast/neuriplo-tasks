@@ -18,30 +18,6 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
 - **Unified Tensor Interface**: Simplified API using `Tensor` struct that encapsulates data and shape information
 
-## Tensor Interface
-
-Vision-core uses a unified `Tensor` struct to simplify API usage and improve type safety:
-
-```cpp
-struct Tensor {
-    std::vector<TensorElement> data;    // Tensor values (variant: float, int32_t, int64_t, uint8_t)
-    std::vector<int64_t> shape;         // Tensor dimensions
-    
-    // Constructors
-    Tensor() = default;
-    Tensor(std::vector<TensorElement> data_, std::vector<int64_t> shape_);
-};
-
-// Example usage:
-Tensor output_tensor(inference_data, {1, 25200, 85});  // YOLO output
-Tensor scores_tensor(scores_data, {1, 8400});          // Confidence scores
-```
-
-**Benefits:**
-- **Type Safety**: Data and shape are always paired together, preventing mismatched parameters
-- **Cleaner API**: Reduces parameter count in postprocessing functions
-- **Better Encapsulation**: Related tensor information is grouped in a single structure
-- **Consistency**: All postprocessors use the same tensor interface
 
 ## Two Ways to Use vision-core
 
