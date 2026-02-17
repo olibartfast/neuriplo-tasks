@@ -1,31 +1,32 @@
 #include "vision-core/optical_flow/raft_postprocessor.hpp"
-#include <stdexcept>
-#include <iostream>
+
 #include <algorithm>
+#include <iostream>
+#include <stdexcept>
 
 namespace vision_core {
 
 RaftPostprocessor::RaftPostprocessor() {}
 
-std::vector<OpticalFlow> RaftPostprocessor::postprocess(
-    const std::vector<TensorElement>& flow_output,
-    const std::vector<int64_t>& shape,
-    const cv::Size& frame_size) {
-    
+std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<TensorElement>& flow_output,
+                                                        const std::vector<int64_t>& shape, const cv::Size& frame_size) {
+
     if (flow_output.empty() || shape.empty()) {
         return {};
     }
 
     // RAFT output: [1, 2, H, W] (dx, dy)
-    if (shape.size() < 4) return {};
-    
+    if (shape.size() < 4)
+        return {};
+
     int channels = shape[1];
     int height = shape[2];
     int width = shape[3];
-    
-    if (channels != 2) return {};
-    
-    // Robust tensor data access - handle float tensors  
+
+    if (channels != 2)
+        return {};
+
+    // Robust tensor data access - handle float tensors
     const float* data = std::get_if<float>(&flow_output[0]);
     if (!data) {
         // Fallback: convert other types to float
@@ -36,15 +37,15 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(
         }
         data = temp_buffer.data();
     }
-    
+
     // Create flow matrix [H, W, 2] like master branch
     cv::Mat flow(height, width, CV_32FC2);
     float* flow_ptr = reinterpret_cast<float*>(flow.data);
-    
+
     // Channel offset logic matching master branch
     const int u_channel_offset = 0;
     const int v_channel_offset = height * width;
-    
+
     // Reconstruct flow matrix using direct TensorElement access (like master branch)
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
@@ -52,12 +53,12 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(
             flow_ptr[y * width * 2 + x * 2 + 1] = getTensorFloat(flow_output[v_channel_offset + y * width + x]);
         }
     }
-    
+
     // Resize to original frame size if needed (with proper flow scaling)
     if (frame_size.width != width || frame_size.height != height) {
         cv::Mat resized_flow;
         cv::resize(flow, resized_flow, frame_size);
-        
+
         // Scale flow values proportionally
         std::vector<cv::Mat> flow_channels;
         cv::split(resized_flow, flow_channels);
@@ -65,33 +66,31 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(
         flow_channels[1] *= static_cast<float>(frame_size.height) / height; // Scale V
         cv::merge(flow_channels, flow);
     }
-    
+
     // Split flow into separate U and V components for visualization
     std::vector<cv::Mat> flow_channels;
     cv::split(flow, flow_channels);
     cv::Mat flow_u = flow_channels[0];
     cv::Mat flow_v = flow_channels[1];
-    
+
     OpticalFlow result;
     result.raw_flow = flow.clone();
-    
+
     // Calculate magnitude and max displacement
     cv::Mat magnitude, angle;
     cv::cartToPolar(flow_u, flow_v, magnitude, angle);
     double max_disp;
     cv::minMaxLoc(magnitude, nullptr, &max_disp);
     result.max_displacement = static_cast<float>(max_disp);
-    
+
     // Create color visualization using master branch approach
     result.flow = visualizeFlow(flow_u, flow_v);
-    
+
     return {result};
 }
 
 float RaftPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float {
-        return static_cast<float>(value);
-    }, element);
+    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
 }
 
 cv::Mat RaftPostprocessor::makeColorwheel() {
@@ -125,7 +124,7 @@ cv::Mat RaftPostprocessor::makeColorwheel() {
     for (int i = 0; i < MR; ++i, ++col) {
         colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255 - 255 * i / MR, 0, 255);
     }
-    
+
     return colorwheel;
 }
 
@@ -133,7 +132,7 @@ cv::Mat RaftPostprocessor::visualizeFlow(const cv::Mat& flow_x, const cv::Mat& f
     if (flow_x.empty() || flow_y.empty() || flow_x.size() != flow_y.size()) {
         return cv::Mat();
     }
-    
+
     // Compute magnitude and angle
     cv::Mat magnitude, angle;
     cv::cartToPolar(flow_x, flow_y, magnitude, angle);
@@ -160,8 +159,10 @@ cv::Mat RaftPostprocessor::visualizeFlow(const cv::Mat& flow_x, const cv::Mat& f
             float ang = angle.at<float>(i, j);
 
             // Handle angles outside [0,1] range after shift
-            while (ang < 0) ang += 1.0f;
-            while (ang >= 1.0f) ang -= 1.0f;
+            while (ang < 0)
+                ang += 1.0f;
+            while (ang >= 1.0f)
+                ang -= 1.0f;
 
             // Find nearest colors in the wheel
             int k0 = static_cast<int>(ang * (ncols - 1));

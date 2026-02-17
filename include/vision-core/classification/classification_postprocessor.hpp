@@ -2,6 +2,7 @@
 
 #include "vision-core/core/result_types.hpp"
 #include "vision-core/core/task_interface.hpp"
+
 #include <vector>
 
 namespace vision_core {
@@ -10,7 +11,7 @@ namespace vision_core {
  * @brief Interface for classification postprocessing
  */
 class ClassificationPostprocessor {
-public:
+  public:
     virtual ~ClassificationPostprocessor() = default;
 
     /**
@@ -19,23 +20,21 @@ public:
      * @param shape Output tensor shape
      * @return Vector of Classification results
      */
-    virtual std::vector<Classification> postprocess(
-        const std::vector<TensorElement>& output,
-        const std::vector<int64_t>& shape) = 0;
+    virtual std::vector<Classification> postprocess(const std::vector<TensorElement>& output,
+                                                    const std::vector<int64_t>& shape) = 0;
 };
 
 /**
  * @brief Default implementation for standard classification models
  */
 class DefaultClassificationPostprocessor : public ClassificationPostprocessor {
-public:
+  public:
     DefaultClassificationPostprocessor(int top_k, bool apply_softmax);
 
-    std::vector<Classification> postprocess(
-        const std::vector<TensorElement>& output,
-        const std::vector<int64_t>& shape) override;
+    std::vector<Classification> postprocess(const std::vector<TensorElement>& output,
+                                            const std::vector<int64_t>& shape) override;
 
-private:
+  private:
     int top_k_;
     bool apply_softmax_;
 

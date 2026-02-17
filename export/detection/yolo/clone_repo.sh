@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # YOLO Repository Cloning Script
-# 
+#
 # This script clones the appropriate YOLO repository based on version
 # and sets up the directory structure for export pipelines.
 #
@@ -257,4 +257,3 @@ case $VERSION in
         echo "  python -c \"from ultralytics import YOLO; YOLO('yolov12s.pt').export(format='onnx')\""
         ;;
 esac
-

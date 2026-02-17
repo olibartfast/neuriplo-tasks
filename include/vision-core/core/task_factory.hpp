@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vision-core/core/task_interface.hpp"
+
 #include <memory>
 #include <string>
 
@@ -8,12 +9,12 @@ namespace vision_core {
 
 /**
  * @brief Factory for creating task instances
- * 
+ *
  * Creates appropriate task implementations based on model type string.
  * Uses direct instantiation - no registration pattern.
  */
 class TaskFactory {
-public:
+  public:
     /**
      * @brief Create a task instance for the given model type
      * @param model_type Model type identifier (e.g., "yolov8", "rtdetr", "resnet50")
@@ -22,16 +23,15 @@ public:
      * @throws std::invalid_argument if model type is invalid
      * @throws InputDimensionError if model info has invalid dimensions
      */
-    static std::unique_ptr<TaskInterface> createTaskInstance(
-        const std::string& model_type, 
-        const ModelInfo& model_info);
+    static std::unique_ptr<TaskInterface> createTaskInstance(const std::string& model_type,
+                                                             const ModelInfo& model_info);
 
-private:
+  private:
     /**
      * @brief Normalize model type names for lookup
      */
     static std::string normalizeModelType(const std::string& model_type);
-    
+
     /**
      * @brief Validate input sizes
      */

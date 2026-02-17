@@ -2,8 +2,9 @@
 
 #include "vision-core/core/result_types.hpp"
 #include "vision-core/core/task_interface.hpp"
-#include <vector>
+
 #include <opencv2/core.hpp>
+#include <vector>
 
 namespace vision_core {
 
@@ -11,7 +12,7 @@ namespace vision_core {
  * @brief Interface for pose estimation postprocessing
  */
 class PosePostprocessor {
-public:
+  public:
     virtual ~PosePostprocessor() = default;
 
     /**
@@ -21,10 +22,8 @@ public:
      * @param input_size Network input size
      * @return Vector of PoseEstimation results
      */
-    virtual std::vector<PoseEstimation> postprocess(
-        const std::vector<Tensor>& tensors,
-        const cv::Size& original_size,
-        const cv::Size& input_size) = 0;
+    virtual std::vector<PoseEstimation> postprocess(const std::vector<Tensor>& tensors, const cv::Size& original_size,
+                                                    const cv::Size& input_size) = 0;
 };
 
 } // namespace vision_core

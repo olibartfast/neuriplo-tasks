@@ -1,25 +1,20 @@
 #include "vision-core/video_classification/video_classification_task.hpp"
-#include "vision-core/video_classification/video_classification_preprocessor.hpp"
+
 #include "vision-core/video_classification/video_classification_postprocessor.hpp"
+#include "vision-core/video_classification/video_classification_preprocessor.hpp"
+
 #include <algorithm>
-#include <stdexcept>
 #include <cstring>
+#include <stdexcept>
 
 namespace vision_core {
 
-VideoClassificationTask::VideoClassificationTask(const ModelInfo& model_info,
-                                                 const std::string& model_name,
-                                                 int top_k,
+VideoClassificationTask::VideoClassificationTask(const ModelInfo& model_info, const std::string& model_name, int top_k,
                                                  bool apply_softmax)
-    : TaskInterface(model_info)
-    , model_type_(detectModelType(model_name))
-    , model_name_(model_name)
-    , top_k_(top_k)
-    , apply_softmax_(apply_softmax)
-    , num_frames_(16)
-    , input_width_(224)
-    , input_height_(224)
-{
+    : TaskInterface(model_info), model_type_(detectModelType(model_name)), model_name_(model_name), top_k_(top_k),
+      apply_softmax_(apply_softmax), num_frames_(16) {
+    input_width_ = 224;
+    input_height_ = 224;
     extractVideoInputSize(model_info);
 
     cv::Size input_size(input_width_, input_height_);
@@ -63,9 +58,7 @@ std::vector<std::vector<uint8_t>> VideoClassificationTask::preprocess(const std:
     return {concatenated};
 }
 
-std::vector<Result> VideoClassificationTask::postprocess(
-    const cv::Size&,
-    const std::vector<Tensor>& tensors) {
+std::vector<Result> VideoClassificationTask::postprocess(const cv::Size&, const std::vector<Tensor>& tensors) {
 
     if (tensors.empty()) {
         return {};
@@ -98,12 +91,12 @@ VideoClassificationTask::ModelType VideoClassificationTask::detectModelType(cons
 
 std::unique_ptr<Preprocessor> VideoClassificationTask::createPreprocessor(ModelType type, const cv::Size& input_size) {
     switch (type) {
-        case ModelType::VIDEOMAE:
-            return std::make_unique<VideoMAEPreprocessor>(input_size);
-        case ModelType::VIVIT:
-            return std::make_unique<VivitPreprocessor>(input_size);
-        case ModelType::TIMESFORMER:
-            return std::make_unique<TimeSformerPreprocessor>(input_size);
+    case ModelType::VIDEOMAE:
+        return std::make_unique<VideoMAEPreprocessor>(input_size);
+    case ModelType::VIVIT:
+        return std::make_unique<VivitPreprocessor>(input_size);
+    case ModelType::TIMESFORMER:
+        return std::make_unique<TimeSformerPreprocessor>(input_size);
     }
     return nullptr;
 }

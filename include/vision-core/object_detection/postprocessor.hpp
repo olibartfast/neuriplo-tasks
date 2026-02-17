@@ -2,8 +2,9 @@
 
 #include "vision-core/core/result_types.hpp"
 #include "vision-core/core/task_interface.hpp"
-#include <vector>
+
 #include <opencv2/opencv.hpp>
+#include <vector>
 
 namespace vision_core {
 
@@ -11,7 +12,7 @@ namespace vision_core {
  * @brief Interface for object detection postprocessing
  */
 class Postprocessor {
-public:
+  public:
     virtual ~Postprocessor() = default;
 
     /**
@@ -20,9 +21,7 @@ public:
      * @param frame_size Original frame size
      * @return Vector of Detection results
      */
-    virtual std::vector<Detection> postprocess(
-        const std::vector<Tensor>& tensors,
-        const cv::Size& frame_size) = 0;
+    virtual std::vector<Detection> postprocess(const std::vector<Tensor>& tensors, const cv::Size& frame_size) = 0;
 };
 
 } // namespace vision_core

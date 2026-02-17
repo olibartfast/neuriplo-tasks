@@ -1,11 +1,11 @@
 #include "vision-core/core/preprocessor.hpp"
-#include <stdexcept>
+
 #include <cstring>
+#include <stdexcept>
 
 namespace vision_core {
 
-Preprocessor::Preprocessor(const PreprocessConfig& config)
-    : config_(config) {}
+Preprocessor::Preprocessor(const PreprocessConfig& config) : config_(config) {}
 
 void Preprocessor::apply_imagenet_normalization(cv::Mat& image) const {
     if (image.type() != CV_32FC3) {
@@ -22,12 +22,8 @@ void Preprocessor::apply_imagenet_normalization(cv::Mat& image) const {
     cv::merge(channels, image);
 }
 
-std::vector<uint8_t> Preprocessor::preprocess_image(
-    const cv::Mat& image,
-    const cv::Size& target_size,
-    ImageFormat format,
-    DataType data_type) const
-{
+std::vector<uint8_t> Preprocessor::preprocess_image(const cv::Mat& image, const cv::Size& target_size,
+                                                    ImageFormat format, DataType data_type) const {
     if (image.empty()) {
         throw std::invalid_argument("Input image is empty");
     }
@@ -59,7 +55,7 @@ std::vector<uint8_t> Preprocessor::preprocess_image(
     // Convert to target format
     std::vector<uint8_t> output;
     const size_t elem_size = (data_type == DataType::FLOAT32) ? sizeof(float) : sizeof(uint8_t);
-    
+
     if (format == ImageFormat::NCHW && processed.channels() > 1) {
         // Channel-first: split channels and concatenate
         std::vector<cv::Mat> channels;
@@ -84,9 +80,7 @@ std::vector<uint8_t> Preprocessor::preprocess(const cv::Mat& image) const {
     return preprocess_image(image, config_.input_size, config_.format, config_.data_type);
 }
 
-std::vector<std::vector<uint8_t>> Preprocessor::preprocess(
-    const std::vector<cv::Mat>& images) const
-{
+std::vector<std::vector<uint8_t>> Preprocessor::preprocess(const std::vector<cv::Mat>& images) const {
     std::vector<std::vector<uint8_t>> results;
     results.reserve(images.size());
 

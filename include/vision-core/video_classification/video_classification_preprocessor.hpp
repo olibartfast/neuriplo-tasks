@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vision-core/core/preprocessor.hpp"
+
 #include <array>
 
 namespace vision_core {
@@ -12,12 +13,12 @@ namespace vision_core {
  * mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225]
  */
 class VideoMAEPreprocessor : public Preprocessor {
-public:
+  public:
     explicit VideoMAEPreprocessor(const cv::Size& input_size);
 
     [[nodiscard]] std::vector<uint8_t> preprocess(const cv::Mat& image) const override;
 
-private:
+  private:
     static constexpr std::array<float, 3> kMean = {0.485f, 0.456f, 0.406f};
     static constexpr std::array<float, 3> kStd = {0.229f, 0.224f, 0.225f};
 };
@@ -30,12 +31,12 @@ private:
  * mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225]
  */
 class VivitPreprocessor : public Preprocessor {
-public:
+  public:
     explicit VivitPreprocessor(const cv::Size& input_size);
 
     [[nodiscard]] std::vector<uint8_t> preprocess(const cv::Mat& image) const override;
 
-private:
+  private:
     static constexpr int kShortestEdge = 256;
     static constexpr std::array<float, 3> kMean = {0.485f, 0.456f, 0.406f};
     static constexpr std::array<float, 3> kStd = {0.229f, 0.224f, 0.225f};
@@ -49,12 +50,12 @@ private:
  * mean=[0.45,0.45,0.45], std=[0.225,0.225,0.225]
  */
 class TimeSformerPreprocessor : public Preprocessor {
-public:
+  public:
     explicit TimeSformerPreprocessor(const cv::Size& input_size);
 
     [[nodiscard]] std::vector<uint8_t> preprocess(const cv::Mat& image) const override;
 
-private:
+  private:
     static constexpr int kShortestEdge = 224;
     static constexpr std::array<float, 3> kMean = {0.45f, 0.45f, 0.45f};
     static constexpr std::array<float, 3> kStd = {0.225f, 0.225f, 0.225f};

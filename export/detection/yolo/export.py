@@ -9,16 +9,16 @@ Usage:
     # Ultralytics models (v5, v8, v9, v10, v11, v12, 26)
     python export.py --model yolov8n.pt --format onnx
     python export.py --model yolo11s.pt --format onnx --imgsz 640
-    
+
     # YOLOv6 (Meituan)
     python export.py --model yolov6s.pt --version v6 --format onnx
-    
+
     # YOLOv7 (WongKinYiu)
     python export.py --model yolov7.pt --version v7 --format onnx
-    
+
     # YOLO-NAS (Deci)
     python export.py --model yolo_nas_s --version nas --format onnx
-    
+
     # Export with custom input size
     python export.py --model yolov8n.pt --format onnx --imgsz 640 --batch-size 1
 """
@@ -39,7 +39,7 @@ def check_virtual_environment():
     """Check if running in a virtual environment and warn if not."""
     in_venv = False
     venv_info = ""
-    
+
     if hasattr(sys, 'real_prefix'):
         in_venv = True
         venv_info = "virtualenv"
@@ -55,20 +55,20 @@ def check_virtual_environment():
     elif os.environ.get('CONDA_PREFIX'):
         in_venv = True
         venv_info = f"conda prefix: {os.environ['CONDA_PREFIX']}"
-    
+
     if in_venv:
         logger.info(f"✓ Running in virtual environment: {venv_info}")
     else:
         logger.warning("⚠️  Not running in a virtual environment!")
         logger.warning("   It's recommended to use a virtual environment to avoid dependency conflicts.")
         logger.warning("   Consider creating one with: conda create -n yolo python=3.11")
-    
+
     return in_venv
 
 
 class YOLOExporter:
     """Universal YOLO model exporter for ONNX and TensorRT formats."""
-    
+
     # Version to repository mapping
     REPO_INFO = {
         'v5': {
@@ -115,14 +115,14 @@ class YOLOExporter:
             'url': None,
             'package': 'ultralytics',
             'export_method': 'ultralytics'
-        },        
+        },
         'nas': {
             'url': None,
             'package': 'super-gradients',
             'export_method': 'yolo_nas'
         }
     }
-    
+
     # YOLOv5 weight URLs (original repo)
     YOLOV5_WEIGHTS = {
         'yolov5n': 'https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5n.pt',
@@ -136,7 +136,7 @@ class YOLOExporter:
         'yolov5l6': 'https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5l6.pt',
         'yolov5x6': 'https://github.com/ultralytics/yolov5/releases/download/v7.0/yolov5x6.pt',
     }
-    
+
     # Ultralytics model weight URLs (v8+)
     ULTRALYTICS_WEIGHTS = {
         # YOLOv8
@@ -168,7 +168,7 @@ class YOLOExporter:
         'yolo26s': 'https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26s.pt',
         'yolo26m': 'https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26m.pt',
         'yolo26l': 'https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26l.pt',
-        'yolo26x': 'https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26x.pt',        
+        'yolo26x': 'https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26x.pt',
         # YOLOv12
         'yolov12n': 'https://github.com/sunsmarterjie/yolov12/releases/download/v1.0/yolov12n.pt',
         'yolov12s': 'https://github.com/sunsmarterjie/yolov12/releases/download/v1.0/yolov12s.pt',
@@ -176,7 +176,7 @@ class YOLOExporter:
         'yolov12l': 'https://github.com/sunsmarterjie/yolov12/releases/download/v1.0/yolov12l.pt',
         'yolov12x': 'https://github.com/sunsmarterjie/yolov12/releases/download/v1.0/yolov12x.pt',
     }
-    
+
     # YOLOv6 weight URLs
     YOLOV6_WEIGHTS = {
         'yolov6n': 'https://github.com/meituan/YOLOv6/releases/download/0.4.0/yolov6n.pt',
@@ -184,7 +184,7 @@ class YOLOExporter:
         'yolov6m': 'https://github.com/meituan/YOLOv6/releases/download/0.4.0/yolov6m.pt',
         'yolov6l': 'https://github.com/meituan/YOLOv6/releases/download/0.4.0/yolov6l.pt',
     }
-    
+
     # YOLOv7 weight URLs
     YOLOV7_WEIGHTS = {
         'yolov7': 'https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7.pt',
@@ -195,7 +195,7 @@ class YOLOExporter:
         'yolov7-d6': 'https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7-d6.pt',
         'yolov7-e6e': 'https://github.com/WongKinYiu/yolov7/releases/download/v0.1/yolov7-e6e.pt',
     }
-    
+
     def __init__(self, model_path: str, version: str = 'auto', output_dir: str = "./exported_models",
                  imgsz: int = 640, batch_size: int = 1):
         self.model_path = model_path
@@ -204,17 +204,17 @@ class YOLOExporter:
         self.imgsz = imgsz
         self.batch_size = batch_size
         self.output_dir.mkdir(exist_ok=True, parents=True)
-        
+
         # Auto-detect version if needed
         if self.version == 'auto':
             self.version = self._detect_version()
-        
+
         logger.info(f"Detected YOLO version: {self.version}")
-    
+
     def _detect_version(self) -> str:
         """Auto-detect YOLO version from model path."""
         model_name = Path(self.model_path).stem.lower()
-        
+
         if 'yolo_nas' in model_name or model_name.startswith('yolo_nas'):
             return 'nas'
         elif 'yolov12' in model_name:
@@ -222,7 +222,7 @@ class YOLOExporter:
         elif 'yolo11' in model_name:
             return 'v11'
         elif 'yolo26' in model_name:
-            return '26'    
+            return '26'
         elif 'yolov10' in model_name:
             return 'v10'
         elif 'yolov9' in model_name:
@@ -239,14 +239,14 @@ class YOLOExporter:
             # Default to ultralytics for unknown models
             logger.warning(f"Could not auto-detect version for {model_name}, defaulting to v8 (ultralytics)")
             return 'v8'
-    
+
     def download_weights(self, weights_dir: str = "./weights") -> str:
         """Download model weights if not present."""
         weights_path = Path(weights_dir)
         weights_path.mkdir(exist_ok=True, parents=True)
-        
+
         model_name = Path(self.model_path).stem.lower()
-        
+
         # Determine weight URL based on version
         weight_url = None
         if self.version == 'v5':
@@ -257,17 +257,17 @@ class YOLOExporter:
             weight_url = self.YOLOV6_WEIGHTS.get(model_name)
         elif self.version == 'v7':
             weight_url = self.YOLOV7_WEIGHTS.get(model_name)
-        
+
         if not weight_url:
             logger.warning(f"No download URL found for {model_name}")
             return self.model_path
-        
+
         output_path = weights_path / f"{model_name}.pt"
-        
+
         if output_path.exists():
             logger.info(f"Weights already exist: {output_path}")
             return str(output_path)
-        
+
         logger.info(f"Downloading weights from {weight_url}")
         try:
             import urllib.request
@@ -277,11 +277,11 @@ class YOLOExporter:
         except Exception as e:
             logger.error(f"Failed to download weights: {e}")
             return self.model_path
-    
+
     def export_onnx(self, simplify: bool = True, opset: int = 12, dynamic: bool = False, repo_dir: str = None) -> str:
         """Export model to ONNX format."""
         export_method = self.REPO_INFO[self.version]['export_method']
-        
+
         if export_method == 'ultralytics':
             return self._export_ultralytics_onnx(simplify, opset, dynamic)
         elif export_method == 'yolov5':
@@ -294,7 +294,7 @@ class YOLOExporter:
             return self._export_yolo_nas_onnx(simplify, opset)
         else:
             raise ValueError(f"Unknown export method: {export_method}")
-    
+
     def _export_ultralytics_onnx(self, simplify: bool, opset: int, dynamic: bool) -> str:
         """Export using ultralytics library (v8, v9, v10, v11, v12, 26)."""
         try:
@@ -302,10 +302,10 @@ class YOLOExporter:
         except ImportError:
             logger.error("ultralytics not installed. Install with: pip install ultralytics")
             sys.exit(1)
-        
+
         logger.info(f"Loading model from {self.model_path}")
         model = YOLO(self.model_path)
-        
+
         export_args = {
             'format': 'onnx',
             'imgsz': self.imgsz,
@@ -314,22 +314,22 @@ class YOLOExporter:
             'opset': opset,
             'dynamic': dynamic,
         }
-        
+
         logger.info(f"Exporting to ONNX with args: {export_args}")
         output_path = model.export(**export_args)
-        
+
         # Move to output directory
         if output_path and Path(output_path).exists():
             dest_path = self.output_dir / Path(output_path).name
             shutil.move(output_path, dest_path)
             logger.info(f"ONNX model exported to: {dest_path}")
             return str(dest_path)
-        
+
         return output_path
-    
+
     def _export_yolov5_onnx(self, simplify: bool, opset: int, dynamic: bool, repo_dir: str = None) -> str:
         """Export YOLOv5 to ONNX using the original ultralytics/yolov5 repository.
-        
+
         Note: The 'ultralytics' pip package (for v8+) is NOT compatible with original YOLOv5.
         You must clone the yolov5 repository and run export from there.
         """
@@ -338,21 +338,21 @@ class YOLOExporter:
         except ImportError:
             logger.error("torch not installed")
             sys.exit(1)
-        
+
         model_name = Path(self.model_path).stem
-        
+
         # Check if we have a repo directory
         if repo_dir and Path(repo_dir).exists():
             # Resolve repo_dir to absolute path
             repo_dir = Path(repo_dir).resolve()
-            
+
             # Use the repo's export.py
             export_script = repo_dir / 'export.py'
             if not export_script.exists():
                 logger.error(f"export.py not found in {repo_dir}")
                 logger.info("Clone the repo with: ./clone_repo.sh --version v5")
                 sys.exit(1)
-            
+
             # Build command to run from repo directory (use relative path since cwd=repo_dir)
             cmd = [
                 sys.executable, 'export.py',
@@ -362,18 +362,18 @@ class YOLOExporter:
                 '--include', 'onnx',
                 '--opset', str(opset),
             ]
-            
+
             if simplify:
                 cmd.append('--simplify')
             if dynamic:
                 cmd.append('--dynamic')
-            
+
             logger.info(f"Running YOLOv5 export from repository: {repo_dir}")
             logger.info(f"Command: {' '.join(cmd)}")
-            
+
             # Run from repo directory
             result = subprocess.run(cmd, cwd=str(repo_dir), check=True)
-            
+
             # Find the exported ONNX file (YOLOv5 exports next to the weights file)
             expected_onnx = Path(self.model_path).absolute().with_suffix('.onnx')
             if expected_onnx.exists():
@@ -381,26 +381,26 @@ class YOLOExporter:
                 shutil.move(str(expected_onnx), str(dest_path))
                 logger.info(f"ONNX model exported to: {dest_path}")
                 return str(dest_path)
-            
+
             return str(expected_onnx)
-        
+
         else:
             # Try to load and export using torch.hub (downloads repo automatically)
             logger.info("Loading YOLOv5 via torch.hub...")
             try:
                 model = torch.hub.load('ultralytics/yolov5', 'custom', path=self.model_path, force_reload=False)
-                
+
                 # Export via torch
                 output_path = self.output_dir / f"{model_name}.onnx"
                 dummy_input = torch.randn(self.batch_size, 3, self.imgsz, self.imgsz)
-                
+
                 dynamic_axes = None
                 if dynamic:
                     dynamic_axes = {
                         'images': {0: 'batch'},
                         'output': {0: 'batch'}
                     }
-                
+
                 torch.onnx.export(
                     model.model,
                     dummy_input,
@@ -410,13 +410,13 @@ class YOLOExporter:
                     output_names=['output'],
                     dynamic_axes=dynamic_axes,
                 )
-                
+
                 if simplify:
                     self._simplify_onnx(str(output_path))
-                
+
                 logger.info(f"ONNX model exported to: {output_path}")
                 return str(output_path)
-                
+
             except Exception as e:
                 logger.error(f"torch.hub export failed: {e}")
                 logger.info("")
@@ -426,60 +426,60 @@ class YOLOExporter:
                 logger.info("Then run export with --repo-dir:")
                 logger.info(f"  python export.py --model {self.model_path} --version v5 --repo-dir ./repositories/yolov5")
                 sys.exit(1)
-    
+
     def _export_yolov6_onnx(self, simplify: bool, opset: int, dynamic: bool, repo_dir: str = None) -> str:
         """Export YOLOv6 to ONNX."""
         model_name = Path(self.model_path).stem
         output_path = self.output_dir / f"{model_name}.onnx"
-        
+
         if not repo_dir:
             logger.error("YOLOv6 requires repository clone for export")
             logger.info("Clone the repo with: ./clone_repo.sh --version v6")
             logger.info("Then run: python export.py --model weights.pt --version v6 --repo-dir ./repositories/YOLOv6")
             sys.exit(1)
-        
+
         # YOLOv6 uses its own export script
         repo_dir = Path(repo_dir).resolve()
         export_script = repo_dir / 'deploy' / 'ONNX' / 'export_onnx.py'
         if not export_script.exists():
             logger.error(f"Export script not found: {export_script}")
             sys.exit(1)
-        
+
         # Use path relative to repo_dir for subprocess
         relative_export = 'deploy/ONNX/export_onnx.py'
-        
+
         cmd = [
             sys.executable, relative_export,
             '--weights', str(Path(self.model_path).absolute()),
             '--img-size', str(self.imgsz),
             '--batch-size', str(self.batch_size),
         ]
-        
+
         if simplify:
             cmd.append('--simplify')
-        
+
         logger.info(f"Running: {' '.join(cmd)}")
         subprocess.run(cmd, cwd=str(repo_dir), check=True)
-        
+
         return str(output_path)
-    
+
     def _export_yolov7_onnx(self, simplify: bool, opset: int, dynamic: bool, repo_dir: str = None) -> str:
         """Export YOLOv7 to ONNX."""
         model_name = Path(self.model_path).stem
         output_path = self.output_dir / f"{model_name}.onnx"
-        
+
         if not repo_dir:
             logger.error("YOLOv7 requires repository clone for export")
             logger.info("Clone the repo with: ./clone_repo.sh --version v7")
             logger.info("Then run: python export.py --model weights.pt --version v7 --repo-dir ./repositories/yolov7")
             sys.exit(1)
-        
+
         repo_dir = Path(repo_dir).resolve()
         export_script = repo_dir / 'export.py'
         if not export_script.exists():
             logger.error(f"export.py not found in {repo_dir}")
             sys.exit(1)
-        
+
         cmd = [
             sys.executable, 'export.py',
             '--weights', str(Path(self.model_path).absolute()),
@@ -493,22 +493,22 @@ class YOLOExporter:
             # NOTE: NOT using --end2end to avoid TensorRT NMS plugin
             # This produces standard YOLO format compatible with ONNX Runtime
         ]
-        
+
         if simplify:
             cmd.append('--simplify')
-        
+
         logger.info(f"Running: {' '.join(cmd)}")
         subprocess.run(cmd, cwd=str(repo_dir), check=True)
-        
+
         # Find exported file (YOLOv7 exports next to weights file)
         expected_onnx = Path(self.model_path).absolute().with_suffix('.onnx')
         if expected_onnx.exists():
             dest_path = self.output_dir / expected_onnx.name
             shutil.move(str(expected_onnx), str(dest_path))
             return str(dest_path)
-        
+
         return str(output_path)
-    
+
     def _export_yolo_nas_onnx(self, simplify: bool, opset: int) -> str:
         """Export YOLO-NAS to ONNX."""
         try:
@@ -518,26 +518,26 @@ class YOLOExporter:
         except ImportError:
             logger.error("super-gradients not installed. Install with: pip install super-gradients")
             sys.exit(1)
-        
+
         model_name = self.model_path.lower()
         output_path = self.output_dir / f"{model_name}.onnx"
-        
+
         # Map model names to SuperGradients model names
         model_map = {
             'yolo_nas_s': Models.YOLO_NAS_S,
             'yolo_nas_m': Models.YOLO_NAS_M,
             'yolo_nas_l': Models.YOLO_NAS_L,
         }
-        
+
         sg_model_name = model_map.get(model_name)
         if not sg_model_name:
             logger.error(f"Unknown YOLO-NAS model: {model_name}")
             logger.info(f"Available models: {list(model_map.keys())}")
             sys.exit(1)
-        
+
         logger.info(f"Loading YOLO-NAS model: {sg_model_name}")
         model = models.get(sg_model_name, pretrained_weights="coco")
-        
+
         # Export to ONNX
         logger.info(f"Exporting to ONNX: {output_path}")
         model.export(
@@ -545,23 +545,23 @@ class YOLOExporter:
             input_image_shape=(self.imgsz, self.imgsz),
             batch_size=self.batch_size,
         )
-        
+
         if simplify:
             self._simplify_onnx(str(output_path))
-        
+
         logger.info(f"ONNX model exported to: {output_path}")
         return str(output_path)
-    
+
     def _simplify_onnx(self, onnx_path: str):
         """Simplify ONNX model using onnxsim."""
         try:
             import onnx
             from onnxsim import simplify
-            
+
             logger.info(f"Simplifying ONNX model: {onnx_path}")
             model = onnx.load(onnx_path)
             model_simplified, check = simplify(model)
-            
+
             if check:
                 onnx.save(model_simplified, onnx_path)
                 logger.info("ONNX model simplified successfully")
@@ -571,19 +571,19 @@ class YOLOExporter:
             logger.warning("onnxsim not installed, skipping simplification")
         except Exception as e:
             logger.warning(f"ONNX simplification failed: {e}")
-    
+
     def export_tensorrt(self, fp16: bool = True, workspace_size: str = "4g") -> str:
         """Export model to TensorRT format."""
         # First export to ONNX
         onnx_path = self.export_onnx(simplify=True)
-        
+
         if not onnx_path or not Path(onnx_path).exists():
             logger.error("ONNX export failed, cannot convert to TensorRT")
             return None
-        
+
         model_name = Path(onnx_path).stem
         trt_path = self.output_dir / f"{model_name}.engine"
-        
+
         # Build TensorRT engine using trtexec
         cmd = [
             'trtexec',
@@ -591,12 +591,12 @@ class YOLOExporter:
             f'--saveEngine={trt_path}',
             f'--workspace={self._parse_size(workspace_size)}',
         ]
-        
+
         if fp16:
             cmd.append('--fp16')
-        
+
         logger.info(f"Building TensorRT engine: {' '.join(cmd)}")
-        
+
         try:
             subprocess.run(cmd, check=True)
             logger.info(f"TensorRT engine saved to: {trt_path}")
@@ -607,7 +607,7 @@ class YOLOExporter:
         except FileNotFoundError:
             logger.error("trtexec not found. Please install TensorRT.")
             return None
-    
+
     def _parse_size(self, size_str: str) -> int:
         """Parse size string (e.g., '4g', '512m') to bytes."""
         size_str = size_str.lower().strip()
@@ -618,7 +618,7 @@ class YOLOExporter:
         elif size_str.endswith('k'):
             return int(size_str[:-1]) * 1024
         return int(size_str)
-    
+
     def get_model_info(self):
         """Display model information (FLOPs, parameters)."""
         if self.version in ['v8', 'v9', 'v10', '', 'v12']:
@@ -640,50 +640,50 @@ def main():
 Examples:
     # Export YOLOv8 to ONNX
     python export.py --model yolov8n.pt --format onnx
-    
+
     # Export YOLO11 with custom size
     python export.py --model yolo11s.pt --format onnx --imgsz 640
-    
+
     # Export YOLOv5 (requires repo clone)
     python export.py --model yolov5s.pt --version v5 --repo-dir ./repositories/yolov5 --format onnx
-    
+
     # Export YOLOv7 (requires repo clone)
     python export.py --model yolov7.pt --version v7 --repo-dir ./repositories/yolov7 --format onnx
-    
+
     # Export YOLO-NAS
     python export.py --model yolo_nas_s --version nas --format onnx
-    
+
     # Export with auto-download
     python export.py --model yolov8n --download-weights --format onnx
         """
     )
-    
+
     # Required arguments
     parser.add_argument('--model', '-m', required=True,
                         help='Path to model weights or model name')
-    
+
     # Version selection
     parser.add_argument('--version', '-v', default='auto',
                         choices=['auto', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10', 'v11', 'v12', 'nas', '26'],
                         help='YOLO version (default: auto-detect)')
-    
+
     # Export options
     parser.add_argument('--format', '-f', default='onnx',
                         choices=['onnx', 'tensorrt', 'both'],
                         help='Export format (default: onnx)')
     parser.add_argument('--output-dir', '-o', default='./exported_models',
                         help='Output directory (default: ./exported_models)')
-    
+
     # Repository options (for v5, v6, v7)
     parser.add_argument('--repo-dir', default=None,
                         help='Path to cloned YOLO repository (required for v5, v6, v7)')
-    
+
     # Model options
     parser.add_argument('--imgsz', '--img-size', type=int, default=640,
                         help='Input image size (default: 640)')
     parser.add_argument('--batch-size', '-b', type=int, default=1,
                         help='Batch size (default: 1)')
-    
+
     # ONNX options
     parser.add_argument('--no-simplify', action='store_true',
                         help='Skip ONNX simplification')
@@ -691,31 +691,31 @@ Examples:
                         help='ONNX opset version (default: 12)')
     parser.add_argument('--dynamic', action='store_true',
                         help='Enable dynamic batch size')
-    
+
     # TensorRT options
     parser.add_argument('--no-fp16', action='store_true',
                         help='Disable FP16 precision for TensorRT')
     parser.add_argument('--workspace-size', default='4g',
                         help='TensorRT workspace size (default: 4g)')
-    
+
     # Weight download
     parser.add_argument('--download-weights', action='store_true',
                         help='Download model weights if not present')
     parser.add_argument('--weights-dir', default='./weights',
                         help='Directory to download weights to')
-    
+
     # Utility options
     parser.add_argument('--model-info', action='store_true',
                         help='Display model information')
     parser.add_argument('--skip-venv-check', action='store_true',
                         help='Skip virtual environment check')
-    
+
     args = parser.parse_args()
-    
+
     # Check virtual environment
     if not args.skip_venv_check:
         check_virtual_environment()
-    
+
     # Initialize exporter
     exporter = YOLOExporter(
         model_path=args.model,
@@ -724,17 +724,17 @@ Examples:
         imgsz=args.imgsz,
         batch_size=args.batch_size,
     )
-    
+
     # Download weights if requested
     if args.download_weights:
         args.model = exporter.download_weights(args.weights_dir)
         exporter.model_path = args.model
-    
+
     # Display model info if requested
     if args.model_info:
         exporter.get_model_info()
         return
-    
+
     # Export model
     if args.format in ['onnx', 'both']:
         onnx_path = exporter.export_onnx(
@@ -745,7 +745,7 @@ Examples:
         )
         if onnx_path:
             logger.info(f"✓ ONNX export complete: {onnx_path}")
-    
+
     if args.format in ['tensorrt', 'both']:
         trt_path = exporter.export_tensorrt(
             fp16=not args.no_fp16,

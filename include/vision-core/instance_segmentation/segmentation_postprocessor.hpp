@@ -2,8 +2,9 @@
 
 #include "vision-core/core/result_types.hpp"
 #include "vision-core/core/task_interface.hpp"
-#include <vector>
+
 #include <opencv2/core/types.hpp>
+#include <vector>
 
 namespace vision_core {
 
@@ -11,7 +12,7 @@ namespace vision_core {
  * @brief Interface for instance segmentation postprocessing
  */
 class SegmentationPostprocessor {
-public:
+  public:
     virtual ~SegmentationPostprocessor() = default;
 
     /**
@@ -20,9 +21,8 @@ public:
      * @param frame_size Original frame size
      * @return Vector of InstanceSegmentation results
      */
-    virtual std::vector<InstanceSegmentation> postprocess(
-        const std::vector<Tensor>& tensors,
-        const cv::Size& frame_size) = 0;
+    virtual std::vector<InstanceSegmentation> postprocess(const std::vector<Tensor>& tensors,
+                                                          const cv::Size& frame_size) = 0;
 };
 
 } // namespace vision_core

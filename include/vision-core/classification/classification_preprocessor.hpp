@@ -8,7 +8,7 @@ namespace vision_core {
  * @brief Generic classifier preprocessor
  */
 class ClassifierPreprocessor : public Preprocessor {
-public:
+  public:
     explicit ClassifierPreprocessor(const cv::Size& input_size, bool use_imagenet_norm = false);
 };
 
@@ -17,7 +17,7 @@ public:
  * Uses ImageNet normalization
  */
 class TorchvisionPreprocessor : public Preprocessor {
-public:
+  public:
     explicit TorchvisionPreprocessor(const cv::Size& input_size = cv::Size(224, 224));
 };
 
@@ -26,7 +26,7 @@ public:
  * No ImageNet normalization, just [0, 1] scaling
  */
 class TensorflowPreprocessor : public Preprocessor {
-public:
+  public:
     explicit TensorflowPreprocessor(const cv::Size& input_size = cv::Size(224, 224));
 };
 
@@ -35,7 +35,7 @@ public:
  * Uses ImageNet normalization
  */
 class ViTPreprocessor : public Preprocessor {
-public:
+  public:
     explicit ViTPreprocessor(const cv::Size& input_size = cv::Size(224, 224));
 };
 
