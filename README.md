@@ -288,12 +288,8 @@ MIT License
 
 ## Roadmap
 ### In Progress 🚧
-- [ ] Extend Unit Tests
-- [ ] CI/CD pipeline setup
 - [ ] Migration of tritonic/vision-inference/deep-stream-infer-lab to use vision-core
 
 ### Planned 📋
 - [ ] Batch processing utilities
 - [ ] Performance benchmarks and optimizations
-- [x] Additional video classification models (VideoMAE, ViViT)
-- [x] Pose estimation support (ViTPose)

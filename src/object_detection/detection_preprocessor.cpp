@@ -17,11 +17,11 @@ std::vector<uint8_t> YoloPreprocessor::preprocess(const cv::Mat& image) const {
     cv::Mat letterbox_image = cv::Mat::zeros(config_.input_size, CV_8UC3);
 
     // Calculate scale
-    float scale = std::min(static_cast<float>(config_.input_size.width) / image.cols,
-                           static_cast<float>(config_.input_size.height) / image.rows);
+    float scale = std::min(static_cast<float>(config_.input_size.width) / static_cast<float>(image.cols),
+                           static_cast<float>(config_.input_size.height) / static_cast<float>(image.rows));
 
-    int new_width = static_cast<int>(image.cols * scale);
-    int new_height = static_cast<int>(image.rows * scale);
+    int new_width = static_cast<int>(static_cast<float>(image.cols) * scale);
+    int new_height = static_cast<int>(static_cast<float>(image.rows) * scale);
 
     cv::Mat resized;
     cv::resize(image, resized, cv::Size(new_width, new_height), 0, 0, cv::INTER_LINEAR);

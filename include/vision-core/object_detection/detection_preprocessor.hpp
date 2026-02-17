@@ -19,6 +19,7 @@ class YoloPreprocessor : public Preprocessor {
   public:
     explicit YoloPreprocessor(const cv::Size& input_size);
 
+    using Preprocessor::preprocess;
     [[nodiscard]] std::vector<uint8_t> preprocess(const cv::Mat& image) const override;
 };
 
