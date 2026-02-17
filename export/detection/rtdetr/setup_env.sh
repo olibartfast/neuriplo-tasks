@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # RT-DETR Virtual Environment Setup Script
-# 
+#
 # This script creates optimized virtual environments for RT-DETR export pipelines.
 # Supports both PyTorch-based and PaddlePaddle-based workflows.
 #
@@ -77,7 +77,7 @@ PIPELINE COMPONENTS:
 
 PyTorch Pipeline:
     ├── PyTorch (CUDA-enabled)
-    ├── TorchVision 
+    ├── TorchVision
     ├── ONNX & ONNX Runtime
     ├── ONNXSim (model optimization)
     ├── TensorRT Python bindings
@@ -168,7 +168,7 @@ validate_arguments() {
 # Check dependencies
 check_dependencies() {
     local python_cmd="python${PYTHON_VERSION}"
-    
+
     # Check if specific python version exists
     if ! command -v "$python_cmd" &> /dev/null; then
         log_warning "$python_cmd not found, checking for python3..."
@@ -176,7 +176,7 @@ check_dependencies() {
             log_error "Python 3 is not installed"
             exit 1
         fi
-        
+
         # Check if python3 is the right version
         local ver=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
         if [[ "$ver" != "$PYTHON_VERSION" ]]; then
@@ -207,7 +207,7 @@ check_dependencies() {
 # Check GPU availability
 check_gpu_availability() {
     local has_gpu=false
-    
+
     # Check for nvidia-smi command and NVIDIA GPUs
     if command -v nvidia-smi &> /dev/null; then
         if nvidia-smi &> /dev/null; then
@@ -218,17 +218,17 @@ check_gpu_availability() {
             fi
         fi
     fi
-    
+
     # Check for CUDA toolkit
     if [[ "$has_gpu" == true ]] && command -v nvcc &> /dev/null; then
         local cuda_ver=$(nvcc --version | grep -oP "release \K[0-9]+\.[0-9]+" || echo "unknown")
         log_info "CUDA toolkit detected: version $cuda_ver"
     fi
-    
+
     if [[ "$has_gpu" == false ]]; then
         log_warning "No NVIDIA GPU detected - will install CPU versions"
     fi
-    
+
     echo "$has_gpu"
 }
 
@@ -237,7 +237,7 @@ get_pytorch_commands() {
     local cuda_version="$1"
     local has_gpu="$2"
     local commands=()
-    
+
     # Install PyTorch based on GPU availability
     if [[ "$has_gpu" == "true" ]]; then
         # Convert CUDA version for PyTorch index
@@ -252,12 +252,12 @@ get_pytorch_commands() {
     else
         commands+=("pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu")
     fi
-    
+
     commands+=(
         "pip install transformers timm"
         "pip install opencv-python pillow"
     )
-    
+
     printf '%s\n' "${commands[@]}"
 }
 
@@ -274,7 +274,7 @@ get_export_commands() {
         "pip install matplotlib"
         "pip install pycocotools"
     )
-    
+
     # Install GPU or CPU version of onnxruntime based on availability
     if [[ "$has_gpu" == "true" ]]; then
         commands+=(
@@ -285,7 +285,7 @@ get_export_commands() {
     else
         commands+=("pip install onnxruntime")
     fi
-    
+
     if [[ "$INSTALL_EXTRAS" == true ]]; then
         commands+=(
             "pip install fiftyone"
@@ -294,7 +294,7 @@ get_export_commands() {
             "pip install gradio"
         )
     fi
-    
+
     printf '%s\n' "${commands[@]}"
 }
 
@@ -303,9 +303,9 @@ get_export_commands() {
 create_environment() {
     local env_name="$1"
     local env_path="$OUTPUT_DIR/$env_name"
-    
+
     mkdir -p "$OUTPUT_DIR"
-    
+
     # Check if environment exists
     if [[ -d "$env_path" ]]; then
         if [[ "$FORCE_CREATE" == true ]]; then
@@ -317,14 +317,14 @@ create_environment() {
             exit 1
         fi
     fi
-    
+
     log_step "Creating $framework environment: $env_name"
-    
+
     if [[ "$DRY_RUN" == true ]]; then
         log_info "DRY RUN: Would create environment at $env_path"
         return
     fi
-    
+
     case "$ENV_MANAGER" in
         "conda")
             conda create -y -p "$env_path" python="$PYTHON_VERSION"
@@ -336,13 +336,13 @@ create_environment() {
                 log_warning "$python_cmd not found, falling back to python3"
                 python_cmd="python3"
             fi
-            
+
             log_info "Using $python_cmd to create venv"
-            
+
             # Try standard creation
             if ! "$python_cmd" -m venv "$env_path"; then
                 log_warning "Standard venv creation failed (likely missing ensurepip). Retrying without pip..."
-                
+
                 # Try without pip
                 if "$python_cmd" -m venv --without-pip "$env_path"; then
                     log_step "Bootstrapping pip..."
@@ -366,7 +366,7 @@ create_environment() {
             fi
             ;;
     esac
-    
+
     log_success "Environment created: $env_path"
 }
 
@@ -374,15 +374,15 @@ create_environment() {
 install_packages() {
     local env_name="$1"
     local env_path="$OUTPUT_DIR/$env_name"
-    
+
     if [[ "$DRY_RUN" == true ]]; then
         log_info "DRY RUN: Would install packages in $env_path"
         show_installation_plan
         return
     fi
-    
+
     log_step "Installing packages for PyTorch pipeline"
-    
+
     # Activate environment
     case "$ENV_MANAGER" in
         "conda")
@@ -392,42 +392,42 @@ install_packages() {
             source "$env_path/bin/activate"
             ;;
     esac
-    
+
     # Upgrade pip
     log_info "Upgrading pip..."
     python -m pip install --upgrade pip
-    
+
     # Check GPU availability
     local has_gpu=$(check_gpu_availability)
-    
+
     # Install PyTorch pipeline dependencies
     log_info "Installing PyTorch pipeline dependencies..."
     while IFS= read -r cmd; do
         log_info "Running: $cmd"
         eval "$cmd"
     done < <(get_pytorch_commands "$CUDA_VERSION" "$has_gpu")
-    
+
     # Install common export dependencies
     log_info "Installing export dependencies..."
     while IFS= read -r cmd; do
         log_info "Running: $cmd"
         eval "$cmd"
     done < <(get_export_commands "$has_gpu")
-    
+
     log_success "Package installation completed"
 }
 
 # Show installation plan for dry run
 show_installation_plan() {
     local has_gpu=$(check_gpu_availability)
-    
+
     echo
     log_info "Installation Plan for PyTorch Pipeline:"
     echo
-    
+
     echo "PyTorch packages:"
     get_pytorch_commands "$CUDA_VERSION" "$has_gpu" | grep -E '^pip install' | sed 's/^/  /'
-    
+
     echo
     echo "Export dependencies:"
     get_export_commands "$has_gpu" | grep -E '^pip install' | sed 's/^/  /'
@@ -439,16 +439,16 @@ create_activation_script() {
     local env_name="$1"
     local env_path="$OUTPUT_DIR/$env_name"
     local scripts_dir="$OUTPUT_DIR/activation_scripts"
-    
+
     mkdir -p "$scripts_dir"
-    
+
     local script_path="$scripts_dir/activate_${env_name}.sh"
-    
+
     if [[ "$DRY_RUN" == true ]]; then
         log_info "DRY RUN: Would create activation script at $script_path"
         return
     fi
-    
+
     cat > "$script_path" << EOF
 #!/bin/bash
 # RT-DETR Environment Activation Script
@@ -487,7 +487,7 @@ echo
 EOF
 
     chmod +x "$script_path"
-    
+
     log_success "Activation script created: $script_path"
 }
 
@@ -495,13 +495,13 @@ EOF
 create_env_info() {
     local env_name="$1"
     local env_path="$OUTPUT_DIR/$env_name"
-    
+
     if [[ "$DRY_RUN" == true ]]; then
         return
     fi
-    
+
     local info_file="$env_path/.rtdetr_env_info"
-    
+
     cat > "$info_file" << EOF
 # RT-DETR Environment Information
 # Generated on $(date)
@@ -527,7 +527,7 @@ show_summary() {
     local env_name="$1"
     local env_path="$OUTPUT_DIR/$env_name"
     local script_path="$OUTPUT_DIR/activation_scripts/activate_${env_name}.sh"
-    
+
     echo
     log_success "Environment setup completed!"
     echo
@@ -537,12 +537,12 @@ show_summary() {
     echo "  Python: $PYTHON_VERSION"
     echo "  CUDA: $CUDA_VERSION"
     echo
-    
+
     log_info "Activation Options:"
     echo "  Direct: source $env_path/bin/activate"
     echo "  Script: source $script_path"
     echo
-    
+
     log_info "Next Steps:"
     echo "  1. Activate environment: source $script_path"
     echo "  2. Clone repository: ./clone_repo.sh --version [VERSION]"
@@ -554,20 +554,20 @@ show_summary() {
 # Main execution
 main() {
     log_info "RT-DETR Virtual Environment Setup Script"
-    
+
     # Show help if no arguments
     if [[ $# -eq 0 ]]; then
         show_help
         exit 0
     fi
-    
+
     # Parse and validate arguments
     parse_arguments "$@"
     validate_arguments
-    
+
     # Check dependencies
     check_dependencies
-    
+
     log_info "Setup Configuration:"
     echo "  Environment: $ENV_NAME"
     echo "  Python: $PYTHON_VERSION"
@@ -575,19 +575,19 @@ main() {
     echo "  Manager: $ENV_MANAGER"
     echo "  Extras: $INSTALL_EXTRAS"
     echo
-    
+
     if [[ "$DRY_RUN" == true ]]; then
         log_warning "DRY RUN MODE - No changes will be made"
         show_installation_plan
         exit 0
     fi
-    
+
     # Create and setup environment
     create_environment "$ENV_NAME"
     install_packages "$ENV_NAME"
     create_activation_script "$ENV_NAME"
     create_env_info "$ENV_NAME"
-    
+
     # Show summary
     show_summary "$ENV_NAME"
 }

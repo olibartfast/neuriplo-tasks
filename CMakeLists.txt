@@ -4,9 +4,43 @@ project(vision-core VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Options for testing
+# Options
 option(BUILD_TESTS "Build tests" OFF)
+
+# --- Compiler Warnings (applied to project targets only, not third-party) ---
+set(PROJECT_WARNING_FLAGS
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Wshadow
+    -Wnon-virtual-dtor
+    -Wold-style-cast
+    -Wcast-align
+    -Wunused
+    -Woverloaded-virtual
+    -Wconversion
+    -Wsign-conversion
+    -Wnull-dereference
+    -Wdouble-promotion
+    -Wformat=2
+    -Wimplicit-fallthrough
+)
+
+# Treat warnings as errors in CI (opt-in via -DWERROR=ON)
+option(WERROR "Treat compiler warnings as errors" OFF)
+if(WERROR)
+    list(APPEND PROJECT_WARNING_FLAGS -Werror)
+endif()
+
+# Enable sanitizers in debug builds (opt-in via -DSANITIZERS=ON)
+option(SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+if(SANITIZERS)
+    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address,undefined)
+    message(STATUS "Sanitizers: AddressSanitizer + UndefinedBehaviorSanitizer enabled")
+endif()
 
 # Find OpenCV
 find_package(OpenCV REQUIRED)
@@ -107,10 +141,7 @@ target_compile_features(vision-core PUBLIC cxx_std_17)
 if(MSVC)
     target_compile_options(vision-core PRIVATE /W4 /WX)
 else()
-    target_compile_options(vision-core PRIVATE 
-        -Wall -Wextra -Wpedantic -Werror
-        -Wno-unused-parameter
-    )
+    target_compile_options(vision-core PRIVATE ${PROJECT_WARNING_FLAGS})
 endif()
 
 # Install rules

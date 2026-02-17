@@ -2,8 +2,8 @@
 
 #include <opencv2/opencv.hpp>
 #include <string>
-#include <vector>
 #include <variant>
+#include <vector>
 
 namespace vision_core {
 
@@ -11,9 +11,9 @@ namespace vision_core {
  * @brief Classification result structure
  */
 struct Classification {
-    float class_id{-1.0f};             ///< Predicted class ID
-    float class_confidence{0.0f};      ///< Confidence score [0.0, 1.0]
-    
+    float class_id{-1.0f};        ///< Predicted class ID
+    float class_confidence{0.0f}; ///< Confidence score [0.0, 1.0]
+
     Classification() = default;
     Classification(float id, float conf) : class_id(id), class_confidence(conf) {}
 };
@@ -22,36 +22,34 @@ struct Classification {
  * @brief Detection result structure (extends Classification)
  */
 struct Detection : public Classification {
-    cv::Rect bbox;                     ///< Bounding box
-    
+    cv::Rect bbox; ///< Bounding box
+
     Detection() = default;
-    Detection(const cv::Rect& box, float conf, int cls)
-        : Classification(static_cast<float>(cls), conf), bbox(box) {}
+    Detection(const cv::Rect& box, float conf, int cls) : Classification(static_cast<float>(cls), conf), bbox(box) {}
 };
 
 /**
  * @brief Instance segmentation result structure (extends Detection)
  */
 struct InstanceSegmentation : public Detection {
-    std::vector<uint8_t> mask_data;    ///< Mask data as a vector
-    int mask_height{0};                ///< Mask height
-    int mask_width{0};                 ///< Mask width
-    cv::Mat mask;                      ///< Binary or soft mask
-    
+    std::vector<uint8_t> mask_data; ///< Mask data as a vector
+    int mask_height{0};             ///< Mask height
+    int mask_width{0};              ///< Mask width
+    cv::Mat mask;                   ///< Binary or soft mask
+
     InstanceSegmentation() = default;
-    
-    InstanceSegmentation(const cv::Rect& box, float conf, int cls)
-        : Detection(box, conf, cls) {}
+
+    InstanceSegmentation(const cv::Rect& box, float conf, int cls) : Detection(box, conf, cls) {}
 };
 
 /**
  * @brief Optical flow result structure
  */
 struct OpticalFlow {
-    cv::Mat flow;                      ///< Colored visualization
-    cv::Mat raw_flow;                  ///< Raw flow field (CV_32FC2)
-    float max_displacement{0.0f};      ///< Maximum flow magnitude
-    
+    cv::Mat flow;                 ///< Colored visualization
+    cv::Mat raw_flow;             ///< Raw flow field (CV_32FC2)
+    float max_displacement{0.0f}; ///< Maximum flow magnitude
+
     OpticalFlow() = default;
 };
 
@@ -59,9 +57,9 @@ struct OpticalFlow {
  * @brief Video classification result structure (extends Classification)
  */
 struct VideoClassification : public Classification {
-    std::string action_label;          ///< Human-readable action name
-    std::vector<float> frame_scores;   ///< Confidence scores per frame
-    
+    std::string action_label;        ///< Human-readable action name
+    std::vector<float> frame_scores; ///< Confidence scores per frame
+
     VideoClassification() = default;
 };
 
@@ -79,20 +77,21 @@ struct Keypoint {
  */
 struct PoseEstimation {
     std::vector<Keypoint> keypoints;
-    float score{0.0f}; 
-    
+    float score{0.0f};
+
     PoseEstimation() = default;
 };
 
 /**
  * @brief Result variant type to hold any task result
  */
-using Result = std::variant<Classification, Detection, InstanceSegmentation, OpticalFlow, VideoClassification, PoseEstimation>;
+using Result =
+    std::variant<Classification, Detection, InstanceSegmentation, OpticalFlow, VideoClassification, PoseEstimation>;
 
 /**
  * @brief Task type enumeration
  */
-enum class TaskType {
+enum class TaskType : uint8_t {
     OpticalFlow,
     Classification,
     Detection,
@@ -100,6 +99,5 @@ enum class TaskType {
     VideoClassification,
     PoseEstimation
 };
-
 
 } // namespace vision_core

@@ -1,32 +1,27 @@
-#include <gtest/gtest.h>
-#include "vision-core/core/task_factory.hpp"
 #include "vision-core/core/model_info.hpp"
-#include <thread>
+#include "vision-core/core/task_factory.hpp"
+
 #include <future>
+#include <gtest/gtest.h>
+#include <thread>
 #include <vector>
 
 using namespace vision_core;
 
 // Minimal test task for registration tests
 class TestTask : public TaskInterface {
-public:
+  public:
     TestTask(const ModelInfo& model_info) : TaskInterface(model_info) {}
-    
+
     TaskType getTaskType() override { return TaskType::Detection; }
-    
-    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override {
-        return {};
-    }
-    
-    std::vector<Result> postprocess(
-        const cv::Size&,
-        const std::vector<Tensor>&) override {
-        return {};
-    }
+
+    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override { return {}; }
+
+    std::vector<Result> postprocess(const cv::Size&, const std::vector<Tensor>&) override { return {}; }
 };
 
 class TaskFactoryTest : public ::testing::Test {
-protected:
+  protected:
     ModelInfo createValidModelInfo() {
         ModelInfo info;
         info.input_shapes = {{1, 3, 640, 640}};
@@ -43,46 +38,36 @@ protected:
 TEST_F(TaskFactoryTest, ValidateInputSizesEmpty) {
     ModelInfo info;
     info.input_shapes = {};
-    
-    EXPECT_THROW({
-        TaskFactory::createTaskInstance("yolov8", info);
-    }, InputDimensionError);
+
+    EXPECT_THROW({ TaskFactory::createTaskInstance("yolov8", info); }, InputDimensionError);
 }
 
 TEST_F(TaskFactoryTest, ValidateInputSizesNegative) {
     ModelInfo info;
     info.input_shapes = {{1, 3, -640, 640}};
     info.input_formats = {"FORMAT_NCHW"};
-    
-    EXPECT_THROW({
-        TaskFactory::createTaskInstance("yolov8", info);
-    }, InputDimensionError);
+
+    EXPECT_THROW({ TaskFactory::createTaskInstance("yolov8", info); }, InputDimensionError);
 }
 
 TEST_F(TaskFactoryTest, UnrecognizedModelType) {
     auto info = createValidModelInfo();
-    
-    EXPECT_THROW({
-        TaskFactory::createTaskInstance("unknown_model", info);
-    }, std::invalid_argument);
+
+    EXPECT_THROW({ TaskFactory::createTaskInstance("unknown_model", info); }, std::invalid_argument);
 }
 
 TEST_F(TaskFactoryTest, EmptyModelType) {
     auto info = createValidModelInfo();
-    
-    EXPECT_THROW({
-        TaskFactory::createTaskInstance("", info);
-    }, std::invalid_argument);
+
+    EXPECT_THROW({ TaskFactory::createTaskInstance("", info); }, std::invalid_argument);
 }
 
 TEST_F(TaskFactoryTest, InvalidInputDimensions) {
     ModelInfo info;
     info.input_shapes = {{1, 0}};
     info.input_formats = {"FORMAT_NCHW"};
-    
-    EXPECT_THROW({
-        TaskFactory::createTaskInstance("yolov8", info);
-    }, InputDimensionError);
+
+    EXPECT_THROW({ TaskFactory::createTaskInstance("yolov8", info); }, InputDimensionError);
 }
 
 TEST_F(TaskFactoryTest, CreateValidYoloTask) {
@@ -120,7 +105,7 @@ TEST_F(TaskFactoryTest, CreateValidClassificationTask) {
 TEST_F(TaskFactoryTest, ModelInfoCopy) {
     auto info1 = createValidModelInfo();
     ModelInfo info2 = info1;
-    
+
     EXPECT_EQ(info1.input_shapes.size(), info2.input_shapes.size());
     EXPECT_EQ(info1.input_formats.size(), info2.input_formats.size());
     EXPECT_EQ(info1.input_names.size(), info2.input_names.size());
@@ -137,7 +122,7 @@ TEST_F(TaskFactoryTest, ModelInfoDefaultConstruction) {
     EXPECT_EQ(info.batch_size_, 1);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

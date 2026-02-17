@@ -2,6 +2,7 @@
 
 #include "vision-core/core/result_types.hpp"
 #include "vision-core/core/task_interface.hpp"
+
 #include <vector>
 
 namespace vision_core {
@@ -13,14 +14,13 @@ namespace vision_core {
  * returns top-K VideoClassification results.
  */
 class VideoClassificationPostprocessor {
-public:
+  public:
     VideoClassificationPostprocessor(int top_k, bool apply_softmax);
 
-    std::vector<VideoClassification> postprocess(
-        const std::vector<TensorElement>& output,
-        const std::vector<int64_t>& shape);
+    std::vector<VideoClassification> postprocess(const std::vector<TensorElement>& output,
+                                                 const std::vector<int64_t>& shape);
 
-private:
+  private:
     int top_k_;
     bool apply_softmax_;
 

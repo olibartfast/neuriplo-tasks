@@ -1,4 +1,5 @@
 #include "vision-core/pose_estimation/vit_pose_postprocessor.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -7,11 +8,10 @@ namespace vision_core {
 
 ViTPosePostprocessor::ViTPosePostprocessor() {}
 
-std::vector<PoseEstimation> ViTPosePostprocessor::postprocess(
-        const std::vector<Tensor>& tensors,
-        const cv::Size& original_size,
-        const cv::Size& input_size) {
-    
+std::vector<PoseEstimation> ViTPosePostprocessor::postprocess(const std::vector<Tensor>& tensors,
+                                                              const cv::Size& original_size,
+                                                              const cv::Size& input_size) {
+
     if (tensors.empty()) {
         return {};
     }
@@ -24,7 +24,7 @@ std::vector<PoseEstimation> ViTPosePostprocessor::postprocess(
     if (shape.size() != 4) {
         // Logic to handle unexpected shape? For now, return empty or try to adapt.
         // If it's flattened, we might need more info. But Tensor usually has shape.
-        return {}; 
+        return {};
     }
 
     int batch_size = static_cast<int>(shape[0]);
@@ -56,7 +56,7 @@ std::vector<PoseEstimation> ViTPosePostprocessor::postprocess(
                     } else if (std::holds_alternative<int64_t>(val_variant)) {
                         val = static_cast<float>(std::get<int64_t>(val_variant));
                     }
-                    
+
                     if (val > max_val) {
                         max_val = val;
                         max_x = x;
@@ -70,15 +70,15 @@ std::vector<PoseEstimation> ViTPosePostprocessor::postprocess(
             // Assuming the whole image was resized to input_size, and then fed to network.
             // Heatmap is a downsampled version of input.
             // Mapping: heatmap_coord / heatmap_size * original_size
-            
+
             kp.x = static_cast<float>(max_x) * original_size.width / heatmap_w;
             kp.y = static_cast<float>(max_y) * original_size.height / heatmap_h;
             kp.confidence = max_val;
-            
+
             pose.keypoints.push_back(kp);
             total_score += max_val;
         }
-        
+
         if (num_joints > 0) {
             pose.score = total_score / num_joints;
         }

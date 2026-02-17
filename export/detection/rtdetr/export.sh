@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # RT-DETR Universal Export Launcher Script
-# 
+#
 # This script provides a convenient interface for exporting RT-DETR models
 # across all versions (v1, v2, v3, v4) to ONNX and TensorRT formats.
 #
@@ -112,7 +112,7 @@ EXAMPLES:
 
 SUPPORTED MODELS:
     - RT-DETR v1 (PyTorch)    - github.com/lyuwenyu/RT-DETR
-    - RT-DETR v2 (PyTorch)    - github.com/lyuwenyu/RT-DETR  
+    - RT-DETR v2 (PyTorch)    - github.com/lyuwenyu/RT-DETR
     - RT-DETR v3 (PaddlePaddle) - github.com/clxia12/RT-DETRv3
     - RT-DETR v4 (PyTorch)    - github.com/RT-DETRs/RT-DETRv4
     - D-FINE (PyTorch)        - github.com/Peterande/D-FINE
@@ -157,7 +157,7 @@ parse_arguments() {
     # Convert arguments for Python script
     PYTHON_ARGS=()
     DOWNLOAD_WEIGHTS=false
-    
+
     while [[ $# -gt 0 ]]; do
         case $1 in
             -h|--help)
@@ -277,21 +277,21 @@ validate_arguments() {
 # Main execution
 main() {
     log_info "Starting RT-DETR Universal Export Launcher"
-    
+
     # Parse command line arguments
     parse_arguments "$@"
-    
+
     # Validate dependencies and arguments
     check_dependencies
     validate_arguments
-    
+
     log_info "Configuration: $CONFIG_FILE"
     log_info "Checkpoint: $CHECKPOINT_FILE"
     log_info "Python command: $PYTHON_CMD"
-    
+
     # Execute Python export script
     log_info "Launching export process..."
-    
+
     if $PYTHON_CMD "$EXPORT_SCRIPT" "${PYTHON_ARGS[@]}"; then
         log_success "Export completed successfully!"
     else

@@ -1,14 +1,15 @@
 #pragma once
 
-#include "vision-core/core/result_types.hpp"
 #include "vision-core/core/model_info.hpp"
-#include <opencv2/opencv.hpp>
-#include <vector>
-#include <variant>
-#include <memory>
-#include <stdexcept>
+#include "vision-core/core/result_types.hpp"
+
 #include <fstream>
+#include <memory>
+#include <opencv2/opencv.hpp>
+#include <stdexcept>
 #include <tuple>
+#include <variant>
+#include <vector>
 
 namespace vision_core {
 
@@ -24,7 +25,7 @@ using TensorElement = std::variant<float, int32_t, int64_t, uint8_t>;
 struct Tensor {
     std::vector<TensorElement> data;
     std::vector<int64_t> shape;
-    
+
     Tensor() = default;
     Tensor(std::vector<TensorElement> data_, std::vector<int64_t> shape_)
         : data(std::move(data_)), shape(std::move(shape_)) {}
@@ -34,19 +35,18 @@ struct Tensor {
  * @brief Input dimension error exception
  */
 class InputDimensionError : public std::runtime_error {
-public:
-    explicit InputDimensionError(const std::string& what_arg) 
-        : std::runtime_error(what_arg) {}
+  public:
+    explicit InputDimensionError(const std::string& what_arg) : std::runtime_error(what_arg) {}
 };
 
 /**
  * @brief Base task interface
- * 
+ *
  * Provides a unified interface for preprocessing and postprocessing
  * across different computer vision tasks.
  */
 class TaskInterface {
-public:
+  public:
     explicit TaskInterface(const ModelInfo& model_info);
     virtual ~TaskInterface() = default;
 
@@ -68,16 +68,14 @@ public:
      * @param tensors Inference output tensors with shape information
      * @return Vector of Result variants
      */
-    virtual std::vector<Result> postprocess(
-        const cv::Size& frame_size,
-        const std::vector<Tensor>& tensors) = 0;
+    virtual std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) = 0;
 
     /**
      * @brief Read label names from file
      * @param file_name Path to labels file
      * @return Vector of class names
      */
-    std::vector<std::string> readLabelNames(const std::string& file_name) const {
+    [[nodiscard]] std::vector<std::string> readLabelNames(const std::string& file_name) const {
         std::vector<std::string> classes;
         std::ifstream ifs(file_name.c_str());
         std::string line;
@@ -87,17 +85,17 @@ public:
         return classes;
     }
 
-protected:
+  protected:
     ModelInfo model_info_;
     int input_width_{0};
     int input_height_{0};
     int input_channels_{0};
 
-private:
+  private:
     /**
      * @brief Initialize input dimensions from model info
      */
-    std::tuple<int, int, int> initializeInputDimensions(const ModelInfo& model_info) const {
+    [[nodiscard]] std::tuple<int, int, int> initializeInputDimensions(const ModelInfo& model_info) const {
         for (size_t i = 0; i < model_info.input_shapes.size(); i++) {
             const auto& shape = model_info.input_shapes[i];
             const bool is_nhwc = (model_info.input_formats[i] == "FORMAT_NHWC");
@@ -106,16 +104,17 @@ private:
                 // Case for 3D inputs: CHW (default) or HWC
                 if (is_nhwc) {
                     // HWC: 0->H, 1->W, 2->C
-                    return std::make_tuple(static_cast<int>(shape[1]), static_cast<int>(shape[0]), static_cast<int>(shape[2]));
-                } else {
-                    // CHW: 0->C, 1->H, 2->W
-                    return std::make_tuple(static_cast<int>(shape[2]), static_cast<int>(shape[1]), static_cast<int>(shape[0]));
+                    return std::make_tuple(static_cast<int>(shape[1]), static_cast<int>(shape[0]),
+                                           static_cast<int>(shape[2]));
                 }
+                // CHW: 0->C, 1->H, 2->W
+                return std::make_tuple(static_cast<int>(shape[2]), static_cast<int>(shape[1]),
+                                       static_cast<int>(shape[0]));
             } else if (shape.size() >= 4) {
                 // Case for 4D inputs: NCHW (default) or NHWC
-                int channels = is_nhwc ? shape[3] : shape[1];
-                int height = is_nhwc ? shape[1] : shape[2];
-                int width = is_nhwc ? shape[2] : shape[3];
+                int channels = static_cast<int>(is_nhwc ? shape[3] : shape[1]);
+                int height = static_cast<int>(is_nhwc ? shape[1] : shape[2]);
+                int width = static_cast<int>(is_nhwc ? shape[2] : shape[3]);
                 return std::make_tuple(width, height, channels);
             }
         }

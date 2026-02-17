@@ -102,5 +102,3 @@ docker run --rm -it --gpus=all \
                             --avgRuns=1000 \
                             --duration=10"
 ```
-
- 

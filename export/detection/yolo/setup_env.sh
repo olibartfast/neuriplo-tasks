@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # YOLO Virtual Environment Setup Script
-# 
+#
 # This script creates optimized virtual environments for YOLO export pipelines.
 # Different YOLO versions may have different dependency requirements.
 #
@@ -156,7 +156,7 @@ fi
 # Create environment
 if [[ "$USE_CONDA" == "true" ]]; then
     log_step "Creating conda environment..."
-    
+
     # Check if environment exists
     if conda env list | grep -q "^$ENV_NAME "; then
         if [[ "$FORCE_CREATE" == "true" ]]; then
@@ -169,19 +169,19 @@ if [[ "$USE_CONDA" == "true" ]]; then
             exit 0
         fi
     fi
-    
+
     # Create environment
     conda create -n "$ENV_NAME" python="$PYTHON_VERSION" -y
-    
+
     # Activate environment
     eval "$(conda shell.bash hook)"
     conda activate "$ENV_NAME"
-    
+
 else
     log_step "Creating venv environment..."
-    
+
     VENV_DIR="./envs/$ENV_NAME"
-    
+
     if [[ -d "$VENV_DIR" ]]; then
         if [[ "$FORCE_CREATE" == "true" ]]; then
             log_warning "Removing existing environment: $VENV_DIR"
@@ -193,7 +193,7 @@ else
             exit 0
         fi
     fi
-    
+
     python${PYTHON_VERSION} -m venv "$VENV_DIR"
     source "$VENV_DIR/bin/activate"
 fi

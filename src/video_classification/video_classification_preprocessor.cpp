@@ -1,4 +1,5 @@
 #include "vision-core/video_classification/video_classification_preprocessor.hpp"
+
 #include <cstring>
 
 namespace vision_core {
@@ -7,13 +8,11 @@ namespace vision_core {
 
 VideoMAEPreprocessor::VideoMAEPreprocessor(const cv::Size& input_size)
     : Preprocessor(PreprocessConfig{
-        input_size,
-        ImageFormat::NCHW,
-        DataType::FLOAT32,
-        false,  // We handle normalization manually
-        false,
-        true    // BGR to RGB
-    }) {}
+          input_size, ImageFormat::NCHW, DataType::FLOAT32,
+          false, // We handle normalization manually
+          false,
+          true // BGR to RGB
+      }) {}
 
 std::vector<uint8_t> VideoMAEPreprocessor::preprocess(const cv::Mat& image) const {
     cv::Mat processed;
@@ -50,14 +49,7 @@ std::vector<uint8_t> VideoMAEPreprocessor::preprocess(const cv::Mat& image) cons
 // ============ VivitPreprocessor ============
 
 VivitPreprocessor::VivitPreprocessor(const cv::Size& input_size)
-    : Preprocessor(PreprocessConfig{
-        input_size,
-        ImageFormat::NCHW,
-        DataType::FLOAT32,
-        false,
-        false,
-        true
-    }) {}
+    : Preprocessor(PreprocessConfig{input_size, ImageFormat::NCHW, DataType::FLOAT32, false, false, true}) {}
 
 std::vector<uint8_t> VivitPreprocessor::preprocess(const cv::Mat& image) const {
     cv::Mat processed;
@@ -76,9 +68,7 @@ std::vector<uint8_t> VivitPreprocessor::preprocess(const cv::Mat& image) const {
     // Center crop to target size
     int crop_x = (processed.cols - config_.input_size.width) / 2;
     int crop_y = (processed.rows - config_.input_size.height) / 2;
-    processed = processed(cv::Rect(crop_x, crop_y,
-                                   config_.input_size.width,
-                                   config_.input_size.height)).clone();
+    processed = processed(cv::Rect(crop_x, crop_y, config_.input_size.width, config_.input_size.height)).clone();
 
     // Convert to float and rescale: pixel * (1/127.5) - 1
     processed.convertTo(processed, CV_32FC3, 1.0 / 127.5, -1.0);
@@ -106,14 +96,7 @@ std::vector<uint8_t> VivitPreprocessor::preprocess(const cv::Mat& image) const {
 // ============ TimeSformerPreprocessor ============
 
 TimeSformerPreprocessor::TimeSformerPreprocessor(const cv::Size& input_size)
-    : Preprocessor(PreprocessConfig{
-        input_size,
-        ImageFormat::NCHW,
-        DataType::FLOAT32,
-        false,
-        false,
-        true
-    }) {}
+    : Preprocessor(PreprocessConfig{input_size, ImageFormat::NCHW, DataType::FLOAT32, false, false, true}) {}
 
 std::vector<uint8_t> TimeSformerPreprocessor::preprocess(const cv::Mat& image) const {
     cv::Mat processed;
@@ -132,9 +115,7 @@ std::vector<uint8_t> TimeSformerPreprocessor::preprocess(const cv::Mat& image) c
     // Center crop to target size
     int crop_x = (processed.cols - config_.input_size.width) / 2;
     int crop_y = (processed.rows - config_.input_size.height) / 2;
-    processed = processed(cv::Rect(crop_x, crop_y,
-                                   config_.input_size.width,
-                                   config_.input_size.height)).clone();
+    processed = processed(cv::Rect(crop_x, crop_y, config_.input_size.width, config_.input_size.height)).clone();
 
     // Convert to float and rescale /255
     processed.convertTo(processed, CV_32FC3, 1.0 / 255.0);

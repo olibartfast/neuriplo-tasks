@@ -134,8 +134,8 @@ Follow [YoloNAS Quickstart](https://github.com/Deci-AI/super-gradients/blob/mast
 from super_gradients.training import models
 
 net = models.get("yolo_nas_s", pretrained_weights="coco")
-models.convert_to_onnx(model=net, input_shape=(3,640,640), out_path="yolo_nas_s.onnx", 
-                      torch_onnx_export_kwargs={"input_names": ['input'], 
+models.convert_to_onnx(model=net, input_shape=(3,640,640), out_path="yolo_nas_s.onnx",
+                      torch_onnx_export_kwargs={"input_names": ['input'],
                                                "output_names": ['output0', 'output1']})
 ```
 
@@ -222,7 +222,7 @@ python tools/deployment/export_onnx.py \
 
 **Available RT-DETRv4 Models:**
 - `rtv4_hgnetv2_s_coco` - Small model
-- `rtv4_hgnetv2_m_coco` - Medium model  
+- `rtv4_hgnetv2_m_coco` - Medium model
 - `rtv4_hgnetv2_l_coco` - Large model
 - `rtv4_hgnetv2_x_coco` - Extra large model
 

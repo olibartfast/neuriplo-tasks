@@ -1,7 +1,8 @@
 #pragma once
 
-#include "vision-core/core/task_interface.hpp"
 #include "vision-core/core/preprocessor.hpp"
+#include "vision-core/core/task_interface.hpp"
+
 #include <memory>
 #include <string>
 
@@ -21,16 +22,10 @@ class VideoClassificationPostprocessor;
  * Each frame is preprocessed independently, then concatenated into a single buffer.
  */
 class VideoClassificationTask : public TaskInterface {
-public:
-    enum class ModelType {
-        VIDEOMAE,
-        VIVIT,
-        TIMESFORMER
-    };
+  public:
+    enum class ModelType : uint8_t { VIDEOMAE, VIVIT, TIMESFORMER };
 
-    explicit VideoClassificationTask(const ModelInfo& model_info,
-                                     const std::string& model_name,
-                                     int top_k = 5,
+    explicit VideoClassificationTask(const ModelInfo& model_info, const std::string& model_name, int top_k = 5,
                                      bool apply_softmax = true);
 
     ~VideoClassificationTask() override;
@@ -39,20 +34,16 @@ public:
 
     std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override;
 
-    std::vector<Result> postprocess(
-        const cv::Size& frame_size,
-        const std::vector<Tensor>& tensors) override;
+    std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
 
-private:
+  private:
     ModelType model_type_;
     std::string model_name_;
     std::unique_ptr<Preprocessor> preprocessor_;
     std::unique_ptr<VideoClassificationPostprocessor> postprocessor_;
     int top_k_;
     bool apply_softmax_;
-    int num_frames_;
-    int input_width_;
-    int input_height_;
+    int num_frames_{0};
 
     static ModelType detectModelType(const std::string& model_name);
 

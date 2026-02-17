@@ -5,14 +5,13 @@
 namespace vision_core {
 
 class TensorflowPostprocessor : public ClassificationPostprocessor {
-public:
+  public:
     TensorflowPostprocessor(int top_k, bool apply_softmax);
 
-    std::vector<Classification> postprocess(
-        const std::vector<TensorElement>& output,
-        const std::vector<int64_t>& shape) override;
+    std::vector<Classification> postprocess(const std::vector<TensorElement>& output,
+                                            const std::vector<int64_t>& shape) override;
 
-private:
+  private:
     int top_k_;
     bool apply_softmax_;
 

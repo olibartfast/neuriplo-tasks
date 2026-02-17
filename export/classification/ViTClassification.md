@@ -7,12 +7,12 @@ This guide explains how to deploy and use Hugging Face Vision Transformer models
 ViT (Vision Transformer) models apply transformer architectures to image classification tasks by treating images as sequences of patches. TritonIC supports ViT models through three deployment methods:
 
 1. **Python Backend with Pipeline** - Simplest setup with automatic preprocessing
-2. **Python Backend Standard** - More control with custom preprocessing  
+2. **Python Backend Standard** - More control with custom preprocessing
 3. **ONNX Backend** - Best performance with GPU optimization
 
 For model export, use:
 ```bash
-# Clone vision-core if not already available  
+# Clone vision-core if not already available
 git clone https://github.com/olibartfast/vision-core.git
 cd vision-core/export/classification/vit/onnx
 python export.py
@@ -36,7 +36,7 @@ cd deploy/vit/python_pipeline
 python deploy.py --model google/vit-base-patch16-224 --output ./model_repository/vit_pipeline
 ```
 
-#### Method 2: Python Standard  
+#### Method 2: Python Standard
 ```bash
 cd deploy/vit/python_standard
 python deploy.py --model google/vit-base-patch16-224 --output ./model_repository/vit_standard
@@ -53,7 +53,7 @@ python deploy.py --model google/vit-base-patch16-224 --output ./model_repository
 ### Popular ViT Models
 
 - `google/vit-base-patch16-224` (88M parameters) - Standard resolution
-- `google/vit-base-patch16-384` (88M parameters) - High resolution  
+- `google/vit-base-patch16-384` (88M parameters) - High resolution
 - `google/vit-large-patch16-224` (307M parameters) - Large model
 - `google/vit-huge-patch14-224-in21k` (632M parameters) - Huge model
 - `microsoft/beit-base-patch16-224` (87M parameters) - BEiT variant
@@ -79,7 +79,7 @@ ViT models use standard ImageNet preprocessing:
 
 - **Input Size**: 224×224 (or 384×384 for high-res models)
 - **Normalization**: ImageNet statistics
-  - Mean: [0.485, 0.456, 0.406] 
+  - Mean: [0.485, 0.456, 0.406]
   - Std: [0.229, 0.224, 0.225]
 - **Format**: RGB (automatically converted from BGR)
 - **Range**: [0, 1] before normalization
@@ -99,7 +99,7 @@ ViT classifiers return top-k predictions with:
 Example output:
 ```
 Top 1: class 285 (Egyptian cat) with confidence 0.8234
-Top 2: class 281 (tabby cat) with confidence 0.1123  
+Top 2: class 281 (tabby cat) with confidence 0.1123
 Top 3: class 282 (tiger cat) with confidence 0.0456
 ```
 
@@ -169,7 +169,7 @@ auto classifier = std::make_unique<ViTClassifier>(model_info);
 std::vector<cv::Mat> images = {cv::imread("cat.jpg")};
 auto preprocessed = classifier->preprocess(images);
 
-// Get results  
+// Get results
 auto results = classifier->postprocess(frame_size, infer_results, infer_shapes);
 ```
 

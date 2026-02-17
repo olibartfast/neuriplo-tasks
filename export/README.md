@@ -71,7 +71,7 @@ These exported models can be used with:
 - Custom inference implementations
 
 Refer to:
-* [Object Detection](https://github.com/olibartfast/vision-core/blob/master/export/detection/ObjectDetection.md) 
+* [Object Detection](https://github.com/olibartfast/vision-core/blob/master/export/detection/ObjectDetection.md)
 * [Classification](https://github.com/olibartfast/vision-core/blob/master/export/classification/Classification.md)
 
 * [Instance Segmentation](https://github.com/olibartfast/vision-core/blob/master/export/segmentation/InstanceSegmentation.md)

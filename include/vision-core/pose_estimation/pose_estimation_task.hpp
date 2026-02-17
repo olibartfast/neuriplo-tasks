@@ -1,26 +1,25 @@
 #pragma once
 
-#include "vision-core/core/task_interface.hpp"
 #include "vision-core/core/preprocessor.hpp"
+#include "vision-core/core/task_interface.hpp"
 #include "vision-core/pose_estimation/pose_postprocessor.hpp"
+
 #include <memory>
 #include <string>
 
 namespace vision_core {
 
 class PoseEstimationTask : public TaskInterface {
-public:
+  public:
     explicit PoseEstimationTask(const ModelInfo& model_info, const std::string& model_type);
 
     TaskType getTaskType() override { return TaskType::PoseEstimation; }
 
     std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override;
 
-    std::vector<Result> postprocess(
-        const cv::Size& frame_size,
-        const std::vector<Tensor>& tensors) override;
+    std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
 
-private:
+  private:
     std::unique_ptr<Preprocessor> preprocessor_;
     std::unique_ptr<PosePostprocessor> postprocessor_;
     std::string model_type_;
