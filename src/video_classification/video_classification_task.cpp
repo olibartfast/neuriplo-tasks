@@ -40,12 +40,13 @@ std::vector<std::vector<uint8_t>> VideoClassificationTask::preprocess(const std:
 
     // Process each frame through the preprocessor and concatenate into a single buffer
     std::vector<uint8_t> concatenated;
-    const size_t frame_size = static_cast<size_t>(input_width_) * input_height_ * 3 * sizeof(float);
-    concatenated.reserve(num_frames_ * frame_size);
+    const size_t frame_size =
+        static_cast<size_t>(input_width_) * static_cast<size_t>(input_height_) * 3 * sizeof(float);
+    concatenated.reserve(static_cast<size_t>(num_frames_) * frame_size);
 
     for (int i = 0; i < num_frames_; ++i) {
         // If fewer frames provided than needed, repeat the last frame
-        const cv::Mat& frame = (i < static_cast<int>(imgs.size())) ? imgs[i] : imgs.back();
+        const cv::Mat& frame = (i < static_cast<int>(imgs.size())) ? imgs[static_cast<size_t>(i)] : imgs.back();
 
         if (frame.empty()) {
             throw std::invalid_argument("Empty frame provided at index " + std::to_string(i));

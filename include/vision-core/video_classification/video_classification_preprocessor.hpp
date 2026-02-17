@@ -16,6 +16,7 @@ class VideoMAEPreprocessor : public Preprocessor {
   public:
     explicit VideoMAEPreprocessor(const cv::Size& input_size);
 
+    using Preprocessor::preprocess;
     [[nodiscard]] std::vector<uint8_t> preprocess(const cv::Mat& image) const override;
 
   private:
@@ -34,6 +35,7 @@ class VivitPreprocessor : public Preprocessor {
   public:
     explicit VivitPreprocessor(const cv::Size& input_size);
 
+    using Preprocessor::preprocess;
     [[nodiscard]] std::vector<uint8_t> preprocess(const cv::Mat& image) const override;
 
   private:
@@ -53,6 +55,7 @@ class TimeSformerPreprocessor : public Preprocessor {
   public:
     explicit TimeSformerPreprocessor(const cv::Size& input_size);
 
+    using Preprocessor::preprocess;
     [[nodiscard]] std::vector<uint8_t> preprocess(const cv::Mat& image) const override;
 
   private:
