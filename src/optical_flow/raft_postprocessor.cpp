@@ -19,9 +19,9 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     if (shape.size() < 4)
         return {};
 
-    int channels = shape[1];
-    int height = shape[2];
-    int width = shape[3];
+    int channels = static_cast<int>(shape[1]);
+    int height = static_cast<int>(shape[2]);
+    int width = static_cast<int>(shape[3]);
 
     if (channels != 2)
         return {};
@@ -49,8 +49,10 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     // Reconstruct flow matrix using direct TensorElement access (like master branch)
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            flow_ptr[y * width * 2 + x * 2] = getTensorFloat(flow_output[u_channel_offset + y * width + x]);
-            flow_ptr[y * width * 2 + x * 2 + 1] = getTensorFloat(flow_output[v_channel_offset + y * width + x]);
+            flow_ptr[y * width * 2 + x * 2] =
+                getTensorFloat(flow_output[static_cast<size_t>(u_channel_offset + y * width + x)]);
+            flow_ptr[y * width * 2 + x * 2 + 1] =
+                getTensorFloat(flow_output[static_cast<size_t>(v_channel_offset + y * width + x)]);
         }
     }
 
@@ -62,8 +64,8 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
         // Scale flow values proportionally
         std::vector<cv::Mat> flow_channels;
         cv::split(resized_flow, flow_channels);
-        flow_channels[0] *= static_cast<float>(frame_size.width) / width;   // Scale U
-        flow_channels[1] *= static_cast<float>(frame_size.height) / height; // Scale V
+        flow_channels[0] *= static_cast<float>(frame_size.width) / static_cast<float>(width);   // Scale U
+        flow_channels[1] *= static_cast<float>(frame_size.height) / static_cast<float>(height); // Scale V
         cv::merge(flow_channels, flow);
     }
 
@@ -102,27 +104,27 @@ cv::Mat RaftPostprocessor::makeColorwheel() {
     int col = 0;
     // RY - Red to Yellow (BGR format: Blue=255, Green=increasing, Red=0)
     for (int i = 0; i < RY; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255, 255 * i / RY, 0);
+        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255, static_cast<uchar>(255 * i / RY), 0);
     }
     // YG - Yellow to Green (BGR format: Blue=255-decreasing, Green=255, Red=0)
     for (int i = 0; i < YG; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255 - 255 * i / YG, 255, 0);
+        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(static_cast<uchar>(255 - 255 * i / YG), 255, 0);
     }
     // GC - Green to Cyan (BGR format: Blue=0, Green=255, Red=increasing)
     for (int i = 0; i < GC; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(0, 255, 255 * i / GC);
+        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(0, 255, static_cast<uchar>(255 * i / GC));
     }
     // CB - Cyan to Blue (BGR format: Blue=0, Green=255-decreasing, Red=255)
     for (int i = 0; i < CB; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(0, 255 - 255 * i / CB, 255);
+        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(0, static_cast<uchar>(255 - 255 * i / CB), 255);
     }
     // BM - Blue to Magenta (BGR format: Blue=increasing, Green=0, Red=255)
     for (int i = 0; i < BM; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255 * i / BM, 0, 255);
+        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(static_cast<uchar>(255 * i / BM), 0, 255);
     }
     // MR - Magenta to Red (BGR format: Blue=255-decreasing, Green=0, Red=255)
     for (int i = 0; i < MR; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255 - 255 * i / MR, 0, 255);
+        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(static_cast<uchar>(255 - 255 * i / MR), 0, 255);
     }
 
     return colorwheel;
@@ -165,9 +167,9 @@ cv::Mat RaftPostprocessor::visualizeFlow(const cv::Mat& flow_x, const cv::Mat& f
                 ang -= 1.0f;
 
             // Find nearest colors in the wheel
-            int k0 = static_cast<int>(ang * (ncols - 1));
+            int k0 = static_cast<int>(ang * static_cast<float>(ncols - 1));
             int k1 = (k0 + 1) % ncols;
-            float f = (ang * (ncols - 1)) - k0;
+            float f = (ang * static_cast<float>(ncols - 1)) - static_cast<float>(k0);
 
             // Get colors from the wheel
             cv::Vec3b col0 = colorwheel.at<cv::Vec3b>(k0);

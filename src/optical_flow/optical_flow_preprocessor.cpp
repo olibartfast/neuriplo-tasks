@@ -53,7 +53,7 @@ std::vector<std::vector<uint8_t>> RaftPreprocessor::preprocess_pair(const cv::Ma
         } else {
             // HWC format
             const float* data = reinterpret_cast<const float*>(processed.data);
-            const size_t total_size = processed.total() * processed.channels() * sizeof(float);
+            const size_t total_size = processed.total() * static_cast<size_t>(processed.channels()) * sizeof(float);
             const uint8_t* byte_data = reinterpret_cast<const uint8_t*>(data);
             output.insert(output.end(), byte_data, byte_data + total_size);
         }

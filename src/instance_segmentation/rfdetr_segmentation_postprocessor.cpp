@@ -43,12 +43,12 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         throw std::runtime_error("RF-DETR segmentation requires at least 3 output tensors");
     }
 
-    const auto& boxes = tensors[boxes_idx_].data;
-    const auto& labels = tensors[labels_idx_].data;
-    const auto& masks = tensors[masks_idx_].data;
-    const auto& boxes_shape = tensors[boxes_idx_].shape;
-    const auto& labels_shape = tensors[labels_idx_].shape;
-    const auto& masks_shape = tensors[masks_idx_].shape;
+    const auto& boxes = tensors[static_cast<size_t>(boxes_idx_)].data;
+    const auto& labels = tensors[static_cast<size_t>(labels_idx_)].data;
+    const auto& masks = tensors[static_cast<size_t>(masks_idx_)].data;
+    const auto& boxes_shape = tensors[static_cast<size_t>(boxes_idx_)].shape;
+    const auto& labels_shape = tensors[static_cast<size_t>(labels_idx_)].shape;
+    const auto& masks_shape = tensors[static_cast<size_t>(masks_idx_)].shape;
 
     std::vector<InstanceSegmentation> segmentations;
 
@@ -69,7 +69,7 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         int class_id = -1;
 
         for (int c = 0; c < num_classes; ++c) {
-            float logit = getTensorFloat(labels[i * num_classes + c]);
+            float logit = getTensorFloat(labels[static_cast<size_t>(i * num_classes + c)]);
             float score = 1.0f / (1.0f + std::exp(-logit)); // sigmoid
             if (score > max_score) {
                 max_score = score;
@@ -87,10 +87,10 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         }
 
         // Extract box (cx, cy, w, h) in normalized coordinates
-        float cx = getTensorFloat(boxes[i * 4 + 0]);
-        float cy = getTensorFloat(boxes[i * 4 + 1]);
-        float w = getTensorFloat(boxes[i * 4 + 2]);
-        float h = getTensorFloat(boxes[i * 4 + 3]);
+        float cx = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 0)]);
+        float cy = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 1)]);
+        float w = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 2)]);
+        float h = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 3)]);
 
         // Convert to frame coordinates
         float x_center = cx * static_cast<float>(frame_size.width);
@@ -114,7 +114,7 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         float min_val = 1.0f;
         for (int y = 0; y < mask_h; ++y) {
             for (int x = 0; x < mask_w; ++x) {
-                float logit = getTensorFloat(masks[mask_offset + y * mask_w + x]);
+                float logit = getTensorFloat(masks[static_cast<size_t>(mask_offset + y * mask_w + x)]);
                 float val = 1.0f / (1.0f + std::exp(-logit)); // sigmoid
                 mask_logits.at<float>(y, x) = val;
                 max_val = std::max(max_val, val);

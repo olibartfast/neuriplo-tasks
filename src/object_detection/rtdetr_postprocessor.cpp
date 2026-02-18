@@ -41,7 +41,9 @@ std::vector<Detection> RtDetrPostprocessor::postprocess(const std::vector<Tensor
         if (tensors.size() < 3) {
             throw std::runtime_error("RT-DETR style models require 3 output tensors");
         }
-        detections = postprocessRTDETR(tensors[scores_idx_], tensors[boxes_idx_], tensors[labels_idx_], frame_size);
+        detections =
+            postprocessRTDETR(tensors[static_cast<size_t>(scores_idx_)], tensors[static_cast<size_t>(boxes_idx_)],
+                              tensors[static_cast<size_t>(labels_idx_)], frame_size);
         break;
     }
 
@@ -75,22 +77,22 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETR(const Tensor& scor
     float r_h = static_cast<float>(frame_size.height) / static_cast<float>(input_size_.height);
 
     for (int i = 0; i < num_dets; ++i) {
-        float score = getTensorFloat(scores.data[i]);
+        float score = getTensorFloat(scores.data[static_cast<size_t>(i)]);
 
         if (score < confidence_threshold_)
             continue;
 
-        int class_id = getTensorInt(labels.data[i]);
+        int class_id = getTensorInt(labels.data[static_cast<size_t>(i)]);
         if (class_id < 0)
             continue;
 
-        float x1 = getTensorFloat(boxes.data[i * 4 + 0]) * r_w;
-        float y1 = getTensorFloat(boxes.data[i * 4 + 1]) * r_h;
-        float x2 = getTensorFloat(boxes.data[i * 4 + 2]) * r_w;
-        float y2 = getTensorFloat(boxes.data[i * 4 + 3]) * r_h;
+        float x1 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 0)]) * r_w;
+        float y1 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 1)]) * r_h;
+        float x2 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 2)]) * r_w;
+        float y2 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 3)]) * r_h;
 
         Detection det;
-        det.class_id = class_id;
+        det.class_id = static_cast<float>(class_id);
         det.class_confidence = score;
         det.bbox = cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
                             cv::Point(static_cast<int>(x2), static_cast<int>(y2)));
@@ -123,7 +125,7 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(const Tensor& ou
         float max_score = 0.0f;
         int class_id = -1;
         for (int c = 0; c < num_classes; ++c) {
-            float score = getTensorFloat(output.data[offset + 4 + c]);
+            float score = getTensorFloat(output.data[static_cast<size_t>(offset + 4 + c)]);
             if (score > max_score) {
                 max_score = score;
                 class_id = c;
@@ -133,13 +135,13 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(const Tensor& ou
         if (max_score < confidence_threshold_)
             continue;
 
-        float x1 = getTensorFloat(output.data[offset + 0]) * r_w;
-        float y1 = getTensorFloat(output.data[offset + 1]) * r_h;
-        float x2 = getTensorFloat(output.data[offset + 2]) * r_w;
-        float y2 = getTensorFloat(output.data[offset + 3]) * r_h;
+        float x1 = getTensorFloat(output.data[static_cast<size_t>(offset + 0)]) * r_w;
+        float y1 = getTensorFloat(output.data[static_cast<size_t>(offset + 1)]) * r_h;
+        float x2 = getTensorFloat(output.data[static_cast<size_t>(offset + 2)]) * r_w;
+        float y2 = getTensorFloat(output.data[static_cast<size_t>(offset + 3)]) * r_h;
 
         Detection det;
-        det.class_id = class_id;
+        det.class_id = static_cast<float>(class_id);
         det.class_confidence = max_score;
         det.bbox = cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
                             cv::Point(static_cast<int>(x2), static_cast<int>(y2)));

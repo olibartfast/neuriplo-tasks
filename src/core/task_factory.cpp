@@ -57,33 +57,36 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
         throw std::invalid_argument("Model type string is empty");
     }
 
+    // ============ INSTANCE SEGMENTATION ============
+    // Check seg BEFORE generic yolo prefix so "yoloseg" etc. are routed correctly
+    if (normalized == "yoloseg" || normalized == "yolov10seg" || normalized == "yolo26seg" ||
+        normalized == "rfdetrseg" ||
+        (normalized.size() >= 4 && normalized.substr(0, 4) == "yolo" && normalized.find("seg") != std::string::npos)) {
+        return std::make_unique<InstanceSegmentationTask>(model_info, normalized);
+    }
+
     // ============ OBJECT DETECTION ============
-    // YOLO variants
-    if (normalized == "yolo" || normalized == "yolov7e2e" || normalized == "yolov10" || normalized == "yolo26" ||
-        normalized == "yolonas" || normalized == "yolov4") {
+    // Any yolo* string (that is not a seg variant, handled above)
+    if (normalized.size() >= 4 && normalized.substr(0, 4) == "yolo") {
         return std::make_unique<ObjectDetectionTask>(model_info, normalized);
     }
 
     // Transformer-based detectors
-    if (normalized == "rtdetr" || normalized == "rtdetrul" || normalized == "rfdetr") {
+    if (normalized == "rtdetr" || normalized == "rtdetrul" || normalized == "rtdetrultralytics" ||
+        normalized == "rfdetr") {
         return std::make_unique<ObjectDetectionTask>(model_info, normalized);
     }
 
     // ============ CLASSIFICATION ============
     if (normalized == "torchvisionclassifier" || normalized == "tensorflowclassifier" ||
-        normalized == "vitclassifier") {
+        normalized == "vitclassifier" || (normalized.size() >= 6 && normalized.substr(0, 6) == "resnet") ||
+        normalized.find("tensorflow") != std::string::npos) {
         return std::make_unique<ClassificationTask>(model_info, normalized);
     }
 
     // ============ VIDEO CLASSIFICATION ============
     if (normalized == "videomae" || normalized == "vivit" || normalized == "timesformer") {
         return std::make_unique<VideoClassificationTask>(model_info, normalized);
-    }
-
-    // ============ INSTANCE SEGMENTATION ============
-    if (normalized == "yoloseg" || normalized == "yolov10seg" || normalized == "yolo26seg" ||
-        normalized.find("seg") != std::string::npos) {
-        return std::make_unique<InstanceSegmentationTask>(model_info, normalized);
     }
 
     // ============ OPTICAL FLOW ============
