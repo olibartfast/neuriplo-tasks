@@ -130,7 +130,7 @@ ObjectDetectionTask::ModelType ObjectDetectionTask::detectModelType(const std::s
     if (lower_name == "rfdetr" || lower_name == "rf-detr") {
         return ModelType::RF_DETR;
     }
-    if (lower_name == "rtdetrul") {
+    if (lower_name == "rtdetrul" || lower_name == "rtdetrultralytics") {
         return ModelType::RT_DETR_UL;
     }
     if (lower_name == "rtdetr" || lower_name == "rtdetrv2" || lower_name == "dfine" || lower_name == "deim") {

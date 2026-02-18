@@ -15,7 +15,7 @@ void Preprocessor::apply_imagenet_normalization(cv::Mat& image) const {
     std::vector<cv::Mat> channels;
     cv::split(image, channels);
 
-    for (int i = 0; i < 3; ++i) {
+    for (size_t i = 0; i < 3; ++i) {
         channels[i] = (channels[i] - kImageNetMean[i]) / kImageNetStd[i];
     }
 

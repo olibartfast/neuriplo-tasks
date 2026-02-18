@@ -10,7 +10,7 @@ ViTPosePostprocessor::ViTPosePostprocessor() {}
 
 std::vector<PoseEstimation> ViTPosePostprocessor::postprocess(const std::vector<Tensor>& tensors,
                                                               const cv::Size& original_size,
-                                                              const cv::Size& input_size) {
+                                                              const cv::Size& /*input_size*/) {
 
     if (tensors.empty()) {
         return {};
@@ -47,7 +47,7 @@ std::vector<PoseEstimation> ViTPosePostprocessor::postprocess(const std::vector<
 
             for (int y = 0; y < heatmap_h; ++y) {
                 for (int x = 0; x < heatmap_w; ++x) {
-                    const auto& val_variant = data[offset + y * heatmap_w + x];
+                    const auto& val_variant = data[static_cast<size_t>(offset + y * heatmap_w + x)];
                     float val = 0.0f;
                     if (std::holds_alternative<float>(val_variant)) {
                         val = std::get<float>(val_variant);
@@ -71,8 +71,8 @@ std::vector<PoseEstimation> ViTPosePostprocessor::postprocess(const std::vector<
             // Heatmap is a downsampled version of input.
             // Mapping: heatmap_coord / heatmap_size * original_size
 
-            kp.x = static_cast<float>(max_x) * original_size.width / heatmap_w;
-            kp.y = static_cast<float>(max_y) * original_size.height / heatmap_h;
+            kp.x = static_cast<float>(max_x) * static_cast<float>(original_size.width) / static_cast<float>(heatmap_w);
+            kp.y = static_cast<float>(max_y) * static_cast<float>(original_size.height) / static_cast<float>(heatmap_h);
             kp.confidence = max_val;
 
             pose.keypoints.push_back(kp);
@@ -80,7 +80,7 @@ std::vector<PoseEstimation> ViTPosePostprocessor::postprocess(const std::vector<
         }
 
         if (num_joints > 0) {
-            pose.score = total_score / num_joints;
+            pose.score = total_score / static_cast<float>(num_joints);
         }
         results.push_back(pose);
     }

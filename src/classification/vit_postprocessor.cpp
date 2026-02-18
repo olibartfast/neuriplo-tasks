@@ -40,7 +40,7 @@ std::vector<Classification> ViTPostprocessor::postprocess(const std::vector<Tens
 
     std::vector<Classification> classifications;
     int limit = std::min(top_k_, static_cast<int>(indexed_scores.size()));
-    for (int i = 0; i < limit; ++i) {
+    for (size_t i = 0; i < static_cast<size_t>(limit); ++i) {
         Classification cls;
         cls.class_id = static_cast<float>(indexed_scores[i].first);
         cls.class_confidence = indexed_scores[i].second;

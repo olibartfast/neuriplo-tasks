@@ -38,10 +38,10 @@ std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor
         throw std::runtime_error("RF-DETR requires 2 output tensors (dets, labels)");
     }
 
-    const auto& boxes = tensors[dets_idx_].data;
-    const auto& logits = tensors[labels_idx_].data;
-    const auto& box_shape = tensors[dets_idx_].shape;
-    const auto& logit_shape = tensors[labels_idx_].shape;
+    const auto& boxes = tensors[static_cast<size_t>(dets_idx_)].data;
+    const auto& logits = tensors[static_cast<size_t>(labels_idx_)].data;
+    const auto& box_shape = tensors[static_cast<size_t>(dets_idx_)].shape;
+    const auto& logit_shape = tensors[static_cast<size_t>(labels_idx_)].shape;
 
     std::vector<Detection> detections;
 
@@ -63,7 +63,7 @@ std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor
 
         // Find max class score applying sigmoid to logits
         for (int c = 0; c < num_classes; ++c) {
-            float logit = getTensorFloat(logits[i * num_classes + c]);
+            float logit = getTensorFloat(logits[static_cast<size_t>(i * num_classes + c)]);
             float score = 1.0f / (1.0f + std::exp(-logit));
             if (score > max_score) {
                 max_score = score;
@@ -80,10 +80,10 @@ std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor
             continue;
 
         // Boxes are normalized cx,cy,w,h format
-        float cx = getTensorFloat(boxes[i * 4 + 0]) * input_size_.width;
-        float cy = getTensorFloat(boxes[i * 4 + 1]) * input_size_.height;
-        float w = getTensorFloat(boxes[i * 4 + 2]) * input_size_.width;
-        float h = getTensorFloat(boxes[i * 4 + 3]) * input_size_.height;
+        float cx = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 0)]) * static_cast<float>(input_size_.width);
+        float cy = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 1)]) * static_cast<float>(input_size_.height);
+        float w = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 2)]) * static_cast<float>(input_size_.width);
+        float h = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 3)]) * static_cast<float>(input_size_.height);
 
         // Convert to x,y,w,h and scale to frame size
         float x = (cx - w / 2.0f) * scale_w;
@@ -92,7 +92,7 @@ std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor
         float height = h * scale_h;
 
         Detection det;
-        det.class_id = max_class_idx;
+        det.class_id = static_cast<float>(max_class_idx);
         det.class_confidence = max_score;
         det.bbox =
             cv::Rect(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width), static_cast<int>(height));

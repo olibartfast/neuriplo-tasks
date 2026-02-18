@@ -37,10 +37,10 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
     int det_idx = indices.first;
     int proto_idx = indices.second;
 
-    const auto& dets_data = tensors[det_idx].data;
-    const auto& protos_data_raw = tensors[proto_idx].data;
-    const auto& dets_shape = tensors[det_idx].shape;
-    const auto& protos_shape = tensors[proto_idx].shape;
+    const auto& dets_data = tensors[static_cast<size_t>(det_idx)].data;
+    const auto& protos_data_raw = tensors[static_cast<size_t>(proto_idx)].data;
+    const auto& dets_shape = tensors[static_cast<size_t>(det_idx)].shape;
+    const auto& protos_shape = tensors[static_cast<size_t>(proto_idx)].shape;
 
     if (dets_shape.size() < 3 || protos_shape.size() < 4) {
         return {};
@@ -73,7 +73,7 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
         int class_id = -1;
 
         for (int c = 0; c < num_classes; ++c) {
-            float score = getTensorFloat(dets_data[(c + 4) * anchors + i]);
+            float score = getTensorFloat(dets_data[static_cast<size_t>((c + 4) * anchors + i)]);
             if (score > max_score) {
                 max_score = score;
                 class_id = c;
@@ -85,10 +85,10 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
         }
 
         // Extract box (cx, cy, w, h)
-        float cx = getTensorFloat(dets_data[0 * anchors + i]);
-        float cy = getTensorFloat(dets_data[1 * anchors + i]);
-        float w = getTensorFloat(dets_data[2 * anchors + i]);
-        float h = getTensorFloat(dets_data[3 * anchors + i]);
+        float cx = getTensorFloat(dets_data[static_cast<size_t>(0 * anchors + i)]);
+        float cy = getTensorFloat(dets_data[static_cast<size_t>(1 * anchors + i)]);
+        float w = getTensorFloat(dets_data[static_cast<size_t>(2 * anchors + i)]);
+        float h = getTensorFloat(dets_data[static_cast<size_t>(3 * anchors + i)]);
 
         float x1 = cx - w / 2.0f;
         float y1 = cy - h / 2.0f;
@@ -97,9 +97,9 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
 
         // Extract mask coefficients
         std::vector<float> mask_coeffs;
-        mask_coeffs.reserve(num_mask_coeffs);
+        mask_coeffs.reserve(static_cast<size_t>(num_mask_coeffs));
         for (int m = 0; m < num_mask_coeffs; ++m) {
-            mask_coeffs.push_back(getTensorFloat(dets_data[(4 + num_classes + m) * anchors + i]));
+            mask_coeffs.push_back(getTensorFloat(dets_data[static_cast<size_t>((4 + num_classes + m) * anchors + i)]));
         }
 
         Detection det;
@@ -133,7 +133,7 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
         // Check if mask has any content
         double max_val = 0.0;
         cv::minMaxLoc(final_mask, nullptr, &max_val);
-        if (max_val <= 0.0f) {
+        if (max_val <= 0.0) {
             continue;
         }
 
@@ -164,8 +164,8 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tenso
     int det_idx = indices.first;
     int proto_idx = indices.second;
 
-    const auto& dets_tensor = tensors[det_idx];
-    const auto& protos_tensor = tensors[proto_idx];
+    const auto& dets_tensor = tensors[static_cast<size_t>(det_idx)];
+    const auto& protos_tensor = tensors[static_cast<size_t>(proto_idx)];
     const auto& dets_shape = dets_tensor.shape;
     const auto& protos_shape = protos_tensor.shape;
 

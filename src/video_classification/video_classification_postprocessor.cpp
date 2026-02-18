@@ -45,8 +45,8 @@ std::vector<VideoClassification> VideoClassificationPostprocessor::postprocess(c
 
     // Create VideoClassification results
     std::vector<VideoClassification> classifications;
-    classifications.reserve(k);
-    for (int i = 0; i < k; ++i) {
+    classifications.reserve(static_cast<size_t>(k));
+    for (size_t i = 0; i < static_cast<size_t>(k); ++i) {
         VideoClassification cls;
         cls.class_id = static_cast<float>(indexed_scores[i].first);
         cls.class_confidence = indexed_scores[i].second;
