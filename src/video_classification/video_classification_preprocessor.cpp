@@ -29,7 +29,7 @@ std::vector<uint8_t> VideoMAEPreprocessor::preprocess(const cv::Mat& image) cons
     // Apply normalization: (pixel - mean) / std
     std::vector<cv::Mat> channels;
     cv::split(processed, channels);
-    for (int i = 0; i < 3; ++i) {
+    for (size_t i = 0; i < 3; ++i) {
         channels[i] = (channels[i] - kMean[i]) / kStd[i];
     }
     cv::merge(channels, processed);
@@ -60,9 +60,9 @@ std::vector<uint8_t> VivitPreprocessor::preprocess(const cv::Mat& image) const {
     // Aspect-preserving resize: shortest edge to 256
     int h = processed.rows;
     int w = processed.cols;
-    float scale = static_cast<float>(kShortestEdge) / std::min(h, w);
-    int new_h = static_cast<int>(h * scale);
-    int new_w = static_cast<int>(w * scale);
+    float scale = static_cast<float>(kShortestEdge) / static_cast<float>(std::min(h, w));
+    int new_h = static_cast<int>(static_cast<float>(h) * scale);
+    int new_w = static_cast<int>(static_cast<float>(w) * scale);
     cv::resize(processed, processed, cv::Size(new_w, new_h), 0, 0, cv::INTER_LINEAR);
 
     // Center crop to target size
@@ -76,7 +76,7 @@ std::vector<uint8_t> VivitPreprocessor::preprocess(const cv::Mat& image) const {
     // Apply ImageNet normalization: (pixel - mean) / std
     std::vector<cv::Mat> channels;
     cv::split(processed, channels);
-    for (int i = 0; i < 3; ++i) {
+    for (size_t i = 0; i < 3; ++i) {
         channels[i] = (channels[i] - kMean[i]) / kStd[i];
     }
     cv::merge(channels, processed);
@@ -107,9 +107,9 @@ std::vector<uint8_t> TimeSformerPreprocessor::preprocess(const cv::Mat& image) c
     // Aspect-preserving resize: shortest edge to 224
     int h = processed.rows;
     int w = processed.cols;
-    float scale = static_cast<float>(kShortestEdge) / std::min(h, w);
-    int new_h = static_cast<int>(h * scale);
-    int new_w = static_cast<int>(w * scale);
+    float scale = static_cast<float>(kShortestEdge) / static_cast<float>(std::min(h, w));
+    int new_h = static_cast<int>(static_cast<float>(h) * scale);
+    int new_w = static_cast<int>(static_cast<float>(w) * scale);
     cv::resize(processed, processed, cv::Size(new_w, new_h), 0, 0, cv::INTER_LINEAR);
 
     // Center crop to target size
@@ -123,7 +123,7 @@ std::vector<uint8_t> TimeSformerPreprocessor::preprocess(const cv::Mat& image) c
     // Apply custom normalization: (pixel - mean) / std
     std::vector<cv::Mat> channels;
     cv::split(processed, channels);
-    for (int i = 0; i < 3; ++i) {
+    for (size_t i = 0; i < 3; ++i) {
         channels[i] = (channels[i] - kMean[i]) / kStd[i];
     }
     cv::merge(channels, processed);

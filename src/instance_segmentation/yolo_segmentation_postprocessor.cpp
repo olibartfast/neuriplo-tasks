@@ -193,12 +193,13 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tenso
 
     for (int i = 0; i < num_dets; ++i) {
         // Extract detection data
-        float x1 = getTensorFloat(dets_tensor.data[i * det_dims + 0]);
-        float y1 = getTensorFloat(dets_tensor.data[i * det_dims + 1]);
-        float x2 = getTensorFloat(dets_tensor.data[i * det_dims + 2]);
-        float y2 = getTensorFloat(dets_tensor.data[i * det_dims + 3]);
-        float score = getTensorFloat(dets_tensor.data[i * det_dims + 4]);
-        int class_id = static_cast<int>(getTensorFloat(dets_tensor.data[i * det_dims + 5]));
+        const size_t base = static_cast<size_t>(i * det_dims);
+        float x1 = getTensorFloat(dets_tensor.data[base + 0]);
+        float y1 = getTensorFloat(dets_tensor.data[base + 1]);
+        float x2 = getTensorFloat(dets_tensor.data[base + 2]);
+        float y2 = getTensorFloat(dets_tensor.data[base + 3]);
+        float score = getTensorFloat(dets_tensor.data[base + 4]);
+        int class_id = static_cast<int>(getTensorFloat(dets_tensor.data[base + 5]));
 
         // Filter by confidence
         if (score < confidence_threshold_) {
@@ -209,7 +210,7 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tenso
         std::vector<float> mask_coeffs;
         mask_coeffs.reserve(32);
         for (int c = 0; c < 32; ++c) {
-            mask_coeffs.push_back(getTensorFloat(dets_tensor.data[i * det_dims + 6 + c]));
+            mask_coeffs.push_back(getTensorFloat(dets_tensor.data[base + 6 + static_cast<size_t>(c)]));
         }
 
         // Generate mask at proto resolution (160x160)
@@ -220,7 +221,7 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tenso
                 float sum = 0.0f;
                 for (int c = 0; c < num_protos; ++c) {
                     int pidx = c * proto_h * proto_w + h * proto_w + w;
-                    sum += mask_coeffs[c] * protos_data[pidx];
+                    sum += mask_coeffs[static_cast<size_t>(c)] * protos_data[static_cast<size_t>(pidx)];
                 }
                 // Apply sigmoid activation
                 mask_proto.at<float>(h, w) = 1.0f / (1.0f + std::exp(-sum));
@@ -254,7 +255,7 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tenso
         // Check if mask has any content (equivalent to Python's masks.amax() > 0)
         double max_val = 0.0;
         cv::minMaxLoc(mask_cropped, nullptr, &max_val);
-        if (max_val <= 0.0f) {
+        if (max_val <= 0.0) {
             continue;
         }
 
