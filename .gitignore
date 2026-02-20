@@ -1,3 +1,11 @@
 build/*
 .cache/
 .venv/
+
+# Cloned third-party repositories
+3rdparty/
+**/*.onnx
+**/*.pt
+
+# Model weights and exports
+weights/
