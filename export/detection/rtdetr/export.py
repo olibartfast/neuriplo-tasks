@@ -191,18 +191,27 @@ class RTDETRExporter:
             logger.info(f"ONNX export successful")
             logger.info(f"Export output: {result.stdout}")
 
-            # The RT-DETR script generates model.onnx in the current directory (repo_dir)
+            # The RT-DETR script may generate model.onnx in the repo dir,
+            # or write next to the checkpoint using the checkpoint filename.
             generated_onnx = Path("model.onnx")
+            fallback_onnx = Path(abs_checkpoint_path).with_suffix('.onnx')
             abs_output_path = Path(original_dir) / onnx_path
 
+            source_onnx = None
             if generated_onnx.exists():
+                source_onnx = generated_onnx
+            elif fallback_onnx.exists():
+                logger.info(f"ONNX found next to checkpoint: {fallback_onnx}")
+                source_onnx = fallback_onnx
+
+            if source_onnx is not None:
                 # Move to desired output location
                 abs_output_path.parent.mkdir(parents=True, exist_ok=True)
-                generated_onnx.rename(abs_output_path)
+                source_onnx.rename(abs_output_path)
                 logger.info(f"ONNX model moved to: {abs_output_path}")
                 return str(abs_output_path)
             else:
-                logger.warning(f"Expected ONNX file not found, check output directory")
+                logger.warning(f"Expected ONNX file not found at {generated_onnx} or {fallback_onnx}")
                 return str(abs_output_path)
 
         except subprocess.CalledProcessError as e:
