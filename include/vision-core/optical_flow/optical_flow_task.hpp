@@ -21,6 +21,8 @@ class OpticalFlowTask : public TaskInterface {
     // TaskInterface implementation
     TaskType getTaskType() override { return TaskType::OpticalFlow; }
 
+    int getRequiredFrames() const override { return 2; }
+
     std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override;
 
     std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
