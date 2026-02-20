@@ -56,6 +56,12 @@ class TaskInterface {
     virtual TaskType getTaskType() = 0;
 
     /**
+     * @brief Get the number of frames required by this task
+     * @return Number of frames needed for inference (default: 1)
+     */
+    virtual int getRequiredFrames() const { return 1; }
+
+    /**
      * @brief Preprocess input images
      * @param imgs Input images
      * @return Preprocessed data as uint8_t vectors
