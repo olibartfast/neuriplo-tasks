@@ -30,7 +30,7 @@ cd vision-core/export/segmentation/rfdetr
 python export.py --simplify --input_size 432
 ```
 
-See [vision-core export documentation](https://github.com/olibartfast/vision-core/tree/main/export) for detailed usage.
+
 
 **Available Options:**
 - `--output_dir`: Path to save exported model (default: current directory)
