@@ -182,12 +182,30 @@ TEST_F(ResultTypesTest, ResultVariantHoldsVideoClassification) {
     EXPECT_TRUE(std::holds_alternative<VideoClassification>(result));
 }
 
+TEST_F(ResultTypesTest, DepthEstimationDefaultConstruction) {
+    DepthEstimation depth;
+    EXPECT_TRUE(depth.depth.empty());
+    EXPECT_TRUE(depth.normalized_depth.empty());
+    EXPECT_FLOAT_EQ(depth.min_depth, 0.0f);
+    EXPECT_FLOAT_EQ(depth.max_depth, 0.0f);
+}
+
+TEST_F(ResultTypesTest, ResultVariantHoldsDepthEstimation) {
+    DepthEstimation depth;
+    depth.depth = cv::Mat::ones(10, 10, CV_32FC1);
+    Result result = depth;
+
+    EXPECT_TRUE(std::holds_alternative<DepthEstimation>(result));
+}
+
 TEST_F(ResultTypesTest, TaskTypeEnumValues) {
     EXPECT_EQ(static_cast<int>(TaskType::OpticalFlow), 0);
     EXPECT_EQ(static_cast<int>(TaskType::Classification), 1);
     EXPECT_EQ(static_cast<int>(TaskType::Detection), 2);
     EXPECT_EQ(static_cast<int>(TaskType::InstanceSegmentation), 3);
     EXPECT_EQ(static_cast<int>(TaskType::VideoClassification), 4);
+    EXPECT_EQ(static_cast<int>(TaskType::PoseEstimation), 5);
+    EXPECT_EQ(static_cast<int>(TaskType::DepthEstimation), 6);
 }
 
 int main(int argc, char** argv) {

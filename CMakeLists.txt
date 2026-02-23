@@ -78,6 +78,9 @@ set(CORE_SOURCES
     src/object_detection/detection_preprocessor.cpp
     src/classification/classification_preprocessor.cpp
     src/optical_flow/optical_flow_preprocessor.cpp
+    src/depth_estimation/depth_estimation_task.cpp
+    src/depth_estimation/depth_estimation_preprocessor.cpp
+    src/depth_estimation/depth_anything_v2_postprocessor.cpp
 )
 
 set(CORE_HEADERS
@@ -118,6 +121,10 @@ set(CORE_HEADERS
     include/vision-core/object_detection/detection_preprocessor.hpp
     include/vision-core/classification/classification_preprocessor.hpp
     include/vision-core/optical_flow/optical_flow_preprocessor.hpp
+    include/vision-core/depth_estimation/depth_estimation_task.hpp
+    include/vision-core/depth_estimation/depth_estimation_preprocessor.hpp
+    include/vision-core/depth_estimation/depth_estimation_postprocessor.hpp
+    include/vision-core/depth_estimation/depth_anything_v2_postprocessor.hpp
 )
 
 # Create library
