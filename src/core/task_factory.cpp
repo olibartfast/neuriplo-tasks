@@ -2,6 +2,7 @@
 
 #include "vision-core/classification/classification_postprocessor.hpp"
 #include "vision-core/classification/classification_task.hpp"
+#include "vision-core/depth_estimation/depth_estimation_task.hpp"
 #include "vision-core/instance_segmentation/instance_segmentation_task.hpp"
 #include "vision-core/instance_segmentation/segmentation_postprocessor.hpp"
 #include "vision-core/object_detection/object_detection_task.hpp"
@@ -82,6 +83,11 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
         normalized == "vitclassifier" || (normalized.size() >= 6 && normalized.substr(0, 6) == "resnet") ||
         normalized.find("tensorflow") != std::string::npos) {
         return std::make_unique<ClassificationTask>(model_info, normalized);
+    }
+
+    // ============ DEPTH ESTIMATION ============
+    if (normalized.find("depthanythingv2") != std::string::npos) {
+        return std::make_unique<DepthEstimationTask>(model_info, normalized);
     }
 
     // ============ VIDEO CLASSIFICATION ============

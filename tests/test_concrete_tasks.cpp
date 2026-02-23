@@ -56,6 +56,16 @@ TEST_F(ConcreteTasksTest, CreateClassificationTask) {
     }
 }
 
+TEST_F(ConcreteTasksTest, CreateDepthAnythingV2Task) {
+    ModelInfo info;
+    info.input_shapes = {{1, 3, 518, 518}};
+    info.input_formats = {"FORMAT_NCHW"};
+
+    auto task = TaskFactory::createTaskInstance("depth-anything-v2", info);
+    ASSERT_NE(task, nullptr);
+    EXPECT_EQ(task->getTaskType(), TaskType::DepthEstimation);
+}
+
 TEST_F(ConcreteTasksTest, PreprocessExecution) {
     // Verify that we can call preprocess without crashing
     auto info = createValidModelInfo();

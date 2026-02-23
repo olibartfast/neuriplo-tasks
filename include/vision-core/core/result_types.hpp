@@ -83,10 +83,23 @@ struct PoseEstimation {
 };
 
 /**
+ * @brief Depth estimation result structure
+ */
+struct DepthEstimation {
+    cv::Mat depth;            ///< Raw depth map (CV_32FC1)
+    cv::Mat normalized_depth; ///< Normalized depth map in [0,1] (CV_32FC1)
+    float min_depth{0.0f};    ///< Minimum depth value in raw map
+    float max_depth{0.0f};    ///< Maximum depth value in raw map
+
+    DepthEstimation() = default;
+};
+
+/**
  * @brief Result variant type to hold any task result
  */
 using Result =
-    std::variant<Classification, Detection, InstanceSegmentation, OpticalFlow, VideoClassification, PoseEstimation>;
+    std::variant<Classification, Detection, InstanceSegmentation, OpticalFlow, VideoClassification, PoseEstimation,
+                 DepthEstimation>;
 
 /**
  * @brief Task type enumeration
@@ -97,7 +110,8 @@ enum class TaskType : uint8_t {
     Detection,
     InstanceSegmentation,
     VideoClassification,
-    PoseEstimation
+    PoseEstimation,
+    DepthEstimation
 };
 
 } // namespace vision_core
