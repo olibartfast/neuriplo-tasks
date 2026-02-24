@@ -18,6 +18,7 @@ class DepthEstimationTask : public TaskInterface {
     enum class ModelType : uint8_t { DEPTH_ANYTHING_V2 };
 
     explicit DepthEstimationTask(const ModelInfo& model_info, const std::string& model_name);
+    ~DepthEstimationTask() override;
 
     TaskType getTaskType() override { return TaskType::DepthEstimation; }
 
