@@ -15,9 +15,7 @@ class DepthEstimationPostprocessor;
  */
 class DepthEstimationTask : public TaskInterface {
   public:
-    enum class ModelType : uint8_t {
-        DEPTH_ANYTHING_V2
-    };
+    enum class ModelType : uint8_t { DEPTH_ANYTHING_V2 };
 
     explicit DepthEstimationTask(const ModelInfo& model_info, const std::string& model_name);
 

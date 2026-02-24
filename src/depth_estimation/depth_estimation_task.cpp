@@ -59,7 +59,8 @@ DepthEstimationTask::ModelType DepthEstimationTask::detectModelType(const std::s
     std::string lower_name = model_name;
     std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
 
-    if (lower_name.find("depthanythingv2") != std::string::npos || lower_name.find("depth-anything-v2") != std::string::npos) {
+    if (lower_name.find("depthanythingv2") != std::string::npos ||
+        lower_name.find("depth-anything-v2") != std::string::npos) {
         return ModelType::DEPTH_ANYTHING_V2;
     }
 

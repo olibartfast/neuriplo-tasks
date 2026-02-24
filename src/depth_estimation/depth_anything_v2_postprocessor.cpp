@@ -40,8 +40,8 @@ DepthLayout parseDepthLayout(const std::vector<int64_t>& shape) {
 } // namespace
 
 std::vector<DepthEstimation> DepthAnythingV2Postprocessor::postprocess(const std::vector<TensorElement>& depth_output,
-                                                                        const std::vector<int64_t>& shape,
-                                                                        const cv::Size& frame_size) {
+                                                                       const std::vector<int64_t>& shape,
+                                                                       const cv::Size& frame_size) {
     if (depth_output.empty() || shape.empty()) {
         return {};
     }
@@ -51,8 +51,8 @@ std::vector<DepthEstimation> DepthAnythingV2Postprocessor::postprocess(const std
         return {};
     }
 
-    const int64_t expected = static_cast<int64_t>(layout.batch) * static_cast<int64_t>(layout.height) *
-                             static_cast<int64_t>(layout.width);
+    const int64_t expected =
+        static_cast<int64_t>(layout.batch) * static_cast<int64_t>(layout.height) * static_cast<int64_t>(layout.width);
     if (static_cast<int64_t>(depth_output.size()) < expected) {
         return {};
     }

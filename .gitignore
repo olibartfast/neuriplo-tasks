@@ -9,3 +9,4 @@ build/*
 
 # Model weights and exports
 weights/
+environments/
