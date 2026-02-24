@@ -97,9 +97,8 @@ struct DepthEstimation {
 /**
  * @brief Result variant type to hold any task result
  */
-using Result =
-    std::variant<Classification, Detection, InstanceSegmentation, OpticalFlow, VideoClassification, PoseEstimation,
-                 DepthEstimation>;
+using Result = std::variant<Classification, Detection, InstanceSegmentation, OpticalFlow, VideoClassification,
+                            PoseEstimation, DepthEstimation>;
 
 /**
  * @brief Task type enumeration
