@@ -99,6 +99,15 @@ TEST_F(TaskFactoryTest, CreateValidClassificationTask) {
     EXPECT_EQ(task->getTaskType(), TaskType::Classification);
 }
 
+TEST_F(TaskFactoryTest, CreateValidDepthEstimationTask) {
+    auto info = createValidModelInfo();
+    info.input_shapes = {{1, 3, 518, 518}};
+
+    auto task = TaskFactory::createTaskInstance("depth_anything_v2", info);
+    ASSERT_NE(task, nullptr);
+    EXPECT_EQ(task->getTaskType(), TaskType::DepthEstimation);
+}
+
 // Note: Actual task creation tests would require implementing the concrete task classes
 // These tests verify the factory's error handling and validation logic
 

@@ -20,6 +20,8 @@ export/
 │   └── raft/               # RAFT optical flow export
 ├── pose_estimation/
 │   └── vitpose/            # ViTPose pose estimation export
+├── depth_estimation/
+│   └── depth_anything_v2/  # Depth Anything V2 depth export
 └── video_classification/
     ├── videomae/           # VideoMAE video classification export
     ├── vivit/              # ViViT video classification export
@@ -51,6 +53,9 @@ python export/optical_flow/raft/raft_exporter.py --model-type large --format onn
 # Export ViTPose
 python export/pose_estimation/vitpose/export_vitpose_to_onnx.py
 
+# Export Depth Anything V2
+python export/depth_estimation/depth_anything_v2/export_depth_anything_v2_to_onnx.py
+
 # Export VideoMAE
 python export/video_classification/videomae/export_videomae_to_onnx.py
 
@@ -77,6 +82,7 @@ Refer to:
 * [Instance Segmentation](https://github.com/olibartfast/vision-core/blob/master/export/segmentation/InstanceSegmentation.md)
 * [Optical Flow](https://github.com/olibartfast/vision-core/blob/master/export/optical_flow/OpticalFlow.md)
 * [Pose Estimation](https://github.com/olibartfast/vision-core/blob/master/export/pose_estimation/PoseEstimation.md)
+* [Depth Estimation](https://github.com/olibartfast/vision-core/blob/master/export/depth_estimation/DepthEstimation.md)
 * [Video Classification](https://github.com/olibartfast/vision-core/blob/master/export/video_classification/VideoClassification.md)
 
 
