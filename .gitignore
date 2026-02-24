@@ -1,7 +1,7 @@
 build/*
 .cache/
 .venv/
-
+**/__pycache__/
 # Cloned third-party repositories
 3rdparty/
 **/*.onnx
