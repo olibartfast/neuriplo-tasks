@@ -25,6 +25,8 @@ DepthEstimationTask::DepthEstimationTask(const ModelInfo& model_info, const std:
     }
 }
 
+DepthEstimationTask::~DepthEstimationTask() = default;
+
 std::vector<std::vector<uint8_t>> DepthEstimationTask::preprocess(const std::vector<cv::Mat>& imgs) {
     std::vector<std::vector<uint8_t>> results;
     results.reserve(imgs.size());
