@@ -15,6 +15,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Video Classification**: VideoMAE, ViViT, TimeSformer
 - **Optical Flow**: RAFT
 - **Pose Estimation**: ViTPose
+- **Depth Estimation**: Depth Anything V2
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
 - **Unified Tensor Interface**: Simplified API using `Tensor` struct that encapsulates data and shape information
 
@@ -167,6 +168,9 @@ The TaskFactory supports the following model type strings:
 
 **Pose Estimation:**
 - `"vitpose"` - ViTPose
+
+**Depth Estimation:**
+- `"depth_anything_v2"`, `"depth-anything-v2"` - Depth Anything V2
 
 ## Building
 
