@@ -1,5 +1,6 @@
 #pragma once
 
+#include "vision-core/core/task_config.hpp"
 #include "vision-core/core/task_interface.hpp"
 
 #include <memory>
@@ -23,8 +24,8 @@ class TaskFactory {
      * @throws std::invalid_argument if model type is invalid
      * @throws InputDimensionError if model info has invalid dimensions
      */
-    static std::unique_ptr<TaskInterface> createTaskInstance(const std::string& model_type,
-                                                             const ModelInfo& model_info);
+    static std::unique_ptr<TaskInterface> createTaskInstance(const std::string& model_type, const ModelInfo& model_info,
+                                                             const TaskConfig& config = TaskConfig{});
 
   private:
     /**

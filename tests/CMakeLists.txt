@@ -54,6 +54,15 @@ target_link_libraries(test_yolo_segmentation_postprocessor ${TEST_LIBS})
 add_executable(test_bbox_processor test_bbox_processor.cpp)
 target_link_libraries(test_bbox_processor ${TEST_LIBS})
 
+# TaskConfig tests (struct defaults + factory integration + behavioral)
+add_executable(test_task_config test_task_config.cpp)
+target_link_libraries(test_task_config
+    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    GTest::GTest
+    GTest::Main
+    ${OpenCV_LIBS}
+)
+
 # Concrete task implementation tests
 add_executable(test_concrete_tasks test_concrete_tasks.cpp)
 target_link_libraries(test_concrete_tasks
@@ -98,6 +107,7 @@ add_test(NAME test_yolo_postprocessor COMMAND test_yolo_postprocessor)
 add_test(NAME test_rtdetr_postprocessor COMMAND test_rtdetr_postprocessor)
 add_test(NAME test_yolo_segmentation_postprocessor COMMAND test_yolo_segmentation_postprocessor)
 add_test(NAME test_bbox_processor COMMAND test_bbox_processor)
+add_test(NAME test_task_config COMMAND test_task_config)
 add_test(NAME test_concrete_tasks COMMAND test_concrete_tasks)
 add_test(NAME test_optical_flow COMMAND test_optical_flow)
 add_test(NAME test_pose_estimation COMMAND test_pose_estimation)

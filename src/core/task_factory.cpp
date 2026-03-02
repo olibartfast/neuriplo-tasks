@@ -48,7 +48,7 @@ std::string TaskFactory::normalizeModelType(const std::string& model_type) {
 }
 
 std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string& model_type,
-                                                               const ModelInfo& model_info) {
+                                                               const ModelInfo& model_info, const TaskConfig& config) {
 
     validateInputSizes(model_info.input_shapes);
 
@@ -63,26 +63,29 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
     if (normalized == "yoloseg" || normalized == "yolov10seg" || normalized == "yolo26seg" ||
         normalized == "rfdetrseg" ||
         (normalized.size() >= 4 && normalized.substr(0, 4) == "yolo" && normalized.find("seg") != std::string::npos)) {
-        return std::make_unique<InstanceSegmentationTask>(model_info, normalized);
+        return std::make_unique<InstanceSegmentationTask>(model_info, normalized, config.confidence_threshold,
+                                                          config.nms_threshold, config.mask_threshold);
     }
 
     // ============ OBJECT DETECTION ============
     // Any yolo* string (that is not a seg variant, handled above)
     if (normalized.size() >= 4 && normalized.substr(0, 4) == "yolo") {
-        return std::make_unique<ObjectDetectionTask>(model_info, normalized);
+        return std::make_unique<ObjectDetectionTask>(model_info, normalized, config.confidence_threshold,
+                                                     config.nms_threshold);
     }
 
     // Transformer-based detectors
     if (normalized == "rtdetr" || normalized == "rtdetrul" || normalized == "rtdetrultralytics" ||
         normalized == "rfdetr") {
-        return std::make_unique<ObjectDetectionTask>(model_info, normalized);
+        return std::make_unique<ObjectDetectionTask>(model_info, normalized, config.confidence_threshold,
+                                                     config.nms_threshold);
     }
 
     // ============ CLASSIFICATION ============
     if (normalized == "torchvisionclassifier" || normalized == "tensorflowclassifier" ||
         normalized == "vitclassifier" || (normalized.size() >= 6 && normalized.substr(0, 6) == "resnet") ||
         normalized.find("tensorflow") != std::string::npos) {
-        return std::make_unique<ClassificationTask>(model_info, normalized);
+        return std::make_unique<ClassificationTask>(model_info, normalized, config.top_k, config.apply_softmax);
     }
 
     // ============ DEPTH ESTIMATION ============
@@ -92,7 +95,7 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
 
     // ============ VIDEO CLASSIFICATION ============
     if (normalized == "videomae" || normalized == "vivit" || normalized == "timesformer") {
-        return std::make_unique<VideoClassificationTask>(model_info, normalized);
+        return std::make_unique<VideoClassificationTask>(model_info, normalized, config.top_k, config.apply_softmax);
     }
 
     // ============ OPTICAL FLOW ============
