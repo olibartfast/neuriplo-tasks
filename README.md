@@ -14,7 +14,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: VideoMAE, ViViT, TimeSformer
 - **Optical Flow**: RAFT
-- **Pose Estimation**: ViTPose
+- **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose
 - **Depth Estimation**: Depth Anything V2
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
 - **Unified Tensor Interface**: Simplified API using `Tensor` struct that encapsulates data and shape information
@@ -167,7 +167,11 @@ The TaskFactory supports the following model type strings:
 - `"raft"` - RAFT optical flow
 
 **Pose Estimation:**
-- `"vitpose"` - ViTPose
+- `"yolov8pose"`, `"yolov8-pose"` - YOLOv8 pose (single-stage, returns bbox + keypoints)
+- `"yolo11pose"`, `"yolo11-pose"` - YOLO11 pose
+- `"yolo26pose"`, `"yolo26-pose"` - YOLO26 pose
+- `"yolov5pose"`, `"yolov5-pose"` - YOLOv5 pose
+- `"vitpose"` - ViTPose (top-down, heatmap-based)
 
 **Depth Estimation:**
 - `"depth_anything_v2"`, `"depth-anything-v2"` - Depth Anything V2
