@@ -67,8 +67,15 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
                                                           config.nms_threshold, config.mask_threshold);
     }
 
+    // ============ POSE ESTIMATION (YOLO) ============
+    // Check yolo*pose* BEFORE generic yolo prefix so pose models are routed correctly
+    if (normalized.size() >= 4 && normalized.substr(0, 4) == "yolo" && normalized.find("pose") != std::string::npos) {
+        return std::make_unique<PoseEstimationTask>(model_info, normalized, config.confidence_threshold,
+                                                    config.nms_threshold);
+    }
+
     // ============ OBJECT DETECTION ============
-    // Any yolo* string (that is not a seg variant, handled above)
+    // Any yolo* string (that is not a seg or pose variant, handled above)
     if (normalized.size() >= 4 && normalized.substr(0, 4) == "yolo") {
         return std::make_unique<ObjectDetectionTask>(model_info, normalized, config.confidence_threshold,
                                                      config.nms_threshold);
@@ -105,7 +112,8 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
 
     // ============ POSE ESTIMATION ============
     if (normalized == "vitpose") {
-        return std::make_unique<PoseEstimationTask>(model_info, normalized);
+        return std::make_unique<PoseEstimationTask>(model_info, normalized, config.confidence_threshold,
+                                                    config.nms_threshold);
     }
 
     throw std::invalid_argument("Unrecognized model type: " + model_type);
