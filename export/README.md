@@ -19,6 +19,7 @@ export/
 ├── optical_flow/
 │   └── raft/               # RAFT optical flow export
 ├── pose_estimation/
+│   ├── yolo_pose/          # YOLO pose export (v5/v8/v11/v26)
 │   └── vitpose/            # ViTPose pose estimation export
 ├── depth_estimation/
 │   └── depth_anything_v2/  # Depth Anything V2 depth export
@@ -49,6 +50,9 @@ python export/classification/vit/onnx/export.py
 
 # Export RAFT optical flow
 python export/optical_flow/raft/raft_exporter.py --model-type large --format onnx
+
+# Export YOLO pose (YOLOv8/YOLO11/YOLO26)
+python export/pose_estimation/yolo_pose/export.py --model yolov8n-pose.pt --format onnx
 
 # Export ViTPose
 python export/pose_estimation/vitpose/export_vitpose_to_onnx.py
