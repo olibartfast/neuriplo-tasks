@@ -1,30 +1,33 @@
 #include "vision-core/pose_estimation/pose_estimation_task.hpp"
 
+#include "vision-core/object_detection/detection_preprocessor.hpp"
 #include "vision-core/pose_estimation/vit_pose_postprocessor.hpp"
+#include "vision-core/pose_estimation/yolo_pose_postprocessor.hpp"
 
 #include <stdexcept>
 
 namespace vision_core {
 
-PoseEstimationTask::PoseEstimationTask(const ModelInfo& model_info, const std::string& model_type)
+PoseEstimationTask::PoseEstimationTask(const ModelInfo& model_info, const std::string& model_type,
+                                       float confidence_threshold, float nms_threshold)
     : TaskInterface(model_info), model_type_(model_type) {
 
-    // Initialize Preprocessor
-    PreprocessConfig config;
-    // TaskInterface initializes input_width_, input_height_, input_channels_
-    config.input_size = cv::Size(input_width_, input_height_);
+    cv::Size input_size(input_width_, input_height_);
 
-    // ViT Pose usually expects NCHW, RGB, Normalized with ImageNet mean/std
-    config.format = ImageFormat::NCHW;
-    config.data_type = DataType::FLOAT32;
-    config.normalize = true;
-    config.apply_imagenet_norm = true;
-    config.bgr_to_rgb = true;
-
-    preprocessor_ = std::make_unique<Preprocessor>(config);
-
-    // Initialize Postprocessor
-    if (model_type_ == "vitpose") {
+    if (model_type_.size() >= 4 && model_type_.substr(0, 4) == "yolo") {
+        // YOLO pose: letterbox preprocessing + YOLO pose postprocessing
+        preprocessor_ = std::make_unique<YoloPreprocessor>(input_size);
+        postprocessor_ = std::make_unique<YoloPosePostprocessor>(input_size, confidence_threshold, nms_threshold);
+    } else if (model_type_ == "vitpose") {
+        // ViTPose: ImageNet-normalized NCHW preprocessing + heatmap postprocessing
+        PreprocessConfig config;
+        config.input_size = input_size;
+        config.format = ImageFormat::NCHW;
+        config.data_type = DataType::FLOAT32;
+        config.normalize = true;
+        config.apply_imagenet_norm = true;
+        config.bgr_to_rgb = true;
+        preprocessor_ = std::make_unique<Preprocessor>(config);
         postprocessor_ = std::make_unique<ViTPosePostprocessor>();
     } else {
         throw std::invalid_argument("Unsupported pose model type: " + model_type_);

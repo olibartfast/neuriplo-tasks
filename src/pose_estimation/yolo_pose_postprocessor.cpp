@@ -1,0 +1,183 @@
+#include "vision-core/pose_estimation/yolo_pose_postprocessor.hpp"
+
+#include <opencv2/dnn.hpp>
+
+namespace vision_core {
+
+YoloPosePostprocessor::YoloPosePostprocessor(const cv::Size& input_size, float confidence_threshold,
+                                             float nms_threshold)
+    : input_size_(input_size), confidence_threshold_(confidence_threshold), nms_threshold_(nms_threshold) {}
+
+float YoloPosePostprocessor::getTensorFloat(const TensorElement& element) {
+    return std::visit([](auto&& v) -> float { return static_cast<float>(v); }, element);
+}
+
+cv::Rect YoloPosePostprocessor::scaleBoxToOriginal(float cx, float cy, float w, float h,
+                                                   const cv::Size& frame_size) const {
+    float r_w = static_cast<float>(input_size_.width) / static_cast<float>(frame_size.width);
+    float r_h = static_cast<float>(input_size_.height) / static_cast<float>(frame_size.height);
+
+    int x, y, width, height;
+    if (r_h > r_w) {
+        float pad_h = (static_cast<float>(input_size_.height) - r_w * static_cast<float>(frame_size.height)) / 2.0f;
+        x = static_cast<int>((cx - w / 2.0f) / r_w);
+        y = static_cast<int>((cy - h / 2.0f - pad_h) / r_w);
+        width = static_cast<int>(w / r_w);
+        height = static_cast<int>(h / r_w);
+    } else {
+        float pad_w = (static_cast<float>(input_size_.width) - r_h * static_cast<float>(frame_size.width)) / 2.0f;
+        x = static_cast<int>((cx - w / 2.0f - pad_w) / r_h);
+        y = static_cast<int>((cy - h / 2.0f) / r_h);
+        width = static_cast<int>(w / r_h);
+        height = static_cast<int>(h / r_h);
+    }
+    return cv::Rect(x, y, width, height);
+}
+
+cv::Point2f YoloPosePostprocessor::scaleKptToOriginal(float kx, float ky, const cv::Size& frame_size) const {
+    float r_w = static_cast<float>(input_size_.width) / static_cast<float>(frame_size.width);
+    float r_h = static_cast<float>(input_size_.height) / static_cast<float>(frame_size.height);
+
+    float x, y;
+    if (r_h > r_w) {
+        float pad_h = (static_cast<float>(input_size_.height) - r_w * static_cast<float>(frame_size.height)) / 2.0f;
+        x = kx / r_w;
+        y = (ky - pad_h) / r_w;
+    } else {
+        float pad_w = (static_cast<float>(input_size_.width) - r_h * static_cast<float>(frame_size.width)) / 2.0f;
+        x = (kx - pad_w) / r_h;
+        y = ky / r_h;
+    }
+    return cv::Point2f(x, y);
+}
+
+void YoloPosePostprocessor::applyNMS(std::vector<PoseEstimation>& poses) const {
+    if (poses.empty())
+        return;
+
+    std::vector<cv::Rect> boxes;
+    std::vector<float> scores;
+    boxes.reserve(poses.size());
+    scores.reserve(poses.size());
+    for (const auto& p : poses) {
+        boxes.push_back(p.bbox);
+        scores.push_back(p.score);
+    }
+
+    std::vector<int> indices;
+    cv::dnn::NMSBoxes(boxes, scores, confidence_threshold_, nms_threshold_, indices);
+
+    std::vector<PoseEstimation> filtered;
+    filtered.reserve(indices.size());
+    for (int idx : indices) {
+        filtered.push_back(poses[static_cast<size_t>(idx)]);
+    }
+    poses = std::move(filtered);
+}
+
+std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector<Tensor>& tensors,
+                                                               const cv::Size& original_size,
+                                                               const cv::Size& /*input_size*/) {
+    if (tensors.empty())
+        return {};
+
+    const auto& tensor = tensors[0];
+    const auto& shape = tensor.shape;
+    const auto& data = tensor.data;
+
+    // Require at least [batch, dim1, dim2]
+    if (shape.size() < 3)
+        return {};
+
+    int dim1 = static_cast<int>(shape[1]);
+    int dim2 = static_cast<int>(shape[2]);
+
+    // YOLOv5 (with objectness): [batch, anchors, channels] → dim2 < dim1
+    // YOLOv8+  (no objectness): [batch, channels, anchors] → dim1 < dim2
+    bool has_objectness = (dim2 < dim1);
+
+    int channels = has_objectness ? dim2 : dim1;
+    int anchors = has_objectness ? dim1 : dim2;
+
+    // Determine keypoint layout:
+    //   Format A: 4 bbox + 1 conf + 3*kpts          → kpts_start = 5
+    //   Format B: 4 bbox + 1 obj + 1 cls + 3*kpts   → kpts_start = 6  (YOLOv5 with class score)
+    int kpts_start = 5;
+    int num_kpts = 0;
+
+    if (channels > 5 && (channels - 5) % 3 == 0) {
+        kpts_start = 5;
+        num_kpts = (channels - 5) / 3;
+    } else if (channels > 6 && (channels - 6) % 3 == 0) {
+        kpts_start = 6;
+        num_kpts = (channels - 6) / 3;
+    } else {
+        return {}; // Unrecognized channel layout
+    }
+
+    std::vector<PoseEstimation> poses;
+
+    for (int i = 0; i < anchors; ++i) {
+        float conf = 0.0f;
+        float cx, cy, w, h;
+
+        if (has_objectness) {
+            float obj = getTensorFloat(data[static_cast<size_t>(i * channels + 4)]);
+            if (obj < confidence_threshold_)
+                continue;
+
+            if (kpts_start == 6) {
+                // Separate class score (YOLOv5 with single person class)
+                float cls = getTensorFloat(data[static_cast<size_t>(i * channels + 5)]);
+                conf = obj * cls;
+            } else {
+                conf = obj;
+            }
+
+            if (conf < confidence_threshold_)
+                continue;
+
+            cx = getTensorFloat(data[static_cast<size_t>(i * channels + 0)]);
+            cy = getTensorFloat(data[static_cast<size_t>(i * channels + 1)]);
+            w = getTensorFloat(data[static_cast<size_t>(i * channels + 2)]);
+            h = getTensorFloat(data[static_cast<size_t>(i * channels + 3)]);
+        } else {
+            conf = getTensorFloat(data[static_cast<size_t>(4 * anchors + i)]);
+            if (conf < confidence_threshold_)
+                continue;
+
+            cx = getTensorFloat(data[static_cast<size_t>(0 * anchors + i)]);
+            cy = getTensorFloat(data[static_cast<size_t>(1 * anchors + i)]);
+            w = getTensorFloat(data[static_cast<size_t>(2 * anchors + i)]);
+            h = getTensorFloat(data[static_cast<size_t>(3 * anchors + i)]);
+        }
+
+        PoseEstimation pose;
+        pose.score = conf;
+        pose.bbox = scaleBoxToOriginal(cx, cy, w, h, original_size);
+
+        pose.keypoints.reserve(static_cast<size_t>(num_kpts));
+        for (int j = 0; j < num_kpts; ++j) {
+            float kx, ky, kconf;
+            if (has_objectness) {
+                kx = getTensorFloat(data[static_cast<size_t>(i * channels + kpts_start + j * 3 + 0)]);
+                ky = getTensorFloat(data[static_cast<size_t>(i * channels + kpts_start + j * 3 + 1)]);
+                kconf = getTensorFloat(data[static_cast<size_t>(i * channels + kpts_start + j * 3 + 2)]);
+            } else {
+                kx = getTensorFloat(data[static_cast<size_t>((kpts_start + j * 3 + 0) * anchors + i)]);
+                ky = getTensorFloat(data[static_cast<size_t>((kpts_start + j * 3 + 1) * anchors + i)]);
+                kconf = getTensorFloat(data[static_cast<size_t>((kpts_start + j * 3 + 2) * anchors + i)]);
+            }
+
+            cv::Point2f scaled = scaleKptToOriginal(kx, ky, original_size);
+            pose.keypoints.push_back({scaled.x, scaled.y, kconf});
+        }
+
+        poses.push_back(std::move(pose));
+    }
+
+    applyNMS(poses);
+    return poses;
+}
+
+} // namespace vision_core

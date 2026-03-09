@@ -11,7 +11,8 @@ namespace vision_core {
 
 class PoseEstimationTask : public TaskInterface {
   public:
-    explicit PoseEstimationTask(const ModelInfo& model_info, const std::string& model_type);
+    explicit PoseEstimationTask(const ModelInfo& model_info, const std::string& model_type,
+                                float confidence_threshold = 0.25f, float nms_threshold = 0.45f);
 
     TaskType getTaskType() override { return TaskType::PoseEstimation; }
 

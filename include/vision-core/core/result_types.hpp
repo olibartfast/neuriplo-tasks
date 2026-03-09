@@ -76,6 +76,7 @@ struct Keypoint {
  * @brief Pose estimation result structure
  */
 struct PoseEstimation {
+    cv::Rect bbox; ///< Bounding box (populated by detection-based models e.g. YOLO pose)
     std::vector<Keypoint> keypoints;
     float score{0.0f};
 
