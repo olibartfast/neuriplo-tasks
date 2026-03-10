@@ -82,6 +82,9 @@ set(CORE_SOURCES
     src/depth_estimation/depth_estimation_task.cpp
     src/depth_estimation/depth_estimation_preprocessor.cpp
     src/depth_estimation/depth_anything_v2_postprocessor.cpp
+    src/gaussian_splatting/gaussian_splatting_task.cpp
+    src/gaussian_splatting/gaussian_splatting_preprocessor.cpp
+    src/gaussian_splatting/lgm_postprocessor.cpp
 )
 
 set(CORE_HEADERS
@@ -127,6 +130,10 @@ set(CORE_HEADERS
     include/vision-core/depth_estimation/depth_estimation_preprocessor.hpp
     include/vision-core/depth_estimation/depth_estimation_postprocessor.hpp
     include/vision-core/depth_estimation/depth_anything_v2_postprocessor.hpp
+    include/vision-core/gaussian_splatting/gaussian_splatting_task.hpp
+    include/vision-core/gaussian_splatting/gaussian_splatting_preprocessor.hpp
+    include/vision-core/gaussian_splatting/gaussian_splatting_postprocessor.hpp
+    include/vision-core/gaussian_splatting/lgm_postprocessor.hpp
 )
 
 # Create library

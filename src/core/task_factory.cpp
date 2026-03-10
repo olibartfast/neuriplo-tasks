@@ -3,6 +3,7 @@
 #include "vision-core/classification/classification_postprocessor.hpp"
 #include "vision-core/classification/classification_task.hpp"
 #include "vision-core/depth_estimation/depth_estimation_task.hpp"
+#include "vision-core/gaussian_splatting/gaussian_splatting_task.hpp"
 #include "vision-core/instance_segmentation/instance_segmentation_task.hpp"
 #include "vision-core/instance_segmentation/segmentation_postprocessor.hpp"
 #include "vision-core/object_detection/object_detection_task.hpp"
@@ -98,6 +99,13 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
     // ============ DEPTH ESTIMATION ============
     if (normalized.find("depthanythingv2") != std::string::npos) {
         return std::make_unique<DepthEstimationTask>(model_info, normalized);
+    }
+
+    // ============ GAUSSIAN SPLATTING ============
+    if (normalized == "lgm" || normalized == "grm" || normalized == "gaussiansplatting" ||
+        normalized == "lgmmini" || normalized == "lgm-mini" ||
+        normalized.find("splat") != std::string::npos) {
+        return std::make_unique<GaussianSplattingTask>(model_info, normalized);
     }
 
     // ============ VIDEO CLASSIFICATION ============
