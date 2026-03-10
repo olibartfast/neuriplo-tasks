@@ -16,6 +16,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Optical Flow**: RAFT
 - **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose
 - **Depth Estimation**: Depth Anything V2
+- **Gaussian Splatting**: LGM, LGM-mini, GRM (feed-forward image → 3D Gaussians)
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
 - **Unified Tensor Interface**: Simplified API using `Tensor` struct that encapsulates data and shape information
 
@@ -176,6 +177,11 @@ The TaskFactory supports the following model type strings:
 **Depth Estimation:**
 - `"depth_anything_v2"`, `"depth-anything-v2"` - Depth Anything V2
 
+**Gaussian Splatting:**
+- `"lgm"`, `"lgm-mini"` - LGM (Large Gaussian Model)
+- `"grm"` - GRM
+- `"gaussiansplatting"`, any string containing `"splat"` - generic alias
+
 ## Building
 
 ```bash
@@ -301,3 +307,4 @@ MIT License
 ### Planned 📋
 - [ ] Batch processing utilities
 - [ ] Performance benchmarks and optimizations
+- [ ] Gaussian Splatting export script for LGM / GRM
