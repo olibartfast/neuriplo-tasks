@@ -9,11 +9,13 @@
 namespace vision_core {
 
 /**
- * @brief CLIP byte-level BPE tokenizer
+ * @brief CLIP-style tokenizer interface for open-vocabulary models
  *
- * Implements the same tokenization used by OpenAI CLIP and HuggingFace
- * OwlViTTokenizer / Owlv2Tokenizer.  Requires the two vocabulary files
- * that ship with every HuggingFace CLIP-based model checkpoint:
+ * Loads the vocabulary assets used by CLIP-derived text encoders and
+ * exposes a deployment-friendly C++ tokenization interface.
+ *
+ * The initial implementation focuses on the runtime contract needed by
+ * OWL/OWLv2 integration in vision-core:
  *   - vocab.json   (token string → token id)
  *   - merges.txt   (ordered BPE merge rules, one pair per line)
  *
@@ -36,6 +38,15 @@ class ClipTokenizer {
      * @throws std::runtime_error if either file cannot be opened or parsed
      */
     ClipTokenizer(const std::string& vocab_file, const std::string& merges_file);
+
+    /**
+     * @brief Construct the tokenizer from preloaded asset contents
+     * @param vocab_json Raw contents of vocab.json
+     * @param merges_text Raw contents of merges.txt
+     * @param preloaded_assets Must be true to select the in-memory overload
+     * @throws std::runtime_error if either asset cannot be parsed
+     */
+    ClipTokenizer(const std::string& vocab_json, const std::string& merges_text, bool preloaded_assets);
 
     /**
      * @brief Tokenize a single text string

@@ -66,6 +66,22 @@ TEST_F(ConcreteTasksTest, CreateDepthAnythingV2Task) {
     EXPECT_EQ(task->getTaskType(), TaskType::DepthEstimation);
 }
 
+TEST_F(ConcreteTasksTest, CreateOwlv2Task) {
+    ModelInfo info;
+    info.input_shapes = {{1, 3, 960, 960}, {2, 16}, {2, 16}};
+    info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW", "FORMAT_NCHW"};
+    info.input_names = {"pixel_values", "input_ids", "attention_mask"};
+    info.output_names = {"pred_boxes", "logits"};
+    info.input_types = {CV_32F, CV_32S, CV_32S};
+
+    TaskConfig cfg;
+    cfg.text_prompts = {"cat", "dog"};
+
+    auto task = TaskFactory::createTaskInstance("owlv2", info, cfg);
+    ASSERT_NE(task, nullptr);
+    EXPECT_EQ(task->getTaskType(), TaskType::OpenVocabDetection);
+}
+
 TEST_F(ConcreteTasksTest, PreprocessExecution) {
     // Verify that we can call preprocess without crashing
     auto info = createValidModelInfo();
