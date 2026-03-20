@@ -68,6 +68,9 @@ set(CORE_SOURCES
     src/instance_segmentation/rfdetr_segmentation_postprocessor.cpp
     src/optical_flow/optical_flow_task.cpp
     src/optical_flow/raft_postprocessor.cpp
+    src/open_vocab_detection/clip_tokenizer.cpp
+    src/open_vocab_detection/open_vocab_detection_task.cpp
+    src/open_vocab_detection/owlv2_postprocessor.cpp
     src/pose_estimation/pose_estimation_task.cpp
     src/pose_estimation/vit_pose_postprocessor.cpp
     src/pose_estimation/yolo_pose_postprocessor.cpp
@@ -111,6 +114,10 @@ set(CORE_HEADERS
     include/vision-core/optical_flow/optical_flow_task.hpp
     include/vision-core/optical_flow/optical_flow_postprocessor.hpp
     include/vision-core/optical_flow/raft_postprocessor.hpp
+    include/vision-core/open_vocab_detection/clip_tokenizer.hpp
+    include/vision-core/open_vocab_detection/open_vocab_detection_task.hpp
+    include/vision-core/open_vocab_detection/owlv2_postprocessor.hpp
+    include/vision-core/open_vocab_detection/postprocessor.hpp
     include/vision-core/pose_estimation/pose_estimation_task.hpp
     include/vision-core/pose_estimation/pose_postprocessor.hpp
     include/vision-core/pose_estimation/vit_pose_postprocessor.hpp
