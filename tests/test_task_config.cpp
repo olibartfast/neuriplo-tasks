@@ -65,8 +65,16 @@ TEST(TaskConfigTest, DefaultValues) {
     EXPECT_FLOAT_EQ(cfg.confidence_threshold, 0.25f);
     EXPECT_FLOAT_EQ(cfg.nms_threshold, 0.45f);
     EXPECT_FLOAT_EQ(cfg.mask_threshold, 0.50f);
+    EXPECT_FLOAT_EQ(cfg.text_threshold, 0.10f);
     EXPECT_EQ(cfg.top_k, 5);
+    EXPECT_EQ(cfg.max_text_queries, 16);
     EXPECT_TRUE(cfg.apply_softmax);
+    EXPECT_TRUE(cfg.cache_text_features);
+    EXPECT_TRUE(cfg.tokenizer_vocab_path.empty());
+    EXPECT_TRUE(cfg.tokenizer_merges_path.empty());
+    EXPECT_TRUE(cfg.tokenizer_vocab_json.empty());
+    EXPECT_TRUE(cfg.tokenizer_merges_text.empty());
+    EXPECT_TRUE(cfg.text_prompts.empty());
     EXPECT_TRUE(cfg.extra_params.empty());
 }
 
@@ -75,14 +83,31 @@ TEST(TaskConfigTest, FieldAssignment) {
     cfg.confidence_threshold = 0.5f;
     cfg.nms_threshold = 0.3f;
     cfg.mask_threshold = 0.7f;
+    cfg.text_threshold = 0.2f;
     cfg.top_k = 3;
+    cfg.max_text_queries = 8;
     cfg.apply_softmax = false;
+    cfg.cache_text_features = false;
+    cfg.tokenizer_vocab_path = "vocab.json";
+    cfg.tokenizer_merges_path = "merges.txt";
+    cfg.tokenizer_vocab_json = "{\"cat\":1}";
+    cfg.tokenizer_merges_text = "c a";
+    cfg.text_prompts = {"cat", "dog"};
 
     EXPECT_FLOAT_EQ(cfg.confidence_threshold, 0.5f);
     EXPECT_FLOAT_EQ(cfg.nms_threshold, 0.3f);
     EXPECT_FLOAT_EQ(cfg.mask_threshold, 0.7f);
+    EXPECT_FLOAT_EQ(cfg.text_threshold, 0.2f);
     EXPECT_EQ(cfg.top_k, 3);
+    EXPECT_EQ(cfg.max_text_queries, 8);
     EXPECT_FALSE(cfg.apply_softmax);
+    EXPECT_FALSE(cfg.cache_text_features);
+    EXPECT_EQ(cfg.tokenizer_vocab_path, "vocab.json");
+    EXPECT_EQ(cfg.tokenizer_merges_path, "merges.txt");
+    EXPECT_EQ(cfg.tokenizer_vocab_json, "{\"cat\":1}");
+    EXPECT_EQ(cfg.tokenizer_merges_text, "c a");
+    ASSERT_EQ(cfg.text_prompts.size(), 2u);
+    EXPECT_EQ(cfg.text_prompts[0], "cat");
 }
 
 TEST(TaskConfigTest, ExtraParams) {
