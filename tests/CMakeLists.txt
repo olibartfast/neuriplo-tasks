@@ -23,6 +23,21 @@ endif()
 
 include(GoogleTest)
 
+function(target_link_whole_archive target library_target)
+    if(MSVC)
+        target_link_libraries(${target} ${library_target})
+        target_link_options(${target} PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:${library_target}>")
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_link_libraries(${target}
+            "-Wl,--whole-archive"
+            ${library_target}
+            "-Wl,--no-whole-archive"
+        )
+    else()
+        target_link_libraries(${target} ${library_target})
+    endif()
+endfunction()
+
 # Common test libraries
 set(TEST_LIBS
     neuriplo-tasks::neuriplo-tasks
@@ -118,8 +133,8 @@ target_link_libraries(test_bbox_processor ${TEST_LIBS})
 
 # TaskConfig tests (struct defaults + factory integration + behavioral)
 add_executable(test_task_config test_task_config.cpp)
+target_link_whole_archive(test_task_config neuriplo-tasks)
 target_link_libraries(test_task_config
-    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -127,8 +142,8 @@ target_link_libraries(test_task_config
 
 # Concrete task implementation tests
 add_executable(test_concrete_tasks test_concrete_tasks.cpp)
+target_link_whole_archive(test_concrete_tasks neuriplo-tasks)
 target_link_libraries(test_concrete_tasks
-    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -136,8 +151,8 @@ target_link_libraries(test_concrete_tasks
 
 # Optical flow tests
 add_executable(test_optical_flow test_optical_flow.cpp)
+target_link_whole_archive(test_optical_flow neuriplo-tasks)
 target_link_libraries(test_optical_flow
-    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -145,8 +160,8 @@ target_link_libraries(test_optical_flow
 
 # Pose estimation tests
 add_executable(test_pose_estimation test_pose_estimation.cpp)
+target_link_whole_archive(test_pose_estimation neuriplo-tasks)
 target_link_libraries(test_pose_estimation
-    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -154,8 +169,8 @@ target_link_libraries(test_pose_estimation
 
 # Depth estimation tests
 add_executable(test_depth_estimation test_depth_estimation.cpp)
+target_link_whole_archive(test_depth_estimation neuriplo-tasks)
 target_link_libraries(test_depth_estimation
-    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
