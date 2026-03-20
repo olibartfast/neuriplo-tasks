@@ -1,6 +1,8 @@
 #include "neuriplo/tasks/core/model_info.hpp"
 #include "neuriplo/tasks/core/task_interface.hpp"
 
+#include <filesystem>
+#include <fstream>
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 
@@ -141,7 +143,8 @@ TEST_F(TaskInterfaceTest, ReadLabelNamesNonExistentFile) {
 
 TEST_F(TaskInterfaceTest, ReadLabelNamesValidFile) {
     // Create a temporary labels file
-    std::string temp_file = "/tmp/test_labels.txt";
+    const auto temp_file =
+        std::filesystem::temp_directory_path() / std::filesystem::path("vision-core-test-labels.txt");
     std::ofstream ofs(temp_file);
     ofs << "person\n";
     ofs << "car\n";
@@ -151,14 +154,14 @@ TEST_F(TaskInterfaceTest, ReadLabelNamesValidFile) {
     auto model_info = createValidModelInfo();
     TestTask task(model_info);
 
-    auto labels = task.readLabelNames(temp_file);
+    auto labels = task.readLabelNames(temp_file.string());
     EXPECT_EQ(labels.size(), 3);
     EXPECT_EQ(labels[0], "person");
     EXPECT_EQ(labels[1], "car");
     EXPECT_EQ(labels[2], "dog");
 
     // Cleanup
-    std::remove(temp_file.c_str());
+    std::filesystem::remove(temp_file);
 }
 
 TEST_F(TaskInterfaceTest, InputDimensionErrorMessage) {
