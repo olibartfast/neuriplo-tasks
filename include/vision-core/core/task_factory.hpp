@@ -18,7 +18,7 @@ class TaskFactory {
   public:
     /**
      * @brief Create a task instance for the given model type
-     * @param model_type Model type identifier (e.g., "yolov8", "rtdetr", "resnet50")
+     * @param model_type Model type identifier (e.g., "yolov8", "rtdetr", "resnet50", "owlv2")
      * @param model_info Model configuration information
      * @return Unique pointer to task interface
      * @throws std::invalid_argument if model type is invalid
