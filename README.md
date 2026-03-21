@@ -16,6 +16,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Optical Flow**: RAFT
 - **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose
 - **Depth Estimation**: Depth Anything V2
+- **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
 - **Unified Tensor Interface**: Simplified API using `Tensor` struct that encapsulates data and shape information
 
@@ -175,6 +176,21 @@ The TaskFactory supports the following model type strings:
 
 **Depth Estimation:**
 - `"depth_anything_v2"`, `"depth-anything-v2"` - Depth Anything V2
+
+**Open-Vocabulary Detection:**
+- `"owlv2"` - OWLv2 open-vocabulary detection
+- `"owlvit"` - OWL-ViT compatible open-vocabulary detection
+- `"openvocabowl"` - Generic Open Vocabulary OWL alias
+
+Open-vocabulary models use text prompts supplied at runtime through `TaskConfig::text_prompts`. Tokenizer assets can be passed either as file paths (`tokenizer_vocab_path`, `tokenizer_merges_path`) or preloaded text blobs (`tokenizer_vocab_json`, `tokenizer_merges_text`).
+
+The expected ONNX contract is:
+- Inputs: `pixel_values`, `input_ids`, `attention_mask`
+- Outputs: `logits`, `pred_boxes`, and optional `objectness_logits`
+
+Results are returned as `OpenVocabDetection` entries containing `bbox`, `score`, `prompt_index`, and resolved `label`.
+
+For export details, see [export/open_vocab_detection/OWLv2.md](export/open_vocab_detection/OWLv2.md).
 
 ## Building
 
