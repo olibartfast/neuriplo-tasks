@@ -27,6 +27,7 @@ def export_owlv2_to_onnx(
     sequence_length=16,
     opset_version=17,
     dynamic_batch=True,
+    dynamo=False,
 ):
     try:
         import transformers
@@ -55,6 +56,7 @@ def export_owlv2_to_onnx(
     print(f"   - Processor: {processor.__class__.__name__ if processor is not None else 'unavailable'}")
 
     wrapped = OWLv2ExportWrapper(model)
+    wrapped.eval()
     pixel_values = torch.randn(1, 3, image_height, image_width, dtype=torch.float32)
     input_ids = torch.zeros((max_queries, sequence_length), dtype=torch.int64)
     attention_mask = torch.ones((max_queries, sequence_length), dtype=torch.int64)
@@ -86,6 +88,7 @@ def export_owlv2_to_onnx(
             input_names=["pixel_values", "input_ids", "attention_mask"],
             output_names=["logits", "objectness_logits", "pred_boxes"],
             dynamic_axes=dynamic_axes,
+            dynamo=dynamo,
             verbose=False,
         )
     except ModuleNotFoundError as exc:
@@ -138,6 +141,11 @@ def main():
     parser.add_argument("--sequence-length", type=int, default=16, help="Sequence length per prompt")
     parser.add_argument("--opset", type=int, default=17, help="ONNX opset version")
     parser.add_argument("--static-batch", action="store_true", help="Disable dynamic batch axis")
+    parser.add_argument(
+        "--dynamo",
+        action="store_true",
+        help="Use the torch.export-based ONNX exporter instead of the legacy tracer",
+    )
     parser.add_argument("--test", action="store_true", help="Run ONNX Runtime smoke test")
     args = parser.parse_args()
 
@@ -151,6 +159,7 @@ def main():
             sequence_length=args.sequence_length,
             opset_version=args.opset,
             dynamic_batch=not args.static_batch,
+            dynamo=args.dynamo,
         )
         if exported is None:
             sys.exit(1)
