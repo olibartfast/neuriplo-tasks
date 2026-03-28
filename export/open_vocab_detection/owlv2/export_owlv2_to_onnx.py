@@ -29,6 +29,7 @@ def export_owlv2_to_onnx(
     dynamic_batch=True,
 ):
     try:
+        import transformers
         from transformers import AutoProcessor, Owlv2ForObjectDetection
     except ImportError as exc:
         print(f"Transformers not available: {exc}")
@@ -36,16 +37,22 @@ def export_owlv2_to_onnx(
 
     print(f"Loading OWLv2 model: {model_name}")
     print(f"PyTorch version: {torch.__version__}")
+    print(f"Transformers version: {transformers.__version__}")
 
     model = Owlv2ForObjectDetection.from_pretrained(model_name)
-    processor = AutoProcessor.from_pretrained(model_name)
+    processor = None
+    try:
+        processor = AutoProcessor.from_pretrained(model_name)
+    except ValueError as exc:
+        print(f"Processor load skipped: {exc}")
+        print("Continuing export without a processor because dummy tensors are used for tracing.")
     model.eval()
 
     print("Model config:")
     print(f"   - Image size: {image_height}x{image_width}")
     print(f"   - Max queries: {max_queries}")
     print(f"   - Sequence length: {sequence_length}")
-    print(f"   - Processor: {processor.__class__.__name__}")
+    print(f"   - Processor: {processor.__class__.__name__ if processor is not None else 'unavailable'}")
 
     wrapped = OWLv2ExportWrapper(model)
     pixel_values = torch.randn(1, 3, image_height, image_width, dtype=torch.float32)
@@ -68,18 +75,25 @@ def export_owlv2_to_onnx(
             "pred_boxes": {0: "batch_size"},
         }
 
-    torch.onnx.export(
-        wrapped,
-        (pixel_values, input_ids, attention_mask),
-        output_path,
-        export_params=True,
-        opset_version=opset_version,
-        do_constant_folding=True,
-        input_names=["pixel_values", "input_ids", "attention_mask"],
-        output_names=["logits", "objectness_logits", "pred_boxes"],
-        dynamic_axes=dynamic_axes,
-        verbose=False,
-    )
+    try:
+        torch.onnx.export(
+            wrapped,
+            (pixel_values, input_ids, attention_mask),
+            output_path,
+            export_params=True,
+            opset_version=opset_version,
+            do_constant_folding=True,
+            input_names=["pixel_values", "input_ids", "attention_mask"],
+            output_names=["logits", "objectness_logits", "pred_boxes"],
+            dynamic_axes=dynamic_axes,
+            verbose=False,
+        )
+    except ModuleNotFoundError as exc:
+        if exc.name == "onnxscript":
+            print("ONNX export requires the `onnxscript` package with this PyTorch version.")
+            print("Install it in the export environment, for example: pip install onnxscript")
+            return None
+        raise
 
     print(f"Model exported to: {output_path}")
     onnx_model = onnx.load(output_path)
