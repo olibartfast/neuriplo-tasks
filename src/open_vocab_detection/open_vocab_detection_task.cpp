@@ -25,9 +25,11 @@ std::string normalizeModelName(const std::string& name) {
 }
 
 std::vector<uint8_t> toByteBuffer(const std::vector<int32_t>& values) {
-    std::vector<uint8_t> bytes(values.size() * sizeof(int32_t));
-    if (!values.empty()) {
-        std::memcpy(bytes.data(), values.data(), bytes.size());
+    // ONNX models typically expect int64 for token inputs
+    std::vector<int64_t> values64(values.begin(), values.end());
+    std::vector<uint8_t> bytes(values64.size() * sizeof(int64_t));
+    if (!values64.empty()) {
+        std::memcpy(bytes.data(), values64.data(), bytes.size());
     }
     return bytes;
 }
