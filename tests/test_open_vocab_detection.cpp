@@ -30,8 +30,8 @@ TEST(OpenVocabDetectionTest, PreprocessProducesImageAndTextInputs) {
 
     ASSERT_EQ(buffers.size(), 3U);
     EXPECT_FALSE(buffers[0].empty());
-    EXPECT_EQ(buffers[1].size(), static_cast<size_t>(2 * 8 * sizeof(int32_t)));
-    EXPECT_EQ(buffers[2].size(), static_cast<size_t>(2 * 8 * sizeof(int32_t)));
+    EXPECT_EQ(buffers[1].size(), static_cast<size_t>(2 * 8 * sizeof(int64_t)));
+    EXPECT_EQ(buffers[2].size(), static_cast<size_t>(2 * 8 * sizeof(int64_t)));
 }
 
 TEST(OpenVocabDetectionTest, PostprocessReturnsOpenVocabDetectionResults) {
