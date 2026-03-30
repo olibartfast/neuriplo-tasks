@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.15)
-project(vision-core VERSION 1.0.0 LANGUAGES CXX)
+
+# Read version from VERSION file
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" PROJECT_VERSION_RAW)
+string(STRIP "${PROJECT_VERSION_RAW}" PROJECT_VERSION_RAW)
+# Extract semver (strip -dev or other suffixes)
+string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" PROJECT_SEMVER "${PROJECT_VERSION_RAW}")
+
+project(vision-core VERSION ${PROJECT_SEMVER} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
