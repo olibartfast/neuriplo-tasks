@@ -1,0 +1,39 @@
+name: vision-core
+role: task-contracts
+
+default_branches:
+  integration: develop
+  release: master
+
+entrypoints:
+  configure:
+    - cmake -S . -B build -DBUILD_TESTS=ON
+  build:
+    - cmake --build build --parallel
+  test:
+    - ctest --test-dir build --output-on-failure
+
+owned_paths:
+  - include/
+  - src/
+  - tests/
+  - export/
+  - CMakeLists.txt
+  - AGENTS.md
+
+allowed_change_classes:
+  - ci-triage
+  - api-migration-source
+  - test-fix
+  - docs-sync
+
+forbidden_change_classes:
+  - model-io-change
+  - inference-logic-change
+  - large-refactor
+
+constraints:
+  preserve_task_contracts: true
+  preserve_result_schema: true
+  review_shape_dtype_changes: mandatory
+  avoid_unnecessary_copies: true
