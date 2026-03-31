@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-31
+
 ### Added
 - OWLv2 open-vocabulary detection scaffold and CLIP tokenizer
 - OWLv2 ONNX export script
@@ -30,5 +32,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - clang-format and clang-tidy configuration
 - CI workflow with lint, static analysis, build, and test jobs
 
-[Unreleased]: https://github.com/olibartfast/vision-core/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/olibartfast/vision-core/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/olibartfast/vision-core/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/olibartfast/vision-core/releases/tag/v0.1.0
