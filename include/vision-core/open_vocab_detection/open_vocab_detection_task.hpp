@@ -3,18 +3,20 @@
 #include "vision-core/core/preprocessor.hpp"
 #include "vision-core/core/task_config.hpp"
 #include "vision-core/core/task_interface.hpp"
+#include "vision-core/open_vocab_detection/bert_tokenizer.hpp"
 #include "vision-core/open_vocab_detection/clip_tokenizer.hpp"
 #include "vision-core/open_vocab_detection/postprocessor.hpp"
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace vision_core {
 
 class OpenVocabDetectionTask : public TaskInterface {
   public:
-    enum class ModelType : uint8_t { Unknown, OWLV2, OWLVIT };
+    enum class ModelType : uint8_t { Unknown, OWLV2, OWLVIT, GroundingDino };
 
     OpenVocabDetectionTask(const ModelInfo& model_info, const std::string& model_name, const TaskConfig& config);
 
@@ -29,7 +31,12 @@ class OpenVocabDetectionTask : public TaskInterface {
     TaskConfig config_;
     std::unique_ptr<Preprocessor> image_preprocessor_;
     std::unique_ptr<OpenVocabPostprocessor> postprocessor_;
+    // CLIP-style tokenizer (OWL-ViT / OWLv2)
     std::unique_ptr<ClipTokenizer> tokenizer_;
+    // BERT-style tokenizer (Grounding DINO)
+    std::unique_ptr<BertTokenizer> bert_tokenizer_;
+    // Per-phrase token ranges in the BERT-encoded sequence (Grounding DINO only)
+    std::vector<std::pair<int, int>> phrase_token_ranges_;
 
     static ModelType detectModelType(const std::string& model_name);
     static std::vector<std::string> extractPrompts(const TaskConfig& config);
