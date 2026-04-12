@@ -78,6 +78,8 @@ set(CORE_SOURCES
     src/open_vocab_detection/clip_tokenizer.cpp
     src/open_vocab_detection/open_vocab_detection_task.cpp
     src/open_vocab_detection/owlv2_postprocessor.cpp
+    src/open_vocab_detection/bert_tokenizer.cpp
+    src/open_vocab_detection/grounding_dino_postprocessor.cpp
     src/pose_estimation/pose_estimation_task.cpp
     src/pose_estimation/vit_pose_postprocessor.cpp
     src/pose_estimation/yolo_pose_postprocessor.cpp
@@ -125,6 +127,8 @@ set(CORE_HEADERS
     include/vision-core/open_vocab_detection/open_vocab_detection_task.hpp
     include/vision-core/open_vocab_detection/owlv2_postprocessor.hpp
     include/vision-core/open_vocab_detection/postprocessor.hpp
+    include/vision-core/open_vocab_detection/bert_tokenizer.hpp
+    include/vision-core/open_vocab_detection/grounding_dino_postprocessor.hpp
     include/vision-core/pose_estimation/pose_estimation_task.hpp
     include/vision-core/pose_estimation/pose_postprocessor.hpp
     include/vision-core/pose_estimation/vit_pose_postprocessor.hpp
