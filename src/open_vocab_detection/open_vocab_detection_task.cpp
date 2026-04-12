@@ -1,6 +1,7 @@
 #include "vision-core/open_vocab_detection/open_vocab_detection_task.hpp"
 
 #include "vision-core/object_detection/detection_preprocessor.hpp"
+#include "vision-core/open_vocab_detection/grounding_dino_postprocessor.hpp"
 #include "vision-core/open_vocab_detection/owlv2_postprocessor.hpp"
 
 #include <algorithm>
@@ -54,19 +55,40 @@ OpenVocabDetectionTask::OpenVocabDetectionTask(const ModelInfo& model_info, cons
     input_height_ = input_size.height;
     image_preprocessor_ = std::make_unique<RtDetrPreprocessor>(input_size);
 
-    if (!config_.tokenizer_vocab_json.empty() && !config_.tokenizer_merges_text.empty()) {
-        tokenizer_ = std::make_unique<ClipTokenizer>(config_.tokenizer_vocab_json, config_.tokenizer_merges_text, true);
-    } else if (!config_.tokenizer_vocab_path.empty() && !config_.tokenizer_merges_path.empty()) {
-        tokenizer_ = std::make_unique<ClipTokenizer>(config_.tokenizer_vocab_path, config_.tokenizer_merges_path);
-    }
-
     switch (model_type_) {
     case ModelType::OWLV2:
     case ModelType::OWLVIT:
+        if (!config_.tokenizer_vocab_json.empty() && !config_.tokenizer_merges_text.empty()) {
+            tokenizer_ =
+                std::make_unique<ClipTokenizer>(config_.tokenizer_vocab_json, config_.tokenizer_merges_text, true);
+        } else if (!config_.tokenizer_vocab_path.empty() && !config_.tokenizer_merges_path.empty()) {
+            tokenizer_ = std::make_unique<ClipTokenizer>(config_.tokenizer_vocab_path, config_.tokenizer_merges_path);
+        }
         postprocessor_ =
             std::make_unique<OWLv2Postprocessor>(input_size, config_.confidence_threshold, config_.text_threshold,
                                                  extractPrompts(config_), model_info_.output_names);
         break;
+
+    case ModelType::GroundingDino: {
+        if (!config_.bert_tokenizer_vocab_text.empty()) {
+            bert_tokenizer_ = std::make_unique<BertTokenizer>(config_.bert_tokenizer_vocab_text, true);
+        } else if (!config_.bert_tokenizer_vocab_path.empty()) {
+            bert_tokenizer_ = std::make_unique<BertTokenizer>(config_.bert_tokenizer_vocab_path);
+        }
+
+        // Pre-compute phrase token ranges (fixed for the lifetime of this task)
+        const std::vector<std::string> prompts = extractPrompts(config_);
+        if (bert_tokenizer_ && !prompts.empty()) {
+            auto encoded = bert_tokenizer_->encodePhrases(prompts, config_.max_text_queries);
+            phrase_token_ranges_ = std::move(encoded.phrase_token_ranges);
+        }
+
+        postprocessor_ = std::make_unique<GroundingDinoPostprocessor>(
+            input_size, config_.confidence_threshold, config_.text_threshold, prompts,
+            model_info_.output_names, phrase_token_ranges_);
+        break;
+    }
+
     default:
         throw std::invalid_argument("Unsupported open-vocabulary model type");
     }
@@ -79,6 +101,9 @@ OpenVocabDetectionTask::ModelType OpenVocabDetectionTask::detectModelType(const 
     }
     if (normalized == "owlvit") {
         return ModelType::OWLVIT;
+    }
+    if (normalized == "groundingdino") {
+        return ModelType::GroundingDino;
     }
     return ModelType::Unknown;
 }
@@ -138,7 +163,8 @@ cv::Size OpenVocabDetectionTask::extractInputSize(const ModelInfo& model_info) {
     throw InputDimensionError("No valid image input found for open-vocabulary detection model");
 }
 
-std::pair<std::vector<int32_t>, std::vector<int32_t>> OpenVocabDetectionTask::encodePrompts(int context_length) const {
+std::pair<std::vector<int32_t>, std::vector<int32_t>>
+OpenVocabDetectionTask::encodePrompts(int context_length) const {
     const std::vector<std::string> prompts = extractPrompts(config_);
     if (prompts.empty()) {
         throw std::invalid_argument("Open-vocabulary detection requires at least one text prompt");
@@ -167,25 +193,45 @@ std::vector<std::vector<uint8_t>> OpenVocabDetectionTask::preprocess(const std::
     std::vector<int32_t> attention_mask;
     bool needs_text_inputs = false;
 
+    // Determine text-input context length and encode prompts
     for (size_t index = 0; index < model_info_.input_shapes.size(); ++index) {
         const std::string input_name = index < model_info_.input_names.size() ? model_info_.input_names[index] : "";
         const std::string normalized = normalizeModelName(input_name);
-        if (normalized.find("inputids") != std::string::npos || normalized.find("attentionmask") != std::string::npos) {
+        if (normalized.find("inputids") != std::string::npos ||
+            normalized.find("attentionmask") != std::string::npos) {
             needs_text_inputs = true;
             const int context_length = !model_info_.input_shapes[index].empty()
                                            ? static_cast<int>(model_info_.input_shapes[index].back())
                                            : config_.max_text_queries;
-            const auto encoded = encodePrompts(context_length);
-            input_ids = encoded.first;
-            attention_mask = encoded.second;
+
+            if (model_type_ == ModelType::GroundingDino && bert_tokenizer_) {
+                // Grounding DINO: encode all phrases as a single concatenated sequence
+                const std::vector<std::string> prompts = extractPrompts(config_);
+                if (!prompts.empty()) {
+                    auto encoded = bert_tokenizer_->encodePhrases(prompts, context_length);
+                    input_ids = std::move(encoded.input_ids);
+                    attention_mask = std::move(encoded.attention_mask);
+                }
+            } else {
+                // OWL-ViT / OWLv2: encode each prompt independently (CLIP tokenizer)
+                const auto encoded = encodePrompts(context_length);
+                input_ids = encoded.first;
+                attention_mask = encoded.second;
+            }
             break;
         }
     }
 
-    if (!needs_text_inputs && !extractPrompts(config_).empty() && tokenizer_) {
-        const auto encoded = encodePrompts(config_.max_text_queries);
-        input_ids = encoded.first;
-        attention_mask = encoded.second;
+    if (!needs_text_inputs && !extractPrompts(config_).empty()) {
+        if (model_type_ == ModelType::GroundingDino && bert_tokenizer_) {
+            auto encoded = bert_tokenizer_->encodePhrases(extractPrompts(config_), config_.max_text_queries);
+            input_ids = std::move(encoded.input_ids);
+            attention_mask = std::move(encoded.attention_mask);
+        } else if (tokenizer_) {
+            const auto encoded = encodePrompts(config_.max_text_queries);
+            input_ids = encoded.first;
+            attention_mask = encoded.second;
+        }
     }
 
     for (size_t index = 0; index < model_info_.input_shapes.size(); ++index) {
@@ -199,6 +245,9 @@ std::vector<std::vector<uint8_t>> OpenVocabDetectionTask::preprocess(const std::
             results.push_back(toByteBuffer(input_ids));
         } else if (normalized.find("attentionmask") != std::string::npos) {
             results.push_back(toByteBuffer(attention_mask));
+        } else if (normalized.find("tokentypeids") != std::string::npos) {
+            // All-zero token type IDs required by some models (e.g. Grounding DINO)
+            results.push_back(toByteBuffer(std::vector<int32_t>(input_ids.size(), 0)));
         } else {
             results.emplace_back();
         }
