@@ -52,17 +52,14 @@ void BertTokenizer::loadVocab(std::istream& stream, std::unordered_map<std::stri
     }
 }
 
-void BertTokenizer::loadVocabFromText(const std::string& text,
-                                      std::unordered_map<std::string, int32_t>& vocab) {
+void BertTokenizer::loadVocabFromText(const std::string& text, std::unordered_map<std::string, int32_t>& vocab) {
     std::istringstream iss(text);
     loadVocab(iss, vocab);
 }
 
 // ─── Character classification ─────────────────────────────────────────────────
 
-bool BertTokenizer::isWhitespace(char c) {
-    return c == ' ' || c == '\t' || c == '\n' || c == '\r';
-}
+bool BertTokenizer::isWhitespace(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; }
 
 bool BertTokenizer::isPunctuation(char c) {
     const auto uc = static_cast<unsigned char>(c);
@@ -178,8 +175,8 @@ std::vector<int32_t> BertTokenizer::tokenize(const std::string& text) const {
 
 // ─── Public encode interface ──────────────────────────────────────────────────
 
-std::pair<std::vector<int32_t>, std::vector<int32_t>>
-BertTokenizer::encode(const std::string& text, int max_length) const {
+std::pair<std::vector<int32_t>, std::vector<int32_t>> BertTokenizer::encode(const std::string& text,
+                                                                            int max_length) const {
     std::vector<int32_t> content = tokenize(text);
 
     // Truncate to max_length - 2 (reserve space for [CLS] and [SEP])
@@ -205,8 +202,8 @@ BertTokenizer::encode(const std::string& text, int max_length) const {
     return {input_ids, attention_mask};
 }
 
-BertTokenizer::PhraseEncoding
-BertTokenizer::encodePhrases(const std::vector<std::string>& phrases, int max_length) const {
+BertTokenizer::PhraseEncoding BertTokenizer::encodePhrases(const std::vector<std::string>& phrases,
+                                                           int max_length) const {
     // Grounding DINO format: "phrase1 . phrase2 . phrase3 ."
     // Tokenise each phrase independently to obtain per-phrase token counts,
     // then join and compute token ranges relative to the final sequence.

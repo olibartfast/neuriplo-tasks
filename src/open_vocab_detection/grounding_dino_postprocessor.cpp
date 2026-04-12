@@ -61,8 +61,7 @@ cv::Rect makeRectFromCenterBox(float cx, float cy, float w, float h, const cv::S
 // ─── Construction ────────────────────────────────────────────────────────────
 
 GroundingDinoPostprocessor::GroundingDinoPostprocessor(const cv::Size& input_size, float confidence_threshold,
-                                                       float text_threshold,
-                                                       std::vector<std::string> prompt_labels,
+                                                       float text_threshold, std::vector<std::string> prompt_labels,
                                                        std::vector<std::string> output_names,
                                                        std::vector<std::pair<int, int>> phrase_token_ranges)
     : input_size_(input_size), confidence_threshold_(confidence_threshold), text_threshold_(text_threshold),
@@ -71,8 +70,8 @@ GroundingDinoPostprocessor::GroundingDinoPostprocessor(const cv::Size& input_siz
 
 // ─── Postprocessing ──────────────────────────────────────────────────────────
 
-std::vector<OpenVocabDetection>
-GroundingDinoPostprocessor::postprocess(const std::vector<Tensor>& tensors, const cv::Size& frame_size) {
+std::vector<OpenVocabDetection> GroundingDinoPostprocessor::postprocess(const std::vector<Tensor>& tensors,
+                                                                        const cv::Size& frame_size) {
     std::vector<OpenVocabDetection> results;
     if (tensors.size() < 2) {
         return results;

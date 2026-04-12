@@ -28,18 +28,18 @@ std::string makeMinimalBertVocab() {
     for (int i = 1; i < 100; ++i) {
         vocab += "[unused" + std::to_string(i) + "]\n";
     }
-    vocab += "[UNK]\n"; // 100
-    vocab += "[CLS]\n"; // 101
-    vocab += "[SEP]\n"; // 102
+    vocab += "[UNK]\n";  // 100
+    vocab += "[CLS]\n";  // 101
+    vocab += "[SEP]\n";  // 102
     vocab += "[MASK]\n"; // 103
     // add common tokens we'll use in tests
     for (int i = 104; i < 200; ++i) {
         vocab += "[unused" + std::to_string(i) + "]\n";
     }
-    vocab += ".\n";    // 200  – dot separator
-    vocab += "cat\n";  // 201
-    vocab += "dog\n";  // 202
-    vocab += "car\n";  // 203
+    vocab += ".\n";   // 200  – dot separator
+    vocab += "cat\n"; // 201
+    vocab += "dog\n"; // 202
+    vocab += "car\n"; // 203
     return vocab;
 }
 
@@ -228,8 +228,8 @@ TEST(GroundingDinoTest, PostprocessReturnsDetectionForHighScoreToken) {
     // Two phrases: cat (token range [1,2)), dog (token range [3,4))
     // seq_len = 8. For query 0: logit[3] is high → dog wins.
     std::vector<std::pair<int, int>> phrase_ranges = {{1, 2}, {3, 4}};
-    GroundingDinoPostprocessor pp(cv::Size(800, 800), 0.1f, 0.1f, {"cat", "dog"},
-                                  {"pred_boxes", "pred_logits"}, phrase_ranges);
+    GroundingDinoPostprocessor pp(cv::Size(800, 800), 0.1f, 0.1f, {"cat", "dog"}, {"pred_boxes", "pred_logits"},
+                                  phrase_ranges);
 
     // pred_boxes: [1, 1, 4] → one query, normalised cx cy w h
     Tensor boxes(std::vector<TensorElement>{0.5f, 0.5f, 0.25f, 0.25f}, {1, 1, 4});
@@ -249,8 +249,8 @@ TEST(GroundingDinoTest, PostprocessReturnsDetectionForHighScoreToken) {
 
 TEST(GroundingDinoTest, PostprocessFiltersLowScoreQueries) {
     std::vector<std::pair<int, int>> phrase_ranges = {{1, 2}};
-    GroundingDinoPostprocessor pp(cv::Size(800, 800), 0.9f, 0.9f, {"cat"},
-                                  {"pred_boxes", "pred_logits"}, phrase_ranges);
+    GroundingDinoPostprocessor pp(cv::Size(800, 800), 0.9f, 0.9f, {"cat"}, {"pred_boxes", "pred_logits"},
+                                  phrase_ranges);
 
     Tensor boxes(std::vector<TensorElement>{0.5f, 0.5f, 0.25f, 0.25f}, {1, 1, 4});
     // All logits negative → sigmoid < 0.5 → below threshold
@@ -262,8 +262,7 @@ TEST(GroundingDinoTest, PostprocessFiltersLowScoreQueries) {
 
 TEST(GroundingDinoTest, PostprocessNoPhraseRangesFallsBackToMaxToken) {
     // When phrase_token_ranges is empty, the postprocessor takes the max over all tokens
-    GroundingDinoPostprocessor pp(cv::Size(800, 800), 0.5f, 0.5f, {},
-                                  {"pred_boxes", "pred_logits"}, {});
+    GroundingDinoPostprocessor pp(cv::Size(800, 800), 0.5f, 0.5f, {}, {"pred_boxes", "pred_logits"}, {});
 
     Tensor boxes(std::vector<TensorElement>{0.5f, 0.5f, 0.25f, 0.25f}, {1, 1, 4});
     std::vector<TensorElement> logit_data(4, TensorElement{-5.0f});

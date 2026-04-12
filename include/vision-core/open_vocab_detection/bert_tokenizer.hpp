@@ -55,8 +55,8 @@ class BertTokenizer {
      * @param max_length Maximum sequence length (padded / truncated)
      * @return Pair (input_ids, attention_mask)
      */
-    [[nodiscard]] std::pair<std::vector<int32_t>, std::vector<int32_t>>
-    encode(const std::string& text, int max_length = 256) const;
+    [[nodiscard]] std::pair<std::vector<int32_t>, std::vector<int32_t>> encode(const std::string& text,
+                                                                               int max_length = 256) const;
 
     /**
      * @brief Phrase encoding result for Grounding DINO
@@ -74,8 +74,7 @@ class BertTokenizer {
      * @param max_length Maximum total sequence length (padded / truncated)
      * @return PhraseEncoding with token IDs, mask, and per-phrase token ranges
      */
-    [[nodiscard]] PhraseEncoding encodePhrases(const std::vector<std::string>& phrases,
-                                               int max_length = 256) const;
+    [[nodiscard]] PhraseEncoding encodePhrases(const std::vector<std::string>& phrases, int max_length = 256) const;
 
   private:
     std::unordered_map<std::string, int32_t> vocab_;
