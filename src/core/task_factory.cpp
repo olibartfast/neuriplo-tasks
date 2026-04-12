@@ -90,7 +90,8 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
     }
 
     // ============ OPEN-VOCAB DETECTION ============
-    if (normalized == "owlv2" || normalized == "owlvit" || normalized == "openvocabowl") {
+    if (normalized == "owlv2" || normalized == "owlvit" || normalized == "openvocabowl" ||
+        normalized == "groundingdino") {
         return std::make_unique<OpenVocabDetectionTask>(model_info, normalized, config);
     }
 
