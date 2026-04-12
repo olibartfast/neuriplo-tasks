@@ -83,9 +83,9 @@ OpenVocabDetectionTask::OpenVocabDetectionTask(const ModelInfo& model_info, cons
             phrase_token_ranges_ = std::move(encoded.phrase_token_ranges);
         }
 
-        postprocessor_ = std::make_unique<GroundingDinoPostprocessor>(
-            input_size, config_.confidence_threshold, config_.text_threshold, prompts,
-            model_info_.output_names, phrase_token_ranges_);
+        postprocessor_ = std::make_unique<GroundingDinoPostprocessor>(input_size, config_.confidence_threshold,
+                                                                      config_.text_threshold, prompts,
+                                                                      model_info_.output_names, phrase_token_ranges_);
         break;
     }
 
@@ -163,8 +163,7 @@ cv::Size OpenVocabDetectionTask::extractInputSize(const ModelInfo& model_info) {
     throw InputDimensionError("No valid image input found for open-vocabulary detection model");
 }
 
-std::pair<std::vector<int32_t>, std::vector<int32_t>>
-OpenVocabDetectionTask::encodePrompts(int context_length) const {
+std::pair<std::vector<int32_t>, std::vector<int32_t>> OpenVocabDetectionTask::encodePrompts(int context_length) const {
     const std::vector<std::string> prompts = extractPrompts(config_);
     if (prompts.empty()) {
         throw std::invalid_argument("Open-vocabulary detection requires at least one text prompt");
@@ -197,8 +196,7 @@ std::vector<std::vector<uint8_t>> OpenVocabDetectionTask::preprocess(const std::
     for (size_t index = 0; index < model_info_.input_shapes.size(); ++index) {
         const std::string input_name = index < model_info_.input_names.size() ? model_info_.input_names[index] : "";
         const std::string normalized = normalizeModelName(input_name);
-        if (normalized.find("inputids") != std::string::npos ||
-            normalized.find("attentionmask") != std::string::npos) {
+        if (normalized.find("inputids") != std::string::npos || normalized.find("attentionmask") != std::string::npos) {
             needs_text_inputs = true;
             const int context_length = !model_info_.input_shapes[index].empty()
                                            ? static_cast<int>(model_info_.input_shapes[index].back())
