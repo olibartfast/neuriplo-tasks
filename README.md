@@ -318,10 +318,16 @@ cmake --build build
 MIT License
 
 ## Roadmap
-### In Progress 🚧
-- [ ] Migration of tritonic/vision-inference/deep-stream-infer-lab to use vision-core
+
+### Done ✅
+- [x] Gaussian Splatting C++ task and LgmPostprocessor
+- [x] Gaussian Splatting export script for LGM / GRM
+- [x] Open-Vocabulary Detection (OWLv2, Grounding DINO)
+- [x] Unified task interface and factory pattern
+- [x] Pre-commit hooks and agent tooling kit
 
 ### Planned 📋
+- [ ] Migration of tritonic/vision-inference/deep-stream-infer-lab to use vision-core
 - [ ] Batch processing utilities
 - [ ] Performance benchmarks and optimizations
-- [ ] Gaussian Splatting export script for LGM / GRM
+- [ ] Direct export to NVIDIA TensorRT engine via Python script
