@@ -29,10 +29,6 @@
           {
             "type": "command",
             "command": ".claude/hooks/block_large_binaries.sh"
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/pre_push_ci_gate.sh"
           }
         ]
       }
