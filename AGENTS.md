@@ -156,6 +156,8 @@ task headers are needed by consumers.
 | Optical Flow          | `OpticalFlowTask`            | `RaftPostprocessor`                                                   |
 | Pose Estimation       | `PoseEstimationTask`         | `VitPosePostprocessor`, `YoloPosePostprocessor`                       |
 | Depth Estimation      | `DepthEstimationTask`        | `DepthAnythingV2Postprocessor`                                        |
+| Open-Vocabulary Detection | `OpenVocabDetectionTask` | `OwlV2Postprocessor`, `GroundingDinoPostprocessor`                    |
+| Gaussian Splatting    | `GaussianSplattingTask`      | `LgmPostprocessor`                                                    |
 
 ### `Tensor` type
 
@@ -175,11 +177,13 @@ checked in order:
 2. YOLO pose: `yolo*pose*` → `PoseEstimationTask` (with `YoloPosePostprocessor`)
 3. YOLO prefix: any `yolo*` → `ObjectDetectionTask`
 4. `"rtdetr"`, `"rfdetr"` → `ObjectDetectionTask`
-5. `"torchvisionclassifier"`, `"vitclassifier"`, `"tensorflowclassifier"`, `resnet*`, `*tensorflow*` → `ClassificationTask`
-6. `*depthanythingv2*` → `DepthEstimationTask`
-7. `"videomae"`, `"vivit"`, `"timesformer"` → `VideoClassificationTask`
-8. `"raft"` → `OpticalFlowTask`
-9. `"vitpose"` → `PoseEstimationTask`
+5. `"owlv2"`, `"owlvit"`, `"groundingdino"` → `OpenVocabDetectionTask`
+6. `"lgm"`, `"grm"`, `*splat*` → `GaussianSplattingTask`
+7. `"torchvisionclassifier"`, `"vitclassifier"`, `"tensorflowclassifier"`, `resnet*`, `*tensorflow*` → `ClassificationTask`
+8. `*depthanythingv2*` → `DepthEstimationTask`
+9. `"videomae"`, `"vivit"`, `"timesformer"` → `VideoClassificationTask`
+10. `"raft"` → `OpticalFlowTask`
+11. `"vitpose"` → `PoseEstimationTask`
 
 ### `export/` directory
 
