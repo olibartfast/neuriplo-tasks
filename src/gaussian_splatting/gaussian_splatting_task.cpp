@@ -99,14 +99,28 @@ cv::Size GaussianSplattingTask::extractInputSize(const ModelInfo& model_info) {
 
     if (!model_info.input_shapes.empty()) {
         const auto& shape = model_info.input_shapes[0];
+        const std::string& format = model_info.input_formats.empty() ? "FORMAT_NCHW" : model_info.input_formats[0];
+
         if (shape.size() == 4) {
-            // NCHW: [N, C, H, W]
-            height = static_cast<int>(shape[2]);
-            width = static_cast<int>(shape[3]);
+            if (format == "FORMAT_NCHW") {
+                // [N, C, H, W]
+                height = static_cast<int>(shape[2]);
+                width = static_cast<int>(shape[3]);
+            } else if (format == "FORMAT_NHWC") {
+                // [N, H, W, C]
+                height = static_cast<int>(shape[1]);
+                width = static_cast<int>(shape[2]);
+            }
         } else if (shape.size() == 3) {
-            // CHW: [C, H, W]
-            height = static_cast<int>(shape[1]);
-            width = static_cast<int>(shape[2]);
+            if (format == "FORMAT_NCHW") {
+                // [C, H, W]
+                height = static_cast<int>(shape[1]);
+                width = static_cast<int>(shape[2]);
+            } else if (format == "FORMAT_NHWC") {
+                // [H, W, C]
+                height = static_cast<int>(shape[0]);
+                width = static_cast<int>(shape[1]);
+            }
         }
     }
 
