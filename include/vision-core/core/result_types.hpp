@@ -29,6 +29,20 @@ struct Detection : public Classification {
 };
 
 /**
+ * @brief Open-vocabulary detection result structure
+ */
+struct OpenVocabDetection {
+    cv::Rect bbox;        ///< Bounding box
+    float score{0.0f};    ///< Detection score
+    int prompt_index{-1}; ///< Index into the runtime prompt list
+    std::string label;    ///< Resolved prompt label
+
+    OpenVocabDetection() = default;
+    OpenVocabDetection(const cv::Rect& box, float det_score, int index, std::string prompt_label)
+        : bbox(box), score(det_score), prompt_index(index), label(std::move(prompt_label)) {}
+};
+
+/**
  * @brief Instance segmentation result structure (extends Detection)
  */
 struct InstanceSegmentation : public Detection {
@@ -148,8 +162,8 @@ struct GaussianSplatting {
 /**
  * @brief Result variant type to hold any task result
  */
-using Result = std::variant<Classification, Detection, InstanceSegmentation, OpticalFlow, VideoClassification,
-                            PoseEstimation, DepthEstimation, GaussianSplatting>;
+using Result = std::variant<Classification, Detection, OpenVocabDetection, InstanceSegmentation, OpticalFlow,
+                            VideoClassification, PoseEstimation, DepthEstimation, GaussianSplatting>;
 
 /**
  * @brief Task type enumeration
@@ -162,6 +176,7 @@ enum class TaskType : uint8_t {
     VideoClassification,
     PoseEstimation,
     DepthEstimation,
+    OpenVocabDetection,
     GaussianSplatting
 };
 
