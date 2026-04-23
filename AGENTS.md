@@ -5,6 +5,16 @@ rules for working in `vision-core`. All other AI agent config files
 (`CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`) defer to this
 file.
 
+## Repo metadata
+
+- Machine-readable entrypoints and owned paths live in
+  [`REPO_META.yaml`](./REPO_META.yaml). Prefer it as the source for build/test
+  commands and allowed change classes when automating.
+- **Branches**: `develop` is the integration branch for normal work; `master`
+  is release-only.
+- **Priorities when reviewing a change**: correctness → backward compatibility
+  → task-contract stability → shape/dtype assumptions → performance regressions.
+
 ---
 
 ## Project overview

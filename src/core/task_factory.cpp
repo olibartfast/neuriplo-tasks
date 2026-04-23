@@ -7,6 +7,7 @@
 #include "vision-core/instance_segmentation/instance_segmentation_task.hpp"
 #include "vision-core/instance_segmentation/segmentation_postprocessor.hpp"
 #include "vision-core/object_detection/object_detection_task.hpp"
+#include "vision-core/open_vocab_detection/open_vocab_detection_task.hpp"
 #include "vision-core/optical_flow/optical_flow_postprocessor.hpp"
 #include "vision-core/optical_flow/optical_flow_task.hpp"
 #include "vision-core/pose_estimation/pose_estimation_task.hpp"
@@ -87,6 +88,12 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
         normalized == "rfdetr") {
         return std::make_unique<ObjectDetectionTask>(model_info, normalized, config.confidence_threshold,
                                                      config.nms_threshold);
+    }
+
+    // ============ OPEN-VOCAB DETECTION ============
+    if (normalized == "owlv2" || normalized == "owlvit" || normalized == "openvocabowl" ||
+        normalized == "groundingdino") {
+        return std::make_unique<OpenVocabDetectionTask>(model_info, normalized, config);
     }
 
     // ============ CLASSIFICATION ============

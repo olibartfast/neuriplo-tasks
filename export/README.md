@@ -18,6 +18,8 @@ export/
 │   └── rfdetr/             # RF-DETR segmentation export
 ├── optical_flow/
 │   └── raft/               # RAFT optical flow export
+├── open_vocab_detection/
+│   └── owlv2/              # OWLv2 open-vocabulary detection export
 ├── pose_estimation/
 │   ├── yolo_pose/          # YOLO pose export (v5/v8/v11/v26)
 │   └── vitpose/            # ViTPose pose estimation export
@@ -62,6 +64,9 @@ python export/pose_estimation/vitpose/export_vitpose_to_onnx.py
 # Export Depth Anything V2
 python export/depth_estimation/depth_anything_v2/export_depth_anything_v2_to_onnx.py
 
+# Export OWLv2
+python export/open_vocab_detection/owlv2/export_owlv2_to_onnx.py --test
+
 # Export LGM Gaussian Splatting
 python export/gaussian_splatting/lgm/export_lgm_to_onnx.py
 
@@ -92,6 +97,7 @@ Refer to:
 * [Optical Flow](https://github.com/olibartfast/vision-core/blob/master/export/optical_flow/OpticalFlow.md)
 * [Pose Estimation](https://github.com/olibartfast/vision-core/blob/master/export/pose_estimation/PoseEstimation.md)
 * [Depth Estimation](https://github.com/olibartfast/vision-core/blob/master/export/depth_estimation/DepthEstimation.md)
+* [Open-Vocabulary Detection](https://github.com/olibartfast/vision-core/blob/master/export/open_vocab_detection/OWLv2.md)
 * [Video Classification](https://github.com/olibartfast/vision-core/blob/master/export/video_classification/VideoClassification.md)
 
 

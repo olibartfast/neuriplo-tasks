@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.15)
-project(vision-core VERSION 1.0.0 LANGUAGES CXX)
+
+# Read version from VERSION file
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" PROJECT_VERSION_RAW)
+string(STRIP "${PROJECT_VERSION_RAW}" PROJECT_VERSION_RAW)
+# Extract semver (strip -dev or other suffixes)
+string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" PROJECT_SEMVER "${PROJECT_VERSION_RAW}")
+
+project(vision-core VERSION ${PROJECT_SEMVER} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -68,6 +75,11 @@ set(CORE_SOURCES
     src/instance_segmentation/rfdetr_segmentation_postprocessor.cpp
     src/optical_flow/optical_flow_task.cpp
     src/optical_flow/raft_postprocessor.cpp
+    src/open_vocab_detection/clip_tokenizer.cpp
+    src/open_vocab_detection/open_vocab_detection_task.cpp
+    src/open_vocab_detection/owlv2_postprocessor.cpp
+    src/open_vocab_detection/bert_tokenizer.cpp
+    src/open_vocab_detection/grounding_dino_postprocessor.cpp
     src/pose_estimation/pose_estimation_task.cpp
     src/pose_estimation/vit_pose_postprocessor.cpp
     src/pose_estimation/yolo_pose_postprocessor.cpp
@@ -114,6 +126,12 @@ set(CORE_HEADERS
     include/vision-core/optical_flow/optical_flow_task.hpp
     include/vision-core/optical_flow/optical_flow_postprocessor.hpp
     include/vision-core/optical_flow/raft_postprocessor.hpp
+    include/vision-core/open_vocab_detection/clip_tokenizer.hpp
+    include/vision-core/open_vocab_detection/open_vocab_detection_task.hpp
+    include/vision-core/open_vocab_detection/owlv2_postprocessor.hpp
+    include/vision-core/open_vocab_detection/postprocessor.hpp
+    include/vision-core/open_vocab_detection/bert_tokenizer.hpp
+    include/vision-core/open_vocab_detection/grounding_dino_postprocessor.hpp
     include/vision-core/pose_estimation/pose_estimation_task.hpp
     include/vision-core/pose_estimation/pose_postprocessor.hpp
     include/vision-core/pose_estimation/vit_pose_postprocessor.hpp

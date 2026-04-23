@@ -156,6 +156,33 @@ TEST_F(ResultTypesTest, ResultVariantHoldsDetection) {
     EXPECT_FALSE(std::holds_alternative<Classification>(result));
 }
 
+TEST_F(ResultTypesTest, OpenVocabDetectionDefaultConstruction) {
+    OpenVocabDetection det;
+    EXPECT_EQ(det.bbox.width, 0);
+    EXPECT_EQ(det.bbox.height, 0);
+    EXPECT_FLOAT_EQ(det.score, 0.0f);
+    EXPECT_EQ(det.prompt_index, -1);
+    EXPECT_TRUE(det.label.empty());
+}
+
+TEST_F(ResultTypesTest, OpenVocabDetectionParameterizedConstruction) {
+    OpenVocabDetection det(cv::Rect(11, 12, 13, 14), 0.77f, 2, "cat");
+    EXPECT_EQ(det.bbox.x, 11);
+    EXPECT_EQ(det.bbox.y, 12);
+    EXPECT_FLOAT_EQ(det.score, 0.77f);
+    EXPECT_EQ(det.prompt_index, 2);
+    EXPECT_EQ(det.label, "cat");
+}
+
+TEST_F(ResultTypesTest, ResultVariantHoldsOpenVocabDetection) {
+    OpenVocabDetection det(cv::Rect(0, 1, 2, 3), 0.91f, 1, "vehicle");
+    Result result = det;
+
+    EXPECT_TRUE(std::holds_alternative<OpenVocabDetection>(result));
+    auto& stored = std::get<OpenVocabDetection>(result);
+    EXPECT_EQ(stored.label, "vehicle");
+}
+
 TEST_F(ResultTypesTest, ResultVariantHoldsInstanceSegmentation) {
     InstanceSegmentation seg(cv::Rect(10, 20, 30, 40), 0.95f, 2);
     Result result = seg;
@@ -206,6 +233,7 @@ TEST_F(ResultTypesTest, TaskTypeEnumValues) {
     EXPECT_EQ(static_cast<int>(TaskType::VideoClassification), 4);
     EXPECT_EQ(static_cast<int>(TaskType::PoseEstimation), 5);
     EXPECT_EQ(static_cast<int>(TaskType::DepthEstimation), 6);
+    EXPECT_EQ(static_cast<int>(TaskType::OpenVocabDetection), 7);
 }
 
 int main(int argc, char** argv) {
