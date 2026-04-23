@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Gaussian Splatting task: LGM, LGM-mini, and GRM support
+- Grounding DINO open-vocabulary detection
+- Agent tooling kit: Claude Code hooks for formatting, CI gating (local), and CI guardian skill
+- LGM Gaussian Splatting ONNX export script and model validation test
+
+### Fixed
+- Gaussian Splatting task: Parse NHWC input shapes before choosing resize dimensions (P1)
+- LGM postprocessor: Preserve all batches in [N,G,14] Gaussian outputs (P1)
+- AGENTS.md: Documentation for Open-Vocabulary Detection and Gaussian Splatting tasks
+
 ## [0.2.0] - 2026-03-31
 
 ### Added
