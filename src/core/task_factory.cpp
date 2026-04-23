@@ -102,9 +102,8 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
     }
 
     // ============ GAUSSIAN SPLATTING ============
-    if (normalized == "lgm" || normalized == "grm" || normalized == "gaussiansplatting" ||
-        normalized == "lgmmini" || normalized == "lgm-mini" ||
-        normalized.find("splat") != std::string::npos) {
+    if (normalized == "lgm" || normalized == "grm" || normalized == "gaussiansplatting" || normalized == "lgmmini" ||
+        normalized == "lgm-mini" || normalized.find("splat") != std::string::npos) {
         return std::make_unique<GaussianSplattingTask>(model_info, normalized);
     }
 

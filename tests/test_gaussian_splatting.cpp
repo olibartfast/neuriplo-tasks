@@ -10,11 +10,11 @@ class GaussianSplattingTest : public ::testing::Test {
   protected:
     ModelInfo createModelInfo(int h = 256, int w = 256) {
         ModelInfo info;
-        info.input_shapes  = {{1, 3, h, w}};
+        info.input_shapes = {{1, 3, h, w}};
         info.input_formats = {"FORMAT_NCHW"};
-        info.input_names   = {"image"};
-        info.output_names  = {"gaussians"};
-        info.input_types   = {CV_32F};
+        info.input_names = {"image"};
+        info.output_names = {"gaussians"};
+        info.input_types = {CV_32F};
         return info;
     }
 
@@ -143,20 +143,20 @@ TEST_F(GaussianSplattingTest, PostprocessFieldValuesCorrect) {
     ASSERT_EQ(splat.num_gaussians, 1);
 
     const Gaussian3D& g = splat.gaussians[0];
-    EXPECT_FLOAT_EQ(g.x,        0.0f);
-    EXPECT_FLOAT_EQ(g.y,        1.0f);
-    EXPECT_FLOAT_EQ(g.z,        2.0f);
-    EXPECT_FLOAT_EQ(g.scale_x,  3.0f);
-    EXPECT_FLOAT_EQ(g.scale_y,  4.0f);
-    EXPECT_FLOAT_EQ(g.scale_z,  5.0f);
-    EXPECT_FLOAT_EQ(g.rot_w,    6.0f);
-    EXPECT_FLOAT_EQ(g.rot_x,    7.0f);
-    EXPECT_FLOAT_EQ(g.rot_y,    8.0f);
-    EXPECT_FLOAT_EQ(g.rot_z,    9.0f);
+    EXPECT_FLOAT_EQ(g.x, 0.0f);
+    EXPECT_FLOAT_EQ(g.y, 1.0f);
+    EXPECT_FLOAT_EQ(g.z, 2.0f);
+    EXPECT_FLOAT_EQ(g.scale_x, 3.0f);
+    EXPECT_FLOAT_EQ(g.scale_y, 4.0f);
+    EXPECT_FLOAT_EQ(g.scale_z, 5.0f);
+    EXPECT_FLOAT_EQ(g.rot_w, 6.0f);
+    EXPECT_FLOAT_EQ(g.rot_x, 7.0f);
+    EXPECT_FLOAT_EQ(g.rot_y, 8.0f);
+    EXPECT_FLOAT_EQ(g.rot_z, 9.0f);
     EXPECT_FLOAT_EQ(g.opacity, 10.0f);
-    EXPECT_FLOAT_EQ(g.sh_r,   11.0f);
-    EXPECT_FLOAT_EQ(g.sh_g,   12.0f);
-    EXPECT_FLOAT_EQ(g.sh_b,   13.0f);
+    EXPECT_FLOAT_EQ(g.sh_r, 11.0f);
+    EXPECT_FLOAT_EQ(g.sh_g, 12.0f);
+    EXPECT_FLOAT_EQ(g.sh_b, 13.0f);
 }
 
 // ---------------------------------------------------------------------------
@@ -176,8 +176,7 @@ TEST_F(GaussianSplattingTest, PostprocessTruncatedDataReturnsEmpty) {
     GaussianSplattingTask task(info, "lgm");
 
     // Tensor claims [10, 14] but data only has 5 elements
-    Tensor t({TensorElement{0.f}, TensorElement{1.f}, TensorElement{2.f},
-              TensorElement{3.f}, TensorElement{4.f}},
+    Tensor t({TensorElement{0.f}, TensorElement{1.f}, TensorElement{2.f}, TensorElement{3.f}, TensorElement{4.f}},
              {10, 14});
     auto results = task.postprocess(cv::Size(256, 256), {t});
     ASSERT_EQ(results.size(), 1u);

@@ -11,7 +11,7 @@ namespace vision_core {
 GaussianSplattingTask::GaussianSplattingTask(const ModelInfo& model_info, const std::string& model_name)
     : TaskInterface(model_info), model_type_(detectModelType(model_name)), model_name_(model_name) {
     cv::Size input_size = extractInputSize(model_info);
-    input_width_  = input_size.width;
+    input_width_ = input_size.width;
     input_height_ = input_size.height;
 
     preprocessor_ = createPreprocessor(model_type_, input_size);
@@ -55,7 +55,7 @@ std::vector<std::vector<uint8_t>> GaussianSplattingTask::preprocess(const std::v
 }
 
 std::vector<Result> GaussianSplattingTask::postprocess(const cv::Size& /*frame_size*/,
-                                                        const std::vector<Tensor>& tensors) {
+                                                       const std::vector<Tensor>& tensors) {
     if (tensors.empty()) {
         return {};
     }
@@ -78,7 +78,7 @@ GaussianSplattingTask::ModelType GaussianSplattingTask::detectModelType(const st
 }
 
 std::unique_ptr<Preprocessor> GaussianSplattingTask::createPreprocessor(ModelType /*type*/,
-                                                                          const cv::Size& input_size) {
+                                                                        const cv::Size& input_size) {
     return std::make_unique<GaussianSplattingPreprocessor>(input_size);
 }
 
@@ -94,7 +94,7 @@ std::unique_ptr<GaussianSplattingPostprocessor> GaussianSplattingTask::createPos
 
 cv::Size GaussianSplattingTask::extractInputSize(const ModelInfo& model_info) {
     // Default input size used by LGM / GRM
-    int width  = 256;
+    int width = 256;
     int height = 256;
 
     if (!model_info.input_shapes.empty()) {
@@ -102,11 +102,11 @@ cv::Size GaussianSplattingTask::extractInputSize(const ModelInfo& model_info) {
         if (shape.size() == 4) {
             // NCHW: [N, C, H, W]
             height = static_cast<int>(shape[2]);
-            width  = static_cast<int>(shape[3]);
+            width = static_cast<int>(shape[3]);
         } else if (shape.size() == 3) {
             // CHW: [C, H, W]
             height = static_cast<int>(shape[1]);
-            width  = static_cast<int>(shape[2]);
+            width = static_cast<int>(shape[2]);
         }
     }
 
