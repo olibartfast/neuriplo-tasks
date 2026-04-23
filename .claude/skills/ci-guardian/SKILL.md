@@ -356,8 +356,7 @@ ctest --test-dir build --output-on-failure && \
 echo "OK — safe to push"
 ```
 
-This is what `.claude/hooks/pre_push_ci_gate.sh` runs on `git push`.
-If the command is green, CI will be green.
+If this command is green locally, CI will be green.
 
 ---
 

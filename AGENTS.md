@@ -200,19 +200,18 @@ If any job is red, the push is broken.
 
 ## Agent tooling (Claude Code)
 
-This repo ships a Claude Code kit under `.claude/` that enforces the rules
-above **before** a push reaches CI. If you use Claude Code, the kit activates
-automatically. If you use another agent (Copilot, Codex, Gemini), the
-catalogue in `.claude/skills/ci-guardian/SKILL.md` is still the right
-reference — point your tool at it.
+This repo ships a Claude Code kit under `.claude/` that nudges the rules
+above during edits. It does **not** gate `git push` — CI is the gate. If
+you use another agent (Copilot, Codex, Gemini), the catalogue in
+`.claude/skills/ci-guardian/SKILL.md` is still the right reference — point
+your tool at it.
 
 ### Hooks
 
 | Hook                         | Event                              | What it does |
 |------------------------------|------------------------------------|--------------|
 | `format_on_edit.sh`          | `PostToolUse(Edit\|Write\|MultiEdit)` | Runs `clang-format-18 -i` on every edited `.cpp`/`.hpp`/`.h` under `src/`, `include/`, `tests/`, then re-checks with `--dry-run --Werror`. Blocks the turn if formatting issues remain. |
-| `pre_push_ci_gate.sh`        | `PreToolUse(Bash)` on `git push`   | Runs the exact CI gates locally: format check → cppcheck → configure+build (`-DBUILD_TESTS=ON -DWERROR=ON`) → `ctest`. Opt out with `VISION_CORE_SKIP_CI_GATE=1` or `--no-verify`. |
-| `block_large_binaries.sh`    | `PreToolUse(Bash)`                 | Denies `git add` / `git commit` of model artefacts and sample media: `*.weights`, `*.onnx`, `*.mp4`, `*.jpg`, `*.png` (>1 MB), `vocab.json`, `merges.txt`, `labels.txt`. |
+| `block_large_binaries.sh`    | `PreToolUse(Bash)`                 | Denies `git add` / `git commit` of model artefacts and sample media: `*.weights`, `*.onnx`, `*.mp4`, `*.jpg`, `*.png` (outside `docs/`), `vocab.json`, `merges.txt`, `labels.txt`. |
 | `inject_ci_context.sh`       | `UserPromptSubmit`                 | Prepends a short reminder of the core CI rules (clang-format, clang-tidy, cppcheck, `-DWERROR=ON`, no large binaries) to every prompt. |
 
 ### Subagents
@@ -237,6 +236,9 @@ the skill** in the same PR. The skill compounds in value — don't let it decay.
 
 ## The one local gate command
 
+Run this manually before pushing anything non-trivial — CI will fail on the
+same checks:
+
 ```bash
 find src include tests -name '*.cpp' -o -name '*.hpp' | \
   xargs clang-format-18 --dry-run --Werror && \
@@ -249,8 +251,4 @@ cmake --build build --parallel && \
 ctest --test-dir build --output-on-failure
 ```
 
-If this is green locally, CI will be green. `pre_push_ci_gate.sh` runs
-exactly these commands.
-
-**Rule: always run the full gate before every commit and push.**
-A push that skips local tests risks breaking CI for everyone. No exceptions.
+If this is green locally, CI will be green.
