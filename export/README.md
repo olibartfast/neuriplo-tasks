@@ -25,6 +25,8 @@ export/
 │   └── vitpose/            # ViTPose pose estimation export
 ├── depth_estimation/
 │   └── depth_anything_v2/  # Depth Anything V2 depth export
+├── gaussian_splatting/
+│   └── lgm/                # LGM / GRM Gaussian Splatting export
 └── video_classification/
     ├── videomae/           # VideoMAE video classification export
     ├── vivit/              # ViViT video classification export
@@ -64,6 +66,9 @@ python export/depth_estimation/depth_anything_v2/export_depth_anything_v2_to_onn
 
 # Export OWLv2
 python export/open_vocab_detection/owlv2/export_owlv2_to_onnx.py --test
+
+# Export LGM Gaussian Splatting
+python export/gaussian_splatting/lgm/export_lgm_to_onnx.py
 
 # Export VideoMAE
 python export/video_classification/videomae/export_videomae_to_onnx.py

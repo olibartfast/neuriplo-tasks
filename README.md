@@ -16,7 +16,8 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Optical Flow**: RAFT
 - **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose
 - **Depth Estimation**: Depth Anything V2
-- **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection
+- **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO
+- **Gaussian Splatting**: LGM, LGM-mini, GRM (feed-forward image → 3D Gaussians)
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
 - **Unified Tensor Interface**: Simplified API using `Tensor` struct that encapsulates data and shape information
 
@@ -181,6 +182,7 @@ The TaskFactory supports the following model type strings:
 - `"owlv2"` - OWLv2 open-vocabulary detection
 - `"owlvit"` - OWL-ViT compatible open-vocabulary detection
 - `"openvocabowl"` - Generic Open Vocabulary OWL alias
+- `"groundingdino"` - Grounding DINO text-conditioned detection
 
 Open-vocabulary models use text prompts supplied at runtime through `TaskConfig::text_prompts`. Tokenizer assets can be passed either as file paths (`tokenizer_vocab_path`, `tokenizer_merges_path`) or preloaded text blobs (`tokenizer_vocab_json`, `tokenizer_merges_text`).
 
@@ -191,6 +193,11 @@ The expected ONNX contract is:
 Results are returned as `OpenVocabDetection` entries containing `bbox`, `score`, `prompt_index`, and resolved `label`.
 
 For export details, see [export/open_vocab_detection/OWLv2.md](export/open_vocab_detection/OWLv2.md).
+
+**Gaussian Splatting:**
+- `"lgm"`, `"lgm-mini"` - LGM (Large Gaussian Model)
+- `"grm"` - GRM
+- `"gaussiansplatting"`, any string containing `"splat"` - generic alias
 
 ## Building
 
@@ -311,9 +318,16 @@ cmake --build build
 MIT License
 
 ## Roadmap
-### In Progress 🚧
-- [ ] Migration of tritonic/vision-inference/deep-stream-infer-lab to use vision-core
+
+### Done ✅
+- [x] Gaussian Splatting C++ task and LgmPostprocessor
+- [x] Gaussian Splatting export script for LGM / GRM
+- [x] Open-Vocabulary Detection (OWLv2, Grounding DINO)
+- [x] Unified task interface and factory pattern
+- [x] Pre-commit hooks and agent tooling kit
 
 ### Planned 📋
+- [ ] Migration of tritonic/vision-inference/deep-stream-infer-lab to use vision-core
 - [ ] Batch processing utilities
 - [ ] Performance benchmarks and optimizations
+- [ ] Direct export to NVIDIA TensorRT engine via Python script

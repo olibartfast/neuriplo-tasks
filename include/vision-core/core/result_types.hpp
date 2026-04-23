@@ -110,10 +110,60 @@ struct DepthEstimation {
 };
 
 /**
+ * @brief Single 3D Gaussian primitive
+ *
+ * Represents one Gaussian in a 3D Gaussian Splatting scene.
+ * Fields follow the standard PLY layout used by the original
+ * Kerbl et al. (SIGGRAPH 2023) implementation and by models such
+ * as LGM and GRM.
+ */
+struct Gaussian3D {
+    // Position
+    float x{0.0f};
+    float y{0.0f};
+    float z{0.0f};
+
+    // Opacity (pre-sigmoid, raw logit as output by the network)
+    float opacity{0.0f};
+
+    // Scale (log-scale, 3 values)
+    float scale_x{0.0f};
+    float scale_y{0.0f};
+    float scale_z{0.0f};
+
+    // Rotation quaternion (w, x, y, z)
+    float rot_w{1.0f};
+    float rot_x{0.0f};
+    float rot_y{0.0f};
+    float rot_z{0.0f};
+
+    // Spherical-harmonic DC colour (degree-0, RGB channels)
+    float sh_r{0.0f};
+    float sh_g{0.0f};
+    float sh_b{0.0f};
+
+    Gaussian3D() = default;
+};
+
+/**
+ * @brief Gaussian Splatting result structure
+ *
+ * Output of a feed-forward Gaussian Splatting model (e.g. LGM, GRM).
+ * Contains per-primitive Gaussian parameters ready for rendering or
+ * serialisation to .ply format.
+ */
+struct GaussianSplatting {
+    std::vector<Gaussian3D> gaussians; ///< Predicted 3D Gaussians
+    int num_gaussians{0};              ///< Number of Gaussians
+
+    GaussianSplatting() = default;
+};
+
+/**
  * @brief Result variant type to hold any task result
  */
 using Result = std::variant<Classification, Detection, OpenVocabDetection, InstanceSegmentation, OpticalFlow,
-                            VideoClassification, PoseEstimation, DepthEstimation>;
+                            VideoClassification, PoseEstimation, DepthEstimation, GaussianSplatting>;
 
 /**
  * @brief Task type enumeration
@@ -126,7 +176,8 @@ enum class TaskType : uint8_t {
     VideoClassification,
     PoseEstimation,
     DepthEstimation,
-    OpenVocabDetection
+    OpenVocabDetection,
+    GaussianSplatting
 };
 
 } // namespace vision_core
