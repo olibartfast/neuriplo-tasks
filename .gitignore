@@ -2,6 +2,7 @@ build*/*
 .cache/
 .venv/
 **/__pycache__/
+.claude/settings.local.json
 # Cloned third-party repositories
 3rdparty/
 **/*.onnx
