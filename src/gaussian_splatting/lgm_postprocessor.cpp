@@ -40,15 +40,16 @@ GaussianSplatting LgmPostprocessor::postprocess(const std::vector<TensorElement>
     }
 
     // Accept layouts: [G, 14] or [N, G, 14]
-    int num_gaussians = 0;
+    int batch_size = 1;
+    int num_gaussians_per_batch = 0;
     int feature_dim = 0;
 
     if (shape.size() == 2) {
-        num_gaussians = static_cast<int>(shape[0]);
+        num_gaussians_per_batch = static_cast<int>(shape[0]);
         feature_dim = static_cast<int>(shape[1]);
     } else if (shape.size() == 3) {
-        // Use first batch item only
-        num_gaussians = static_cast<int>(shape[1]);
+        batch_size = static_cast<int>(shape[0]);
+        num_gaussians_per_batch = static_cast<int>(shape[1]);
         feature_dim = static_cast<int>(shape[2]);
     } else {
         return result;
@@ -58,16 +59,16 @@ GaussianSplatting LgmPostprocessor::postprocess(const std::vector<TensorElement>
         return result;
     }
 
-    const auto expected = static_cast<int64_t>(num_gaussians) * static_cast<int64_t>(feature_dim);
-    // For batched layout take only first batch
+    const int total_gaussians = batch_size * num_gaussians_per_batch;
+    const auto expected = static_cast<int64_t>(total_gaussians) * static_cast<int64_t>(feature_dim);
     if (static_cast<int64_t>(tensor_data.size()) < expected) {
         return result;
     }
 
-    result.gaussians.resize(static_cast<size_t>(num_gaussians));
-    result.num_gaussians = num_gaussians;
+    result.gaussians.resize(static_cast<size_t>(total_gaussians));
+    result.num_gaussians = total_gaussians;
 
-    for (int i = 0; i < num_gaussians; ++i) {
+    for (int i = 0; i < total_gaussians; ++i) {
         const int base = i * feature_dim;
         Gaussian3D& g = result.gaussians[static_cast<size_t>(i)];
 
