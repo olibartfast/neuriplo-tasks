@@ -108,6 +108,15 @@ target_link_libraries(test_open_vocab_detection
     ${OpenCV_LIBS}
 )
 
+# Gaussian splatting tests
+add_executable(test_gaussian_splatting test_gaussian_splatting.cpp)
+target_link_libraries(test_gaussian_splatting
+    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    GTest::GTest
+    GTest::Main
+    ${OpenCV_LIBS}
+)
+
 # Add tests manually for better compatibility
 add_test(NAME test_result_types COMMAND test_result_types)
 add_test(NAME test_task_interface COMMAND test_task_interface)
@@ -122,3 +131,4 @@ add_test(NAME test_optical_flow COMMAND test_optical_flow)
 add_test(NAME test_pose_estimation COMMAND test_pose_estimation)
 add_test(NAME test_depth_estimation COMMAND test_depth_estimation)
 add_test(NAME test_open_vocab_detection COMMAND test_open_vocab_detection)
+add_test(NAME test_gaussian_splatting COMMAND test_gaussian_splatting)
