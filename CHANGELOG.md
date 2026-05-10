@@ -7,15 +7,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Image Understanding task with VLM multimodal preprocessing (`ImageUnderstandingTask`, `gemma4` / `imageunderstanding` aliases)
 - Gaussian Splatting task: LGM, LGM-mini, and GRM support
 - Grounding DINO open-vocabulary detection
 - Agent tooling kit: Claude Code hooks for formatting, CI gating (local), and CI guardian skill
 - LGM Gaussian Splatting ONNX export script and model validation test
+- Image Understanding export guide and updated export README
+- GTest contract locking README ↔ TaskFactory alias consistency
+
+### Changed
+- CI lint workflow skips on docs-only pushes (`**.md`, `export/**`, `docs/**`)
 
 ### Fixed
-- Gaussian Splatting task: Parse NHWC input shapes before choosing resize dimensions (P1)
-- LGM postprocessor: Preserve all batches in [N,G,14] Gaussian outputs (P1)
-- AGENTS.md: Documentation for Open-Vocabulary Detection and Gaussian Splatting tasks
+- `InputDimensionError` restored for invalid spatial shapes; `memcpy` `-DWERROR` fix
+- Gaussian Splatting task: parse NHWC input shapes before choosing resize dimensions
+- LGM postprocessor: preserve all batches in [N,G,14] Gaussian outputs
 
 ## [0.2.0] - 2026-03-31
 
