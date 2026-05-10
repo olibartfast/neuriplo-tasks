@@ -201,6 +201,8 @@ Input contract: `preprocess()` returns two tensors — `[0]` UTF-8 prompt bytes,
 
 Requires the llama.cpp `LLAMACPP` backend with an mmproj (vision projector) GGUF.
 
+For model download and setup details, see [export/image_understanding/ImageUnderstanding.md](export/image_understanding/ImageUnderstanding.md).
+
 **Gaussian Splatting:**
 - `"lgm"`, `"lgm-mini"` - LGM (Large Gaussian Model)
 - `"grm"` - GRM
