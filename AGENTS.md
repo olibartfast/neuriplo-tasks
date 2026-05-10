@@ -303,6 +303,12 @@ Failing to update any of these makes the task invisible to consumers and agents 
 
 ---
 
+## Skipping CI for docs-only commits
+
+CI workflows have `paths-ignore` for `**.md`, `export/**`, and `docs/**` — pure documentation pushes skip CI automatically.
+
+For mixed commits (docs + code) where CI is still unnecessary, add `[skip ci]` to the commit message subject line.
+
 ## The one local gate command
 
 Run this manually before pushing anything non-trivial — CI will fail on the
