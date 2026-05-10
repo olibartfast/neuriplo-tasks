@@ -22,15 +22,23 @@ std::vector<std::vector<uint8_t>> ImageUnderstandingTask::preprocess(const std::
     const uint32_t nx = static_cast<uint32_t>(rgb.cols);
     const uint32_t ny = static_cast<uint32_t>(rgb.rows);
 
-    std::vector<uint8_t> image_bytes(8 + static_cast<size_t>(nx) * ny * 3);
-    std::memcpy(image_bytes.data() + 0, &nx, 4);
-    std::memcpy(image_bytes.data() + 4, &ny, 4);
+    const size_t pixel_bytes = static_cast<size_t>(nx) * ny * 3;
+    std::vector<uint8_t> image_bytes;
+    image_bytes.reserve(8 + pixel_bytes);
 
+    // Write width and height as little-endian uint32 bytes
+    for (int i = 0; i < 4; ++i)
+        image_bytes.push_back(static_cast<uint8_t>((nx >> (i * 8)) & 0xFF));
+    for (int i = 0; i < 4; ++i)
+        image_bytes.push_back(static_cast<uint8_t>((ny >> (i * 8)) & 0xFF));
+
+    // Append pixel data
     if (rgb.isContinuous()) {
-        std::memcpy(image_bytes.data() + 8, rgb.data, static_cast<size_t>(nx) * ny * 3);
+        image_bytes.insert(image_bytes.end(), rgb.data, rgb.data + pixel_bytes);
     } else {
         for (uint32_t row = 0; row < ny; ++row) {
-            std::memcpy(image_bytes.data() + 8 + row * nx * 3, rgb.ptr(static_cast<int>(row)), nx * 3);
+            const uint8_t* row_ptr = rgb.ptr(static_cast<int>(row));
+            image_bytes.insert(image_bytes.end(), row_ptr, row_ptr + nx * 3);
         }
     }
 

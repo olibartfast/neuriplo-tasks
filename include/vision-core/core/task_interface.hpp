@@ -104,27 +104,38 @@ class TaskInterface {
     [[nodiscard]] std::tuple<int, int, int> initializeInputDimensions(const ModelInfo& model_info) const {
         for (size_t i = 0; i < model_info.input_shapes.size(); i++) {
             const auto& shape = model_info.input_shapes[i];
-            const bool is_nhwc = (model_info.input_formats[i] == "FORMAT_NHWC");
+
+            // 0-D and 1-D shapes are non-spatial (e.g. {-1} for text/LLM inputs); skip.
+            if (shape.size() <= 1) {
+                continue;
+            }
+
+            const bool is_nhwc =
+                (i < model_info.input_formats.size()) && (model_info.input_formats[i] == "FORMAT_NHWC");
 
             if (shape.size() == 3) {
-                // Case for 3D inputs: CHW (default) or HWC
-                if (is_nhwc) {
-                    // HWC: 0->H, 1->W, 2->C
-                    return std::make_tuple(static_cast<int>(shape[1]), static_cast<int>(shape[0]),
-                                           static_cast<int>(shape[2]));
+                int w = static_cast<int>(is_nhwc ? shape[1] : shape[2]);
+                int h = static_cast<int>(is_nhwc ? shape[0] : shape[1]);
+                int c = static_cast<int>(is_nhwc ? shape[2] : shape[0]);
+                if (w <= 0 || h <= 0 || c <= 0) {
+                    throw InputDimensionError("Non-positive dimension in 3D input shape");
                 }
-                // CHW: 0->C, 1->H, 2->W
-                return std::make_tuple(static_cast<int>(shape[2]), static_cast<int>(shape[1]),
-                                       static_cast<int>(shape[0]));
-            } else if (shape.size() >= 4) {
-                // Case for 4D inputs: NCHW (default) or NHWC
-                int channels = static_cast<int>(is_nhwc ? shape[3] : shape[1]);
-                int height = static_cast<int>(is_nhwc ? shape[1] : shape[2]);
-                int width = static_cast<int>(is_nhwc ? shape[2] : shape[3]);
-                return std::make_tuple(width, height, channels);
+                return std::make_tuple(w, h, c);
             }
+            if (shape.size() >= 4) {
+                int w = static_cast<int>(is_nhwc ? shape[2] : shape[3]);
+                int h = static_cast<int>(is_nhwc ? shape[1] : shape[2]);
+                int c = static_cast<int>(is_nhwc ? shape[3] : shape[1]);
+                if (w <= 0 || h <= 0 || c <= 0) {
+                    throw InputDimensionError("Non-positive dimension in 4D+ input shape");
+                }
+                return std::make_tuple(w, h, c);
+            }
+
+            // 2-D shape that doesn't match any recognised spatial layout.
+            throw InputDimensionError("No valid input shape found");
         }
-        // No spatial shape found — non-image task (e.g. text generation). Return zeros.
+        // All shapes were non-spatial (text/LLM task) — return zeros.
         return std::make_tuple(0, 0, 0);
     }
 };
