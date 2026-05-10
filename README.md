@@ -192,7 +192,7 @@ The expected ONNX contract is:
 
 Results are returned as `OpenVocabDetection` entries containing `bbox`, `score`, `prompt_index`, and resolved `label`.
 
-For export details, see [export/open_vocab_detection/OWLv2.md](export/open_vocab_detection/OWLv2.md).
+For export details, see [export/open_vocab_detection/OWLv2.md](https://github.com/olibartfast/vision-core/blob/master/export/open_vocab_detection/OWLv2.md).
 
 **Image Understanding (VLM):**
 - `"gemma4"`, `"imageunderstanding"` - Vision-language model image captioning / Q&A via llama.cpp backend
@@ -201,7 +201,7 @@ Input contract: `preprocess()` returns two tensors — `[0]` UTF-8 prompt bytes,
 
 Requires the llama.cpp `LLAMACPP` backend with an mmproj (vision projector) GGUF.
 
-For model download and setup details, see [export/image_understanding/ImageUnderstanding.md](export/image_understanding/ImageUnderstanding.md).
+For model download and setup details, see [export/image_understanding/ImageUnderstanding.md](https://github.com/olibartfast/vision-core/blob/master/export/image_understanding/ImageUnderstanding.md).
 
 **Gaussian Splatting:**
 - `"lgm"`, `"lgm-mini"` - LGM (Large Gaussian Model)
