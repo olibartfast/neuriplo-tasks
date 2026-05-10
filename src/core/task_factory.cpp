@@ -1,10 +1,10 @@
 #include "vision-core/core/task_factory.hpp"
 
-#include "vision-core/image_understanding/image_understanding_task.hpp"
 #include "vision-core/classification/classification_postprocessor.hpp"
 #include "vision-core/classification/classification_task.hpp"
 #include "vision-core/depth_estimation/depth_estimation_task.hpp"
 #include "vision-core/gaussian_splatting/gaussian_splatting_task.hpp"
+#include "vision-core/image_understanding/image_understanding_task.hpp"
 #include "vision-core/instance_segmentation/instance_segmentation_task.hpp"
 #include "vision-core/instance_segmentation/segmentation_postprocessor.hpp"
 #include "vision-core/object_detection/object_detection_task.hpp"
@@ -132,8 +132,8 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
     }
 
     // ============ IMAGE UNDERSTANDING (LLM/VLM via llama.cpp) ============
-    if (normalized == "gemma4" || normalized == "gemma" || normalized == "llama" ||
-        normalized == "llamacpp" || normalized == "imageunderstanding") {
+    if (normalized == "gemma4" || normalized == "gemma" || normalized == "llama" || normalized == "llamacpp" ||
+        normalized == "imageunderstanding") {
         return std::make_unique<ImageUnderstandingTask>(model_info, model_type, config);
     }
 

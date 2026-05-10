@@ -172,9 +172,9 @@ struct ImageUnderstanding {
 /**
  * @brief Result variant type to hold any task result
  */
-using Result = std::variant<Classification, Detection, OpenVocabDetection, InstanceSegmentation, OpticalFlow,
-                            VideoClassification, PoseEstimation, DepthEstimation, GaussianSplatting,
-                            ImageUnderstanding>;
+using Result =
+    std::variant<Classification, Detection, OpenVocabDetection, InstanceSegmentation, OpticalFlow, VideoClassification,
+                 PoseEstimation, DepthEstimation, GaussianSplatting, ImageUnderstanding>;
 
 /**
  * @brief Task type enumeration
