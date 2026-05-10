@@ -1,5 +1,6 @@
 #include "vision-core/core/task_factory.hpp"
 
+#include "vision-core/image_understanding/image_understanding_task.hpp"
 #include "vision-core/classification/classification_postprocessor.hpp"
 #include "vision-core/classification/classification_task.hpp"
 #include "vision-core/depth_estimation/depth_estimation_task.hpp"
@@ -26,7 +27,8 @@ void TaskFactory::validateInputSizes(const std::vector<std::vector<int64_t>>& in
         if (size.empty()) {
             throw InputDimensionError("An input size vector is empty");
         }
-        if (std::any_of(size.begin(), size.end(), [](int64_t s) { return s <= 0; })) {
+        // -1 is a valid dynamic-dimension marker (used by text/LLM backends).
+        if (std::any_of(size.begin(), size.end(), [](int64_t s) { return s <= 0 && s != -1; })) {
             throw InputDimensionError("Non-positive input size detected");
         }
     }
@@ -127,6 +129,12 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
     if (normalized == "vitpose") {
         return std::make_unique<PoseEstimationTask>(model_info, normalized, config.confidence_threshold,
                                                     config.nms_threshold);
+    }
+
+    // ============ IMAGE UNDERSTANDING (LLM/VLM via llama.cpp) ============
+    if (normalized == "gemma4" || normalized == "gemma" || normalized == "llama" ||
+        normalized == "llamacpp" || normalized == "imageunderstanding") {
+        return std::make_unique<ImageUnderstandingTask>(model_info, model_type, config);
     }
 
     throw std::invalid_argument("Unrecognized model type: " + model_type);
