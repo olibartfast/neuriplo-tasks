@@ -3,8 +3,16 @@ name: C++ Lint & Build
 on:
   push:
     branches: [develop]
+    paths-ignore:
+      - '**.md'
+      - 'export/**'
+      - 'docs/**'
   pull_request:
     branches: [develop]
+    paths-ignore:
+      - '**.md'
+      - 'export/**'
+      - 'docs/**'
 
 jobs:
   format-check:
