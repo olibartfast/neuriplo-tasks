@@ -252,6 +252,24 @@ the skill** in the same PR. The skill compounds in value — don't let it decay.
 
 ## Rules enforced by CI — do not skip locally
 
+### act CI emulation — which jobs run where
+
+The pre-push hook does **not** run the full `lint.yml` via `act` because two
+job categories consistently fail in local Docker:
+
+| Job | Why it fails locally | How it's covered |
+|-----|----------------------|-----------------|
+| `format-check` | `clang-format-18` not installed in the act container image | Run locally by the pre-push hook before calling act |
+| `clang-tidy`, `build-and-test`, `build-warnings` | `ccache-action` requires GitHub auth (token) inside Docker | Validated by real GitHub CI after push |
+| `cppcheck` | Works fine in act | Run via act in both pre-commit and pre-push hooks |
+
+**Rule**: never expand the pre-push hook to `act push -W .github/workflows/lint.yml`
+(no `-j` filter) — that runs all five jobs and will always fail locally on the
+ccache-auth and clang-format-18 issues above. Only add a job to the hook when you
+have verified it works inside the act container without network access.
+
+---
+
 ### clang-format before every commit
 
 **Run `clang-format-18 -i` on every `.cpp`/`.hpp` you touch before staging.**
