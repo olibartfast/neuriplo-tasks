@@ -6,8 +6,7 @@ ImageUnderstandingTask::ImageUnderstandingTask(const ModelInfo& model_info, cons
                                                const TaskConfig& config)
     : TaskInterface(model_info) {
     const auto it = config.extra_params.find("prompt");
-    prompt_ = (it != config.extra_params.end() && !it->second.empty()) ? it->second
-                                                                        : "Describe what you see.";
+    prompt_ = (it != config.extra_params.end() && !it->second.empty()) ? it->second : "Describe what you see.";
 }
 
 std::vector<std::vector<uint8_t>> ImageUnderstandingTask::preprocess(const std::vector<cv::Mat>& imgs) {

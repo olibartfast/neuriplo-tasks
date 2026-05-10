@@ -158,6 +158,7 @@ task headers are needed by consumers.
 | Depth Estimation      | `DepthEstimationTask`        | `DepthAnythingV2Postprocessor`                                        |
 | Open-Vocabulary Detection | `OpenVocabDetectionTask` | `OwlV2Postprocessor`, `GroundingDinoPostprocessor`                    |
 | Gaussian Splatting    | `GaussianSplattingTask`      | `LgmPostprocessor`                                                    |
+| Image Understanding   | `ImageUnderstandingTask`     | _(none — response decoded directly from float-encoded bytes)_         |
 
 ### `Tensor` type
 
@@ -184,6 +185,7 @@ checked in order:
 9. `"videomae"`, `"vivit"`, `"timesformer"` → `VideoClassificationTask`
 10. `"raft"` → `OpticalFlowTask`
 11. `"vitpose"` → `PoseEstimationTask`
+12. `"gemma4"`, `"imageunderstanding"` → `ImageUnderstandingTask`
 
 ### `export/` directory
 
@@ -245,6 +247,42 @@ linkage). Every section includes the exact local-reproduce command.
 
 If you fix a CI failure whose cause isn't yet catalogued, **add a section to
 the skill** in the same PR. The skill compounds in value — don't let it decay.
+
+---
+
+## Rules enforced by CI — do not skip locally
+
+### clang-format before every commit
+
+**Run `clang-format-18 -i` on every `.cpp`/`.hpp` you touch before staging.**
+CI runs `clang-format-18 --dry-run --Werror` on all files under `src/`,
+`include/`, and `tests/`. A single misformatted line fails the push.
+
+```bash
+# Format all changed files
+git diff --name-only HEAD | grep -E '\.(cpp|hpp|h)$' | xargs clang-format-18 -i
+
+# Or format all source files at once
+find src include tests -name '*.cpp' -o -name '*.hpp' | xargs clang-format-18 -i
+
+# Verify (same command CI runs)
+find src include tests -name '*.cpp' -o -name '*.hpp' | \
+  xargs clang-format-18 --dry-run --Werror
+```
+
+The `format_on_edit.sh` hook does this automatically for Claude Code edits,
+but running it manually is the safest gate before `git commit`.
+
+### Update README.md when adding a new task type
+
+When adding a new task type to `TaskFactory`, **always update the
+`<!-- TASKFACTORY_MODEL_LIST:START/END -->` block in `README.md`** with:
+- The recognized type string(s)
+- The input/output contract (shapes, encoding, special tensor layout)
+- Any backend or external dependency requirements
+
+Failing to update docs makes the task invisible to consumers and agents
+inspecting the library without reading source code.
 
 ---
 
