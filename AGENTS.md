@@ -293,14 +293,13 @@ but running it manually is the safest gate before `git commit`.
 
 ### Update README.md when adding a new task type
 
-When adding a new task type to `TaskFactory`, **always update the
-`<!-- TASKFACTORY_MODEL_LIST:START/END -->` block in `README.md`** with:
-- The recognized type string(s)
-- The input/output contract (shapes, encoding, special tensor layout)
-- Any backend or external dependency requirements
+When adding a new task type to `TaskFactory`, **always update ALL of the following in `README.md`**:
 
-Failing to update docs makes the task invisible to consumers and agents
-inspecting the library without reading source code.
+1. **`## Features` bullet list** — add a line for the new task (same section, lines ~10–22).
+2. **`<!-- TASKFACTORY_MODEL_LIST:START/END -->` block** — add recognized type string(s), input/output contract, and backend/dependency requirements.
+3. **`export/` directory** — add a matching `export/<task_domain>/` subdirectory with a setup/download guide; update `export/README.md` directory tree and reference links (use absolute GitHub URLs so they survive being synced into other repos).
+
+Failing to update any of these makes the task invisible to consumers and agents inspecting the library without reading source code.
 
 ---
 
