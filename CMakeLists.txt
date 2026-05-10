@@ -97,6 +97,7 @@ set(CORE_SOURCES
     src/gaussian_splatting/gaussian_splatting_task.cpp
     src/gaussian_splatting/gaussian_splatting_preprocessor.cpp
     src/gaussian_splatting/lgm_postprocessor.cpp
+    src/image_understanding/image_understanding_task.cpp
 )
 
 set(CORE_HEADERS
@@ -152,6 +153,7 @@ set(CORE_HEADERS
     include/vision-core/gaussian_splatting/gaussian_splatting_preprocessor.hpp
     include/vision-core/gaussian_splatting/gaussian_splatting_postprocessor.hpp
     include/vision-core/gaussian_splatting/lgm_postprocessor.hpp
+    include/vision-core/image_understanding/image_understanding_task.hpp
 )
 
 # Create library

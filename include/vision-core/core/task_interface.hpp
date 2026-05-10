@@ -124,7 +124,8 @@ class TaskInterface {
                 return std::make_tuple(width, height, channels);
             }
         }
-        throw InputDimensionError("No valid input shape found");
+        // No spatial shape found — non-image task (e.g. text generation). Return zeros.
+        return std::make_tuple(0, 0, 0);
     }
 };
 

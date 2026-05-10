@@ -160,10 +160,21 @@ struct GaussianSplatting {
 };
 
 /**
+ * @brief Image understanding / text generation result
+ */
+struct ImageUnderstanding {
+    std::string text; ///< Generated text response
+
+    ImageUnderstanding() = default;
+    explicit ImageUnderstanding(std::string t) : text(std::move(t)) {}
+};
+
+/**
  * @brief Result variant type to hold any task result
  */
 using Result = std::variant<Classification, Detection, OpenVocabDetection, InstanceSegmentation, OpticalFlow,
-                            VideoClassification, PoseEstimation, DepthEstimation, GaussianSplatting>;
+                            VideoClassification, PoseEstimation, DepthEstimation, GaussianSplatting,
+                            ImageUnderstanding>;
 
 /**
  * @brief Task type enumeration
@@ -177,7 +188,8 @@ enum class TaskType : uint8_t {
     PoseEstimation,
     DepthEstimation,
     OpenVocabDetection,
-    GaussianSplatting
+    GaussianSplatting,
+    ImageUnderstanding
 };
 
 } // namespace vision_core
