@@ -18,6 +18,9 @@ struct TaskConfig {
     std::string tokenizer_merges_path;
     std::string tokenizer_vocab_json;
     std::string tokenizer_merges_text;
+    // BERT tokenizer assets (used by Grounding DINO)
+    std::string bert_tokenizer_vocab_path;
+    std::string bert_tokenizer_vocab_text;
     std::vector<std::string> text_prompts;
 
     // Extensible key/value bag for task-specific params.
