@@ -25,19 +25,20 @@ export/
 │   └── vitpose/            # ViTPose pose estimation export
 ├── depth_estimation/
 │   └── depth_anything_v2/  # Depth Anything V2 depth export
-└── video_classification/
-    ├── videomae/           # VideoMAE video classification export
-    ├── vivit/              # ViViT video classification export
-    └── timesformer/        # TimeSFormer video classification export
+├── gaussian_splatting/
+│   └── lgm/                # LGM / GRM Gaussian Splatting export
+├── video_classification/
+│   ├── videomae/           # VideoMAE video classification export
+│   ├── vivit/              # ViViT video classification export
+│   └── timesformer/        # TimeSFormer video classification export
+└── image_understanding/    # VLM model download (GGUF, no ONNX export)
 ```
 
 ## Usage
 
-Each subdirectory contains:
-- Export scripts (.py)
-- Setup/environment scripts (.sh)
-- Requirements files (requirements.txt)
-- Usage documentation
+Each subdirectory contains task-specific documentation and, where applicable, export scripts.
+
+Most tasks export to ONNX. The `image_understanding/` task is an exception — it uses GGUF models downloaded from Hugging Face and runs via the llama.cpp backend (no ONNX export step).
 
 ### Quick Start Examples
 
@@ -65,6 +66,9 @@ python export/depth_estimation/depth_anything_v2/export_depth_anything_v2_to_onn
 # Export OWLv2
 python export/open_vocab_detection/owlv2/export_owlv2_to_onnx.py --test
 
+# Export LGM Gaussian Splatting
+python export/gaussian_splatting/lgm/export_lgm_to_onnx.py
+
 # Export VideoMAE
 python export/video_classification/videomae/export_videomae_to_onnx.py
 
@@ -73,6 +77,9 @@ python export/video_classification/vivit/export_vivit_to_onnx.py
 
 # Export TimeSFormer
 python export/video_classification/timesformer/export_timesformer_to_onnx.py
+
+# Image Understanding (VLM) — download GGUF models, no export step needed
+# See export/image_understanding/ImageUnderstanding.md for wget commands
 ```
 
 ## Export Integration with Inference Engines
@@ -94,6 +101,7 @@ Refer to:
 * [Depth Estimation](https://github.com/olibartfast/vision-core/blob/master/export/depth_estimation/DepthEstimation.md)
 * [Open-Vocabulary Detection](https://github.com/olibartfast/vision-core/blob/master/export/open_vocab_detection/OWLv2.md)
 * [Video Classification](https://github.com/olibartfast/vision-core/blob/master/export/video_classification/VideoClassification.md)
+* [Image Understanding (VLM)](https://github.com/olibartfast/vision-core/blob/master/export/image_understanding/ImageUnderstanding.md)
 
 
 For Triton-specific deployment tools, see [tritonic](https://github.com/olibartfast/tritonic/tree/master/deploy) repository.

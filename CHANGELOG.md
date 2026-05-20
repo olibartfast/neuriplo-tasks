@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-21
+
+### Added
+- Image Understanding task with VLM multimodal preprocessing (`ImageUnderstandingTask`, `gemma4` / `imageunderstanding` aliases)
+- Gaussian Splatting task: LGM, LGM-mini, and GRM support
+- Grounding DINO open-vocabulary detection
+- Agent tooling kit: Claude Code hooks for formatting, CI gating (local), and CI guardian skill
+- LGM Gaussian Splatting ONNX export script and model validation test
+- Image Understanding export guide and updated export README
+- GTest contract locking README ↔ TaskFactory alias consistency
+
+### Changed
+- CI lint workflow skips on docs-only pushes (`**.md`, `export/**`, `docs/**`)
+
+### Fixed
+- `InputDimensionError` restored for invalid spatial shapes; `memcpy` `-DWERROR` fix
+- Gaussian Splatting task: parse NHWC input shapes before choosing resize dimensions
+- LGM postprocessor: preserve all batches in [N,G,14] Gaussian outputs
+
 ## [0.2.0] - 2026-03-31
 
 ### Added
@@ -32,6 +51,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - clang-format and clang-tidy configuration
 - CI workflow with lint, static analysis, build, and test jobs
 
-[Unreleased]: https://github.com/olibartfast/vision-core/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/olibartfast/vision-core/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/olibartfast/vision-core/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/olibartfast/vision-core/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/olibartfast/vision-core/releases/tag/v0.1.0

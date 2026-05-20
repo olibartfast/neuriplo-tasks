@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Run local CI checks before push.
+# Skip with: SKIP_ACT=1 git push ...
+#
+# Why not run the full lint.yml via act?
+#   - format-check: clang-format-18 is not in the act container image — run locally instead.
+#   - clang-tidy / build-and-test / build-warnings: these use ccache-action which requires
+#     GitHub auth (token) inside Docker; act cannot provide it. These jobs are validated by
+#     real CI after push.
+#   - cppcheck: works fine via act and catches most static-analysis issues pre-push.
+
+set -euo pipefail
+
+[[ "${SKIP_ACT:-0}" == "1" ]] && exit 0
+
+# --- 1. Format check (local clang-format-18, mirrors the format-check CI job) ---
+CFMT=$(command -v clang-format-18 2>/dev/null || echo "")
+if [[ -n "$CFMT" ]]; then
+    echo "[pre-push] Running clang-format-18 check ..."
+    if ! find src include tests -name '*.cpp' -o -name '*.hpp' | \
+         xargs clang-format-18 --dry-run --Werror 2>&1; then
+        echo "[pre-push] clang-format-18 violations found. Run:" >&2
+        echo "  find src include tests -name '*.cpp' -o -name '*.hpp' | xargs clang-format-18 -i" >&2
+        exit 1
+    fi
+    echo "[pre-push] clang-format-18 OK"
+else
+    echo "[pre-push] clang-format-18 not found — skipping format check (install with: sudo apt-get install clang-format-18)" >&2
+fi
+
+# --- 2. cppcheck via act (same as pre-commit) ---
+ACT=$(command -v act 2>/dev/null || echo "")
+if [[ -z "$ACT" ]]; then
+    echo "[pre-push] act not found in PATH — skipping cppcheck" >&2
+    exit 0
+fi
+
+if ! docker info >/dev/null 2>&1; then
+    echo "[pre-push] Docker not running — skipping cppcheck" >&2
+    exit 0
+fi
+
+echo "[pre-push] Running act CI (cppcheck job only) ..."
+act push -W .github/workflows/lint.yml -j cppcheck --no-cache-server -q
+echo "[pre-push] act cppcheck passed"

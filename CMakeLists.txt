@@ -78,6 +78,8 @@ set(CORE_SOURCES
     src/open_vocab_detection/clip_tokenizer.cpp
     src/open_vocab_detection/open_vocab_detection_task.cpp
     src/open_vocab_detection/owlv2_postprocessor.cpp
+    src/open_vocab_detection/bert_tokenizer.cpp
+    src/open_vocab_detection/grounding_dino_postprocessor.cpp
     src/pose_estimation/pose_estimation_task.cpp
     src/pose_estimation/vit_pose_postprocessor.cpp
     src/pose_estimation/yolo_pose_postprocessor.cpp
@@ -92,6 +94,10 @@ set(CORE_SOURCES
     src/depth_estimation/depth_estimation_task.cpp
     src/depth_estimation/depth_estimation_preprocessor.cpp
     src/depth_estimation/depth_anything_v2_postprocessor.cpp
+    src/gaussian_splatting/gaussian_splatting_task.cpp
+    src/gaussian_splatting/gaussian_splatting_preprocessor.cpp
+    src/gaussian_splatting/lgm_postprocessor.cpp
+    src/image_understanding/image_understanding_task.cpp
 )
 
 set(CORE_HEADERS
@@ -125,6 +131,8 @@ set(CORE_HEADERS
     include/vision-core/open_vocab_detection/open_vocab_detection_task.hpp
     include/vision-core/open_vocab_detection/owlv2_postprocessor.hpp
     include/vision-core/open_vocab_detection/postprocessor.hpp
+    include/vision-core/open_vocab_detection/bert_tokenizer.hpp
+    include/vision-core/open_vocab_detection/grounding_dino_postprocessor.hpp
     include/vision-core/pose_estimation/pose_estimation_task.hpp
     include/vision-core/pose_estimation/pose_postprocessor.hpp
     include/vision-core/pose_estimation/vit_pose_postprocessor.hpp
@@ -141,6 +149,11 @@ set(CORE_HEADERS
     include/vision-core/depth_estimation/depth_estimation_preprocessor.hpp
     include/vision-core/depth_estimation/depth_estimation_postprocessor.hpp
     include/vision-core/depth_estimation/depth_anything_v2_postprocessor.hpp
+    include/vision-core/gaussian_splatting/gaussian_splatting_task.hpp
+    include/vision-core/gaussian_splatting/gaussian_splatting_preprocessor.hpp
+    include/vision-core/gaussian_splatting/gaussian_splatting_postprocessor.hpp
+    include/vision-core/gaussian_splatting/lgm_postprocessor.hpp
+    include/vision-core/image_understanding/image_understanding_task.hpp
 )
 
 # Create library
