@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-05-21
+
+### Added
+- Reverse README ↔ TaskFactory contract test: every model-key string literal in `task_factory.cpp` must be documented in the README model-type block (the existing test only checked the forward direction). Plus explicit factory routing tests for hyphenated, long-form, and image-understanding aliases
+
+### Changed
+- TaskFactory: removed an unreachable `normalized == "lgm-mini"` comparison in the Gaussian Splatting branch — `normalizeModelType` strips hyphens before the check, so the existing `lgmmini` branch already covers it
+
+### Fixed
+- README Features list had drifted from the registered TaskFactory model types: restored RF-DETR and YOLOv4 under Object Detection, and YOLOv10-seg / YOLO26-seg under Instance Segmentation
+- README "Supported Model Types" table now documents previously undocumented routable aliases (`rtdetrultralytics`, `gemma`/`llama`/`llamacpp`) and the `resnet*` / `*tensorflow*` classification matching rules
+
 ## [0.3.0] - 2026-05-21
 
 ### Added
@@ -51,7 +63,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - clang-format and clang-tidy configuration
 - CI workflow with lint, static analysis, build, and test jobs
 
-[Unreleased]: https://github.com/olibartfast/vision-core/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/olibartfast/vision-core/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/olibartfast/vision-core/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/olibartfast/vision-core/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/olibartfast/vision-core/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/olibartfast/vision-core/releases/tag/v0.1.0
