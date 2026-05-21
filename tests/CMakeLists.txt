@@ -127,7 +127,9 @@ target_link_libraries(test_readme_model_types
     ${OpenCV_LIBS}
 )
 target_compile_definitions(test_readme_model_types
-    PRIVATE VISION_CORE_README_PATH="${CMAKE_SOURCE_DIR}/README.md"
+    PRIVATE
+        VISION_CORE_README_PATH="${CMAKE_SOURCE_DIR}/README.md"
+        VISION_CORE_TASK_FACTORY_PATH="${CMAKE_SOURCE_DIR}/src/core/task_factory.cpp"
 )
 
 # Add tests manually for better compatibility
