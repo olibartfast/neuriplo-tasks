@@ -126,10 +126,13 @@ target_link_libraries(test_readme_model_types
     GTest::Main
     ${OpenCV_LIBS}
 )
+# Paths are relative to this tests/ directory so they resolve correctly whether
+# vision-core is the top-level project or a FetchContent sub-project of another
+# repo (CMAKE_SOURCE_DIR would point at the consumer's root in the latter case).
 target_compile_definitions(test_readme_model_types
     PRIVATE
-        VISION_CORE_README_PATH="${CMAKE_SOURCE_DIR}/README.md"
-        VISION_CORE_TASK_FACTORY_PATH="${CMAKE_SOURCE_DIR}/src/core/task_factory.cpp"
+        VISION_CORE_README_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../README.md"
+        VISION_CORE_TASK_FACTORY_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../src/core/task_factory.cpp"
 )
 
 # Add tests manually for better compatibility
