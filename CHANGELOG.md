@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Reverse README ↔ TaskFactory contract test: every model-key string literal in `task_factory.cpp` must be documented in the README model-type block (the existing test only checked the forward direction). Plus explicit factory routing tests for hyphenated, long-form, and image-understanding aliases
+
+### Changed
+- TaskFactory: removed an unreachable `normalized == "lgm-mini"` comparison in the Gaussian Splatting branch — `normalizeModelType` strips hyphens before the check, so the existing `lgmmini` branch already covers it
+
 ### Fixed
 - README Features list had drifted from the registered TaskFactory model types: restored RF-DETR and YOLOv4 under Object Detection, and YOLOv10-seg / YOLO26-seg under Instance Segmentation
 - README "Supported Model Types" table now documents previously undocumented routable aliases (`rtdetrultralytics`, `gemma`/`llama`/`llamacpp`) and the `resnet*` / `*tensorflow*` classification matching rules
