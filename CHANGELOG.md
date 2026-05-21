@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-05-21
+
 ### Added
 - Reverse README ↔ TaskFactory contract test: every model-key string literal in `task_factory.cpp` must be documented in the README model-type block (the existing test only checked the forward direction). Plus explicit factory routing tests for hyphenated, long-form, and image-understanding aliases
 
@@ -61,7 +63,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - clang-format and clang-tidy configuration
 - CI workflow with lint, static analysis, build, and test jobs
 
-[Unreleased]: https://github.com/olibartfast/vision-core/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/olibartfast/vision-core/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/olibartfast/vision-core/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/olibartfast/vision-core/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/olibartfast/vision-core/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/olibartfast/vision-core/releases/tag/v0.1.0
