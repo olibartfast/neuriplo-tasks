@@ -124,6 +124,38 @@ TEST_F(TaskFactoryTest, CreateValidDepthEstimationTask) {
     EXPECT_EQ(task->getTaskType(), TaskType::DepthEstimation);
 }
 
+// Regression guard: the unreachable `normalized == "lgm-mini"` branch was
+// removed from TaskFactory. normalizeModelType strips hyphens, so the
+// hyphenated form must still route through the "lgmmini" branch.
+TEST_F(TaskFactoryTest, GaussianSplattingHyphenatedAliasNormalizes) {
+    auto info = createValidModelInfo();
+    info.input_shapes = {{1, 3, 256, 256}};
+
+    for (const char* alias : {"lgm-mini", "lgmmini", "LGM-Mini"}) {
+        auto task = TaskFactory::createTaskInstance(alias, info);
+        ASSERT_NE(task, nullptr) << "null for alias: " << alias;
+        EXPECT_EQ(task->getTaskType(), TaskType::GaussianSplatting) << "alias: " << alias;
+    }
+}
+
+TEST_F(TaskFactoryTest, RtDetrUltralyticsLongFormAlias) {
+    auto info = createValidModelInfo();
+
+    auto task = TaskFactory::createTaskInstance("rtdetrultralytics", info);
+    ASSERT_NE(task, nullptr);
+    EXPECT_EQ(task->getTaskType(), TaskType::Detection);
+}
+
+TEST_F(TaskFactoryTest, ImageUnderstandingAliases) {
+    auto info = createValidModelInfo();
+
+    for (const char* alias : {"gemma4", "gemma", "llama", "llamacpp", "imageunderstanding"}) {
+        auto task = TaskFactory::createTaskInstance(alias, info);
+        ASSERT_NE(task, nullptr) << "null for alias: " << alias;
+        EXPECT_EQ(task->getTaskType(), TaskType::ImageUnderstanding) << "alias: " << alias;
+    }
+}
+
 // Note: Actual task creation tests would require implementing the concrete task classes
 // These tests verify the factory's error handling and validation logic
 
