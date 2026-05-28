@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-05-28
+
+### Fixed
+- YOLOv10/YOLO26 NMS-free postprocessor now scales normalized model output
+  coordinates to pixel space before the inverse letterbox transformation.
+  Without this, detections land at negative coordinates and render off-screen.
+
 ## [0.3.1] - 2026-05-21
 
 ### Added
