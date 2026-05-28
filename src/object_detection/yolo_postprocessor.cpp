@@ -299,6 +299,11 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(const Tensor& o
         float y2 = getTensorFloat(output.data[static_cast<size_t>(i * dims + 3)]);
         int class_id = static_cast<int>(getTensorFloat(output.data[static_cast<size_t>(i * dims + 5)]));
 
+        x1 *= static_cast<float>(input_size_.width);
+        y1 *= static_cast<float>(input_size_.height);
+        x2 *= static_cast<float>(input_size_.width);
+        y2 *= static_cast<float>(input_size_.height);
+
         // Apply letterbox inverse transformation
         if (r_h > r_w) {
             float pad_h = (static_cast<float>(input_size_.height) - r_w * static_cast<float>(frame_size.height)) / 2.0f;
