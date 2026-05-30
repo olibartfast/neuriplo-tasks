@@ -71,6 +71,12 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
                                                           config.nms_threshold, config.mask_threshold);
     }
 
+    // EdgeCrafter segmentation: ecseg* or edgecrafter*seg before generic detection
+    if (normalized.size() >= 5 && normalized.substr(0, 5) == "ecseg") {
+        return std::make_unique<InstanceSegmentationTask>(model_info, normalized, config.confidence_threshold,
+                                                          config.nms_threshold, config.mask_threshold);
+    }
+
     // ============ POSE ESTIMATION (YOLO) ============
     // Check yolo*pose* BEFORE generic yolo prefix so pose models are routed correctly
     if (normalized.size() >= 4 && normalized.substr(0, 4) == "yolo" && normalized.find("pose") != std::string::npos) {
@@ -78,9 +84,36 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
                                                     config.nms_threshold);
     }
 
+    // EdgeCrafter pose: ecpose* before generic detection
+    if (normalized.size() >= 6 && normalized.substr(0, 6) == "ecpose") {
+        return std::make_unique<PoseEstimationTask>(model_info, normalized, config.confidence_threshold,
+                                                    config.nms_threshold);
+    }
+
     // ============ OBJECT DETECTION ============
     // Any yolo* string (that is not a seg or pose variant, handled above)
     if (normalized.size() >= 4 && normalized.substr(0, 4) == "yolo") {
+        return std::make_unique<ObjectDetectionTask>(model_info, normalized, config.confidence_threshold,
+                                                     config.nms_threshold);
+    }
+
+    // EdgeCrafter detection: ecdet*
+    if (normalized.size() >= 5 && normalized.substr(0, 5) == "ecdet") {
+        return std::make_unique<ObjectDetectionTask>(model_info, normalized, config.confidence_threshold,
+                                                     config.nms_threshold);
+    }
+
+    // EdgeCrafter generic: edgecrafter* with task suffix (seg/pose/det)
+    if (normalized.size() >= 11 && normalized.substr(0, 11) == "edgecrafter") {
+        if (normalized.find("seg") != std::string::npos) {
+            return std::make_unique<InstanceSegmentationTask>(model_info, normalized, config.confidence_threshold,
+                                                              config.nms_threshold, config.mask_threshold);
+        }
+        if (normalized.find("pose") != std::string::npos) {
+            return std::make_unique<PoseEstimationTask>(model_info, normalized, config.confidence_threshold,
+                                                        config.nms_threshold);
+        }
+        // Default to detection (matches standalone "edgecrafter" and anything with "det")
         return std::make_unique<ObjectDetectionTask>(model_info, normalized, config.confidence_threshold,
                                                      config.nms_threshold);
     }

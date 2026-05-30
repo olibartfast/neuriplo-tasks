@@ -175,9 +175,12 @@ struct Tensor {
 checked in order:
 
 1. Segmentation before generic YOLO: `"yoloseg"`, `"rfdetrseg"`, `yolo*seg*`
+1b. EdgeCrafter segmentation: `ecseg*`, `edgecrafter*seg*` → `InstanceSegmentationTask` (with `EdgeCrafterSegmentationPostprocessor`)
 2. YOLO pose: `yolo*pose*` → `PoseEstimationTask` (with `YoloPosePostprocessor`)
+2b. EdgeCrafter pose: `ecpose*`, `edgecrafter*pose*` → `PoseEstimationTask` (with `EdgeCrafterPosePostprocessor`)
 3. YOLO prefix: any `yolo*` → `ObjectDetectionTask`
 4. `"rtdetr"`, `"rfdetr"` → `ObjectDetectionTask`
+4b. EdgeCrafter detection: `ecdet*`, `edgecrafter*` → `ObjectDetectionTask` (with `EdgeCrafterPostprocessor`)
 5. `"owlv2"`, `"owlvit"`, `"groundingdino"` → `OpenVocabDetectionTask`
 6. `"lgm"`, `"grm"`, `*splat*` → `GaussianSplattingTask`
 7. `"torchvisionclassifier"`, `"vitclassifier"`, `"tensorflowclassifier"`, `resnet*`, `*tensorflow*` → `ClassificationTask`

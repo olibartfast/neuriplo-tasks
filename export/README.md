@@ -13,16 +13,19 @@ export/
 ├── detection/
 │   ├── yolo/               # Universal YOLO export (v5-v12, NAS)
 │   ├── rtdetr/             # RT-DETR detection export
-│   └── rfdetr/             # RF-DETR detection export
+│   ├── rfdetr/             # RF-DETR detection export
+│   └── edgecrafter/        # EdgeCrafter detection export
 ├── segmentation/
-│   └── rfdetr/             # RF-DETR segmentation export
+│   ├── rfdetr/             # RF-DETR segmentation export
+│   └── edgecrafter/        # EdgeCrafter segmentation export
 ├── optical_flow/
 │   └── raft/               # RAFT optical flow export
 ├── open_vocab_detection/
 │   └── owlv2/              # OWLv2 open-vocabulary detection export
 ├── pose_estimation/
 │   ├── yolo_pose/          # YOLO pose export (v5/v8/v11/v26)
-│   └── vitpose/            # ViTPose pose estimation export
+│   ├── vitpose/            # ViTPose pose estimation export
+│   └── edgecrafter/        # EdgeCrafter pose estimation export
 ├── depth_estimation/
 │   └── depth_anything_v2/  # Depth Anything V2 depth export
 ├── gaussian_splatting/
@@ -102,6 +105,9 @@ Refer to:
 * [Open-Vocabulary Detection](https://github.com/olibartfast/vision-core/blob/master/export/open_vocab_detection/OWLv2.md)
 * [Video Classification](https://github.com/olibartfast/vision-core/blob/master/export/video_classification/VideoClassification.md)
 * [Image Understanding (VLM)](https://github.com/olibartfast/vision-core/blob/master/export/image_understanding/ImageUnderstanding.md)
+* [EdgeCrafter Detection](https://github.com/olibartfast/vision-core/blob/master/export/detection/edgecrafter/README.md)
+* [EdgeCrafter Segmentation](https://github.com/olibartfast/vision-core/blob/master/export/segmentation/edgecrafter/README.md)
+* [EdgeCrafter Pose Estimation](https://github.com/olibartfast/vision-core/blob/master/export/pose_estimation/edgecrafter/README.md)
 
 
 For Triton-specific deployment tools, see [tritonic](https://github.com/olibartfast/tritonic/tree/master/deploy) repository.

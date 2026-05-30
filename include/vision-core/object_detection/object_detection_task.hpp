@@ -43,7 +43,9 @@ class ObjectDetectionTask : public TaskInterface {
         // Transformer-based with RT-DETR style postprocessing
         RT_DETR_STYLE, // RT-DETR, RT-DETRv2, D-FINE, DEIM - same postprocessing
         RT_DETR_UL,    // RT-DETR Ultralytics - different postprocessing
-        RF_DETR        // RF-DETR - different postprocessing
+        RF_DETR,       // RF-DETR - different postprocessing
+
+        EDGECRAFTER // EdgeCrafter - two-input, already-scaled boxes, no NMS
     };
 
     /**

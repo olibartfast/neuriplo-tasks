@@ -65,6 +65,7 @@ set(CORE_SOURCES
     src/object_detection/yolo_postprocessor.cpp
     src/object_detection/rtdetr_postprocessor.cpp
     src/object_detection/rfdetr_postprocessor.cpp
+    src/object_detection/edgecrafter_postprocessor.cpp
     src/classification/classification_task.cpp
     src/classification/classification_postprocessor.cpp
     src/classification/torchvision_postprocessor.cpp
@@ -73,6 +74,7 @@ set(CORE_SOURCES
     src/instance_segmentation/instance_segmentation_task.cpp
     src/instance_segmentation/yolo_segmentation_postprocessor.cpp
     src/instance_segmentation/rfdetr_segmentation_postprocessor.cpp
+    src/instance_segmentation/edgecrafter_segmentation_postprocessor.cpp
     src/optical_flow/optical_flow_task.cpp
     src/optical_flow/raft_postprocessor.cpp
     src/open_vocab_detection/clip_tokenizer.cpp
@@ -83,6 +85,7 @@ set(CORE_SOURCES
     src/pose_estimation/pose_estimation_task.cpp
     src/pose_estimation/vit_pose_postprocessor.cpp
     src/pose_estimation/yolo_pose_postprocessor.cpp
+    src/pose_estimation/edgecrafter_pose_postprocessor.cpp
     src/video_classification/video_classification_task.cpp
     src/video_classification/video_classification_preprocessor.cpp
     src/video_classification/video_classification_postprocessor.cpp
@@ -115,6 +118,7 @@ set(CORE_HEADERS
     include/vision-core/object_detection/yolo_postprocessor.hpp
     include/vision-core/object_detection/rtdetr_postprocessor.hpp
     include/vision-core/object_detection/rfdetr_postprocessor.hpp
+    include/vision-core/object_detection/edgecrafter_postprocessor.hpp
     include/vision-core/classification/classification_task.hpp
     include/vision-core/classification/classification_postprocessor.hpp
     include/vision-core/classification/torchvision_postprocessor.hpp
@@ -124,6 +128,7 @@ set(CORE_HEADERS
     include/vision-core/instance_segmentation/segmentation_postprocessor.hpp
     include/vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp
     include/vision-core/instance_segmentation/rfdetr_segmentation_postprocessor.hpp
+    include/vision-core/instance_segmentation/edgecrafter_segmentation_postprocessor.hpp
     include/vision-core/optical_flow/optical_flow_task.hpp
     include/vision-core/optical_flow/optical_flow_postprocessor.hpp
     include/vision-core/optical_flow/raft_postprocessor.hpp
@@ -137,6 +142,7 @@ set(CORE_HEADERS
     include/vision-core/pose_estimation/pose_postprocessor.hpp
     include/vision-core/pose_estimation/vit_pose_postprocessor.hpp
     include/vision-core/pose_estimation/yolo_pose_postprocessor.hpp
+    include/vision-core/pose_estimation/edgecrafter_pose_postprocessor.hpp
     include/vision-core/video_classification/video_classification_task.hpp
     include/vision-core/video_classification/video_classification_preprocessor.hpp
     include/vision-core/video_classification/video_classification_postprocessor.hpp
