@@ -12,10 +12,11 @@ class SegmentationPostprocessor;
 class InstanceSegmentationTask : public TaskInterface {
   public:
     enum class ModelType : uint8_t {
-        YOLO_SEG,     // YOLO-based segmentation (2 outputs: detections + mask prototypes)
-        YOLO_V10_SEG, // YOLOv10 segmentation (NMS-free, 2 outputs: detections+coeffs + mask prototypes)
-        YOLO_26_SEG,  // YOLO26 segmentation (NMS-free, 2 outputs: detections+coeffs + mask prototypes)
-        RF_DETR_SEG   // RF-DETR segmentation (3 outputs: boxes + labels + masks)
+        YOLO_SEG,       // YOLO-based segmentation (2 outputs: detections + mask prototypes)
+        YOLO_V10_SEG,   // YOLOv10 segmentation (NMS-free, 2 outputs: detections+coeffs + mask prototypes)
+        YOLO_26_SEG,    // YOLO26 segmentation (NMS-free, 2 outputs: detections+coeffs + mask prototypes)
+        RF_DETR_SEG,    // RF-DETR segmentation (3 outputs: boxes + labels + masks)
+        EDGECRAFTER_SEG // EdgeCrafter segmentation (4 outputs: labels + boxes + scores + masks, two-input)
     };
 
     explicit InstanceSegmentationTask(const ModelInfo& model_info, const std::string& model_name,

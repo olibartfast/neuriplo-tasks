@@ -1,10 +1,12 @@
 #include "vision-core/instance_segmentation/instance_segmentation_task.hpp"
 
+#include "vision-core/instance_segmentation/edgecrafter_segmentation_postprocessor.hpp"
 #include "vision-core/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
 #include "vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp"
 #include "vision-core/object_detection/detection_preprocessor.hpp"
 
 #include <algorithm>
+#include <cstring>
 #include <stdexcept>
 
 namespace vision_core {
@@ -36,13 +38,40 @@ InstanceSegmentationTask::InstanceSegmentationTask(const ModelInfo& model_info, 
 
 std::vector<std::vector<uint8_t>> InstanceSegmentationTask::preprocess(const std::vector<cv::Mat>& imgs) {
     std::vector<std::vector<uint8_t>> results;
-    results.reserve(imgs.size());
 
-    for (const auto& img : imgs) {
-        if (img.empty()) {
+    if (model_type_ == ModelType::EDGECRAFTER_SEG) {
+        results.reserve(model_info_.input_shapes.size());
+
+        if (imgs.empty() || imgs[0].empty()) {
             throw std::invalid_argument("Empty input image provided");
         }
-        results.push_back(preprocessor_->preprocess(img));
+
+        const cv::Mat& img = imgs[0];
+
+        for (size_t i = 0; i < model_info_.input_names.size(); ++i) {
+            const auto& input_name = model_info_.input_names[i];
+            const auto& input_shape = model_info_.input_shapes[i];
+
+            if (input_shape.size() >= 3) {
+                results.push_back(preprocessor_->preprocess(img));
+            } else if (input_name == "orig_target_sizes" || input_name == "orig_size") {
+                std::vector<int64_t> orig_sizes = {static_cast<int64_t>(img.cols), static_cast<int64_t>(img.rows)};
+                results.emplace_back(reinterpret_cast<uint8_t*>(orig_sizes.data()),
+                                     reinterpret_cast<uint8_t*>(orig_sizes.data()) +
+                                         orig_sizes.size() * sizeof(int64_t));
+            } else {
+                results.emplace_back();
+            }
+        }
+    } else {
+        results.reserve(imgs.size());
+
+        for (const auto& img : imgs) {
+            if (img.empty()) {
+                throw std::invalid_argument("Empty input image provided");
+            }
+            results.push_back(preprocessor_->preprocess(img));
+        }
     }
 
     return results;
@@ -83,6 +112,12 @@ InstanceSegmentationTask::ModelType InstanceSegmentationTask::detectModelType(co
         return ModelType::YOLO_26_SEG;
     }
 
+    // EdgeCrafter segmentation
+    if (lower_name.find("ecseg") == 0 ||
+        (lower_name.find("edgecrafter") == 0 && lower_name.find("seg") != std::string::npos)) {
+        return ModelType::EDGECRAFTER_SEG;
+    }
+
     // RF-DETR segmentation
     if (lower_name.find("rfdetr") != std::string::npos || lower_name.find("rf-detr") != std::string::npos ||
         lower_name.find("rfdetrseg") != std::string::npos) {
@@ -101,6 +136,7 @@ std::unique_ptr<Preprocessor> InstanceSegmentationTask::createPreprocessor(Model
         return std::make_unique<YoloPreprocessor>(input_size);
 
     case ModelType::RF_DETR_SEG:
+    case ModelType::EDGECRAFTER_SEG:
         return std::make_unique<RfDetrPreprocessor>(input_size);
 
     default:
@@ -121,6 +157,10 @@ std::unique_ptr<SegmentationPostprocessor> InstanceSegmentationTask::createPostp
     case ModelType::RF_DETR_SEG:
         return std::make_unique<RfDetrSegmentationPostprocessor>(input_size, confidence_threshold_, mask_threshold_,
                                                                  model_info_.output_names);
+
+    case ModelType::EDGECRAFTER_SEG:
+        return std::make_unique<EdgeCrafterSegmentationPostprocessor>(confidence_threshold_, mask_threshold_,
+                                                                      model_info_.output_names);
 
     default:
         return nullptr;
@@ -173,6 +213,9 @@ bool InstanceSegmentationTask::validateTensorInputs(const std::vector<Tensor>& t
 
     case ModelType::RF_DETR_SEG:
         return tensors.size() >= 3;
+
+    case ModelType::EDGECRAFTER_SEG:
+        return tensors.size() >= 4;
 
     default:
         return false;

@@ -9,12 +9,12 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 
 ## Features
 
-- **Object Detection**: YOLO (v4-v12, yolo26), RT-DETR family (RT-DETR v1/v2/v4, D-FINE, DEIM v1/v2), YOLO-NAS, RF-DETR
-- **Instance Segmentation**: YOLOv5/v8/v11-seg, YOLOv10-seg, YOLO26-seg, RF-DETR-Seg
+- **Object Detection**: YOLO (v4-v12, yolo26), RT-DETR family (RT-DETR v1/v2/v4, D-FINE, DEIM v1/v2), YOLO-NAS, RF-DETR, EdgeCrafter
+- **Instance Segmentation**: YOLOv5/v8/v11-seg, YOLOv10-seg, YOLO26-seg, RF-DETR-Seg, EdgeCrafter
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: VideoMAE, ViViT, TimeSformer
 - **Optical Flow**: RAFT
-- **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose
+- **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter
 - **Depth Estimation**: Depth Anything V2
 - **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO
 - **Gaussian Splatting**: LGM, LGM-mini, GRM (feed-forward image → 3D Gaussians)
@@ -150,8 +150,11 @@ The TaskFactory supports the following model type strings:
 - `"rtdetr"` - RT-DETR family (RT-DETR v1, v2, and v4; excludes v3; includes D-FINE and DEIM v1/v2)
 - `"rtdetrul"`, `"rtdetrultralytics"` - RT-DETR (Ultralytics implementation)
 - `"rfdetr"` - RF-DETR
+- `"ecdet"` - EdgeCrafter detection (any string starting with `ecdet` or `edgecrafter`)
+- `"edgecrafter"` - EdgeCrafter generic (defaults to detection)
 
 **Instance Segmentation:**
+- `"ecseg"` - EdgeCrafter segmentation (any string starting with `ecseg` or `edgecrafter` and containing `seg`)
 - `"yoloseg"` - YOLOv5/YOLOv8/YOLO11
 - `"yolov10seg"`- YOLOv10
 - `"yolo26seg"` - YOLO26
@@ -178,6 +181,7 @@ Any model type starting with `resnet` (e.g. `resnet50`) or containing `tensorflo
 - `"yolo26pose"`, `"yolo26-pose"` - YOLO26 pose
 - `"yolov5pose"`, `"yolov5-pose"` - YOLOv5 pose
 - `"vitpose"` - ViTPose (top-down, heatmap-based)
+- `"ecpose"` - EdgeCrafter pose estimation (any string starting with `ecpose` or `edgecrafter` and containing `pose`)
 
 **Depth Estimation:**
 - `"depth_anything_v2"`, `"depth-anything-v2"` - Depth Anything V2
@@ -210,6 +214,23 @@ For model download and setup details, see [export/image_understanding/ImageUnder
 - `"lgm"`, `"lgm-mini"` - LGM (Large Gaussian Model)
 - `"grm"` - GRM
 - `"gaussiansplatting"`, any string containing `"splat"` - generic alias
+
+**EdgeCrafter:**
+- `"ecdet"` / `"ecseg"` / `"ecpose"` — detection, segmentation, and pose estimation via the [EdgeCrafter](https://github.com/Intellindust-AI-Lab/EdgeCrafter) model family. All variants share a common ONNX contract:
+
+| Role   | Name                | Dtype  | Shape              | Description                       |
+|--------|---------------------|--------|--------------------|-----------------------------------|
+| Input  | `images`            | float  | `[1, 3, H, W]`     | NCHW preprocessed image           |
+| Input  | `orig_target_sizes` | int64  | `[1, 2]`           | Original `[width, height]`        |
+| Output | `labels`            | int64  | `[1, N]`           | Class IDs (0-indexed COCO)        |
+| Output | `boxes`             | float  | `[1, N, 4]`        | `[x1,y1,x2,y2]` in orig coords   |
+| Output | `scores`            | float  | `[1, N]`           | Confidence scores                 |
+
+Detection models output `labels` + `boxes` + `scores`. Segmentation adds a `masks` `[1, N, MH, MW]` float tensor. Pose estimation replaces `boxes` with `keypoints` `[1, N, 17, 2|3]` and applies a label offset of –1 (person `1` → `0`); bounding boxes are derived from visible keypoints.
+
+Preprocessing: direct resize to `[H, W]` (no letterbox) → BGR to RGB → scale to `[0,1]` → ImageNet normalization (`mean=[0.485, 0.456, 0.406]`, `std=[0.229, 0.224, 0.225]`). The ONNX graph performs top-k selection and coordinate scaling internally.
+
+Export instructions: see [export/detection/edgecrafter/README.md](https://github.com/olibartfast/vision-core/blob/master/export/detection/edgecrafter/README.md), [export/segmentation/edgecrafter/README.md](https://github.com/olibartfast/vision-core/blob/master/export/segmentation/edgecrafter/README.md), [export/pose_estimation/edgecrafter/README.md](https://github.com/olibartfast/vision-core/blob/master/export/pose_estimation/edgecrafter/README.md).
 <!-- TASKFACTORY_MODEL_LIST:END -->
 
 ## Building

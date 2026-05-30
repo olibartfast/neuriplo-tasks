@@ -1,6 +1,7 @@
 #include "vision-core/object_detection/object_detection_task.hpp"
 
 #include "vision-core/object_detection/detection_preprocessor.hpp"
+#include "vision-core/object_detection/edgecrafter_postprocessor.hpp"
 #include "vision-core/object_detection/rfdetr_postprocessor.hpp"
 #include "vision-core/object_detection/rtdetr_postprocessor.hpp"
 #include "vision-core/object_detection/yolo_postprocessor.hpp"
@@ -41,7 +42,7 @@ std::vector<std::vector<uint8_t>> ObjectDetectionTask::preprocess(const std::vec
     // For models with multiple inputs (like RT-DETR/DEIM/DFINE with orig_target_sizes),
     // we need to return one result per model input, not per image
     // Note: RT_DETR_UL (Ultralytics) has single input like YOLO
-    if (model_type_ == ModelType::RT_DETR_STYLE) {
+    if (model_type_ == ModelType::RT_DETR_STYLE || model_type_ == ModelType::EDGECRAFTER) {
         // These models may have multiple inputs (images + orig_target_sizes)
         results.reserve(model_info_.input_shapes.size());
 
@@ -59,12 +60,21 @@ std::vector<std::vector<uint8_t>> ObjectDetectionTask::preprocess(const std::vec
                 // This is the image input
                 results.push_back(preprocessor_->preprocess(img));
             } else if (input_name == "orig_target_sizes" || input_name == "orig_size") {
-                // Handle original image size input - use input dimensions, not original frame
-                std::vector<int64_t> orig_sizes = {static_cast<int64_t>(input_height_),
-                                                   static_cast<int64_t>(input_width_)};
-                results.emplace_back(reinterpret_cast<uint8_t*>(orig_sizes.data()),
-                                     reinterpret_cast<uint8_t*>(orig_sizes.data()) +
-                                         orig_sizes.size() * sizeof(int64_t));
+                // Handle original image size input
+                if (model_type_ == ModelType::EDGECRAFTER) {
+                    // EdgeCrafter: pass ORIGINAL image size so the model internally scales boxes
+                    std::vector<int64_t> orig_sizes = {static_cast<int64_t>(img.cols), static_cast<int64_t>(img.rows)};
+                    results.emplace_back(reinterpret_cast<uint8_t*>(orig_sizes.data()),
+                                         reinterpret_cast<uint8_t*>(orig_sizes.data()) +
+                                             orig_sizes.size() * sizeof(int64_t));
+                } else {
+                    // RT-DETR style: use input dimensions, not original frame
+                    std::vector<int64_t> orig_sizes = {static_cast<int64_t>(input_height_),
+                                                       static_cast<int64_t>(input_width_)};
+                    results.emplace_back(reinterpret_cast<uint8_t*>(orig_sizes.data()),
+                                         reinterpret_cast<uint8_t*>(orig_sizes.data()) +
+                                             orig_sizes.size() * sizeof(int64_t));
+                }
             } else {
                 // Unknown input - send empty for now
                 results.emplace_back();
@@ -126,6 +136,12 @@ ObjectDetectionTask::ModelType ObjectDetectionTask::detectModelType(const std::s
         return ModelType::YOLO_STANDARD;
     }
 
+    // EdgeCrafter models
+    if (lower_name.find("ecdet") == 0 || lower_name == "edgecrafter" ||
+        (lower_name.find("edgecrafter") == 0 && lower_name.find("det") != std::string::npos)) {
+        return ModelType::EDGECRAFTER;
+    }
+
     // Transformer-based models
     if (lower_name == "rfdetr" || lower_name == "rf-detr") {
         return ModelType::RF_DETR;
@@ -156,6 +172,9 @@ std::unique_ptr<Preprocessor> ObjectDetectionTask::createPreprocessor(ModelType 
     case ModelType::RF_DETR:
         return std::make_unique<RfDetrPreprocessor>(input_size);
 
+    case ModelType::EDGECRAFTER:
+        return std::make_unique<RtDetrPreprocessor>(input_size);
+
     default:
         return nullptr;
     }
@@ -176,6 +195,9 @@ std::unique_ptr<Postprocessor> ObjectDetectionTask::createPostprocessor(ModelTyp
 
     case ModelType::RF_DETR:
         return std::make_unique<RfDetrPostprocessor>(input_size, confidence_threshold_, model_info_.output_names);
+
+    case ModelType::EDGECRAFTER:
+        return std::make_unique<EdgeCrafterPostprocessor>(confidence_threshold_, model_info_.output_names);
 
     default:
         return nullptr;
@@ -231,6 +253,7 @@ bool ObjectDetectionTask::validateTensorInputs(const std::vector<Tensor>& tensor
     case ModelType::RT_DETR_STYLE:
     case ModelType::RT_DETR_UL:
     case ModelType::RF_DETR:
+    case ModelType::EDGECRAFTER:
         return tensors.size() >= 2;
 
     default:
