@@ -215,22 +215,13 @@ For model download and setup details, see [export/image_understanding/ImageUnder
 - `"grm"` - GRM
 - `"gaussiansplatting"`, any string containing `"splat"` - generic alias
 
-**EdgeCrafter:**
-- `"ecdet"` / `"ecseg"` / `"ecpose"` — detection, segmentation, and pose estimation via the [EdgeCrafter](https://github.com/Intellindust-AI-Lab/EdgeCrafter) model family. All variants share a common ONNX contract:
 
-| Role   | Name                | Dtype  | Shape              | Description                       |
-|--------|---------------------|--------|--------------------|-----------------------------------|
-| Input  | `images`            | float  | `[1, 3, H, W]`     | NCHW preprocessed image           |
-| Input  | `orig_target_sizes` | int64  | `[1, 2]`           | Original `[width, height]`        |
-| Output | `labels`            | int64  | `[1, N]`           | Class IDs (0-indexed COCO)        |
-| Output | `boxes`             | float  | `[1, N, 4]`        | `[x1,y1,x2,y2]` in orig coords   |
-| Output | `scores`            | float  | `[1, N]`           | Confidence scores                 |
+EdgeCrafter export and tensor contract details live in the task-specific docs:
 
-Detection models output `labels` + `boxes` + `scores`. Segmentation adds a `masks` `[1, N, MH, MW]` float tensor. Pose estimation replaces `boxes` with `keypoints` `[1, N, 17, 2|3]` and applies a label offset of –1 (person `1` → `0`); bounding boxes are derived from visible keypoints.
+- [EdgeCrafter Detection](https://github.com/olibartfast/vision-core/blob/master/export/detection/edgecrafter/README.md)
+- [EdgeCrafter Segmentation](https://github.com/olibartfast/vision-core/blob/master/export/segmentation/edgecrafter/README.md)
+- [EdgeCrafter Pose Estimation](https://github.com/olibartfast/vision-core/blob/master/export/pose_estimation/edgecrafter/README.md)
 
-Preprocessing: direct resize to `[H, W]` (no letterbox) → BGR to RGB → scale to `[0,1]` → ImageNet normalization (`mean=[0.485, 0.456, 0.406]`, `std=[0.229, 0.224, 0.225]`). The ONNX graph performs top-k selection and coordinate scaling internally. If `ModelInfo::output_names` is provided, EdgeCrafter detection, segmentation, and pose postprocessors resolve tensors by exact output name (`labels`, `boxes`, `scores`, plus `masks` or `keypoints`) so outputs may be supplied in model order; omitted names keep the documented default order.
-
-Export instructions: see [export/detection/edgecrafter/README.md](https://github.com/olibartfast/vision-core/blob/master/export/detection/edgecrafter/README.md), [export/segmentation/edgecrafter/README.md](https://github.com/olibartfast/vision-core/blob/master/export/segmentation/edgecrafter/README.md), [export/pose_estimation/edgecrafter/README.md](https://github.com/olibartfast/vision-core/blob/master/export/pose_estimation/edgecrafter/README.md).
 <!-- TASKFACTORY_MODEL_LIST:END -->
 
 ## Building

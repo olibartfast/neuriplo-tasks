@@ -47,6 +47,6 @@ The exported `ecpose_s.onnx` (and optional `ecpose_s.onnx.data`) will be written
 
 Preprocessing: resize to `[H, W]` (direct, no letterbox) → BGR to RGB → scale to `[0,1]` → ImageNet normalization (`mean=[0.485, 0.456, 0.406]`, `std=[0.229, 0.224, 0.225]`).
 
-The ONNX graph handles top-k selection and keypoint coordinate scaling internally. The C++ postprocessor applies a `label_offset` of -1 (person `1` → `0`), derives bounding boxes from visible keypoints, and uses the standard COCO 17-keypoint skeleton.
+The ONNX graph handles top-k selection and keypoint coordinate scaling internally. If `ModelInfo::output_names` is provided, the C++ postprocessor resolves tensors by exact output name (`labels`, `scores`, `keypoints`); omitted names keep the documented default order. The C++ postprocessor applies a `label_offset` of -1 (person `1` → `0`), derives bounding boxes from visible keypoints, and uses the standard COCO 17-keypoint skeleton.
 
 Keypoints are drawn with the COCO skeleton: nose, eyes, ears, shoulders, elbows, wrists, hips, knees, ankles.

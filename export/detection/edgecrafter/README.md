@@ -47,4 +47,4 @@ The exported `ecdet_s.onnx` (and optional `ecdet_s.onnx.data`) will be written n
 
 Preprocessing: resize to `[H, W]` (direct, no letterbox) → BGR to RGB → scale to `[0,1]` → ImageNet normalization (`mean=[0.485, 0.456, 0.406]`, `std=[0.229, 0.224, 0.225]`).
 
-The ONNX graph handles top-k selection and box coordinate scaling internally via `orig_target_sizes`.
+The ONNX graph handles top-k selection and box coordinate scaling internally via `orig_target_sizes`. If `ModelInfo::output_names` is provided, the C++ postprocessor resolves tensors by exact output name (`labels`, `boxes`, `scores`); omitted names keep the documented default order.
