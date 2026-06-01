@@ -15,7 +15,6 @@ class TorchvisionPostprocessor : public ClassificationPostprocessor {
     int top_k_;
     bool apply_softmax_;
 
-    float getTensorFloat(const TensorElement& element);
     void applySoftmax(std::vector<float>& logits);
 };
 

@@ -42,7 +42,7 @@ class GaussianSplattingTask : public TaskInterface {
      * LGM/GRM expect 4 input views produced by a multi-view diffusion stage.
      * Single-image models return 1.
      */
-    int getRequiredFrames() const override;
+    [[nodiscard]] int getRequiredFrames() const override;
 
     std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override;
 

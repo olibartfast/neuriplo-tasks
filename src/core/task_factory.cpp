@@ -15,9 +15,130 @@
 #include "vision-core/video_classification/video_classification_task.hpp"
 
 #include <algorithm>
+#include <functional>
 #include <stdexcept>
+#include <vector>
 
 namespace vision_core {
+
+namespace {
+
+using TaskMatcher = std::function<bool(const std::string&)>;
+using TaskCreator = std::function<std::unique_ptr<TaskInterface>(const std::string&, const std::string&,
+                                                                 const ModelInfo&, const TaskConfig&)>;
+
+struct TaskRegistration {
+    TaskMatcher matches;
+    TaskCreator create;
+};
+
+bool startsWith(const std::string& value, const std::string& prefix) {
+    return value.size() >= prefix.size() && value.compare(0, prefix.size(), prefix) == 0;
+}
+
+bool contains(const std::string& value, const std::string& needle) { return value.find(needle) != std::string::npos; }
+
+std::unique_ptr<TaskInterface> createSegmentationTask([[maybe_unused]] const std::string& model_type,
+                                                      const std::string& normalized, const ModelInfo& model_info,
+                                                      const TaskConfig& config) {
+    return std::make_unique<InstanceSegmentationTask>(model_info, normalized, config.confidence_threshold,
+                                                      config.nms_threshold, config.mask_threshold);
+}
+
+std::unique_ptr<TaskInterface> createPoseTask([[maybe_unused]] const std::string& model_type,
+                                              const std::string& normalized, const ModelInfo& model_info,
+                                              const TaskConfig& config) {
+    return std::make_unique<PoseEstimationTask>(model_info, normalized, config.confidence_threshold,
+                                                config.nms_threshold);
+}
+
+std::unique_ptr<TaskInterface> createDetectionTask([[maybe_unused]] const std::string& model_type,
+                                                   const std::string& normalized, const ModelInfo& model_info,
+                                                   const TaskConfig& config) {
+    return std::make_unique<ObjectDetectionTask>(model_info, normalized, config.confidence_threshold,
+                                                 config.nms_threshold);
+}
+
+const std::vector<TaskRegistration>& taskRegistrations() {
+    static const std::vector<TaskRegistration> registrations = {
+        {[](const std::string& normalized) {
+             return normalized == "yoloseg" || normalized == "yolov10seg" || normalized == "yolo26seg" ||
+                    normalized == "rfdetrseg" || (startsWith(normalized, "yolo") && contains(normalized, "seg"));
+         },
+         createSegmentationTask},
+        {[](const std::string& normalized) { return startsWith(normalized, "ecseg"); }, createSegmentationTask},
+        {[](const std::string& normalized) { return startsWith(normalized, "yolo") && contains(normalized, "pose"); },
+         createPoseTask},
+        {[](const std::string& normalized) { return startsWith(normalized, "ecpose"); }, createPoseTask},
+        {[](const std::string& normalized) { return startsWith(normalized, "yolo"); }, createDetectionTask},
+        {[](const std::string& normalized) { return startsWith(normalized, "ecdet"); }, createDetectionTask},
+        {[](const std::string& normalized) { return startsWith(normalized, "edgecrafter"); },
+         [](const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
+            const TaskConfig& config) {
+             if (contains(normalized, "seg")) {
+                 return createSegmentationTask(model_type, normalized, model_info, config);
+             }
+             if (contains(normalized, "pose")) {
+                 return createPoseTask(model_type, normalized, model_info, config);
+             }
+             return createDetectionTask(model_type, normalized, model_info, config);
+         }},
+        {[](const std::string& normalized) {
+             return normalized == "rtdetr" || normalized == "rtdetrul" || normalized == "rtdetrultralytics" ||
+                    normalized == "rfdetr";
+         },
+         createDetectionTask},
+        {[](const std::string& normalized) {
+             return normalized == "owlv2" || normalized == "owlvit" || normalized == "groundingdino";
+         },
+         []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
+            const TaskConfig& config) {
+             return std::make_unique<OpenVocabDetectionTask>(model_info, normalized, config);
+         }},
+        {[](const std::string& normalized) {
+             return normalized == "torchvisionclassifier" || normalized == "tensorflowclassifier" ||
+                    normalized == "vitclassifier" || startsWith(normalized, "resnet") ||
+                    contains(normalized, "tensorflow");
+         },
+         []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
+            const TaskConfig& config) {
+             return std::make_unique<ClassificationTask>(model_info, normalized, config.top_k, config.apply_softmax);
+         }},
+        {[](const std::string& normalized) { return contains(normalized, "depthanythingv2"); },
+         []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
+            const TaskConfig&) { return std::make_unique<DepthEstimationTask>(model_info, normalized); }},
+        {[](const std::string& normalized) {
+             return normalized == "lgm" || normalized == "grm" || normalized == "gaussiansplatting" ||
+                    normalized == "lgmmini" || contains(normalized, "splat");
+         },
+         []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
+            const TaskConfig&) { return std::make_unique<GaussianSplattingTask>(model_info, normalized); }},
+        {[](const std::string& normalized) {
+             return normalized == "videomae" || normalized == "vivit" || normalized == "timesformer";
+         },
+         []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
+            const TaskConfig& config) {
+             return std::make_unique<VideoClassificationTask>(model_info, normalized, config.top_k,
+                                                              config.apply_softmax);
+         }},
+        {[](const std::string& normalized) { return normalized == "raft"; },
+         []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
+            const TaskConfig&) { return std::make_unique<OpticalFlowTask>(model_info, normalized); }},
+        {[](const std::string& normalized) { return normalized == "vitpose"; }, createPoseTask},
+        {[](const std::string& normalized) {
+             return normalized == "gemma4" || normalized == "gemma" || normalized == "llama" ||
+                    normalized == "llamacpp" || normalized == "imageunderstanding";
+         },
+         []([[maybe_unused]] const std::string& model_type, [[maybe_unused]] const std::string& normalized,
+            const ModelInfo& model_info, const TaskConfig& config) {
+             return std::make_unique<ImageUnderstandingTask>(model_info, model_type, config);
+         }},
+    };
+
+    return registrations;
+}
+
+} // namespace
 
 void TaskFactory::validateInputSizes(const std::vector<std::vector<int64_t>>& input_sizes) {
     if (input_sizes.empty()) {
@@ -62,112 +183,10 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
         throw std::invalid_argument("Model type string is empty");
     }
 
-    // ============ INSTANCE SEGMENTATION ============
-    // Check seg BEFORE generic yolo prefix so "yoloseg" etc. are routed correctly
-    if (normalized == "yoloseg" || normalized == "yolov10seg" || normalized == "yolo26seg" ||
-        normalized == "rfdetrseg" ||
-        (normalized.size() >= 4 && normalized.substr(0, 4) == "yolo" && normalized.find("seg") != std::string::npos)) {
-        return std::make_unique<InstanceSegmentationTask>(model_info, normalized, config.confidence_threshold,
-                                                          config.nms_threshold, config.mask_threshold);
-    }
-
-    // EdgeCrafter segmentation: ecseg* or edgecrafter*seg before generic detection
-    if (normalized.size() >= 5 && normalized.substr(0, 5) == "ecseg") {
-        return std::make_unique<InstanceSegmentationTask>(model_info, normalized, config.confidence_threshold,
-                                                          config.nms_threshold, config.mask_threshold);
-    }
-
-    // ============ POSE ESTIMATION (YOLO) ============
-    // Check yolo*pose* BEFORE generic yolo prefix so pose models are routed correctly
-    if (normalized.size() >= 4 && normalized.substr(0, 4) == "yolo" && normalized.find("pose") != std::string::npos) {
-        return std::make_unique<PoseEstimationTask>(model_info, normalized, config.confidence_threshold,
-                                                    config.nms_threshold);
-    }
-
-    // EdgeCrafter pose: ecpose* before generic detection
-    if (normalized.size() >= 6 && normalized.substr(0, 6) == "ecpose") {
-        return std::make_unique<PoseEstimationTask>(model_info, normalized, config.confidence_threshold,
-                                                    config.nms_threshold);
-    }
-
-    // ============ OBJECT DETECTION ============
-    // Any yolo* string (that is not a seg or pose variant, handled above)
-    if (normalized.size() >= 4 && normalized.substr(0, 4) == "yolo") {
-        return std::make_unique<ObjectDetectionTask>(model_info, normalized, config.confidence_threshold,
-                                                     config.nms_threshold);
-    }
-
-    // EdgeCrafter detection: ecdet*
-    if (normalized.size() >= 5 && normalized.substr(0, 5) == "ecdet") {
-        return std::make_unique<ObjectDetectionTask>(model_info, normalized, config.confidence_threshold,
-                                                     config.nms_threshold);
-    }
-
-    // EdgeCrafter generic: edgecrafter* with task suffix (seg/pose/det)
-    if (normalized.size() >= 11 && normalized.substr(0, 11) == "edgecrafter") {
-        if (normalized.find("seg") != std::string::npos) {
-            return std::make_unique<InstanceSegmentationTask>(model_info, normalized, config.confidence_threshold,
-                                                              config.nms_threshold, config.mask_threshold);
+    for (const auto& registration : taskRegistrations()) {
+        if (registration.matches(normalized)) {
+            return registration.create(model_type, normalized, model_info, config);
         }
-        if (normalized.find("pose") != std::string::npos) {
-            return std::make_unique<PoseEstimationTask>(model_info, normalized, config.confidence_threshold,
-                                                        config.nms_threshold);
-        }
-        // Default to detection (matches standalone "edgecrafter" and anything with "det")
-        return std::make_unique<ObjectDetectionTask>(model_info, normalized, config.confidence_threshold,
-                                                     config.nms_threshold);
-    }
-
-    // Transformer-based detectors
-    if (normalized == "rtdetr" || normalized == "rtdetrul" || normalized == "rtdetrultralytics" ||
-        normalized == "rfdetr") {
-        return std::make_unique<ObjectDetectionTask>(model_info, normalized, config.confidence_threshold,
-                                                     config.nms_threshold);
-    }
-
-    // ============ OPEN-VOCAB DETECTION ============
-    if (normalized == "owlv2" || normalized == "owlvit" || normalized == "groundingdino") {
-        return std::make_unique<OpenVocabDetectionTask>(model_info, normalized, config);
-    }
-
-    // ============ CLASSIFICATION ============
-    if (normalized == "torchvisionclassifier" || normalized == "tensorflowclassifier" ||
-        normalized == "vitclassifier" || (normalized.size() >= 6 && normalized.substr(0, 6) == "resnet") ||
-        normalized.find("tensorflow") != std::string::npos) {
-        return std::make_unique<ClassificationTask>(model_info, normalized, config.top_k, config.apply_softmax);
-    }
-
-    // ============ DEPTH ESTIMATION ============
-    if (normalized.find("depthanythingv2") != std::string::npos) {
-        return std::make_unique<DepthEstimationTask>(model_info, normalized);
-    }
-
-    // ============ GAUSSIAN SPLATTING ============
-    if (normalized == "lgm" || normalized == "grm" || normalized == "gaussiansplatting" || normalized == "lgmmini" ||
-        normalized.find("splat") != std::string::npos) {
-        return std::make_unique<GaussianSplattingTask>(model_info, normalized);
-    }
-
-    // ============ VIDEO CLASSIFICATION ============
-    if (normalized == "videomae" || normalized == "vivit" || normalized == "timesformer") {
-        return std::make_unique<VideoClassificationTask>(model_info, normalized, config.top_k, config.apply_softmax);
-    }
-
-    // ============ OPTICAL FLOW ============
-    if (normalized == "raft") {
-        return std::make_unique<OpticalFlowTask>(model_info, normalized);
-    }
-
-    // ============ POSE ESTIMATION ============
-    if (normalized == "vitpose") {
-        return std::make_unique<PoseEstimationTask>(model_info, normalized, config.confidence_threshold,
-                                                    config.nms_threshold);
-    }
-
-    // ============ IMAGE UNDERSTANDING (LLM/VLM via llama.cpp) ============
-    if (normalized == "gemma4" || normalized == "gemma" || normalized == "llama" || normalized == "llamacpp" ||
-        normalized == "imageunderstanding") {
-        return std::make_unique<ImageUnderstandingTask>(model_info, model_type, config);
     }
 
     throw std::invalid_argument("Unrecognized model type: " + model_type);

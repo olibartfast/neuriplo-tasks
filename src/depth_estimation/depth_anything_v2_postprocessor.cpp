@@ -1,5 +1,7 @@
 #include "vision-core/depth_estimation/depth_anything_v2_postprocessor.hpp"
 
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <algorithm>
 #include <stdexcept>
 
@@ -68,7 +70,7 @@ std::vector<DepthEstimation> DepthAnythingV2Postprocessor::postprocess(const std
         float* depth_ptr = depth.ptr<float>(0);
 
         for (size_t idx = 0; idx < map_size; ++idx) {
-            depth_ptr[idx] = getTensorFloat(depth_output[start_offset + idx]);
+            depth_ptr[idx] = tensorElementToFloat(depth_output[start_offset + idx]);
         }
 
         if (frame_size.width > 0 && frame_size.height > 0 &&
@@ -97,10 +99,6 @@ std::vector<DepthEstimation> DepthAnythingV2Postprocessor::postprocess(const std
     }
 
     return results;
-}
-
-float DepthAnythingV2Postprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
 }
 
 } // namespace vision_core

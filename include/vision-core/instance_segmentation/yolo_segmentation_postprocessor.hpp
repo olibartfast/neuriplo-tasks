@@ -62,7 +62,6 @@ class YoloSegmentationPostprocessor : public SegmentationPostprocessor {
     std::pair<int, int> findOutputIndices(const std::vector<Tensor>& tensors);
 
     /// Extracts float value from TensorElement variant
-    float getTensorFloat(const TensorElement& element);
 
     /// Generates segmentation mask from coefficients and prototypes
     /// @param coeffs Mask coefficients (typically 32 values)

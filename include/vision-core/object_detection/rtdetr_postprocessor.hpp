@@ -36,9 +36,6 @@ class RtDetrPostprocessor : public Postprocessor {
 
     // RT-DETR Ultralytics: single combined output
     std::vector<Detection> postprocessRTDETRUL(const Tensor& output, const cv::Size& frame_size);
-
-    float getTensorFloat(const TensorElement& element);
-    int getTensorInt(const TensorElement& element);
 };
 
 } // namespace vision_core

@@ -1,5 +1,7 @@
 #include "vision-core/object_detection/yolo_postprocessor.hpp"
 
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -46,6 +48,29 @@ cv::Rect YoloPostprocessor::scaleToOriginal(float cx, float cy, float w, float h
     }
 
     return cv::Rect(x, y, width, height);
+}
+
+cv::Rect YoloPostprocessor::scaleXyxyToOriginal(float x1, float y1, float x2, float y2,
+                                                const cv::Size& frame_size) const {
+    const float r_w = static_cast<float>(input_size_.width) / static_cast<float>(frame_size.width);
+    const float r_h = static_cast<float>(input_size_.height) / static_cast<float>(frame_size.height);
+
+    if (r_h > r_w) {
+        const float pad_h =
+            (static_cast<float>(input_size_.height) - r_w * static_cast<float>(frame_size.height)) / 2.0f;
+        y1 = (y1 - pad_h) / r_w;
+        y2 = (y2 - pad_h) / r_w;
+        x1 = x1 / r_w;
+        x2 = x2 / r_w;
+    } else {
+        const float pad_w = (static_cast<float>(input_size_.width) - r_h * static_cast<float>(frame_size.width)) / 2.0f;
+        x1 = (x1 - pad_w) / r_h;
+        x2 = (x2 - pad_w) / r_h;
+        y1 = y1 / r_h;
+        y2 = y2 / r_h;
+    }
+
+    return cv::Rect(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1), static_cast<int>(y2 - y1));
 }
 
 std::vector<Detection> YoloPostprocessor::postprocess(const std::vector<Tensor>& tensors, const cv::Size& frame_size) {
@@ -138,7 +163,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(const std::vec
         // For YOLOv5/v6/v7, check objectness score first (index 4)
         float objectness = 1.0f;
         if (has_objectness) {
-            objectness = getTensorFloat(output[static_cast<size_t>(i * channels + 4)]);
+            objectness = tensorElementToFloat(output[static_cast<size_t>(i * channels + 4)]);
             if (objectness < confidence_threshold_)
                 continue;
         }
@@ -151,10 +176,10 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(const std::vec
             float score;
             if (has_objectness) {
                 // YOLOv5/v6/v7: [batch, anchors, channels] -> data[i * channels + (c + 5)]
-                score = getTensorFloat(output[static_cast<size_t>(i * channels + (c + class_offset))]);
+                score = tensorElementToFloat(output[static_cast<size_t>(i * channels + (c + class_offset))]);
             } else {
                 // YOLOv8+: [batch, channels, anchors] -> data[(c + 4) * anchors + i]
-                score = getTensorFloat(output[static_cast<size_t>((c + class_offset) * anchors + i)]);
+                score = tensorElementToFloat(output[static_cast<size_t>((c + class_offset) * anchors + i)]);
             }
 
             if (score > max_class_score) {
@@ -173,16 +198,16 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(const std::vec
         float cx, cy, w, h;
         if (has_objectness) {
             // YOLOv5/v6/v7: [batch, anchors, channels]
-            cx = getTensorFloat(output[static_cast<size_t>(i * channels + 0)]);
-            cy = getTensorFloat(output[static_cast<size_t>(i * channels + 1)]);
-            w = getTensorFloat(output[static_cast<size_t>(i * channels + 2)]);
-            h = getTensorFloat(output[static_cast<size_t>(i * channels + 3)]);
+            cx = tensorElementToFloat(output[static_cast<size_t>(i * channels + 0)]);
+            cy = tensorElementToFloat(output[static_cast<size_t>(i * channels + 1)]);
+            w = tensorElementToFloat(output[static_cast<size_t>(i * channels + 2)]);
+            h = tensorElementToFloat(output[static_cast<size_t>(i * channels + 3)]);
         } else {
             // YOLOv8+: [batch, channels, anchors]
-            cx = getTensorFloat(output[static_cast<size_t>(0 * anchors + i)]);
-            cy = getTensorFloat(output[static_cast<size_t>(1 * anchors + i)]);
-            w = getTensorFloat(output[static_cast<size_t>(2 * anchors + i)]);
-            h = getTensorFloat(output[static_cast<size_t>(3 * anchors + i)]);
+            cx = tensorElementToFloat(output[static_cast<size_t>(0 * anchors + i)]);
+            cy = tensorElementToFloat(output[static_cast<size_t>(1 * anchors + i)]);
+            w = tensorElementToFloat(output[static_cast<size_t>(2 * anchors + i)]);
+            h = tensorElementToFloat(output[static_cast<size_t>(3 * anchors + i)]);
         }
 
         Detection det;
@@ -209,18 +234,18 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV4(const std::vector<Te
             // Find the class with the highest confidence
             // Find the class with the highest confidence
             auto maxSPtr = std::max_element(output + 5, output + tensors[i].shape[1],
-                                            [this](const TensorElement& a, const TensorElement& b) {
-                                                return this->getTensorFloat(a) < this->getTensorFloat(b);
+                                            [](const TensorElement& a, const TensorElement& b) {
+                                                return tensorElementToFloat(a) < tensorElementToFloat(b);
                                             });
 
-            float score = getTensorFloat(*maxSPtr);
+            float score = tensorElementToFloat(*maxSPtr);
 
             // Check if the confidence is above the threshold
             if (score > confidence_threshold_) {
-                float cx = getTensorFloat(output[0]);
-                float cy = getTensorFloat(output[1]);
-                float w = getTensorFloat(output[2]);
-                float h = getTensorFloat(output[3]);
+                float cx = tensorElementToFloat(output[0]);
+                float cy = tensorElementToFloat(output[1]);
+                float w = tensorElementToFloat(output[2]);
+                float h = tensorElementToFloat(output[3]);
 
                 int label = static_cast<int>(maxSPtr - (output + 5));
 
@@ -284,46 +309,26 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(const Tensor& o
     int num_dets = static_cast<int>(output.shape[1]);
     int dims = static_cast<int>(output.shape[2]);
 
-    // Calculate scale ratios for letterbox inverse
-    float r_w = static_cast<float>(input_size_.width) / static_cast<float>(frame_size.width);
-    float r_h = static_cast<float>(input_size_.height) / static_cast<float>(frame_size.height);
-
     for (int i = 0; i < num_dets; ++i) {
-        float score = getTensorFloat(output.data[static_cast<size_t>(i * dims + 4)]);
+        float score = tensorElementToFloat(output.data[static_cast<size_t>(i * dims + 4)]);
         if (score < confidence_threshold_)
             continue;
 
-        float x1 = getTensorFloat(output.data[static_cast<size_t>(i * dims + 0)]);
-        float y1 = getTensorFloat(output.data[static_cast<size_t>(i * dims + 1)]);
-        float x2 = getTensorFloat(output.data[static_cast<size_t>(i * dims + 2)]);
-        float y2 = getTensorFloat(output.data[static_cast<size_t>(i * dims + 3)]);
-        int class_id = static_cast<int>(getTensorFloat(output.data[static_cast<size_t>(i * dims + 5)]));
+        float x1 = tensorElementToFloat(output.data[static_cast<size_t>(i * dims + 0)]);
+        float y1 = tensorElementToFloat(output.data[static_cast<size_t>(i * dims + 1)]);
+        float x2 = tensorElementToFloat(output.data[static_cast<size_t>(i * dims + 2)]);
+        float y2 = tensorElementToFloat(output.data[static_cast<size_t>(i * dims + 3)]);
+        int class_id = static_cast<int>(tensorElementToFloat(output.data[static_cast<size_t>(i * dims + 5)]));
 
         x1 *= static_cast<float>(input_size_.width);
         y1 *= static_cast<float>(input_size_.height);
         x2 *= static_cast<float>(input_size_.width);
         y2 *= static_cast<float>(input_size_.height);
 
-        // Apply letterbox inverse transformation
-        if (r_h > r_w) {
-            float pad_h = (static_cast<float>(input_size_.height) - r_w * static_cast<float>(frame_size.height)) / 2.0f;
-            y1 = (y1 - pad_h) / r_w;
-            y2 = (y2 - pad_h) / r_w;
-            x1 = x1 / r_w;
-            x2 = x2 / r_w;
-        } else {
-            float pad_w = (static_cast<float>(input_size_.width) - r_h * static_cast<float>(frame_size.width)) / 2.0f;
-            x1 = (x1 - pad_w) / r_h;
-            x2 = (x2 - pad_w) / r_h;
-            y1 = y1 / r_h;
-            y2 = y2 / r_h;
-        }
-
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = score;
-        det.bbox =
-            cv::Rect(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1), static_cast<int>(y2 - y1));
+        det.bbox = scaleXyxyToOriginal(x1, y1, x2, y2, frame_size);
         detections.push_back(det);
     }
 
@@ -344,17 +349,13 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(const Tensor& boxes
     int num_dets = static_cast<int>(boxes.shape[1]);
     int num_classes = static_cast<int>(scores.shape[2]);
 
-    // Calculate scale ratios for letterbox inverse
-    float r_w = static_cast<float>(input_size_.width) / static_cast<float>(frame_size.width);
-    float r_h = static_cast<float>(input_size_.height) / static_cast<float>(frame_size.height);
-
     for (int i = 0; i < num_dets; ++i) {
         // Find max score for this detection
         float max_score = 0.0f;
         int class_id = -1;
 
         for (int c = 0; c < num_classes; ++c) {
-            float score = getTensorFloat(scores.data[static_cast<size_t>(i * num_classes + c)]);
+            float score = tensorElementToFloat(scores.data[static_cast<size_t>(i * num_classes + c)]);
             if (score > max_score) {
                 max_score = score;
                 class_id = c;
@@ -364,31 +365,15 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(const Tensor& boxes
         if (max_score < confidence_threshold_)
             continue;
 
-        float x1 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 0)]);
-        float y1 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 1)]);
-        float x2 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 2)]);
-        float y2 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 3)]);
-
-        // Apply letterbox inverse transformation
-        if (r_h > r_w) {
-            float pad_h = (static_cast<float>(input_size_.height) - r_w * static_cast<float>(frame_size.height)) / 2.0f;
-            y1 = (y1 - pad_h) / r_w;
-            y2 = (y2 - pad_h) / r_w;
-            x1 = x1 / r_w;
-            x2 = x2 / r_w;
-        } else {
-            float pad_w = (static_cast<float>(input_size_.width) - r_h * static_cast<float>(frame_size.width)) / 2.0f;
-            x1 = (x1 - pad_w) / r_h;
-            x2 = (x2 - pad_w) / r_h;
-            y1 = y1 / r_h;
-            y2 = y2 / r_h;
-        }
+        float x1 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 0)]);
+        float y1 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 1)]);
+        float x2 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 2)]);
+        float y2 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 3)]);
 
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = max_score;
-        det.bbox =
-            cv::Rect(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1), static_cast<int>(y2 - y1));
+        det.bbox = scaleXyxyToOriginal(x1, y1, x2, y2, frame_size);
         detections.push_back(det);
     }
 
@@ -437,10 +422,6 @@ void YoloPostprocessor::applyNMS(std::vector<Detection>& detections) {
                      detections.end());
 }
 
-float YoloPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
-}
-
 std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(const Tensor& num_dets_tensor, const Tensor& boxes,
                                                                const Tensor& scores, const Tensor& classes,
                                                                const cv::Size& frame_size) {
@@ -458,49 +439,29 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(const Tensor& num
     }
 
     // Get actual number of detections
-    int num_dets = static_cast<int>(getTensorFloat(num_dets_tensor.data[0]));
+    int num_dets = static_cast<int>(tensorElementToFloat(num_dets_tensor.data[0]));
 
     // boxes.shape is [1, max_dets, 4]
     int max_dets = static_cast<int>(boxes.shape.size() >= 2 ? boxes.shape[1] : 100);
     num_dets = std::min(num_dets, max_dets); // Clamp to max_dets
 
-    // Calculate scale ratios for letterbox inverse
-    float r_w = static_cast<float>(input_size_.width) / static_cast<float>(frame_size.width);
-    float r_h = static_cast<float>(input_size_.height) / static_cast<float>(frame_size.height);
-
     for (int i = 0; i < num_dets; ++i) {
-        float score = getTensorFloat(scores.data[static_cast<size_t>(i)]);
+        float score = tensorElementToFloat(scores.data[static_cast<size_t>(i)]);
         if (score < confidence_threshold_)
             continue;
 
         // Extract box coordinates in model space
-        float x1 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 0)]);
-        float y1 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 1)]);
-        float x2 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 2)]);
-        float y2 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 3)]);
+        float x1 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 0)]);
+        float y1 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 1)]);
+        float x2 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 2)]);
+        float y2 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 3)]);
 
-        // Apply letterbox inverse transformation
-        if (r_h > r_w) {
-            float pad_h = (static_cast<float>(input_size_.height) - r_w * static_cast<float>(frame_size.height)) / 2.0f;
-            y1 = (y1 - pad_h) / r_w;
-            y2 = (y2 - pad_h) / r_w;
-            x1 = x1 / r_w;
-            x2 = x2 / r_w;
-        } else {
-            float pad_w = (static_cast<float>(input_size_.width) - r_h * static_cast<float>(frame_size.width)) / 2.0f;
-            x1 = (x1 - pad_w) / r_h;
-            x2 = (x2 - pad_w) / r_h;
-            y1 = y1 / r_h;
-            y2 = y2 / r_h;
-        }
-
-        int class_id = static_cast<int>(getTensorFloat(classes.data[static_cast<size_t>(i)]));
+        int class_id = static_cast<int>(tensorElementToFloat(classes.data[static_cast<size_t>(i)]));
 
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = score;
-        det.bbox =
-            cv::Rect(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1), static_cast<int>(y2 - y1));
+        det.bbox = scaleXyxyToOriginal(x1, y1, x2, y2, frame_size);
         detections.push_back(det);
     }
 

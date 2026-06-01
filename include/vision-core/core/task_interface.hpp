@@ -59,7 +59,7 @@ class TaskInterface {
      * @brief Get the number of frames required by this task
      * @return Number of frames needed for inference (default: 1)
      */
-    virtual int getRequiredFrames() const { return 1; }
+    [[nodiscard]] virtual int getRequiredFrames() const { return 1; }
 
     /**
      * @brief Preprocess input images
@@ -101,6 +101,28 @@ class TaskInterface {
     /**
      * @brief Initialize input dimensions from model info
      */
+    [[nodiscard]] static std::tuple<int, int, int> dimensionsFrom3DShape(const std::vector<int64_t>& shape,
+                                                                         bool is_nhwc) {
+        int w = static_cast<int>(is_nhwc ? shape[1] : shape[2]);
+        int h = static_cast<int>(is_nhwc ? shape[0] : shape[1]);
+        int c = static_cast<int>(is_nhwc ? shape[2] : shape[0]);
+        if (w <= 0 || h <= 0 || c <= 0) {
+            throw InputDimensionError("Non-positive dimension in 3D input shape");
+        }
+        return std::make_tuple(w, h, c);
+    }
+
+    [[nodiscard]] static std::tuple<int, int, int> dimensionsFrom4DShape(const std::vector<int64_t>& shape,
+                                                                         bool is_nhwc) {
+        int w = static_cast<int>(is_nhwc ? shape[2] : shape[3]);
+        int h = static_cast<int>(is_nhwc ? shape[1] : shape[2]);
+        int c = static_cast<int>(is_nhwc ? shape[3] : shape[1]);
+        if (w <= 0 || h <= 0 || c <= 0) {
+            throw InputDimensionError("Non-positive dimension in 4D+ input shape");
+        }
+        return std::make_tuple(w, h, c);
+    }
+
     [[nodiscard]] std::tuple<int, int, int> initializeInputDimensions(const ModelInfo& model_info) const {
         for (size_t i = 0; i < model_info.input_shapes.size(); i++) {
             const auto& shape = model_info.input_shapes[i];
@@ -114,22 +136,10 @@ class TaskInterface {
                 (i < model_info.input_formats.size()) && (model_info.input_formats[i] == "FORMAT_NHWC");
 
             if (shape.size() == 3) {
-                int w = static_cast<int>(is_nhwc ? shape[1] : shape[2]);
-                int h = static_cast<int>(is_nhwc ? shape[0] : shape[1]);
-                int c = static_cast<int>(is_nhwc ? shape[2] : shape[0]);
-                if (w <= 0 || h <= 0 || c <= 0) {
-                    throw InputDimensionError("Non-positive dimension in 3D input shape");
-                }
-                return std::make_tuple(w, h, c);
+                return dimensionsFrom3DShape(shape, is_nhwc);
             }
             if (shape.size() >= 4) {
-                int w = static_cast<int>(is_nhwc ? shape[2] : shape[3]);
-                int h = static_cast<int>(is_nhwc ? shape[1] : shape[2]);
-                int c = static_cast<int>(is_nhwc ? shape[3] : shape[1]);
-                if (w <= 0 || h <= 0 || c <= 0) {
-                    throw InputDimensionError("Non-positive dimension in 4D+ input shape");
-                }
-                return std::make_tuple(w, h, c);
+                return dimensionsFrom4DShape(shape, is_nhwc);
             }
 
             // 2-D shape that doesn't match any recognised spatial layout.

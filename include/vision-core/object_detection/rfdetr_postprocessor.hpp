@@ -25,7 +25,6 @@ class RfDetrPostprocessor : public Postprocessor {
     int labels_idx_{1}; // Index for labels (logits) output
 
     void findOutputIndices(const std::vector<std::string>& output_names);
-    float getTensorFloat(const TensorElement& element);
 };
 
 } // namespace vision_core

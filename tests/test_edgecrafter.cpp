@@ -277,6 +277,78 @@ TEST(EdgeCrafterPoseTest, EmptyInputThrows) {
     EXPECT_THROW({ pp.postprocess({}, cv::Size(640, 480), cv::Size(640, 640)); }, std::runtime_error);
 }
 
+TEST(EdgeCrafterDetectionTest, UsesOutputNamesWhenTensorsAreReordered) {
+    EdgeCrafterPostprocessor pp(0.5f, {"scores", "labels", "boxes"});
+
+    int num_dets = 1;
+    std::vector<TensorElement> scores = {0.9f};
+    std::vector<TensorElement> labels = {static_cast<int64_t>(5)};
+    std::vector<TensorElement> boxes = {100.0f, 100.0f, 300.0f, 300.0f};
+
+    std::vector<Tensor> tensors = {
+        Tensor(scores, {1, num_dets}),
+        Tensor(labels, {1, num_dets}),
+        Tensor(boxes, {1, num_dets, 4}),
+    };
+
+    auto detections = pp.postprocess(tensors, cv::Size(640, 480));
+
+    ASSERT_EQ(detections.size(), 1u);
+    EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.9f);
+    EXPECT_EQ(detections[0].class_id, 5);
+    EXPECT_EQ(detections[0].bbox, cv::Rect(100, 100, 200, 200));
+}
+
+TEST(EdgeCrafterSegmentationTest, UsesOutputNamesWhenTensorsAreReordered) {
+    EdgeCrafterSegmentationPostprocessor pp(0.5f, 0.5f, {"masks", "scores", "labels", "boxes"});
+
+    int num_dets = 1;
+    int mask_h = 4;
+    int mask_w = 4;
+    std::vector<TensorElement> masks(static_cast<size_t>(mask_h * mask_w), 1.0f);
+    std::vector<TensorElement> scores = {0.9f};
+    std::vector<TensorElement> labels = {static_cast<int64_t>(5)};
+    std::vector<TensorElement> boxes = {100.0f, 100.0f, 300.0f, 300.0f};
+
+    std::vector<Tensor> tensors = {
+        Tensor(masks, {1, num_dets, mask_h, mask_w}),
+        Tensor(scores, {1, num_dets}),
+        Tensor(labels, {1, num_dets}),
+        Tensor(boxes, {1, num_dets, 4}),
+    };
+
+    auto segmentations = pp.postprocess(tensors, cv::Size(640, 480));
+
+    ASSERT_EQ(segmentations.size(), 1u);
+    EXPECT_FLOAT_EQ(segmentations[0].class_confidence, 0.9f);
+    EXPECT_EQ(segmentations[0].class_id, 5);
+    EXPECT_EQ(segmentations[0].bbox, cv::Rect(100, 100, 200, 200));
+}
+
+TEST(EdgeCrafterPoseTest, UsesOutputNamesWhenTensorsAreReordered) {
+    EdgeCrafterPosePostprocessor pp(0.5f, 0.3f, {"keypoints", "labels", "scores"});
+
+    int num_dets = 1;
+    int num_kpts = 2;
+    int kpt_dim = 3;
+    std::vector<TensorElement> keypoints = {100.0f, 150.0f, 0.9f, 120.0f, 190.0f, 0.8f};
+    std::vector<TensorElement> labels = {static_cast<int64_t>(1)};
+    std::vector<TensorElement> scores = {0.9f};
+
+    std::vector<Tensor> tensors = {
+        Tensor(keypoints, {1, num_dets, num_kpts, kpt_dim}),
+        Tensor(labels, {1, num_dets}),
+        Tensor(scores, {1, num_dets}),
+    };
+
+    auto poses = pp.postprocess(tensors, cv::Size(640, 480), cv::Size(640, 640));
+
+    ASSERT_EQ(poses.size(), 1u);
+    EXPECT_NEAR(poses[0].score, 0.9f, 0.01f);
+    ASSERT_EQ(poses[0].keypoints.size(), 2u);
+    EXPECT_EQ(poses[0].bbox, cv::Rect(100, 150, 20, 40));
+}
+
 // ---------------------------------------------------------------------------
 // Task-Level Tests
 // ---------------------------------------------------------------------------

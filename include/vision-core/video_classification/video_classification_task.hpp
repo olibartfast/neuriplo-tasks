@@ -32,7 +32,7 @@ class VideoClassificationTask : public TaskInterface {
 
     TaskType getTaskType() override { return TaskType::VideoClassification; }
 
-    int getRequiredFrames() const override { return num_frames_; }
+    [[nodiscard]] int getRequiredFrames() const override { return num_frames_; }
 
     std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override;
 

@@ -1,5 +1,7 @@
 #include "vision-core/object_detection/rfdetr_postprocessor.hpp"
 
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -63,7 +65,7 @@ std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor
 
         // Find max class score applying sigmoid to logits
         for (int c = 0; c < num_classes; ++c) {
-            float logit = getTensorFloat(logits[static_cast<size_t>(i * num_classes + c)]);
+            float logit = tensorElementToFloat(logits[static_cast<size_t>(i * num_classes + c)]);
             float score = 1.0f / (1.0f + std::exp(-logit));
             if (score > max_score) {
                 max_score = score;
@@ -80,10 +82,10 @@ std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor
             continue;
 
         // Boxes are normalized cx,cy,w,h format
-        float cx = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 0)]) * static_cast<float>(input_size_.width);
-        float cy = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 1)]) * static_cast<float>(input_size_.height);
-        float w = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 2)]) * static_cast<float>(input_size_.width);
-        float h = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 3)]) * static_cast<float>(input_size_.height);
+        float cx = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 0)]) * static_cast<float>(input_size_.width);
+        float cy = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 1)]) * static_cast<float>(input_size_.height);
+        float w = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 2)]) * static_cast<float>(input_size_.width);
+        float h = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 3)]) * static_cast<float>(input_size_.height);
 
         // Convert to x,y,w,h and scale to frame size
         float x = (cx - w / 2.0f) * scale_w;
@@ -100,10 +102,6 @@ std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor
     }
 
     return detections;
-}
-
-float RfDetrPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
 }
 
 } // namespace vision_core

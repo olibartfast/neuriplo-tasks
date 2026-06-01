@@ -29,6 +29,9 @@ class YoloPostprocessor : public Postprocessor {
      */
     [[nodiscard]] cv::Rect scaleToOriginal(float cx, float cy, float w, float h, const cv::Size& frame_size) const;
 
+    [[nodiscard]] cv::Rect scaleXyxyToOriginal(float x1, float y1, float x2, float y2,
+                                               const cv::Size& frame_size) const;
+
     std::vector<Detection> postprocessYoloStandard(const std::vector<TensorElement>& output,
                                                    const std::vector<int64_t>& shape, const cv::Size& frame_size);
 
@@ -42,7 +45,6 @@ class YoloPostprocessor : public Postprocessor {
                                                 const Tensor& classes, const cv::Size& frame_size);
 
     void applyNMS(std::vector<Detection>& detections);
-    float getTensorFloat(const TensorElement& element);
 };
 
 } // namespace vision_core

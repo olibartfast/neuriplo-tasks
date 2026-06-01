@@ -1,5 +1,7 @@
 #include "vision-core/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
 
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -69,7 +71,7 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         int class_id = -1;
 
         for (int c = 0; c < num_classes; ++c) {
-            float logit = getTensorFloat(labels[static_cast<size_t>(i * num_classes + c)]);
+            float logit = tensorElementToFloat(labels[static_cast<size_t>(i * num_classes + c)]);
             float score = 1.0f / (1.0f + std::exp(-logit)); // sigmoid
             if (score > max_score) {
                 max_score = score;
@@ -87,10 +89,10 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         }
 
         // Extract box (cx, cy, w, h) in normalized coordinates
-        float cx = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 0)]);
-        float cy = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 1)]);
-        float w = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 2)]);
-        float h = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 3)]);
+        float cx = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 0)]);
+        float cy = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 1)]);
+        float w = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 2)]);
+        float h = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 3)]);
 
         // Convert to frame coordinates
         float x_center = cx * static_cast<float>(frame_size.width);
@@ -114,7 +116,7 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         float min_val = 1.0f;
         for (int y = 0; y < mask_h; ++y) {
             for (int x = 0; x < mask_w; ++x) {
-                float logit = getTensorFloat(masks[static_cast<size_t>(mask_offset + y * mask_w + x)]);
+                float logit = tensorElementToFloat(masks[static_cast<size_t>(mask_offset + y * mask_w + x)]);
                 float val = 1.0f / (1.0f + std::exp(-logit)); // sigmoid
                 mask_logits.at<float>(y, x) = val;
                 max_val = std::max(max_val, val);
@@ -150,14 +152,6 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
     }
 
     return segmentations;
-}
-
-float RfDetrSegmentationPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
-}
-
-int RfDetrSegmentationPostprocessor::getTensorInt(const TensorElement& element) {
-    return std::visit([](auto&& value) -> int { return static_cast<int>(value); }, element);
 }
 
 } // namespace vision_core

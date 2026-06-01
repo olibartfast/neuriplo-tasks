@@ -24,7 +24,6 @@ class LgmPostprocessor : public GaussianSplattingPostprocessor {
                                   const std::vector<int64_t>& shape) override;
 
   private:
-    static float toFloat(const TensorElement& elem);
 };
 
 } // namespace vision_core

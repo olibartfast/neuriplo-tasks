@@ -1,5 +1,7 @@
 #include "vision-core/pose_estimation/yolo_pose_postprocessor.hpp"
 
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <opencv2/dnn.hpp>
 
 namespace vision_core {
@@ -7,10 +9,6 @@ namespace vision_core {
 YoloPosePostprocessor::YoloPosePostprocessor(const cv::Size& input_size, float confidence_threshold,
                                              float nms_threshold)
     : input_size_(input_size), confidence_threshold_(confidence_threshold), nms_threshold_(nms_threshold) {}
-
-float YoloPosePostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& v) -> float { return static_cast<float>(v); }, element);
-}
 
 cv::Rect YoloPosePostprocessor::scaleBoxToOriginal(float cx, float cy, float w, float h,
                                                    const cv::Size& frame_size) const {
@@ -122,13 +120,13 @@ std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector
         float cx, cy, w, h;
 
         if (has_objectness) {
-            float obj = getTensorFloat(data[static_cast<size_t>(i * channels + 4)]);
+            float obj = tensorElementToFloat(data[static_cast<size_t>(i * channels + 4)]);
             if (obj < confidence_threshold_)
                 continue;
 
             if (kpts_start == 6) {
                 // Separate class score (YOLOv5 with single person class)
-                float cls = getTensorFloat(data[static_cast<size_t>(i * channels + 5)]);
+                float cls = tensorElementToFloat(data[static_cast<size_t>(i * channels + 5)]);
                 conf = obj * cls;
             } else {
                 conf = obj;
@@ -137,19 +135,19 @@ std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector
             if (conf < confidence_threshold_)
                 continue;
 
-            cx = getTensorFloat(data[static_cast<size_t>(i * channels + 0)]);
-            cy = getTensorFloat(data[static_cast<size_t>(i * channels + 1)]);
-            w = getTensorFloat(data[static_cast<size_t>(i * channels + 2)]);
-            h = getTensorFloat(data[static_cast<size_t>(i * channels + 3)]);
+            cx = tensorElementToFloat(data[static_cast<size_t>(i * channels + 0)]);
+            cy = tensorElementToFloat(data[static_cast<size_t>(i * channels + 1)]);
+            w = tensorElementToFloat(data[static_cast<size_t>(i * channels + 2)]);
+            h = tensorElementToFloat(data[static_cast<size_t>(i * channels + 3)]);
         } else {
-            conf = getTensorFloat(data[static_cast<size_t>(4 * anchors + i)]);
+            conf = tensorElementToFloat(data[static_cast<size_t>(4 * anchors + i)]);
             if (conf < confidence_threshold_)
                 continue;
 
-            cx = getTensorFloat(data[static_cast<size_t>(0 * anchors + i)]);
-            cy = getTensorFloat(data[static_cast<size_t>(1 * anchors + i)]);
-            w = getTensorFloat(data[static_cast<size_t>(2 * anchors + i)]);
-            h = getTensorFloat(data[static_cast<size_t>(3 * anchors + i)]);
+            cx = tensorElementToFloat(data[static_cast<size_t>(0 * anchors + i)]);
+            cy = tensorElementToFloat(data[static_cast<size_t>(1 * anchors + i)]);
+            w = tensorElementToFloat(data[static_cast<size_t>(2 * anchors + i)]);
+            h = tensorElementToFloat(data[static_cast<size_t>(3 * anchors + i)]);
         }
 
         PoseEstimation pose;
@@ -160,13 +158,13 @@ std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector
         for (int j = 0; j < num_kpts; ++j) {
             float kx, ky, kconf;
             if (has_objectness) {
-                kx = getTensorFloat(data[static_cast<size_t>(i * channels + kpts_start + j * 3 + 0)]);
-                ky = getTensorFloat(data[static_cast<size_t>(i * channels + kpts_start + j * 3 + 1)]);
-                kconf = getTensorFloat(data[static_cast<size_t>(i * channels + kpts_start + j * 3 + 2)]);
+                kx = tensorElementToFloat(data[static_cast<size_t>(i * channels + kpts_start + j * 3 + 0)]);
+                ky = tensorElementToFloat(data[static_cast<size_t>(i * channels + kpts_start + j * 3 + 1)]);
+                kconf = tensorElementToFloat(data[static_cast<size_t>(i * channels + kpts_start + j * 3 + 2)]);
             } else {
-                kx = getTensorFloat(data[static_cast<size_t>((kpts_start + j * 3 + 0) * anchors + i)]);
-                ky = getTensorFloat(data[static_cast<size_t>((kpts_start + j * 3 + 1) * anchors + i)]);
-                kconf = getTensorFloat(data[static_cast<size_t>((kpts_start + j * 3 + 2) * anchors + i)]);
+                kx = tensorElementToFloat(data[static_cast<size_t>((kpts_start + j * 3 + 0) * anchors + i)]);
+                ky = tensorElementToFloat(data[static_cast<size_t>((kpts_start + j * 3 + 1) * anchors + i)]);
+                kconf = tensorElementToFloat(data[static_cast<size_t>((kpts_start + j * 3 + 2) * anchors + i)]);
             }
 
             cv::Point2f scaled = scaleKptToOriginal(kx, ky, original_size);

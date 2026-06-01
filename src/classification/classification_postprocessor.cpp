@@ -1,5 +1,7 @@
 #include "vision-core/classification/classification_postprocessor.hpp"
 
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -20,7 +22,7 @@ std::vector<Classification> DefaultClassificationPostprocessor::postprocess(cons
     std::vector<float> scores;
     scores.reserve(output.size());
     for (const auto& element : output) {
-        scores.push_back(getTensorFloat(element));
+        scores.push_back(tensorElementToFloat(element));
     }
 
     // Apply softmax if needed
@@ -50,10 +52,6 @@ std::vector<Classification> DefaultClassificationPostprocessor::postprocess(cons
     }
 
     return classifications;
-}
-
-float DefaultClassificationPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
 }
 
 void DefaultClassificationPostprocessor::applySoftmax(std::vector<float>& logits) {

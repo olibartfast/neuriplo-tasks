@@ -1,5 +1,7 @@
 #include "vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp"
 
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -61,7 +63,7 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
     // Extract prototype data to contiguous float vector for efficient access in generateMask
     std::vector<float> protos_data(protos_data_raw.size());
     for (size_t i = 0; i < protos_data.size(); ++i) {
-        protos_data[i] = getTensorFloat(protos_data_raw[i]);
+        protos_data[i] = tensorElementToFloat(protos_data_raw[i]);
     }
 
     // Collect all detections before NMS
@@ -73,7 +75,7 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
         int class_id = -1;
 
         for (int c = 0; c < num_classes; ++c) {
-            float score = getTensorFloat(dets_data[static_cast<size_t>((c + 4) * anchors + i)]);
+            float score = tensorElementToFloat(dets_data[static_cast<size_t>((c + 4) * anchors + i)]);
             if (score > max_score) {
                 max_score = score;
                 class_id = c;
@@ -85,10 +87,10 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
         }
 
         // Extract box (cx, cy, w, h)
-        float cx = getTensorFloat(dets_data[static_cast<size_t>(0 * anchors + i)]);
-        float cy = getTensorFloat(dets_data[static_cast<size_t>(1 * anchors + i)]);
-        float w = getTensorFloat(dets_data[static_cast<size_t>(2 * anchors + i)]);
-        float h = getTensorFloat(dets_data[static_cast<size_t>(3 * anchors + i)]);
+        float cx = tensorElementToFloat(dets_data[static_cast<size_t>(0 * anchors + i)]);
+        float cy = tensorElementToFloat(dets_data[static_cast<size_t>(1 * anchors + i)]);
+        float w = tensorElementToFloat(dets_data[static_cast<size_t>(2 * anchors + i)]);
+        float h = tensorElementToFloat(dets_data[static_cast<size_t>(3 * anchors + i)]);
 
         float x1 = cx - w / 2.0f;
         float y1 = cy - h / 2.0f;
@@ -99,7 +101,8 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
         std::vector<float> mask_coeffs;
         mask_coeffs.reserve(static_cast<size_t>(num_mask_coeffs));
         for (int m = 0; m < num_mask_coeffs; ++m) {
-            mask_coeffs.push_back(getTensorFloat(dets_data[static_cast<size_t>((4 + num_classes + m) * anchors + i)]));
+            mask_coeffs.push_back(
+                tensorElementToFloat(dets_data[static_cast<size_t>((4 + num_classes + m) * anchors + i)]));
         }
 
         Detection det;
@@ -188,18 +191,18 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tenso
     // Extract prototype data once
     std::vector<float> protos_data(static_cast<size_t>(num_protos * proto_h * proto_w));
     for (size_t i = 0; i < protos_data.size(); ++i) {
-        protos_data[i] = getTensorFloat(protos_tensor.data[i]);
+        protos_data[i] = tensorElementToFloat(protos_tensor.data[i]);
     }
 
     for (int i = 0; i < num_dets; ++i) {
         // Extract detection data
         const size_t base = static_cast<size_t>(i * det_dims);
-        float x1 = getTensorFloat(dets_tensor.data[base + 0]);
-        float y1 = getTensorFloat(dets_tensor.data[base + 1]);
-        float x2 = getTensorFloat(dets_tensor.data[base + 2]);
-        float y2 = getTensorFloat(dets_tensor.data[base + 3]);
-        float score = getTensorFloat(dets_tensor.data[base + 4]);
-        int class_id = static_cast<int>(getTensorFloat(dets_tensor.data[base + 5]));
+        float x1 = tensorElementToFloat(dets_tensor.data[base + 0]);
+        float y1 = tensorElementToFloat(dets_tensor.data[base + 1]);
+        float x2 = tensorElementToFloat(dets_tensor.data[base + 2]);
+        float y2 = tensorElementToFloat(dets_tensor.data[base + 3]);
+        float score = tensorElementToFloat(dets_tensor.data[base + 4]);
+        int class_id = static_cast<int>(tensorElementToFloat(dets_tensor.data[base + 5]));
 
         // Filter by confidence
         if (score < confidence_threshold_) {
@@ -210,7 +213,7 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tenso
         std::vector<float> mask_coeffs;
         mask_coeffs.reserve(32);
         for (int c = 0; c < 32; ++c) {
-            mask_coeffs.push_back(getTensorFloat(dets_tensor.data[base + 6 + static_cast<size_t>(c)]));
+            mask_coeffs.push_back(tensorElementToFloat(dets_tensor.data[base + 6 + static_cast<size_t>(c)]));
         }
 
         // Generate mask at proto resolution (160x160)
@@ -348,10 +351,6 @@ cv::Rect YoloSegmentationPostprocessor::scaleToOriginal(float x1, float y1, floa
 
     return cv::Rect(static_cast<int>(orig_x1), static_cast<int>(orig_y1), static_cast<int>(orig_x2 - orig_x1),
                     static_cast<int>(orig_y2 - orig_y1));
-}
-
-float YoloSegmentationPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
 }
 
 cv::Mat YoloSegmentationPostprocessor::generateMask(const std::vector<float>& coeffs, const float* protos_data,

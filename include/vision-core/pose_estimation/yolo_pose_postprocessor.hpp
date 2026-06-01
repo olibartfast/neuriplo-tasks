@@ -30,7 +30,6 @@ class YoloPosePostprocessor : public PosePostprocessor {
     float confidence_threshold_;
     float nms_threshold_;
 
-    static float getTensorFloat(const TensorElement& element);
     cv::Rect scaleBoxToOriginal(float cx, float cy, float w, float h, const cv::Size& frame_size) const;
     cv::Point2f scaleKptToOriginal(float kx, float ky, const cv::Size& frame_size) const;
     void applyNMS(std::vector<PoseEstimation>& poses) const;

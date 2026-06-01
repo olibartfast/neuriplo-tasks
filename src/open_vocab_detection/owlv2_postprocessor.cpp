@@ -1,5 +1,7 @@
 #include "vision-core/open_vocab_detection/owlv2_postprocessor.hpp"
 
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -9,10 +11,6 @@
 namespace vision_core {
 
 namespace {
-
-float tensorElementToFloat(const TensorElement& element) {
-    return std::visit([](const auto& value) { return static_cast<float>(value); }, element);
-}
 
 float sigmoid(float value) {
     if (value >= 0.0F) {
