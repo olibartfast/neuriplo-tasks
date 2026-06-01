@@ -141,7 +141,7 @@ target_link_libraries(your_target vision-core::vision-core)
 ### Supported Model Types (TaskFactory)
 
 <!-- TASKFACTORY_MODEL_LIST:START -->
-The TaskFactory supports the following model type strings:
+The TaskFactory supports the following model type strings. Matching normalizes strings by lowercasing and stripping whitespace, hyphens, and underscores, so `YOLO-V8`, `yolo_v8`, and ` yolo v8 ` route identically. Specific segmentation and pose aliases are checked before generic detection aliases.
 
 **Object Detection:**
 
@@ -150,12 +150,12 @@ The TaskFactory supports the following model type strings:
 - `"rtdetr"` - RT-DETR family (RT-DETR v1, v2, and v4; excludes v3; includes D-FINE and DEIM v1/v2)
 - `"rtdetrul"`, `"rtdetrultralytics"` - RT-DETR (Ultralytics implementation)
 - `"rfdetr"` - RF-DETR
-- `"ecdet"` - EdgeCrafter detection (any string starting with `ecdet` or `edgecrafter`)
-- `"edgecrafter"` - EdgeCrafter generic (defaults to detection)
+- `"ecdet"` - EdgeCrafter detection (any string starting with `ecdet`)
+- `"edgecrafter"`, `"edgecrafter-det"` - EdgeCrafter detection unless the normalized string contains `seg` or `pose`
 
 **Instance Segmentation:**
 - `"ecseg"` - EdgeCrafter segmentation (any string starting with `ecseg` or `edgecrafter` and containing `seg`)
-- `"yoloseg"` - YOLOv5/YOLOv8/YOLO11
+- `"yoloseg"`, `"yolo-seg"`, `"yolov8-seg"` - YOLOv5/YOLOv8/YOLO11-style segmentation
 - `"yolov10seg"`- YOLOv10
 - `"yolo26seg"` - YOLO26
 - `"rfdetrseg"` - RF-DETR
@@ -181,7 +181,7 @@ Any model type starting with `resnet` (e.g. `resnet50`) or containing `tensorflo
 - `"yolo26pose"`, `"yolo26-pose"` - YOLO26 pose
 - `"yolov5pose"`, `"yolov5-pose"` - YOLOv5 pose
 - `"vitpose"` - ViTPose (top-down, heatmap-based)
-- `"ecpose"` - EdgeCrafter pose estimation (any string starting with `ecpose` or `edgecrafter` and containing `pose`)
+- `"ecpose"` - EdgeCrafter pose estimation (any string starting with `ecpose`, or `edgecrafter` and containing `pose`)
 
 **Depth Estimation:**
 - `"depth_anything_v2"`, `"depth-anything-v2"` - Depth Anything V2
@@ -228,7 +228,7 @@ For model download and setup details, see [export/image_understanding/ImageUnder
 
 Detection models output `labels` + `boxes` + `scores`. Segmentation adds a `masks` `[1, N, MH, MW]` float tensor. Pose estimation replaces `boxes` with `keypoints` `[1, N, 17, 2|3]` and applies a label offset of –1 (person `1` → `0`); bounding boxes are derived from visible keypoints.
 
-Preprocessing: direct resize to `[H, W]` (no letterbox) → BGR to RGB → scale to `[0,1]` → ImageNet normalization (`mean=[0.485, 0.456, 0.406]`, `std=[0.229, 0.224, 0.225]`). The ONNX graph performs top-k selection and coordinate scaling internally.
+Preprocessing: direct resize to `[H, W]` (no letterbox) → BGR to RGB → scale to `[0,1]` → ImageNet normalization (`mean=[0.485, 0.456, 0.406]`, `std=[0.229, 0.224, 0.225]`). The ONNX graph performs top-k selection and coordinate scaling internally. If `ModelInfo::output_names` is provided, EdgeCrafter detection, segmentation, and pose postprocessors resolve tensors by exact output name (`labels`, `boxes`, `scores`, plus `masks` or `keypoints`) so outputs may be supplied in model order; omitted names keep the documented default order.
 
 Export instructions: see [export/detection/edgecrafter/README.md](https://github.com/olibartfast/vision-core/blob/master/export/detection/edgecrafter/README.md), [export/segmentation/edgecrafter/README.md](https://github.com/olibartfast/vision-core/blob/master/export/segmentation/edgecrafter/README.md), [export/pose_estimation/edgecrafter/README.md](https://github.com/olibartfast/vision-core/blob/master/export/pose_estimation/edgecrafter/README.md).
 <!-- TASKFACTORY_MODEL_LIST:END -->
