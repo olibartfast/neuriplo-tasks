@@ -24,8 +24,6 @@ class EdgeCrafterSegmentationPostprocessor : public SegmentationPostprocessor {
     int masks_idx_{3};
 
     void findOutputIndices(const std::vector<std::string>& output_names);
-    static float getTensorFloat(const TensorElement& element);
-    static int getTensorInt(const TensorElement& element);
 };
 
 } // namespace vision_core

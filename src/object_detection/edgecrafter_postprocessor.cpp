@@ -1,5 +1,8 @@
 #include "vision-core/object_detection/edgecrafter_postprocessor.hpp"
 
+#include "vision-core/core/output_name_utils.hpp"
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <stdexcept>
 
 namespace vision_core {
@@ -11,20 +14,9 @@ EdgeCrafterPostprocessor::EdgeCrafterPostprocessor(float confidence_threshold,
 }
 
 void EdgeCrafterPostprocessor::findOutputIndices(const std::vector<std::string>& output_names) {
-    if (output_names.empty()) {
-        return;
-    }
-
-    for (size_t i = 0; i < output_names.size(); ++i) {
-        const auto& name = output_names[i];
-        if (name == "scores") {
-            scores_idx_ = static_cast<int>(i);
-        } else if (name == "boxes") {
-            boxes_idx_ = static_cast<int>(i);
-        } else if (name == "labels") {
-            labels_idx_ = static_cast<int>(i);
-        }
-    }
+    scores_idx_ = findOutputIndexByName(output_names, "scores", scores_idx_);
+    boxes_idx_ = findOutputIndexByName(output_names, "boxes", boxes_idx_);
+    labels_idx_ = findOutputIndexByName(output_names, "labels", labels_idx_);
 }
 
 std::vector<Detection> EdgeCrafterPostprocessor::postprocess(const std::vector<Tensor>& tensors,
@@ -48,21 +40,22 @@ std::vector<Detection> EdgeCrafterPostprocessor::postprocess(const std::vector<T
     detections.reserve(static_cast<size_t>(num_dets));
 
     for (int i = 0; i < num_dets; ++i) {
-        float score = getTensorFloat(scores_tensor.data[static_cast<size_t>(i)]);
+        float score = tensorElementToFloat(scores_tensor.data[static_cast<size_t>(i)]);
 
         if (score < confidence_threshold_) {
             continue;
         }
 
-        int class_id = getTensorInt(labels_tensor.data[static_cast<size_t>(i)]);
+        int class_id = tensorElementToInt(labels_tensor.data[static_cast<size_t>(i)]);
         if (class_id < 0) {
             continue;
         }
 
-        float x1 = getTensorFloat(boxes_tensor.data[static_cast<size_t>(i * 4 + 0)]);
-        float y1 = getTensorFloat(boxes_tensor.data[static_cast<size_t>(i * 4 + 1)]);
-        float x2 = getTensorFloat(boxes_tensor.data[static_cast<size_t>(i * 4 + 2)]);
-        float y2 = getTensorFloat(boxes_tensor.data[static_cast<size_t>(i * 4 + 3)]);
+        const size_t box_offset = static_cast<size_t>(i) * 4U;
+        float x1 = tensorElementToFloat(boxes_tensor.data[box_offset + 0U]);
+        float y1 = tensorElementToFloat(boxes_tensor.data[box_offset + 1U]);
+        float x2 = tensorElementToFloat(boxes_tensor.data[box_offset + 2U]);
+        float y2 = tensorElementToFloat(boxes_tensor.data[box_offset + 3U]);
 
         Detection det;
         det.class_id = static_cast<float>(class_id);
@@ -73,14 +66,6 @@ std::vector<Detection> EdgeCrafterPostprocessor::postprocess(const std::vector<T
     }
 
     return detections;
-}
-
-float EdgeCrafterPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
-}
-
-int EdgeCrafterPostprocessor::getTensorInt(const TensorElement& element) {
-    return std::visit([](auto&& value) -> int { return static_cast<int>(value); }, element);
 }
 
 } // namespace vision_core

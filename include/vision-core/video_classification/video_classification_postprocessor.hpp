@@ -24,7 +24,6 @@ class VideoClassificationPostprocessor {
     int top_k_;
     bool apply_softmax_;
 
-    static float getTensorFloat(const TensorElement& element);
     static void applySoftmax(std::vector<float>& logits);
 };
 

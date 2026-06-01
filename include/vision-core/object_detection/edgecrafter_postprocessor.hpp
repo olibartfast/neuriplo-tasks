@@ -20,8 +20,6 @@ class EdgeCrafterPostprocessor : public Postprocessor {
     int labels_idx_{0};
 
     void findOutputIndices(const std::vector<std::string>& output_names);
-    static float getTensorFloat(const TensorElement& element);
-    static int getTensorInt(const TensorElement& element);
 };
 
 } // namespace vision_core

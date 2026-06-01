@@ -42,7 +42,7 @@ class OpenVocabDetectionTask : public TaskInterface {
     static std::vector<std::string> extractPrompts(const TaskConfig& config);
     static cv::Size extractInputSize(const ModelInfo& model_info);
 
-    std::pair<std::vector<int32_t>, std::vector<int32_t>> encodePrompts(int context_length) const;
+    [[nodiscard]] std::pair<std::vector<int32_t>, std::vector<int32_t>> encodePrompts(int context_length) const;
 };
 
 } // namespace vision_core

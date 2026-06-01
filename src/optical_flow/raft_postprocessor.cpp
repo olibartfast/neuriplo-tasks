@@ -1,5 +1,7 @@
 #include "vision-core/optical_flow/raft_postprocessor.hpp"
 
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
@@ -33,7 +35,7 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
         static std::vector<float> temp_buffer;
         temp_buffer.resize(flow_output.size());
         for (size_t i = 0; i < flow_output.size(); ++i) {
-            temp_buffer[i] = getTensorFloat(flow_output[i]);
+            temp_buffer[i] = tensorElementToFloat(flow_output[i]);
         }
         data = temp_buffer.data();
     }
@@ -50,9 +52,9 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             flow_ptr[y * width * 2 + x * 2] =
-                getTensorFloat(flow_output[static_cast<size_t>(u_channel_offset + y * width + x)]);
+                tensorElementToFloat(flow_output[static_cast<size_t>(u_channel_offset + y * width + x)]);
             flow_ptr[y * width * 2 + x * 2 + 1] =
-                getTensorFloat(flow_output[static_cast<size_t>(v_channel_offset + y * width + x)]);
+                tensorElementToFloat(flow_output[static_cast<size_t>(v_channel_offset + y * width + x)]);
         }
     }
 
@@ -89,10 +91,6 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     result.flow = visualizeFlow(flow_u, flow_v);
 
     return {result};
-}
-
-float RaftPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
 }
 
 cv::Mat RaftPostprocessor::makeColorwheel() {

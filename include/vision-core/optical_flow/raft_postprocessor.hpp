@@ -14,7 +14,6 @@ class RaftPostprocessor : public OpticalFlowPostprocessor {
                                          const std::vector<int64_t>& shape, const cv::Size& frame_size) override;
 
   private:
-    float getTensorFloat(const TensorElement& element);
     cv::Mat visualizeFlow(const cv::Mat& flow_x, const cv::Mat& flow_y);
     cv::Mat makeColorwheel();
 };

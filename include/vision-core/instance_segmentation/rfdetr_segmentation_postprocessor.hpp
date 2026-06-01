@@ -21,8 +21,6 @@ class RfDetrSegmentationPostprocessor : public SegmentationPostprocessor {
     int labels_idx_{2}; // Index for labels output
 
     void findOutputIndices(const std::vector<std::string>& output_names);
-    float getTensorFloat(const TensorElement& element);
-    int getTensorInt(const TensorElement& element);
 };
 
 } // namespace vision_core

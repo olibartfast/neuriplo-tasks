@@ -23,8 +23,6 @@ class EdgeCrafterPosePostprocessor : public PosePostprocessor {
     int labels_idx_{0};
 
     void findOutputIndices(const std::vector<std::string>& output_names);
-    static float getTensorFloat(const TensorElement& element);
-    static int getTensorInt(const TensorElement& element);
     void deriveBboxFromKeypoints(PoseEstimation& pose) const;
 };
 

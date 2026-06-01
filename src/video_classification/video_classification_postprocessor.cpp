@@ -1,5 +1,7 @@
 #include "vision-core/video_classification/video_classification_postprocessor.hpp"
 
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <algorithm>
 #include <cmath>
 
@@ -19,7 +21,7 @@ std::vector<VideoClassification> VideoClassificationPostprocessor::postprocess(c
     std::vector<float> scores;
     scores.reserve(output.size());
     for (const auto& element : output) {
-        scores.push_back(getTensorFloat(element));
+        scores.push_back(tensorElementToFloat(element));
     }
 
     // Apply softmax if needed
@@ -54,10 +56,6 @@ std::vector<VideoClassification> VideoClassificationPostprocessor::postprocess(c
     }
 
     return classifications;
-}
-
-float VideoClassificationPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
 }
 
 void VideoClassificationPostprocessor::applySoftmax(std::vector<float>& logits) {

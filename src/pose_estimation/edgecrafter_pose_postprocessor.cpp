@@ -1,5 +1,8 @@
 #include "vision-core/pose_estimation/edgecrafter_pose_postprocessor.hpp"
 
+#include "vision-core/core/output_name_utils.hpp"
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
@@ -13,20 +16,9 @@ EdgeCrafterPosePostprocessor::EdgeCrafterPosePostprocessor(float confidence_thre
 }
 
 void EdgeCrafterPosePostprocessor::findOutputIndices(const std::vector<std::string>& output_names) {
-    if (output_names.empty()) {
-        return;
-    }
-
-    for (size_t i = 0; i < output_names.size(); ++i) {
-        const auto& name = output_names[i];
-        if (name == "scores") {
-            scores_idx_ = static_cast<int>(i);
-        } else if (name == "keypoints") {
-            keypoints_idx_ = static_cast<int>(i);
-        } else if (name == "labels") {
-            labels_idx_ = static_cast<int>(i);
-        }
-    }
+    scores_idx_ = findOutputIndexByName(output_names, "scores", scores_idx_);
+    keypoints_idx_ = findOutputIndexByName(output_names, "keypoints", keypoints_idx_);
+    labels_idx_ = findOutputIndexByName(output_names, "labels", labels_idx_);
 }
 
 std::vector<PoseEstimation> EdgeCrafterPosePostprocessor::postprocess(const std::vector<Tensor>& tensors,
@@ -59,13 +51,13 @@ std::vector<PoseEstimation> EdgeCrafterPosePostprocessor::postprocess(const std:
     static constexpr int kLabelOffset = -1;
 
     for (int i = 0; i < num_dets; ++i) {
-        float score = getTensorFloat(scores_tensor.data[static_cast<size_t>(i)]);
+        float score = tensorElementToFloat(scores_tensor.data[static_cast<size_t>(i)]);
 
         if (score < confidence_threshold_) {
             continue;
         }
 
-        int class_id = getTensorInt(labels_tensor.data[static_cast<size_t>(i)]) + kLabelOffset;
+        int class_id = tensorElementToInt(labels_tensor.data[static_cast<size_t>(i)]) + kLabelOffset;
         if (class_id < 0) {
             continue;
         }
@@ -75,15 +67,13 @@ std::vector<PoseEstimation> EdgeCrafterPosePostprocessor::postprocess(const std:
         pose.bbox = {};
 
         pose.keypoints.reserve(static_cast<size_t>(num_kpts));
+        const size_t detection_offset =
+            static_cast<size_t>(i) * static_cast<size_t>(num_kpts) * static_cast<size_t>(kpt_dim);
         for (int k = 0; k < num_kpts; ++k) {
-            float kx =
-                getTensorFloat(keypoints_tensor.data[static_cast<size_t>(i * num_kpts * kpt_dim + k * kpt_dim + 0)]);
-            float ky =
-                getTensorFloat(keypoints_tensor.data[static_cast<size_t>(i * num_kpts * kpt_dim + k * kpt_dim + 1)]);
-            float kconf =
-                kpt_dim == 3 ? getTensorFloat(
-                                   keypoints_tensor.data[static_cast<size_t>(i * num_kpts * kpt_dim + k * kpt_dim + 2)])
-                             : 1.0F;
+            const size_t keypoint_offset = detection_offset + static_cast<size_t>(k) * static_cast<size_t>(kpt_dim);
+            float kx = tensorElementToFloat(keypoints_tensor.data[keypoint_offset + 0U]);
+            float ky = tensorElementToFloat(keypoints_tensor.data[keypoint_offset + 1U]);
+            float kconf = kpt_dim == 3 ? tensorElementToFloat(keypoints_tensor.data[keypoint_offset + 2U]) : 1.0F;
 
             Keypoint kp;
             kp.x = kx;
@@ -120,14 +110,6 @@ void EdgeCrafterPosePostprocessor::deriveBboxFromKeypoints(PoseEstimation& pose)
         pose.bbox = cv::Rect(static_cast<int>(x_min), static_cast<int>(y_min), static_cast<int>(x_max - x_min),
                              static_cast<int>(y_max - y_min));
     }
-}
-
-float EdgeCrafterPosePostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
-}
-
-int EdgeCrafterPosePostprocessor::getTensorInt(const TensorElement& element) {
-    return std::visit([](auto&& value) -> int { return static_cast<int>(value); }, element);
 }
 
 } // namespace vision_core

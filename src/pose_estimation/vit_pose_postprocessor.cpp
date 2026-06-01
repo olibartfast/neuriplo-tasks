@@ -1,5 +1,7 @@
 #include "vision-core/pose_estimation/vit_pose_postprocessor.hpp"
 
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -47,15 +49,7 @@ std::vector<PoseEstimation> ViTPosePostprocessor::postprocess(const std::vector<
 
             for (int y = 0; y < heatmap_h; ++y) {
                 for (int x = 0; x < heatmap_w; ++x) {
-                    const auto& val_variant = data[static_cast<size_t>(offset + y * heatmap_w + x)];
-                    float val = 0.0f;
-                    if (std::holds_alternative<float>(val_variant)) {
-                        val = std::get<float>(val_variant);
-                    } else if (std::holds_alternative<int32_t>(val_variant)) {
-                        val = static_cast<float>(std::get<int32_t>(val_variant));
-                    } else if (std::holds_alternative<int64_t>(val_variant)) {
-                        val = static_cast<float>(std::get<int64_t>(val_variant));
-                    }
+                    const float val = tensorElementToFloat(data[static_cast<size_t>(offset + y * heatmap_w + x)]);
 
                     if (val > max_val) {
                         max_val = val;

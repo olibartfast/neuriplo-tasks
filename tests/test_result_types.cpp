@@ -1,4 +1,5 @@
 #include "vision-core/core/result_types.hpp"
+#include "vision-core/core/tensor_utils.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
@@ -21,6 +22,20 @@ TEST_F(ResultTypesTest, ClassificationParameterizedConstruction) {
     Classification cls(5.0f, 0.95f);
     EXPECT_FLOAT_EQ(cls.class_id, 5.0f);
     EXPECT_FLOAT_EQ(cls.class_confidence, 0.95f);
+}
+
+TEST_F(ResultTypesTest, TensorElementToFloatCoversSupportedScalarTypes) {
+    EXPECT_FLOAT_EQ(tensorElementToFloat(TensorElement{1.25f}), 1.25f);
+    EXPECT_FLOAT_EQ(tensorElementToFloat(TensorElement{int32_t{-2}}), -2.0f);
+    EXPECT_FLOAT_EQ(tensorElementToFloat(TensorElement{int64_t{3}}), 3.0f);
+    EXPECT_FLOAT_EQ(tensorElementToFloat(TensorElement{uint8_t{4}}), 4.0f);
+}
+
+TEST_F(ResultTypesTest, TensorElementToIntCoversSupportedScalarTypes) {
+    EXPECT_EQ(tensorElementToInt(TensorElement{1.75f}), 1);
+    EXPECT_EQ(tensorElementToInt(TensorElement{int32_t{-2}}), -2);
+    EXPECT_EQ(tensorElementToInt(TensorElement{int64_t{3}}), 3);
+    EXPECT_EQ(tensorElementToInt(TensorElement{uint8_t{4}}), 4);
 }
 
 TEST_F(ResultTypesTest, DetectionDefaultConstruction) {

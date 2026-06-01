@@ -18,7 +18,6 @@ class DepthAnythingV2Postprocessor : public DepthEstimationPostprocessor {
                                              const std::vector<int64_t>& shape, const cv::Size& frame_size) override;
 
   private:
-    static float getTensorFloat(const TensorElement& element);
 };
 
 } // namespace vision_core

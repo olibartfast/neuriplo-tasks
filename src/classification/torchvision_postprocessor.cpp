@@ -1,5 +1,7 @@
 #include "vision-core/classification/torchvision_postprocessor.hpp"
 
+#include "vision-core/core/tensor_utils.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -22,7 +24,7 @@ std::vector<Classification> TorchvisionPostprocessor::postprocess(const std::vec
     std::vector<float> scores;
     scores.reserve(output.size());
     for (const auto& element : output) {
-        scores.push_back(getTensorFloat(element));
+        scores.push_back(tensorElementToFloat(element));
     }
 
     if (apply_softmax_) {
@@ -48,10 +50,6 @@ std::vector<Classification> TorchvisionPostprocessor::postprocess(const std::vec
     }
 
     return classifications;
-}
-
-float TorchvisionPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
 }
 
 void TorchvisionPostprocessor::applySoftmax(std::vector<float>& logits) {
