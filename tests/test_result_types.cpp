@@ -3,8 +3,41 @@
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
+#include <string>
+#include <type_traits>
 
 using namespace vision_core;
+
+namespace {
+
+std::string resultTypeName(const Result& result) {
+    return visitResult(result, [](const auto& value) -> std::string {
+        using T = std::decay_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, Classification>) {
+            return "classification";
+        } else if constexpr (std::is_same_v<T, Detection>) {
+            return "detection";
+        } else if constexpr (std::is_same_v<T, OpenVocabDetection>) {
+            return "open_vocab_detection";
+        } else if constexpr (std::is_same_v<T, InstanceSegmentation>) {
+            return "instance_segmentation";
+        } else if constexpr (std::is_same_v<T, OpticalFlow>) {
+            return "optical_flow";
+        } else if constexpr (std::is_same_v<T, VideoClassification>) {
+            return "video_classification";
+        } else if constexpr (std::is_same_v<T, PoseEstimation>) {
+            return "pose_estimation";
+        } else if constexpr (std::is_same_v<T, DepthEstimation>) {
+            return "depth_estimation";
+        } else if constexpr (std::is_same_v<T, GaussianSplatting>) {
+            return "gaussian_splatting";
+        } else if constexpr (std::is_same_v<T, ImageUnderstanding>) {
+            return "image_understanding";
+        }
+    });
+}
+
+} // namespace
 
 class ResultTypesTest : public ::testing::Test {
   protected:
@@ -238,6 +271,37 @@ TEST_F(ResultTypesTest, ResultVariantHoldsDepthEstimation) {
     Result result = depth;
 
     EXPECT_TRUE(std::holds_alternative<DepthEstimation>(result));
+}
+
+TEST_F(ResultTypesTest, VisitResultAcceptsEveryResultAlternative) {
+    const std::vector<Result> results = {
+        Classification{},      Detection{},      OpenVocabDetection{}, InstanceSegmentation{}, OpticalFlow{},
+        VideoClassification{}, PoseEstimation{}, DepthEstimation{},    GaussianSplatting{},    ImageUnderstanding{},
+    };
+    const std::vector<std::string> expected = {
+        "classification",        "detection",        "open_vocab_detection",
+        "instance_segmentation", "optical_flow",     "video_classification",
+        "pose_estimation",       "depth_estimation", "gaussian_splatting",
+        "image_understanding",
+    };
+
+    ASSERT_EQ(results.size(), expected.size());
+    for (size_t index = 0; index < results.size(); ++index) {
+        EXPECT_EQ(resultTypeName(results[index]), expected[index]);
+    }
+}
+
+TEST_F(ResultTypesTest, VisitResultAllowsMutableVisitors) {
+    Result result = Classification{};
+
+    visitResult(result, [](auto& value) {
+        using T = std::decay_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, Classification>) {
+            value.class_id = 42.0f;
+        }
+    });
+
+    EXPECT_FLOAT_EQ(std::get<Classification>(result).class_id, 42.0f);
 }
 
 TEST_F(ResultTypesTest, TaskTypeEnumValues) {
