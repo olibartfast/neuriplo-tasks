@@ -14,7 +14,7 @@ namespace vision_core {
 
 ClassificationTask::ClassificationTask(const ModelInfo& model_info, const std::string& model_name, int top_k,
                                        bool apply_softmax)
-    : TaskInterface(model_info), model_type_(detectModelType(model_name)), model_name_(model_name), top_k_(top_k),
+    : BaseTask(model_info), model_type_(detectModelType(model_name)), model_name_(model_name), top_k_(top_k),
       apply_softmax_(apply_softmax) {
     // Extract input dimensions
     cv::Size input_size = extractInputSize(model_info);
@@ -36,38 +36,14 @@ ClassificationTask::ClassificationTask(const ModelInfo& model_info, const std::s
     }
 }
 
-std::vector<std::vector<uint8_t>> ClassificationTask::preprocess(const std::vector<cv::Mat>& imgs) {
-    std::vector<std::vector<uint8_t>> results;
-    results.reserve(imgs.size());
+ClassificationTask::~ClassificationTask() = default;
 
-    for (const auto& img : imgs) {
-        if (img.empty()) {
-            throw std::invalid_argument("Empty input image provided");
-        }
-        results.push_back(preprocessor_->preprocess(img));
-    }
+const Preprocessor& ClassificationTask::getPreprocessor() const { return *preprocessor_; }
 
-    return results;
-}
-
-std::vector<Result> ClassificationTask::postprocess(const cv::Size& /*frame_size*/,
-                                                    const std::vector<Tensor>& tensors) {
-
-    if (tensors.empty()) {
-        return {};
-    }
-
-    // Classify using unified postprocessing
+std::vector<Result> ClassificationTask::decode(const cv::Size& /*frame_size*/, const std::vector<Tensor>& tensors) {
     auto classifications = postprocessor_->postprocess(tensors[0].data, tensors[0].shape);
 
-    // Convert to results
-    std::vector<Result> results;
-    results.reserve(classifications.size());
-    for (const auto& classification : classifications) {
-        results.emplace_back(classification);
-    }
-
-    return results;
+    return toResults(classifications);
 }
 
 ClassificationTask::ModelType ClassificationTask::detectModelType(const std::string& model_name) {
