@@ -12,7 +12,8 @@ namespace vision_core {
  * @brief Factory for creating task instances
  *
  * Creates appropriate task implementations based on model type string.
- * Uses direct instantiation - no registration pattern.
+ * Dispatches through a compile-time registration table in task_factory.cpp
+ * (ordered matchers and creators). Built-in tasks only; no dynamic plugins.
  */
 class TaskFactory {
   public:

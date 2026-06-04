@@ -2,6 +2,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -175,6 +176,20 @@ struct ImageUnderstanding {
 using Result =
     std::variant<Classification, Detection, OpenVocabDetection, InstanceSegmentation, OpticalFlow, VideoClassification,
                  PoseEstimation, DepthEstimation, GaussianSplatting, ImageUnderstanding>;
+
+/**
+ * @brief Optional visitor helper for Result (forwards to std::visit).
+ *
+ * Consumers may use std::visit or std::get directly; this wrapper preserves
+ * a single include point if the Result alternative set grows.
+ */
+template <typename Visitor> decltype(auto) visitResult(Result& result, Visitor&& visitor) {
+    return std::visit(std::forward<Visitor>(visitor), result);
+}
+
+template <typename Visitor> decltype(auto) visitResult(const Result& result, Visitor&& visitor) {
+    return std::visit(std::forward<Visitor>(visitor), result);
+}
 
 /**
  * @brief Task type enumeration

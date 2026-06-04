@@ -129,6 +129,10 @@ cppcheck --enable=warning --std=c++17 \
 2. **`TaskInterface` / `TaskFactory`** — unified interface;
    `TaskFactory::createTaskInstance(model_type_string, model_info)` returns a
    `std::unique_ptr<TaskInterface>` that handles both pre- and postprocessing.
+   Task creation is a **built-in, compile-time registry** in `task_factory.cpp`.
+   Third-party or runtime task plugins are **out of scope** unless explicitly
+   added as a product requirement (use a separate extension registry, not an
+   ever-growing internal table).
 
 ### Core abstractions (`include/vision-core/core/`)
 
@@ -136,7 +140,7 @@ cppcheck --enable=warning --std=c++17 \
 |-----------------------|---------|
 | `task_interface.hpp`  | Abstract base: `preprocess(vector<cv::Mat>) → vector<vector<uint8_t>>`, `postprocess(cv::Size, vector<Tensor>) → vector<Result>` |
 | `task_factory.hpp`    | `TaskFactory::createTaskInstance(string, ModelInfo)` — normalises the model-type string (strip `-`, `_`, whitespace; lowercase) and dispatches |
-| `result_types.hpp`    | `Result = std::variant<Classification, Detection, InstanceSegmentation, OpticalFlow, VideoClassification, PoseEstimation, DepthEstimation>` |
+| `result_types.hpp`    | `Result` variant plus optional `visitResult()` helper (forwards to `std::visit`) |
 | `model_info.hpp`      | `ModelInfo`: `input_shapes`, `input_formats` (`FORMAT_NCHW` / `FORMAT_NHWC`), `input_names`, `output_names` |
 | `preprocessor.hpp`    | Base preprocessor utilities |
 | `bbox_processor.hpp`  | Bounding-box coordinate transformations |
