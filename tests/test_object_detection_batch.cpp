@@ -3,6 +3,8 @@
 #include "vision-core/core/task_factory.hpp"
 #include "vision-core/object_detection/yolo_postprocessor.hpp"
 
+#include <array>
+#include <cstring>
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 
@@ -20,6 +22,24 @@ ModelInfo detectionModelInfo() {
     info.batch_size_ = 2;
     info.max_batch_size_ = 2;
     return info;
+}
+
+ModelInfo multiInputDetectionModelInfo() {
+    ModelInfo info;
+    info.input_shapes = {{1, 3, 320, 544}, {1, 2}};
+    info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW"};
+    info.input_names = {"images", "orig_target_sizes"};
+    info.output_names = {"scores", "boxes"};
+    info.input_types = {CV_32F, CV_32S};
+    info.batch_size_ = 1;
+    info.max_batch_size_ = 1;
+    return info;
+}
+
+std::array<int64_t, 2> decodeInt64Pair(const std::vector<uint8_t>& buffer) {
+    std::array<int64_t, 2> values{};
+    std::memcpy(values.data(), buffer.data(), values.size() * sizeof(int64_t));
+    return values;
 }
 
 Tensor makeBatchedYoloTensor(int batch, int anchors, int num_classes) {
@@ -87,4 +107,34 @@ TEST(ObjectDetectionBatchTest, TaskFactoryBatchPreprocessPostprocess) {
     EXPECT_EQ(post.batch_size, 2);
     EXPECT_FALSE(direct.empty());
     EXPECT_EQ(post.results.size(), direct.size());
+}
+
+TEST(ObjectDetectionBatchTest, RtDetrPreprocessUsesModelInputSizeMetadata) {
+    auto task = TaskFactory::createTaskInstance("rtdetr", multiInputDetectionModelInfo());
+    ASSERT_NE(task, nullptr);
+
+    const auto buffers = task->preprocess({cv::Mat::zeros(123, 456, CV_8UC3)});
+
+    ASSERT_EQ(buffers.size(), 2u);
+    EXPECT_FALSE(buffers[0].empty());
+    ASSERT_EQ(buffers[1].size(), 2u * sizeof(int64_t));
+
+    const auto sizes = decodeInt64Pair(buffers[1]);
+    EXPECT_EQ(sizes[0], 320);
+    EXPECT_EQ(sizes[1], 544);
+}
+
+TEST(ObjectDetectionBatchTest, EdgeCrafterPreprocessUsesOriginalImageSizeMetadata) {
+    auto task = TaskFactory::createTaskInstance("edgecrafter", multiInputDetectionModelInfo());
+    ASSERT_NE(task, nullptr);
+
+    const auto buffers = task->preprocess({cv::Mat::zeros(123, 456, CV_8UC3)});
+
+    ASSERT_EQ(buffers.size(), 2u);
+    EXPECT_FALSE(buffers[0].empty());
+    ASSERT_EQ(buffers[1].size(), 2u * sizeof(int64_t));
+
+    const auto sizes = decodeInt64Pair(buffers[1]);
+    EXPECT_EQ(sizes[0], 456);
+    EXPECT_EQ(sizes[1], 123);
 }
