@@ -35,6 +35,65 @@ set(TEST_LIBS
 add_executable(test_result_types test_result_types.cpp)
 target_link_libraries(test_result_types ${TEST_LIBS})
 
+add_executable(test_batch_types test_batch_types.cpp)
+target_link_libraries(test_batch_types ${TEST_LIBS})
+
+add_executable(test_batch_preprocess test_batch_preprocess.cpp)
+target_link_libraries(test_batch_preprocess
+    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    GTest::GTest
+    GTest::Main
+    ${OpenCV_LIBS}
+)
+
+add_executable(test_batch_postprocess test_batch_postprocess.cpp)
+target_link_libraries(test_batch_postprocess
+    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    GTest::GTest
+    GTest::Main
+    ${OpenCV_LIBS}
+)
+
+add_executable(test_classification_batch test_classification_batch.cpp)
+target_link_libraries(test_classification_batch
+    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    GTest::GTest
+    GTest::Main
+    ${OpenCV_LIBS}
+)
+
+add_executable(test_object_detection_batch test_object_detection_batch.cpp)
+target_link_libraries(test_object_detection_batch
+    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    GTest::GTest
+    GTest::Main
+    ${OpenCV_LIBS}
+)
+
+add_executable(test_depth_estimation_batch test_depth_estimation_batch.cpp)
+target_link_libraries(test_depth_estimation_batch
+    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    GTest::GTest
+    GTest::Main
+    ${OpenCV_LIBS}
+)
+
+add_executable(test_pose_estimation_batch test_pose_estimation_batch.cpp)
+target_link_libraries(test_pose_estimation_batch
+    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    GTest::GTest
+    GTest::Main
+    ${OpenCV_LIBS}
+)
+
+add_executable(test_batch_integration test_batch_integration.cpp)
+target_link_libraries(test_batch_integration
+    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    GTest::GTest
+    GTest::Main
+    ${OpenCV_LIBS}
+)
+
 add_executable(test_task_interface test_task_interface.cpp)
 target_link_libraries(test_task_interface ${TEST_LIBS})
 
@@ -146,6 +205,14 @@ target_compile_definitions(test_readme_model_types
 
 # Add tests manually for better compatibility
 add_test(NAME test_result_types COMMAND test_result_types)
+add_test(NAME test_batch_types COMMAND test_batch_types)
+add_test(NAME test_batch_preprocess COMMAND test_batch_preprocess)
+add_test(NAME test_batch_postprocess COMMAND test_batch_postprocess)
+add_test(NAME test_classification_batch COMMAND test_classification_batch)
+add_test(NAME test_object_detection_batch COMMAND test_object_detection_batch)
+add_test(NAME test_depth_estimation_batch COMMAND test_depth_estimation_batch)
+add_test(NAME test_pose_estimation_batch COMMAND test_pose_estimation_batch)
+add_test(NAME test_batch_integration COMMAND test_batch_integration)
 add_test(NAME test_task_interface COMMAND test_task_interface)
 add_test(NAME test_task_factory COMMAND test_task_factory)
 add_test(NAME test_yolo_postprocessor COMMAND test_yolo_postprocessor)

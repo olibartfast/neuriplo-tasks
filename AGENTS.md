@@ -134,6 +134,13 @@ cppcheck --enable=warning --std=c++17 \
    added as a product requirement (use a separate extension registry, not an
    ever-growing internal table).
 
+### Planned work
+
+Atomic roadmap (batch utilities, refactor phases, composite pipelines):
+[`docs/ROADMAP.md`](./docs/ROADMAP.md). Batch readiness audit (B0):
+[`docs/batch_support_matrix.md`](./docs/batch_support_matrix.md). Factory/strategy
+refactor detail: [`docs/task_refactor_atomic_plan.md`](./docs/task_refactor_atomic_plan.md).
+
 ### Core abstractions (`include/vision-core/core/`)
 
 | File                  | Purpose |
@@ -142,6 +149,9 @@ cppcheck --enable=warning --std=c++17 \
 | `task_factory.hpp`    | `TaskFactory::createTaskInstance(string, ModelInfo)` — normalises the model-type string (strip `-`, `_`, whitespace; lowercase) and dispatches |
 | `result_types.hpp`    | `Result` variant plus optional `visitResult()` helper (forwards to `std::visit`) |
 | `model_info.hpp`      | `ModelInfo`: `input_shapes`, `input_formats` (`FORMAT_NCHW` / `FORMAT_NHWC`), `input_names`, `output_names` |
+| `batch_types.hpp`     | `BatchRequest`, `BatchPreprocessOutput`, `BatchPostprocessOutput`, invariant helpers |
+| `batch_preprocess.hpp`| `batchPreprocess(task, BatchRequest)` — per-image preprocess + `batch_size` metadata |
+| `batch_postprocess.hpp`| `batchPostprocess(task, frame_size, tensors, batch_size)` — postprocess + batch alignment |
 | `preprocessor.hpp`    | Base preprocessor utilities |
 | `bbox_processor.hpp`  | Bounding-box coordinate transformations |
 

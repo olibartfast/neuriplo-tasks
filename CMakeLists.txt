@@ -55,6 +55,8 @@ find_package(OpenCV REQUIRED)
 # All library sources - UNIFIED ARCHITECTURE
 set(CORE_SOURCES
     # Core
+    src/core/batch_preprocess.cpp
+    src/core/batch_postprocess.cpp
     src/core/bbox_processor.cpp
     src/core/preprocessor.cpp
     src/core/task_interface.cpp
@@ -106,6 +108,9 @@ set(CORE_SOURCES
 set(CORE_HEADERS
     # Core
     include/vision-core/core/result_types.hpp
+    include/vision-core/core/batch_types.hpp
+    include/vision-core/core/batch_preprocess.hpp
+    include/vision-core/core/batch_postprocess.hpp
     include/vision-core/core/bbox_processor.hpp
     include/vision-core/core/preprocessor.hpp
     include/vision-core/core/model_info.hpp
@@ -120,6 +125,7 @@ set(CORE_HEADERS
     include/vision-core/object_detection/rfdetr_postprocessor.hpp
     include/vision-core/object_detection/edgecrafter_postprocessor.hpp
     include/vision-core/classification/classification_task.hpp
+    include/vision-core/classification/classification_logits_layout.hpp
     include/vision-core/classification/classification_postprocessor.hpp
     include/vision-core/classification/torchvision_postprocessor.hpp
     include/vision-core/classification/vit_postprocessor.hpp

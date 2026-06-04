@@ -113,6 +113,52 @@ for (const auto& result : results) {
 }
 ```
 
+### 3. Batch Processing Utilities
+
+Helpers for running **N independent images** through the same task without reimplementing
+batch metadata or per-domain split logic.
+
+- **Consumer guide:** [docs/batch_processing.md](docs/batch_processing.md) — worked examples, engine vs library responsibilities, migration from `N=1`
+- **Per-family readiness:** [docs/batch_support_matrix.md](docs/batch_support_matrix.md)
+
+**Headers:** `batch_types.hpp`, `batch_preprocess.hpp`, `batch_postprocess.hpp`
+
+```cpp
+#include <vision-core/core/batch_preprocess.hpp>
+#include <vision-core/core/batch_postprocess.hpp>
+#include <vision-core/core/task_factory.hpp>
+
+using namespace vision_core;
+
+ModelInfo model_info;
+model_info.input_shapes = {{2, 3, 224, 224}};
+model_info.input_formats = {"FORMAT_NCHW"};
+model_info.max_batch_size_ = 2;
+model_info.batch_size_ = 2;
+
+auto task = TaskFactory::createTaskInstance("resnet50", model_info);
+
+BatchRequest request;
+request.images = {cv::imread("a.jpg"), cv::imread("b.jpg")};
+
+// 1. Preprocess — one buffer per image; batch_size = N
+BatchPreprocessOutput pre = batchPreprocess(*task, request);
+
+// 2. Run inference (consumer responsibility): stack pre.buffers into [N,C,H,W]
+//    or feed separate inputs per your engine contract.
+
+// 3. Postprocess — align vector<Result> with batch indices
+std::vector<Tensor> output_tensors = { /* engine output, e.g. shape [N, num_classes] */ };
+BatchPostprocessOutput post =
+    batchPostprocess(*task, request.images[0].size(), output_tensors, pre.batch_size);
+
+// Classification with N>1: one top-1 Result per image (post.results.size() == N).
+// Detection: variable detections per image; post.batch_size stays N.
+```
+
+Set `ModelInfo.max_batch_size_` so `batchPreprocess` / `batchPostprocess` reject oversized
+batches. `batch_size_` is a consumer hint for the inference request.
+
 ## Usage
 
 ### As CMake Submodule
@@ -351,6 +397,10 @@ MIT License
 
 ## Roadmap
 
-### Planned 📋
-- [ ] Batch processing utilities
+Planned work is broken into atomic steps in **[docs/ROADMAP.md](docs/ROADMAP.md)**
+(factory refactor, batch utilities, composite pipelines). Batch consumer guide:
+**[docs/batch_processing.md](docs/batch_processing.md)**. Per-task-family readiness:
+**[docs/batch_support_matrix.md](docs/batch_support_matrix.md)**.
+Task-level refactor detail remains in
+**[docs/task_refactor_atomic_plan.md](docs/task_refactor_atomic_plan.md)**.
 
