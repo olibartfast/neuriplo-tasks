@@ -29,7 +29,7 @@ shipping inference on documented model types.
 | Refactor | Phase 0 — factory/README test baseline | **Done** (contract tests exist) |
 | Refactor | Phase 1 — registry extraction | **Done** |
 | Refactor | Phase 2 — optional runtime extension | **Deferred** (out of scope unless product requires plugins) |
-| Refactor | Phases 3–5 — per-domain strategies / `BaseTask` | **Planned** |
+| Refactor | Phases 3–5 — per-domain strategies / `BaseTask` | **In progress** (Phase 3 detection pilot, Phase 4 depth pilot) |
 | Refactor | Phase 6 — result visitor helpers | **Done** |
 | Refactor | Phase 7 — composite `TaskPipeline` API | **Planned** |
 | Refactor | Phase 8 — docs/sync cleanup | **Planned** (ongoing per release) |
@@ -81,8 +81,10 @@ Full step-by-step phases 0–8 live in
 
 **Next recommended phases** (only when duplication or audit pain is real):
 
-1. **Phase 3** — object-detection internal strategies (pilot domain).
-2. **Phase 4** — `BaseTask` lifecycle **only if** two domains share identical flow.
+1. Continue **Phase 4** by migrating classification to `BaseTask` if the depth
+   pilot stays green and the shared lifecycle still removes duplicate code.
+2. Continue **Phase 5** domain-by-domain only where strategies remove duplication
+   or isolate model-specific behavior.
 3. **Phase 7** — `TaskPipeline` for detection+pose / detection+seg (separate from
    batch utilities; pipelines compose *tasks*, batch utilities compose *images*
    within one task).

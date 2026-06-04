@@ -57,6 +57,7 @@ set(CORE_SOURCES
     # Core
     src/core/batch_preprocess.cpp
     src/core/batch_postprocess.cpp
+    src/core/base_task.cpp
     src/core/bbox_processor.cpp
     src/core/preprocessor.cpp
     src/core/task_interface.cpp
@@ -111,6 +112,7 @@ set(CORE_HEADERS
     include/vision-core/core/batch_types.hpp
     include/vision-core/core/batch_preprocess.hpp
     include/vision-core/core/batch_postprocess.hpp
+    include/vision-core/core/base_task.hpp
     include/vision-core/core/bbox_processor.hpp
     include/vision-core/core/preprocessor.hpp
     include/vision-core/core/model_info.hpp
