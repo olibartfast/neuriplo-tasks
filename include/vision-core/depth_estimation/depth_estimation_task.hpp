@@ -1,7 +1,7 @@
 #pragma once
 
+#include "vision-core/core/base_task.hpp"
 #include "vision-core/core/preprocessor.hpp"
-#include "vision-core/core/task_interface.hpp"
 
 #include <memory>
 #include <string>
@@ -13,7 +13,7 @@ class DepthEstimationPostprocessor;
 /**
  * @brief Unified depth estimation task
  */
-class DepthEstimationTask : public TaskInterface {
+class DepthEstimationTask : public BaseTask {
   public:
     enum class ModelType : uint8_t { DEPTH_ANYTHING_V2 };
 
@@ -22,15 +22,14 @@ class DepthEstimationTask : public TaskInterface {
 
     TaskType getTaskType() override { return TaskType::DepthEstimation; }
 
-    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override;
-
-    std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
-
   private:
     ModelType model_type_;
     std::string model_name_;
     std::unique_ptr<Preprocessor> preprocessor_;
     std::unique_ptr<DepthEstimationPostprocessor> postprocessor_;
+
+    [[nodiscard]] const Preprocessor& getPreprocessor() const override;
+    std::vector<Result> decode(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
 
     static ModelType detectModelType(const std::string& model_name);
 

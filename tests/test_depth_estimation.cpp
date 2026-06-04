@@ -29,6 +29,13 @@ TEST_F(DepthEstimationTest, PreprocessReturnsTensorData) {
     EXPECT_FALSE(outputs[0].empty());
 }
 
+TEST_F(DepthEstimationTest, PreprocessRejectsEmptyImage) {
+    auto model_info = createModelInfo();
+    DepthEstimationTask task(model_info, "depth_anything_v2");
+
+    EXPECT_THROW(task.preprocess({cv::Mat()}), std::invalid_argument);
+}
+
 TEST_F(DepthEstimationTest, PostprocessConvertsDepthMap) {
     auto model_info = createModelInfo();
     DepthEstimationTask task(model_info, "depth_anything_v2");
