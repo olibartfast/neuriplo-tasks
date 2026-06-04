@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
+#include <stdexcept>
 
 using namespace vision_core;
 
@@ -60,6 +61,13 @@ TEST(ClassificationBatchTest, TaskPostprocessBatchSizeTwo) {
     ASSERT_TRUE(std::holds_alternative<Classification>(results[0]));
     EXPECT_EQ(std::get<Classification>(results[0]).class_id, 3);
     EXPECT_EQ(std::get<Classification>(results[1]).class_id, 2);
+}
+
+TEST(ClassificationBatchTest, PreprocessRejectsEmptyImage) {
+    auto task = TaskFactory::createTaskInstance("resnet50", classificationModelInfo());
+    ASSERT_NE(task, nullptr);
+
+    EXPECT_THROW(task->preprocess({cv::Mat()}), std::invalid_argument);
 }
 
 TEST(ClassificationBatchTest, BatchPreprocessPostprocessRoundTrip) {

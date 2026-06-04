@@ -1,7 +1,7 @@
 #pragma once
 
+#include "vision-core/core/base_task.hpp"
 #include "vision-core/core/preprocessor.hpp"
-#include "vision-core/core/task_interface.hpp"
 
 #include <memory>
 #include <string>
@@ -24,7 +24,7 @@ class ClassificationPostprocessor;
  * 3. Factory pattern for preprocessor creation
  * 4. Unified postprocessing with configurable parameters
  */
-class ClassificationTask : public TaskInterface {
+class ClassificationTask : public BaseTask {
   public:
     /**
      * @brief Classification model types grouped by preprocessing requirements
@@ -40,13 +40,9 @@ class ClassificationTask : public TaskInterface {
      */
     explicit ClassificationTask(const ModelInfo& model_info, const std::string& model_name, int top_k = 5,
                                 bool apply_softmax = true);
+    ~ClassificationTask() override;
 
-    // TaskInterface implementation
     TaskType getTaskType() override { return TaskType::Classification; }
-
-    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override;
-
-    std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
 
   private:
     ModelType model_type_;
@@ -55,6 +51,9 @@ class ClassificationTask : public TaskInterface {
     std::unique_ptr<ClassificationPostprocessor> postprocessor_;
     int top_k_;
     bool apply_softmax_;
+
+    [[nodiscard]] const Preprocessor& getPreprocessor() const override;
+    std::vector<Result> decode(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
 
     /**
      * @brief Detect model type from model name string
