@@ -9,8 +9,97 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 
 namespace vision_core {
+
+class DetectionPreprocessStrategy {
+  public:
+    virtual ~DetectionPreprocessStrategy() = default;
+
+    [[nodiscard]] virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) const = 0;
+};
+
+namespace {
+
+enum class SizeInputMode : uint8_t { InputSize, OriginalSize };
+
+std::vector<uint8_t> encodeInt64Pair(int64_t first, int64_t second) {
+    std::vector<int64_t> values = {first, second};
+    const auto* begin = reinterpret_cast<const uint8_t*>(values.data());
+    const auto* end = begin + values.size() * sizeof(int64_t);
+    return {begin, end};
+}
+
+class SingleInputDetectionPreprocessStrategy final : public DetectionPreprocessStrategy {
+  public:
+    explicit SingleInputDetectionPreprocessStrategy(std::unique_ptr<Preprocessor> preprocessor)
+        : preprocessor_(std::move(preprocessor)) {}
+
+    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) const override {
+        std::vector<std::vector<uint8_t>> results;
+        results.reserve(imgs.size());
+
+        for (const auto& img : imgs) {
+            if (img.empty()) {
+                throw std::invalid_argument("Empty input image provided");
+            }
+            results.push_back(preprocessor_->preprocess(img));
+        }
+
+        return results;
+    }
+
+  private:
+    std::unique_ptr<Preprocessor> preprocessor_;
+};
+
+class ModelInputDetectionPreprocessStrategy final : public DetectionPreprocessStrategy {
+  public:
+    ModelInputDetectionPreprocessStrategy(std::unique_ptr<Preprocessor> preprocessor, const ModelInfo& model_info,
+                                          const cv::Size& input_size, SizeInputMode size_input_mode)
+        : preprocessor_(std::move(preprocessor)), model_info_(model_info), input_size_(input_size),
+          size_input_mode_(size_input_mode) {}
+
+    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) const override {
+        std::vector<std::vector<uint8_t>> results;
+        results.reserve(model_info_.input_shapes.size());
+
+        if (imgs.empty() || imgs[0].empty()) {
+            throw std::invalid_argument("Empty input image provided");
+        }
+
+        const cv::Mat& img = imgs[0];
+
+        for (size_t i = 0; i < model_info_.input_names.size(); ++i) {
+            const auto& input_name = model_info_.input_names[i];
+            const auto& input_shape = model_info_.input_shapes[i];
+
+            if (input_shape.size() >= 3) {
+                results.push_back(preprocessor_->preprocess(img));
+            } else if (input_name == "orig_target_sizes" || input_name == "orig_size") {
+                if (size_input_mode_ == SizeInputMode::OriginalSize) {
+                    results.push_back(encodeInt64Pair(static_cast<int64_t>(img.cols), static_cast<int64_t>(img.rows)));
+                } else {
+                    results.push_back(encodeInt64Pair(static_cast<int64_t>(input_size_.height),
+                                                      static_cast<int64_t>(input_size_.width)));
+                }
+            } else {
+                results.emplace_back();
+            }
+        }
+
+        return results;
+    }
+
+  private:
+    std::unique_ptr<Preprocessor> preprocessor_;
+    const ModelInfo& model_info_;
+    cv::Size input_size_;
+    SizeInputMode size_input_mode_;
+};
+
+} // namespace
 
 ObjectDetectionTask::ObjectDetectionTask(const ModelInfo& model_info, const std::string& model_name,
                                          float confidence_threshold, float nms_threshold)
@@ -21,10 +110,9 @@ ObjectDetectionTask::ObjectDetectionTask(const ModelInfo& model_info, const std:
     input_width_ = input_size.width;
     input_height_ = input_size.height;
 
-    // Create appropriate preprocessor
-    preprocessor_ = createPreprocessor(model_type_, input_size);
+    preprocess_strategy_ = createPreprocessStrategy(model_type_, input_size);
 
-    if (!preprocessor_) {
+    if (!preprocess_strategy_) {
         throw std::runtime_error("Failed to create preprocessor for model: " + model_name);
     }
 
@@ -37,62 +125,7 @@ ObjectDetectionTask::ObjectDetectionTask(const ModelInfo& model_info, const std:
 }
 
 std::vector<std::vector<uint8_t>> ObjectDetectionTask::preprocess(const std::vector<cv::Mat>& imgs) {
-    std::vector<std::vector<uint8_t>> results;
-
-    // For models with multiple inputs (like RT-DETR/DEIM/DFINE with orig_target_sizes),
-    // we need to return one result per model input, not per image
-    // Note: RT_DETR_UL (Ultralytics) has single input like YOLO
-    if (model_type_ == ModelType::RT_DETR_STYLE || model_type_ == ModelType::EDGECRAFTER) {
-        // These models may have multiple inputs (images + orig_target_sizes)
-        results.reserve(model_info_.input_shapes.size());
-
-        if (imgs.empty() || imgs[0].empty()) {
-            throw std::invalid_argument("Empty input image provided");
-        }
-
-        const cv::Mat& img = imgs[0]; // For now, single image
-
-        for (size_t i = 0; i < model_info_.input_names.size(); ++i) {
-            const auto& input_name = model_info_.input_names[i];
-            const auto& input_shape = model_info_.input_shapes[i];
-
-            if (input_shape.size() >= 3) {
-                // This is the image input
-                results.push_back(preprocessor_->preprocess(img));
-            } else if (input_name == "orig_target_sizes" || input_name == "orig_size") {
-                // Handle original image size input
-                if (model_type_ == ModelType::EDGECRAFTER) {
-                    // EdgeCrafter: pass ORIGINAL image size so the model internally scales boxes
-                    std::vector<int64_t> orig_sizes = {static_cast<int64_t>(img.cols), static_cast<int64_t>(img.rows)};
-                    results.emplace_back(reinterpret_cast<uint8_t*>(orig_sizes.data()),
-                                         reinterpret_cast<uint8_t*>(orig_sizes.data()) +
-                                             orig_sizes.size() * sizeof(int64_t));
-                } else {
-                    // RT-DETR style: use input dimensions, not original frame
-                    std::vector<int64_t> orig_sizes = {static_cast<int64_t>(input_height_),
-                                                       static_cast<int64_t>(input_width_)};
-                    results.emplace_back(reinterpret_cast<uint8_t*>(orig_sizes.data()),
-                                         reinterpret_cast<uint8_t*>(orig_sizes.data()) +
-                                             orig_sizes.size() * sizeof(int64_t));
-                }
-            } else {
-                // Unknown input - send empty for now
-                results.emplace_back();
-            }
-        }
-    } else {
-        // Standard path for YOLO and RF-DETR (single input)
-        results.reserve(imgs.size());
-
-        for (const auto& img : imgs) {
-            if (img.empty()) {
-                throw std::invalid_argument("Empty input image provided");
-            }
-            results.push_back(preprocessor_->preprocess(img));
-        }
-    }
-
-    return results;
+    return preprocess_strategy_->preprocess(imgs);
 }
 
 std::vector<Result> ObjectDetectionTask::postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) {
@@ -154,6 +187,27 @@ ObjectDetectionTask::ModelType ObjectDetectionTask::detectModelType(const std::s
     }
 
     return ModelType::UKNOWN;
+}
+
+ObjectDetectionTask::~ObjectDetectionTask() = default;
+
+std::unique_ptr<DetectionPreprocessStrategy> ObjectDetectionTask::createPreprocessStrategy(ModelType type,
+                                                                                           const cv::Size& input_size) {
+    auto preprocessor = createPreprocessor(type, input_size);
+    if (!preprocessor) {
+        return nullptr;
+    }
+
+    if (type == ModelType::RT_DETR_STYLE) {
+        return std::make_unique<ModelInputDetectionPreprocessStrategy>(std::move(preprocessor), model_info_, input_size,
+                                                                       SizeInputMode::InputSize);
+    }
+    if (type == ModelType::EDGECRAFTER) {
+        return std::make_unique<ModelInputDetectionPreprocessStrategy>(std::move(preprocessor), model_info_, input_size,
+                                                                       SizeInputMode::OriginalSize);
+    }
+
+    return std::make_unique<SingleInputDetectionPreprocessStrategy>(std::move(preprocessor));
 }
 
 std::unique_ptr<Preprocessor> ObjectDetectionTask::createPreprocessor(ModelType type, const cv::Size& input_size) {
