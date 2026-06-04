@@ -34,6 +34,7 @@ yolo export model=best.pt format=torchscript   # for TorchScript format
 ```
 
 - **Output Format**: `[1, 84, 8400]` where 84 = 4 bbox coords + 80 class scores (no objectness score)
+- **Batched output**: `[N, 84, 8400]` with dynamic batch on export; vision-core decodes each batch slice (NMS per image).
 - **Model Type**: `yolo`
 
 ### TensorRT

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Batch processing utilities: `batch_types.hpp`, `batchPreprocess`, `batchPostprocess`
+- Domain batch adoption for classification (`[N,C]` logits), YOLO standard detection, depth, and ViTPose
+- `tests/test_batch_integration.cpp` — end-to-end `batchPreprocess` + `batchPostprocess` for classification and YOLO detection
+- `docs/batch_processing.md` — consumer migration guide (engine vs library, N=2 worked examples)
+
 ## [0.3.2] - 2026-05-28
 
 ### Fixed

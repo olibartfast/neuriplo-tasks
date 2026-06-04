@@ -62,6 +62,11 @@ class TaskInterface {
     [[nodiscard]] virtual int getRequiredFrames() const { return 1; }
 
     /**
+     * @brief Model metadata used to construct this task.
+     */
+    [[nodiscard]] const ModelInfo& getModelInfo() const noexcept { return model_info_; }
+
+    /**
      * @brief Preprocess input images
      * @param imgs Input images
      * @return Preprocessed data as uint8_t vectors

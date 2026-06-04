@@ -41,4 +41,14 @@ class DefaultClassificationPostprocessor : public ClassificationPostprocessor {
     void applySoftmax(std::vector<float>& logits);
 };
 
+/**
+ * @brief Shared logits postprocess for Torchvision / ViT / TensorFlow / default paths.
+ *
+ * When the leading batch dimension is greater than 1, returns one top-1 class per
+ * batch index (so `results.size() == N`). For `N == 1`, returns up to `top_k` classes.
+ */
+[[nodiscard]] std::vector<Classification> postprocessClassificationLogits(const std::vector<TensorElement>& output,
+                                                                          const std::vector<int64_t>& shape, int top_k,
+                                                                          bool apply_softmax);
+
 } // namespace vision_core

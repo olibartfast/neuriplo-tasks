@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <stdexcept>
 
 namespace vision_core {
@@ -123,6 +124,78 @@ std::vector<Detection> YoloPostprocessor::postprocess(const std::vector<Tensor>&
     return detections;
 }
 
+namespace {
+
+std::vector<Detection> decodeYoloStandardBatchSlice(
+    const std::vector<TensorElement>& output, const cv::Size& frame_size, int batch_index, float confidence_threshold,
+    bool has_objectness, int channels, int anchors, int num_classes, int class_offset,
+    const std::function<cv::Rect(float, float, float, float, const cv::Size&)>& scale_to_original) {
+    std::vector<Detection> detections;
+
+    const size_t slice_stride = static_cast<size_t>(channels) * static_cast<size_t>(anchors);
+    const size_t base_offset = static_cast<size_t>(batch_index) * slice_stride;
+
+    for (int i = 0; i < anchors; ++i) {
+        float objectness = 1.0f;
+        if (has_objectness) {
+            objectness = tensorElementToFloat(output[base_offset + static_cast<size_t>(i * channels + 4)]);
+            if (objectness < confidence_threshold) {
+                continue;
+            }
+        }
+
+        float max_class_score = 0.0f;
+        int class_id = -1;
+
+        for (int c = 0; c < num_classes; ++c) {
+            float score;
+            if (has_objectness) {
+                score =
+                    tensorElementToFloat(output[base_offset + static_cast<size_t>(i * channels + (c + class_offset))]);
+            } else {
+                score =
+                    tensorElementToFloat(output[base_offset + static_cast<size_t>((c + class_offset) * anchors + i)]);
+            }
+
+            if (score > max_class_score) {
+                max_class_score = score;
+                class_id = c;
+            }
+        }
+
+        const float final_score = has_objectness ? (objectness * max_class_score) : max_class_score;
+        if (final_score < confidence_threshold) {
+            continue;
+        }
+
+        float cx = 0.0f;
+        float cy = 0.0f;
+        float w = 0.0f;
+        float h = 0.0f;
+        if (has_objectness) {
+            cx = tensorElementToFloat(output[base_offset + static_cast<size_t>(i * channels + 0)]);
+            cy = tensorElementToFloat(output[base_offset + static_cast<size_t>(i * channels + 1)]);
+            w = tensorElementToFloat(output[base_offset + static_cast<size_t>(i * channels + 2)]);
+            h = tensorElementToFloat(output[base_offset + static_cast<size_t>(i * channels + 3)]);
+        } else {
+            cx = tensorElementToFloat(output[base_offset + static_cast<size_t>(0 * anchors + i)]);
+            cy = tensorElementToFloat(output[base_offset + static_cast<size_t>(1 * anchors + i)]);
+            w = tensorElementToFloat(output[base_offset + static_cast<size_t>(2 * anchors + i)]);
+            h = tensorElementToFloat(output[base_offset + static_cast<size_t>(3 * anchors + i)]);
+        }
+
+        Detection det;
+        det.class_id = static_cast<float>(class_id);
+        det.class_confidence = final_score;
+        det.bbox = scale_to_original(cx, cy, w, h, frame_size);
+        detections.push_back(det);
+    }
+
+    return detections;
+}
+
+} // namespace
+
 std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(const std::vector<TensorElement>& output,
                                                                   const std::vector<int64_t>& shape,
                                                                   const cv::Size& frame_size) {
@@ -130,12 +203,13 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(const std::vec
     std::vector<Detection> detections;
 
     // Check shape dimensions
-    if (shape.size() < 3)
+    if (shape.size() < 3) {
         return {};
+    }
 
-    // int batch = shape[0]; // Unused
-    int dim1 = static_cast<int>(shape[1]);
-    int dim2 = static_cast<int>(shape[2]);
+    const int batch = static_cast<int>(shape[0]);
+    const int dim1 = static_cast<int>(shape[1]);
+    const int dim2 = static_cast<int>(shape[2]);
 
     // Detect format by shape:
     // YOLOv5/v6/v7: [batch, anchors, 4+1+classes] where dim2 < dim1, has objectness at index 4
@@ -156,68 +230,22 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(const std::vec
     int num_classes = has_objectness ? (channels - 5) : (channels - 4);
     int class_offset = has_objectness ? 5 : 4;
 
-    if (num_classes <= 0)
+    if (num_classes <= 0) {
         return {};
-
-    for (int i = 0; i < anchors; ++i) {
-        // For YOLOv5/v6/v7, check objectness score first (index 4)
-        float objectness = 1.0f;
-        if (has_objectness) {
-            objectness = tensorElementToFloat(output[static_cast<size_t>(i * channels + 4)]);
-            if (objectness < confidence_threshold_)
-                continue;
-        }
-
-        // Extract class scores
-        float max_class_score = 0.0f;
-        int class_id = -1;
-
-        for (int c = 0; c < num_classes; ++c) {
-            float score;
-            if (has_objectness) {
-                // YOLOv5/v6/v7: [batch, anchors, channels] -> data[i * channels + (c + 5)]
-                score = tensorElementToFloat(output[static_cast<size_t>(i * channels + (c + class_offset))]);
-            } else {
-                // YOLOv8+: [batch, channels, anchors] -> data[(c + 4) * anchors + i]
-                score = tensorElementToFloat(output[static_cast<size_t>((c + class_offset) * anchors + i)]);
-            }
-
-            if (score > max_class_score) {
-                max_class_score = score;
-                class_id = c;
-            }
-        }
-
-        // For YOLOv5/v6/v7, multiply objectness with class score
-        float final_score = has_objectness ? (objectness * max_class_score) : max_class_score;
-
-        if (final_score < confidence_threshold_)
-            continue;
-
-        // Extract box coordinates
-        float cx, cy, w, h;
-        if (has_objectness) {
-            // YOLOv5/v6/v7: [batch, anchors, channels]
-            cx = tensorElementToFloat(output[static_cast<size_t>(i * channels + 0)]);
-            cy = tensorElementToFloat(output[static_cast<size_t>(i * channels + 1)]);
-            w = tensorElementToFloat(output[static_cast<size_t>(i * channels + 2)]);
-            h = tensorElementToFloat(output[static_cast<size_t>(i * channels + 3)]);
-        } else {
-            // YOLOv8+: [batch, channels, anchors]
-            cx = tensorElementToFloat(output[static_cast<size_t>(0 * anchors + i)]);
-            cy = tensorElementToFloat(output[static_cast<size_t>(1 * anchors + i)]);
-            w = tensorElementToFloat(output[static_cast<size_t>(2 * anchors + i)]);
-            h = tensorElementToFloat(output[static_cast<size_t>(3 * anchors + i)]);
-        }
-
-        Detection det;
-        det.class_id = static_cast<float>(class_id);
-        det.class_confidence = final_score;
-        det.bbox = scaleToOriginal(cx, cy, w, h, frame_size);
-        detections.push_back(det);
     }
 
-    applyNMS(detections);
+    const auto scale_fn = [this](float cx, float cy, float w, float h, const cv::Size& fs) {
+        return scaleToOriginal(cx, cy, w, h, fs);
+    };
+
+    for (int batch_index = 0; batch_index < batch; ++batch_index) {
+        std::vector<Detection> slice_detections =
+            decodeYoloStandardBatchSlice(output, frame_size, batch_index, confidence_threshold_, has_objectness,
+                                         channels, anchors, num_classes, class_offset, scale_fn);
+        applyNMS(slice_detections);
+        detections.insert(detections.end(), slice_detections.begin(), slice_detections.end());
+    }
+
     return detections;
 }
 

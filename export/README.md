@@ -85,6 +85,19 @@ python export/video_classification/timesformer/export_timesformer_to_onnx.py
 # See export/image_understanding/ImageUnderstanding.md for wget commands
 ```
 
+## Batched inference (dynamic batch axis)
+
+When exporting ONNX with a dynamic or fixed batch dimension on axis 0, align
+`ModelInfo.input_shapes` / `max_batch_size_` with the engine config and use
+vision-core batch helpers for preprocess/postprocess split.
+
+| Topic | Document |
+|-------|----------|
+| End-to-end consumer flow (`N=2` images, engine vs library) | [docs/batch_processing.md](../docs/batch_processing.md) |
+| Per-task-family batch readiness | [docs/batch_support_matrix.md](../docs/batch_support_matrix.md) |
+| Classification `[N,C]` output | [classification/TorchVisionClassification.md](classification/TorchVisionClassification.md) |
+| YOLO `[N, 4+C, anchors]` output | [detection/ObjectDetection.md](detection/ObjectDetection.md) |
+
 ## Export Integration with Inference Engines
 
 These exported models can be used with:

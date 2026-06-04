@@ -41,6 +41,11 @@ torch.onnx.export(resnet50,
                                 'output': {0: 'batch_size'}})
   ```
 
+### Batch inference (`N > 1`)
+
+- Export with dynamic batch on **input and output** (see `dynamic_axes` above) so the engine can run `[N,3,H,W]` → `[N,num_classes]`.
+- In vision-core, preprocess one buffer per image (`batchPreprocess`), stack for inference, then pass output shape `[N,C]` to `batchPostprocess` with `batch_size = N`. Postprocess returns **one top-1 class per batch index** when `N > 1` (full `top_k` applies only when `N = 1`).
+
  #### TensorRT
  Once you have your exported onnx model, using trtexec:
  ```bash
