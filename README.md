@@ -20,6 +20,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Gaussian Splatting**: LGM, LGM-mini, GRM (feed-forward image → 3D Gaussians)
 - **Image Understanding (VLM)**: Gemma 4 and compatible vision-language models via llama.cpp (image captioning, visual Q&A)
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
+- **Composite Task Pipelines**: Ordered `Result` stages for multi-task flows such as detection → pose or detection → segmentation
 - **Unified Tensor Interface**: Simplified API using `Tensor` struct that encapsulates data and shape information
 
 
@@ -158,6 +159,27 @@ BatchPostprocessOutput post =
 
 Set `ModelInfo.max_batch_size_` so `batchPreprocess` / `batchPostprocess` reject oversized
 batches. `batch_size_` is a consumer hint for the inference request.
+
+### 4. Task Pipeline Utilities
+
+`TaskPipeline` composes explicit `Result` stages without hiding inference engine boundaries.
+Use it for workflows such as detection → pose or detection → segmentation after each model
+has produced its own `Result` vector.
+
+```cpp
+#include <vision-core/core/task_pipeline.hpp>
+
+using namespace vision_core;
+
+SequentialTaskPipeline pipeline;
+pipeline.addStage([](const std::vector<Result>& detections) {
+    std::vector<Result> pose_inputs;
+    // Convert/filter detection results for the next model boundary.
+    return pose_inputs;
+});
+
+auto next_results = pipeline.run(detection_results);
+```
 
 ## Usage
 

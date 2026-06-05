@@ -62,6 +62,7 @@ set(CORE_SOURCES
     src/core/preprocessor.cpp
     src/core/task_interface.cpp
     src/core/task_factory.cpp
+    src/core/task_pipeline.cpp
 
     # Unified Tasks (no separate postprocessors - all internal)
     src/object_detection/object_detection_task.cpp
@@ -118,6 +119,7 @@ set(CORE_HEADERS
     include/vision-core/core/model_info.hpp
     include/vision-core/core/task_interface.hpp
     include/vision-core/core/task_factory.hpp
+    include/vision-core/core/task_pipeline.hpp
 
     # Unified Task Headers (postprocessing is internal)
     include/vision-core/object_detection/object_detection_task.hpp

@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Domain batch adoption for classification (`[N,C]` logits), YOLO standard detection, depth, and ViTPose
 - `tests/test_batch_integration.cpp` — end-to-end `batchPreprocess` + `batchPostprocess` for classification and YOLO detection
 - `docs/batch_processing.md` — consumer migration guide (engine vs library, N=2 worked examples)
+- `task_pipeline.hpp` — composable `Result` pipeline stages for detection → pose / segmentation workflows
 
 ## [0.3.2] - 2026-05-28
 

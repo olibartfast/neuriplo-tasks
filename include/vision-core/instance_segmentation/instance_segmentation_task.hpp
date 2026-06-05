@@ -7,6 +7,7 @@
 
 namespace vision_core {
 
+class InstanceSegmentationPreprocessStrategy;
 class SegmentationPostprocessor;
 
 class InstanceSegmentationTask : public TaskInterface {
@@ -22,6 +23,7 @@ class InstanceSegmentationTask : public TaskInterface {
     explicit InstanceSegmentationTask(const ModelInfo& model_info, const std::string& model_name,
                                       float confidence_threshold = 0.25f, float nms_threshold = 0.45f,
                                       float mask_threshold = 0.5f);
+    ~InstanceSegmentationTask() override;
 
     // TaskInterface implementation
     TaskType getTaskType() override { return TaskType::InstanceSegmentation; }
@@ -33,7 +35,7 @@ class InstanceSegmentationTask : public TaskInterface {
   private:
     ModelType model_type_;
     std::string model_name_;
-    std::unique_ptr<Preprocessor> preprocessor_;
+    std::unique_ptr<InstanceSegmentationPreprocessStrategy> preprocess_strategy_;
     std::unique_ptr<SegmentationPostprocessor> postprocessor_;
     float confidence_threshold_;
     float nms_threshold_;
@@ -42,6 +44,8 @@ class InstanceSegmentationTask : public TaskInterface {
     static ModelType detectModelType(const std::string& model_name);
 
     std::unique_ptr<Preprocessor> createPreprocessor(ModelType type, const cv::Size& input_size);
+    std::unique_ptr<InstanceSegmentationPreprocessStrategy> createPreprocessStrategy(ModelType type,
+                                                                                     const cv::Size& input_size);
     std::unique_ptr<SegmentationPostprocessor> createPostprocessor(ModelType type);
 
     cv::Size extractInputSize(const ModelInfo& model_info);

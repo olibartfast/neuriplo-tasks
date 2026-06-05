@@ -152,6 +152,7 @@ refactor detail: [`docs/task_refactor_atomic_plan.md`](./docs/task_refactor_atom
 | `batch_types.hpp`     | `BatchRequest`, `BatchPreprocessOutput`, `BatchPostprocessOutput`, invariant helpers |
 | `batch_preprocess.hpp`| `batchPreprocess(task, BatchRequest)` — per-image preprocess + `batch_size` metadata |
 | `batch_postprocess.hpp`| `batchPostprocess(task, frame_size, tensors, batch_size)` — postprocess + batch alignment |
+| `task_pipeline.hpp` | `TaskPipeline` / `SequentialTaskPipeline` — explicit `Result` stage composition for multi-task flows |
 | `preprocessor.hpp`    | Base preprocessor utilities |
 | `bbox_processor.hpp`  | Bounding-box coordinate transformations |
 

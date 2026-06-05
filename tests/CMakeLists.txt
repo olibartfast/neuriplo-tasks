@@ -100,6 +100,9 @@ target_link_libraries(test_task_interface ${TEST_LIBS})
 add_executable(test_task_factory test_task_factory.cpp)
 target_link_libraries(test_task_factory ${TEST_LIBS})
 
+add_executable(test_task_pipeline test_task_pipeline.cpp)
+target_link_libraries(test_task_pipeline ${TEST_LIBS})
+
 # Postprocessor tests
 add_executable(test_yolo_postprocessor test_yolo_postprocessor.cpp)
 target_link_libraries(test_yolo_postprocessor ${TEST_LIBS})
@@ -215,6 +218,7 @@ add_test(NAME test_pose_estimation_batch COMMAND test_pose_estimation_batch)
 add_test(NAME test_batch_integration COMMAND test_batch_integration)
 add_test(NAME test_task_interface COMMAND test_task_interface)
 add_test(NAME test_task_factory COMMAND test_task_factory)
+add_test(NAME test_task_pipeline COMMAND test_task_pipeline)
 add_test(NAME test_yolo_postprocessor COMMAND test_yolo_postprocessor)
 add_test(NAME test_rtdetr_postprocessor COMMAND test_rtdetr_postprocessor)
 add_test(NAME test_yolo_segmentation_postprocessor COMMAND test_yolo_segmentation_postprocessor)
