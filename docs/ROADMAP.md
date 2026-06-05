@@ -33,6 +33,7 @@ shipping inference on documented model types.
 | Refactor | Phase 6 — result visitor helpers | **Done** |
 | Refactor | Phase 7 — composite `TaskPipeline` API | **Done** |
 | Refactor | Phase 8 — docs/sync cleanup | **Planned** (ongoing per release) |
+| Factory | Track D — descriptor registry auditability | **Done** |
 | **Batch** | B0 — capability audit (`batch_support_matrix.md`) | **Done** |
 | **Batch** | B1 — batch contract types (`batch_types.hpp`) | **Done** |
 | **Batch** | B2 — preprocess batch packer (`batch_preprocess`) | **Done** |
@@ -308,6 +309,9 @@ within one task.
 
 ## Track D — Factory maintainability (optional)
 
+**Status:** Done — `TaskDescriptor` metadata and grouped registry comments are
+in `task_factory.cpp`; factory boundary tests cover routing precedence.
+
 **Goal:** easier audit as model families grow (pattern review “Low” finding).
 
 **Steps**
@@ -320,7 +324,7 @@ within one task.
 
 **Stop criteria**
 
-- Zero routing behavior change; `test_readme_model_types` and factory tests green.
+- Met — zero routing behavior change; `test_readme_model_types` and factory tests green.
 
 ---
 

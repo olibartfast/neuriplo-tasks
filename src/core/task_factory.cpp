@@ -15,6 +15,7 @@
 #include "vision-core/video_classification/video_classification_task.hpp"
 
 #include <algorithm>
+#include <cstdint>
 #include <functional>
 #include <stdexcept>
 #include <vector>
@@ -27,7 +28,22 @@ using TaskMatcher = std::function<bool(const std::string&)>;
 using TaskCreator = std::function<std::unique_ptr<TaskInterface>(const std::string&, const std::string&,
                                                                  const ModelInfo&, const TaskConfig&)>;
 
-struct TaskRegistration {
+enum class TaskFamily : uint8_t {
+    Detection,
+    InstanceSegmentation,
+    PoseEstimation,
+    OpenVocabDetection,
+    Classification,
+    DepthEstimation,
+    GaussianSplatting,
+    VideoClassification,
+    OpticalFlow,
+    ImageUnderstanding,
+};
+
+struct TaskDescriptor {
+    const char* name;
+    TaskFamily family;
     TaskMatcher matches;
     TaskCreator create;
 };
@@ -59,20 +75,34 @@ std::unique_ptr<TaskInterface> createDetectionTask([[maybe_unused]] const std::s
                                                  config.nms_threshold);
 }
 
-const std::vector<TaskRegistration>& taskRegistrations() {
-    static const std::vector<TaskRegistration> registrations = {
-        {[](const std::string& normalized) {
+const std::vector<TaskDescriptor>& taskDescriptors() {
+    static const std::vector<TaskDescriptor> descriptors = {
+        // Instance segmentation before generic YOLO / EdgeCrafter detection.
+        {"YoloSegmentation", TaskFamily::InstanceSegmentation,
+         [](const std::string& normalized) {
              return normalized == "yoloseg" || normalized == "yolov10seg" || normalized == "yolo26seg" ||
                     normalized == "rfdetrseg" || (startsWith(normalized, "yolo") && contains(normalized, "seg"));
          },
          createSegmentationTask},
-        {[](const std::string& normalized) { return startsWith(normalized, "ecseg"); }, createSegmentationTask},
-        {[](const std::string& normalized) { return startsWith(normalized, "yolo") && contains(normalized, "pose"); },
+        {"EdgeCrafterSegmentation", TaskFamily::InstanceSegmentation,
+         [](const std::string& normalized) { return startsWith(normalized, "ecseg"); }, createSegmentationTask},
+
+        // Pose before generic YOLO / EdgeCrafter detection.
+        {"YoloPose", TaskFamily::PoseEstimation,
+         [](const std::string& normalized) { return startsWith(normalized, "yolo") && contains(normalized, "pose"); },
          createPoseTask},
-        {[](const std::string& normalized) { return startsWith(normalized, "ecpose"); }, createPoseTask},
-        {[](const std::string& normalized) { return startsWith(normalized, "yolo"); }, createDetectionTask},
-        {[](const std::string& normalized) { return startsWith(normalized, "ecdet"); }, createDetectionTask},
-        {[](const std::string& normalized) { return startsWith(normalized, "edgecrafter"); },
+        {"EdgeCrafterPose", TaskFamily::PoseEstimation,
+         [](const std::string& normalized) { return startsWith(normalized, "ecpose"); }, createPoseTask},
+        {"VitPose", TaskFamily::PoseEstimation, [](const std::string& normalized) { return normalized == "vitpose"; },
+         createPoseTask},
+
+        // Object detection aliases.
+        {"YoloDetection", TaskFamily::Detection,
+         [](const std::string& normalized) { return startsWith(normalized, "yolo"); }, createDetectionTask},
+        {"EdgeCrafterDetection", TaskFamily::Detection,
+         [](const std::string& normalized) { return startsWith(normalized, "ecdet"); }, createDetectionTask},
+        {"EdgeCrafterFamily", TaskFamily::Detection,
+         [](const std::string& normalized) { return startsWith(normalized, "edgecrafter"); },
          [](const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
             const TaskConfig& config) {
              if (contains(normalized, "seg")) {
@@ -83,19 +113,26 @@ const std::vector<TaskRegistration>& taskRegistrations() {
              }
              return createDetectionTask(model_type, normalized, model_info, config);
          }},
-        {[](const std::string& normalized) {
+        {"DetrDetection", TaskFamily::Detection,
+         [](const std::string& normalized) {
              return normalized == "rtdetr" || normalized == "rtdetrul" || normalized == "rtdetrultralytics" ||
                     normalized == "rfdetr";
          },
          createDetectionTask},
-        {[](const std::string& normalized) {
+
+        // Open-vocabulary detection aliases.
+        {"OpenVocabDetection", TaskFamily::OpenVocabDetection,
+         [](const std::string& normalized) {
              return normalized == "owlv2" || normalized == "owlvit" || normalized == "groundingdino";
          },
          []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
             const TaskConfig& config) {
              return std::make_unique<OpenVocabDetectionTask>(model_info, normalized, config);
          }},
-        {[](const std::string& normalized) {
+
+        // Classification aliases.
+        {"Classification", TaskFamily::Classification,
+         [](const std::string& normalized) {
              return normalized == "torchvisionclassifier" || normalized == "tensorflowclassifier" ||
                     normalized == "vitclassifier" || startsWith(normalized, "resnet") ||
                     contains(normalized, "tensorflow");
@@ -104,16 +141,25 @@ const std::vector<TaskRegistration>& taskRegistrations() {
             const TaskConfig& config) {
              return std::make_unique<ClassificationTask>(model_info, normalized, config.top_k, config.apply_softmax);
          }},
-        {[](const std::string& normalized) { return contains(normalized, "depthanythingv2"); },
+
+        // Depth estimation aliases.
+        {"DepthEstimation", TaskFamily::DepthEstimation,
+         [](const std::string& normalized) { return contains(normalized, "depthanythingv2"); },
          []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
             const TaskConfig&) { return std::make_unique<DepthEstimationTask>(model_info, normalized); }},
-        {[](const std::string& normalized) {
+
+        // Gaussian splatting aliases.
+        {"GaussianSplatting", TaskFamily::GaussianSplatting,
+         [](const std::string& normalized) {
              return normalized == "lgm" || normalized == "grm" || normalized == "gaussiansplatting" ||
                     normalized == "lgmmini" || contains(normalized, "splat");
          },
          []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
             const TaskConfig&) { return std::make_unique<GaussianSplattingTask>(model_info, normalized); }},
-        {[](const std::string& normalized) {
+
+        // Video classification aliases.
+        {"VideoClassification", TaskFamily::VideoClassification,
+         [](const std::string& normalized) {
              return normalized == "videomae" || normalized == "vivit" || normalized == "timesformer";
          },
          []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
@@ -121,11 +167,15 @@ const std::vector<TaskRegistration>& taskRegistrations() {
              return std::make_unique<VideoClassificationTask>(model_info, normalized, config.top_k,
                                                               config.apply_softmax);
          }},
-        {[](const std::string& normalized) { return normalized == "raft"; },
+
+        // Optical flow aliases.
+        {"OpticalFlow", TaskFamily::OpticalFlow, [](const std::string& normalized) { return normalized == "raft"; },
          []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
             const TaskConfig&) { return std::make_unique<OpticalFlowTask>(model_info, normalized); }},
-        {[](const std::string& normalized) { return normalized == "vitpose"; }, createPoseTask},
-        {[](const std::string& normalized) {
+
+        // Image understanding aliases.
+        {"ImageUnderstanding", TaskFamily::ImageUnderstanding,
+         [](const std::string& normalized) {
              return normalized == "gemma4" || normalized == "gemma" || normalized == "llama" ||
                     normalized == "llamacpp" || normalized == "imageunderstanding";
          },
@@ -135,7 +185,7 @@ const std::vector<TaskRegistration>& taskRegistrations() {
          }},
     };
 
-    return registrations;
+    return descriptors;
 }
 
 } // namespace
@@ -183,9 +233,9 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
         throw std::invalid_argument("Model type string is empty");
     }
 
-    for (const auto& registration : taskRegistrations()) {
-        if (registration.matches(normalized)) {
-            return registration.create(model_type, normalized, model_info, config);
+    for (const auto& descriptor : taskDescriptors()) {
+        if (descriptor.matches(normalized)) {
+            return descriptor.create(model_type, normalized, model_info, config);
         }
     }
 
