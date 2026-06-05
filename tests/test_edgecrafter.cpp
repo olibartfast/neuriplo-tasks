@@ -8,6 +8,8 @@
 #include "vision-core/pose_estimation/edgecrafter_pose_postprocessor.hpp"
 #include "vision-core/pose_estimation/pose_estimation_task.hpp"
 
+#include <array>
+#include <cstring>
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 
@@ -43,6 +45,12 @@ ModelInfo createPoseModelInfo() {
     info.output_names = {"labels", "scores", "keypoints"};
     info.input_types = {CV_32F, CV_32S};
     return info;
+}
+
+std::array<int64_t, 2> decodeInt64Pair(const std::vector<uint8_t>& bytes) {
+    std::array<int64_t, 2> values{};
+    std::memcpy(values.data(), bytes.data(), values.size() * sizeof(int64_t));
+    return values;
 }
 
 } // namespace
@@ -385,7 +393,11 @@ TEST(EdgeCrafterInstanceSegmentationTaskTest, PreprocessReturnsTwoOutputs) {
     auto outputs = task.preprocess({img});
     ASSERT_EQ(outputs.size(), 2u);
     EXPECT_FALSE(outputs[0].empty());
-    EXPECT_FALSE(outputs[1].empty());
+    EXPECT_EQ(outputs[1].size(), 2u * sizeof(int64_t));
+
+    const auto original_size = decodeInt64Pair(outputs[1]);
+    EXPECT_EQ(original_size[0], img.cols);
+    EXPECT_EQ(original_size[1], img.rows);
 }
 
 TEST(EdgeCrafterPoseTaskTest, TaskType) {

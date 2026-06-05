@@ -29,9 +29,9 @@ shipping inference on documented model types.
 | Refactor | Phase 0 — factory/README test baseline | **Done** (contract tests exist) |
 | Refactor | Phase 1 — registry extraction | **Done** |
 | Refactor | Phase 2 — optional runtime extension | **Deferred** (out of scope unless product requires plugins) |
-| Refactor | Phases 3–5 — per-domain strategies / `BaseTask` | **In progress** (Phase 3 detection pilot, Phase 4 depth + classification pilots) |
+| Refactor | Phases 3–5 — per-domain strategies / `BaseTask` | **Done** (detection, pose, segmentation strategies; depth + classification `BaseTask` pilots) |
 | Refactor | Phase 6 — result visitor helpers | **Done** |
-| Refactor | Phase 7 — composite `TaskPipeline` API | **Planned** |
+| Refactor | Phase 7 — composite `TaskPipeline` API | **Done** |
 | Refactor | Phase 8 — docs/sync cleanup | **Planned** (ongoing per release) |
 | **Batch** | B0 — capability audit (`batch_support_matrix.md`) | **Done** |
 | **Batch** | B1 — batch contract types (`batch_types.hpp`) | **Done** |
@@ -81,13 +81,9 @@ Full step-by-step phases 0–8 live in
 
 **Next recommended phases** (only when duplication or audit pain is real):
 
-1. Continue **Phase 4** only for another single-image domain when the shared
-   `BaseTask` lifecycle removes duplicate code without changing validation semantics.
-2. Continue **Phase 5** with instance segmentation or pose only where strategies
-   remove duplication or isolate model-specific behavior.
-3. **Phase 7** — `TaskPipeline` for detection+pose / detection+seg (separate from
-   batch utilities; pipelines compose *tasks*, batch utilities compose *images*
-   within one task).
+1. Maintain **Phase 4/5** only where future domains show real duplicate lifecycle or model-specific branching.
+2. Use **Phase 7** `TaskPipeline` for detection+pose / detection+seg workflows; pipelines compose *task results*, batch utilities compose *images* within one task.
+3. Keep **Phase 8** docs/sync cleanup current when public headers or task contracts change.
 
 Do **not** start Phase 2 (runtime plugin registry) without an explicit product
 requirement.
@@ -299,11 +295,11 @@ Follow **Phase 7** in [task_refactor_atomic_plan.md](./task_refactor_atomic_plan
 
 **Atomic summary**
 
-1. Add `task_pipeline.hpp` / `task_pipeline.cpp` (new API, no `TaskInterface` change).
+1. Add `task_pipeline.hpp` / `task_pipeline.cpp` (new API, no `TaskInterface` change). ✅
 2. Implement one pipeline (e.g. detection → pose) with explicit intermediate
-   `vector<Result>` passing.
-3. Mock-task unit tests; no inference engine inside vision-core.
-4. README + CHANGELOG under **Added**.
+   `vector<Result>` passing. ✅
+3. Mock-task unit tests; no inference engine inside vision-core. ✅
+4. README + CHANGELOG under **Added**. ✅
 
 **Independent of Track B:** pipelines chain tasks; batch utilities scale images
 within one task.

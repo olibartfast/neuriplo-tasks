@@ -224,6 +224,8 @@ Stop criteria:
 
 ## Phase 5: Repeat Strategy Migration Domain By Domain
 
+Status: implemented for current high-value scope (detection, instance segmentation, pose); remaining domains stay optional unless duplication appears.
+
 Purpose: make preprocessing and postprocessing control explicit without broad churn.
 
 Order:
@@ -291,6 +293,8 @@ Stop criteria:
 - No task implementation depends on visitor unless useful.
 
 ## Phase 7: Add Composite Pipelines As Separate API
+
+Status: implemented via `task_pipeline.hpp`, `task_pipeline.cpp`, and `test_task_pipeline.cpp`.
 
 Purpose: support multi-task workflows without overloading single-model task contracts.
 
