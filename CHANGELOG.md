@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `docs/batch_processing.md` — consumer migration guide (engine vs library, N=2 worked examples)
 - `task_pipeline.hpp` — composable `Result` pipeline stages for detection → pose / segmentation workflows
 
+### Changed
+- TaskFactory registry now uses named `TaskDescriptor` entries grouped by task family, with additional boundary tests for routing precedence.
+
 ## [0.3.2] - 2026-05-28
 
 ### Fixed

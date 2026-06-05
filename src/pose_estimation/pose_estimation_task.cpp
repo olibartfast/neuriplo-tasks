@@ -73,7 +73,7 @@ class ModelInputPosePreprocessStrategy final : public PosePreprocessStrategy {
 
   private:
     std::unique_ptr<Preprocessor> preprocessor_;
-    const ModelInfo& model_info_;
+    ModelInfo model_info_;
 };
 
 } // namespace
@@ -110,7 +110,7 @@ std::vector<Result> PoseEstimationTask::postprocess(const cv::Size& frame_size, 
     std::vector<Result> results;
     results.reserve(poses.size());
     for (const auto& pose : poses) {
-        results.push_back(pose);
+        results.emplace_back(pose);
     }
     return results;
 }

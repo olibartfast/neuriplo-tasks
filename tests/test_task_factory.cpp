@@ -214,9 +214,16 @@ TEST_F(TaskFactoryTest, SpecificYoloAliasesPrecedeGenericDetection) {
     expectAliasesRouteTo({"yolo-pose", "YOLO_POSE", " yolo pose ", "yolov8-pose"}, TaskType::PoseEstimation);
 }
 
+TEST_F(TaskFactoryTest, SpecificDetrSegmentationAliasPrecedesDetection) {
+    expectAliasesRouteTo({"rfdetrseg", "RF-DETR-SEG", " rf detr seg "}, TaskType::InstanceSegmentation);
+    expectAliasesRouteTo({"rfdetr", "RF-DETR", " rf detr "}, TaskType::Detection);
+}
+
 TEST_F(TaskFactoryTest, SpecificEdgeCrafterAliasesPrecedeGenericDetection) {
-    expectAliasesRouteTo({"ecseg", "EC-SEG", " edgecrafter seg "}, TaskType::InstanceSegmentation);
-    expectAliasesRouteTo({"ecpose", "EC-POSE", " edgecrafter pose "}, TaskType::PoseEstimation);
+    expectAliasesRouteTo({"ecseg", "EC-SEG", " edgecrafter seg ", "edgecrafter-lite-seg"},
+                         TaskType::InstanceSegmentation);
+    expectAliasesRouteTo({"ecpose", "EC-POSE", " edgecrafter pose ", "edgecrafter-lite-pose"},
+                         TaskType::PoseEstimation);
     expectAliasesRouteTo({"ecdet", "EC-DET", " edgecrafter det ", "edgecrafter"}, TaskType::Detection);
 }
 

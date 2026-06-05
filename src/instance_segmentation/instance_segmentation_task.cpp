@@ -83,7 +83,7 @@ class ModelInputSegmentationPreprocessStrategy final : public InstanceSegmentati
 
   private:
     std::unique_ptr<Preprocessor> preprocessor_;
-    const ModelInfo& model_info_;
+    ModelInfo model_info_;
 };
 
 } // namespace
