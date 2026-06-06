@@ -1,13 +1,13 @@
-#include "vision-core/pose_estimation/edgecrafter_pose_postprocessor.hpp"
+#include "neuriplo/tasks/pose_estimation/edgecrafter_pose_postprocessor.hpp"
 
-#include "vision-core/core/output_name_utils.hpp"
-#include "vision-core/core/tensor_utils.hpp"
+#include "neuriplo/tasks/core/output_name_utils.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
 #include <limits>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 EdgeCrafterPosePostprocessor::EdgeCrafterPosePostprocessor(float confidence_threshold, float keypoint_threshold,
                                                            const std::vector<std::string>& output_names)
@@ -112,4 +112,4 @@ void EdgeCrafterPosePostprocessor::deriveBboxFromKeypoints(PoseEstimation& pose)
     }
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

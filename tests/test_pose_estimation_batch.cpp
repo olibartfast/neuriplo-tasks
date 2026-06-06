@@ -1,11 +1,11 @@
-#include "vision-core/core/batch_postprocess.hpp"
-#include "vision-core/core/task_factory.hpp"
-#include "vision-core/pose_estimation/vit_pose_postprocessor.hpp"
+#include "neuriplo/tasks/core/batch_postprocess.hpp"
+#include "neuriplo/tasks/core/task_factory.hpp"
+#include "neuriplo/tasks/pose_estimation/vit_pose_postprocessor.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 namespace {
 

@@ -1,9 +1,9 @@
 # Ensure minimum policies
 cmake_minimum_required(VERSION 3.15)
 
-option(VISION_CORE_BUNDLED_GTEST "Download and build googletest" ON)
+option(NEURIPLO_TASKS_BUNDLED_GTEST "Download and build googletest" ON)
 
-if(VISION_CORE_BUNDLED_GTEST)
+if(NEURIPLO_TASKS_BUNDLED_GTEST)
     include(FetchContent)
     FetchContent_Declare(
         googletest
@@ -25,7 +25,7 @@ include(GoogleTest)
 
 # Common test libraries
 set(TEST_LIBS
-    vision-core::vision-core
+    neuriplo-tasks::neuriplo-tasks
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -40,7 +40,7 @@ target_link_libraries(test_batch_types ${TEST_LIBS})
 
 add_executable(test_batch_preprocess test_batch_preprocess.cpp)
 target_link_libraries(test_batch_preprocess
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -48,7 +48,7 @@ target_link_libraries(test_batch_preprocess
 
 add_executable(test_batch_postprocess test_batch_postprocess.cpp)
 target_link_libraries(test_batch_postprocess
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -56,7 +56,7 @@ target_link_libraries(test_batch_postprocess
 
 add_executable(test_classification_batch test_classification_batch.cpp)
 target_link_libraries(test_classification_batch
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -64,7 +64,7 @@ target_link_libraries(test_classification_batch
 
 add_executable(test_object_detection_batch test_object_detection_batch.cpp)
 target_link_libraries(test_object_detection_batch
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -72,7 +72,7 @@ target_link_libraries(test_object_detection_batch
 
 add_executable(test_depth_estimation_batch test_depth_estimation_batch.cpp)
 target_link_libraries(test_depth_estimation_batch
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -80,7 +80,7 @@ target_link_libraries(test_depth_estimation_batch
 
 add_executable(test_pose_estimation_batch test_pose_estimation_batch.cpp)
 target_link_libraries(test_pose_estimation_batch
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -88,7 +88,7 @@ target_link_libraries(test_pose_estimation_batch
 
 add_executable(test_batch_integration test_batch_integration.cpp)
 target_link_libraries(test_batch_integration
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -96,6 +96,14 @@ target_link_libraries(test_batch_integration
 
 add_executable(test_task_interface test_task_interface.cpp)
 target_link_libraries(test_task_interface ${TEST_LIBS})
+
+add_executable(test_compatibility_shims test_compatibility_shims.cpp)
+target_link_libraries(test_compatibility_shims
+    vision-core::vision-core
+    GTest::GTest
+    GTest::Main
+    ${OpenCV_LIBS}
+)
 
 add_executable(test_task_factory test_task_factory.cpp)
 target_link_libraries(test_task_factory ${TEST_LIBS})
@@ -119,7 +127,7 @@ target_link_libraries(test_bbox_processor ${TEST_LIBS})
 # TaskConfig tests (struct defaults + factory integration + behavioral)
 add_executable(test_task_config test_task_config.cpp)
 target_link_libraries(test_task_config
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -128,7 +136,7 @@ target_link_libraries(test_task_config
 # Concrete task implementation tests
 add_executable(test_concrete_tasks test_concrete_tasks.cpp)
 target_link_libraries(test_concrete_tasks
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -137,7 +145,7 @@ target_link_libraries(test_concrete_tasks
 # Optical flow tests
 add_executable(test_optical_flow test_optical_flow.cpp)
 target_link_libraries(test_optical_flow
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -146,7 +154,7 @@ target_link_libraries(test_optical_flow
 # Pose estimation tests
 add_executable(test_pose_estimation test_pose_estimation.cpp)
 target_link_libraries(test_pose_estimation
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -155,7 +163,7 @@ target_link_libraries(test_pose_estimation
 # Depth estimation tests
 add_executable(test_depth_estimation test_depth_estimation.cpp)
 target_link_libraries(test_depth_estimation
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -164,7 +172,7 @@ target_link_libraries(test_depth_estimation
 # Open-vocabulary detection tests
 add_executable(test_open_vocab_detection test_open_vocab_detection.cpp)
 target_link_libraries(test_open_vocab_detection
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -173,7 +181,7 @@ target_link_libraries(test_open_vocab_detection
 # Gaussian splatting tests
 add_executable(test_gaussian_splatting test_gaussian_splatting.cpp)
 target_link_libraries(test_gaussian_splatting
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
@@ -182,28 +190,28 @@ target_link_libraries(test_gaussian_splatting
 # EdgeCrafter postprocessor and task tests
 add_executable(test_edgecrafter test_edgecrafter.cpp)
 target_link_libraries(test_edgecrafter
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
 )
 
 # Docs/code contract: every quoted alias in README Supported Model Types block
-# must route via TaskFactory. Locks vision-core/README.md to task_factory.cpp.
+# must route via TaskFactory. Locks neuriplo-tasks/README.md to task_factory.cpp.
 add_executable(test_readme_model_types test_readme_model_types.cpp)
 target_link_libraries(test_readme_model_types
-    -Wl,--whole-archive vision-core -Wl,--no-whole-archive
+    -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
     ${OpenCV_LIBS}
 )
 # Paths are relative to this tests/ directory so they resolve correctly whether
-# vision-core is the top-level project or a FetchContent sub-project of another
+# neuriplo-tasks is the top-level project or a FetchContent sub-project of another
 # repo (CMAKE_SOURCE_DIR would point at the consumer's root in the latter case).
 target_compile_definitions(test_readme_model_types
     PRIVATE
-        VISION_CORE_README_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../README.md"
-        VISION_CORE_TASK_FACTORY_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../src/core/task_factory.cpp"
+        NEURIPLO_TASKS_README_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../README.md"
+        NEURIPLO_TASKS_TASK_FACTORY_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../src/core/task_factory.cpp"
 )
 
 # Add tests manually for better compatibility
@@ -217,6 +225,7 @@ add_test(NAME test_depth_estimation_batch COMMAND test_depth_estimation_batch)
 add_test(NAME test_pose_estimation_batch COMMAND test_pose_estimation_batch)
 add_test(NAME test_batch_integration COMMAND test_batch_integration)
 add_test(NAME test_task_interface COMMAND test_task_interface)
+add_test(NAME test_compatibility_shims COMMAND test_compatibility_shims)
 add_test(NAME test_task_factory COMMAND test_task_factory)
 add_test(NAME test_task_pipeline COMMAND test_task_pipeline)
 add_test(NAME test_yolo_postprocessor COMMAND test_yolo_postprocessor)

@@ -1,14 +1,14 @@
-#include "vision-core/core/model_info.hpp"
-#include "vision-core/core/opencv_interop.hpp"
-#include "vision-core/core/result_types.hpp"
-#include "vision-core/core/task_factory.hpp"
-#include "vision-core/optical_flow/optical_flow_preprocessor.hpp"
-#include "vision-core/optical_flow/raft_postprocessor.hpp"
+#include "neuriplo/tasks/core/model_info.hpp"
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/result_types.hpp"
+#include "neuriplo/tasks/core/task_factory.hpp"
+#include "neuriplo/tasks/optical_flow/optical_flow_preprocessor.hpp"
+#include "neuriplo/tasks/optical_flow/raft_postprocessor.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 class OpticalFlowTest : public ::testing::Test {
   protected:

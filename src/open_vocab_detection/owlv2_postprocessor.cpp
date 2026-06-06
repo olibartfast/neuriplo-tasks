@@ -1,7 +1,7 @@
-#include "vision-core/open_vocab_detection/owlv2_postprocessor.hpp"
+#include "neuriplo/tasks/open_vocab_detection/owlv2_postprocessor.hpp"
 
-#include "vision-core/core/opencv_interop.hpp"
-#include "vision-core/core/tensor_utils.hpp"
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -9,7 +9,7 @@
 #include <limits>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 namespace {
 
@@ -151,4 +151,4 @@ std::vector<OpenVocabDetection> OWLv2Postprocessor::postprocess(const std::vecto
     return results;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

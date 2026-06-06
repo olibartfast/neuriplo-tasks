@@ -1,11 +1,11 @@
-#include "vision-core/pose_estimation/yolo_pose_postprocessor.hpp"
+#include "neuriplo/tasks/pose_estimation/yolo_pose_postprocessor.hpp"
 
-#include "vision-core/core/opencv_interop.hpp"
-#include "vision-core/core/tensor_utils.hpp"
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <opencv2/dnn.hpp>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 YoloPosePostprocessor::YoloPosePostprocessor(const cv::Size& input_size, float confidence_threshold,
                                              float nms_threshold)
@@ -179,4 +179,4 @@ std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector
     return poses;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

@@ -1,13 +1,13 @@
-#include "vision-core/classification/classification_postprocessor.hpp"
-#include "vision-core/core/batch_postprocess.hpp"
-#include "vision-core/core/batch_preprocess.hpp"
-#include "vision-core/core/task_factory.hpp"
+#include "neuriplo/tasks/classification/classification_postprocessor.hpp"
+#include "neuriplo/tasks/core/batch_postprocess.hpp"
+#include "neuriplo/tasks/core/batch_preprocess.hpp"
+#include "neuriplo/tasks/core/task_factory.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 #include <stdexcept>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 namespace {
 

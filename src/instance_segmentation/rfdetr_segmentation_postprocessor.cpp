@@ -1,13 +1,13 @@
-#include "vision-core/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
 
-#include "vision-core/core/opencv_interop.hpp"
-#include "vision-core/core/tensor_utils.hpp"
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 RfDetrSegmentationPostprocessor::RfDetrSegmentationPostprocessor(const cv::Size& input_size, float confidence_threshold,
                                                                  float mask_threshold,
@@ -160,4 +160,4 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
     return segmentations;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

@@ -1,13 +1,13 @@
-#include "vision-core/core/opencv_interop.hpp"
-#include "vision-core/core/result_types.hpp"
-#include "vision-core/core/tensor_utils.hpp"
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/result_types.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 #include <string>
 #include <type_traits>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 namespace {
 

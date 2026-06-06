@@ -1,8 +1,8 @@
-#include "vision-core/core/batch_preprocess.hpp"
+#include "neuriplo/tasks/core/batch_preprocess.hpp"
 
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 namespace {
 
@@ -26,4 +26,4 @@ BatchPreprocessOutput batchPreprocess(TaskInterface& task, const BatchRequest& r
     return output;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

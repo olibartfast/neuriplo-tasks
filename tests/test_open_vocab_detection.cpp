@@ -1,10 +1,10 @@
-#include "vision-core/core/task_factory.hpp"
-#include "vision-core/open_vocab_detection/bert_tokenizer.hpp"
-#include "vision-core/open_vocab_detection/grounding_dino_postprocessor.hpp"
+#include "neuriplo/tasks/core/task_factory.hpp"
+#include "neuriplo/tasks/open_vocab_detection/bert_tokenizer.hpp"
+#include "neuriplo/tasks/open_vocab_detection/grounding_dino_postprocessor.hpp"
 
 #include <gtest/gtest.h>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 namespace {
 

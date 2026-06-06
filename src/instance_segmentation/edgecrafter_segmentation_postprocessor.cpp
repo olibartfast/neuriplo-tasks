@@ -1,13 +1,13 @@
-#include "vision-core/instance_segmentation/edgecrafter_segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/instance_segmentation/edgecrafter_segmentation_postprocessor.hpp"
 
-#include "vision-core/core/opencv_interop.hpp"
-#include "vision-core/core/output_name_utils.hpp"
-#include "vision-core/core/tensor_utils.hpp"
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/output_name_utils.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <opencv2/imgproc.hpp>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 EdgeCrafterSegmentationPostprocessor::EdgeCrafterSegmentationPostprocessor(float confidence_threshold,
                                                                            float mask_threshold,
@@ -113,4 +113,4 @@ std::vector<InstanceSegmentation> EdgeCrafterSegmentationPostprocessor::postproc
     return segmentations;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

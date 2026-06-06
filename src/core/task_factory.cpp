@@ -1,18 +1,18 @@
-#include "vision-core/core/task_factory.hpp"
+#include "neuriplo/tasks/core/task_factory.hpp"
 
-#include "vision-core/classification/classification_postprocessor.hpp"
-#include "vision-core/classification/classification_task.hpp"
-#include "vision-core/depth_estimation/depth_estimation_task.hpp"
-#include "vision-core/gaussian_splatting/gaussian_splatting_task.hpp"
-#include "vision-core/image_understanding/image_understanding_task.hpp"
-#include "vision-core/instance_segmentation/instance_segmentation_task.hpp"
-#include "vision-core/instance_segmentation/segmentation_postprocessor.hpp"
-#include "vision-core/object_detection/object_detection_task.hpp"
-#include "vision-core/open_vocab_detection/open_vocab_detection_task.hpp"
-#include "vision-core/optical_flow/optical_flow_postprocessor.hpp"
-#include "vision-core/optical_flow/optical_flow_task.hpp"
-#include "vision-core/pose_estimation/pose_estimation_task.hpp"
-#include "vision-core/video_classification/video_classification_task.hpp"
+#include "neuriplo/tasks/classification/classification_postprocessor.hpp"
+#include "neuriplo/tasks/classification/classification_task.hpp"
+#include "neuriplo/tasks/depth_estimation/depth_estimation_task.hpp"
+#include "neuriplo/tasks/gaussian_splatting/gaussian_splatting_task.hpp"
+#include "neuriplo/tasks/image_understanding/image_understanding_task.hpp"
+#include "neuriplo/tasks/instance_segmentation/instance_segmentation_task.hpp"
+#include "neuriplo/tasks/instance_segmentation/segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/object_detection_task.hpp"
+#include "neuriplo/tasks/open_vocab_detection/open_vocab_detection_task.hpp"
+#include "neuriplo/tasks/optical_flow/optical_flow_postprocessor.hpp"
+#include "neuriplo/tasks/optical_flow/optical_flow_task.hpp"
+#include "neuriplo/tasks/pose_estimation/pose_estimation_task.hpp"
+#include "neuriplo/tasks/video_classification/video_classification_task.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -20,7 +20,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 namespace {
 
@@ -242,4 +242,4 @@ std::unique_ptr<TaskInterface> TaskFactory::createTaskInstance(const std::string
     throw std::invalid_argument("Unrecognized model type: " + model_type);
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

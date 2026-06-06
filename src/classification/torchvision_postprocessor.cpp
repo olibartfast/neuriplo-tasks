@@ -1,8 +1,8 @@
-#include "vision-core/classification/torchvision_postprocessor.hpp"
+#include "neuriplo/tasks/classification/torchvision_postprocessor.hpp"
 
-#include "vision-core/classification/classification_postprocessor.hpp"
+#include "neuriplo/tasks/classification/classification_postprocessor.hpp"
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 TorchvisionPostprocessor::TorchvisionPostprocessor(int top_k, bool apply_softmax)
     : top_k_(top_k), apply_softmax_(apply_softmax) {}
@@ -14,4 +14,4 @@ std::vector<Classification> TorchvisionPostprocessor::postprocess(const std::vec
 
 void TorchvisionPostprocessor::applySoftmax(std::vector<float>& logits) { (void)logits; }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

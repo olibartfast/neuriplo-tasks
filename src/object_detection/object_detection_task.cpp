@@ -1,17 +1,17 @@
-#include "vision-core/object_detection/object_detection_task.hpp"
+#include "neuriplo/tasks/object_detection/object_detection_task.hpp"
 
-#include "vision-core/object_detection/detection_preprocessor.hpp"
-#include "vision-core/object_detection/edgecrafter_postprocessor.hpp"
-#include "vision-core/object_detection/rfdetr_postprocessor.hpp"
-#include "vision-core/object_detection/rtdetr_postprocessor.hpp"
-#include "vision-core/object_detection/yolo_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/detection_preprocessor.hpp"
+#include "neuriplo/tasks/object_detection/edgecrafter_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/rfdetr_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/rtdetr_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/yolo_postprocessor.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <utility>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 class DetectionPreprocessStrategy {
   public:
@@ -315,4 +315,4 @@ bool ObjectDetectionTask::validateTensorInputs(const std::vector<Tensor>& tensor
     }
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks
