@@ -1,11 +1,11 @@
-# vision-core — Claude instructions
+# neuriplo-tasks — Claude instructions
 
 Primary source of truth: **[AGENTS.md](./AGENTS.md)** — read that file before
 making changes.
 
 Key points:
 
-- C++17 static library (`libvision-core.a`); source roots `src/` + `include/vision-core/`
+- C++17 static library (`libneuriplo-tasks.a`); source roots `src/` + `include/neuriplo/tasks/`
 - Build: `cmake -S . -B build -DBUILD_TESTS=ON && cmake --build build --parallel`
 - Tests: `ctest --test-dir build --output-on-failure` (GoogleTest)
 - Lint: `clang-format-18` (120 col), `clang-tidy-18` (against `build/` compile DB), `cppcheck`

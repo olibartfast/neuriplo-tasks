@@ -20,12 +20,12 @@ yolo export model=yolov8/yolo11/yolo12 n/s/m/x-seg.pt format=onnx/torchscript/op
 
 ### ONNX Export for Instance Segmentation
 
-For instance segmentation, use the export script from vision-core:
+For instance segmentation, use the export script from neuriplo-tasks:
 
 ```bash
-# Clone vision-core if not already available
-git clone https://github.com/olibartfast/vision-core.git
-cd vision-core/export/segmentation/rfdetr
+# Clone neuriplo-tasks if not already available
+git clone https://github.com/olibartfast/neuriplo-tasks.git
+cd neuriplo-tasks/export/segmentation/rfdetr
 
 python export.py --simplify --input_size 432
 ```

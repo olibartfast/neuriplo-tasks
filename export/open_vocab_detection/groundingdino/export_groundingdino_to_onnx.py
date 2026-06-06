@@ -40,7 +40,7 @@ class GroundingDinoExportWrapper(torch.nn.Module):
 
     position_ids are derived from input_ids at runtime so callers only need
     to supply pixel_values, input_ids, attention_mask, and token_type_ids —
-    the same set vision-core's OpenVocabDetectionTask populates.
+    the same set neuriplo-tasks's OpenVocabDetectionTask populates.
     """
 
     def __init__(self, model):

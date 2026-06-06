@@ -62,7 +62,7 @@ onnxruntime  # optional, for --test
 - LGM is designed for **4-view** inputs produced by a multi-view diffusion stage
   (e.g. `dylanebert/multi-view-diffusion`). Pass 4 images as separate calls to
   `GaussianSplattingTask::preprocess()` then concatenate before inference.
-- The C++ `vision-core` postprocessor accepts both `[G, 14]` (single-batch) and
+- The C++ `neuriplo-tasks` postprocessor accepts both `[G, 14]` (single-batch) and
   `[N, G, 14]` (batched) layouts.
 - Rendering (rasterisation to a novel-view image) is outside the scope of this
   library. Use `diff_gaussian_rasterization` or a similar renderer to display

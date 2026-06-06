@@ -4,9 +4,9 @@
 Select a model from https://keras.io/api/applications/, for example resnet50, then export to saved model format:
 
 ```bash
-# Clone vision-core if not already available
-git clone https://github.com/olibartfast/vision-core.git
-cd vision-core/export/classification/tensorflow
+# Clone neuriplo-tasks if not already available
+git clone https://github.com/olibartfast/neuriplo-tasks.git
+cd neuriplo-tasks/export/classification/tensorflow
 
 # Use the provided export script
 python export_tf_saved_model_classifier.py

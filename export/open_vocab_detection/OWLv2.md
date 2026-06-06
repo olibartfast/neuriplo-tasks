@@ -2,7 +2,7 @@
 
 ## Supported Contract
 
-The `vision-core` OWLv2 path expects a Hugging Face style ONNX model with:
+The `neuriplo-tasks` OWLv2 path expects a Hugging Face style ONNX model with:
 
 - Inputs:
   - `pixel_values` of shape `[batch, 3, height, width]`
@@ -13,7 +13,7 @@ The `vision-core` OWLv2 path expects a Hugging Face style ONNX model with:
   - `objectness_logits` of shape `[batch, num_patches]` (optional but recommended)
   - `pred_boxes` of shape `[batch, num_patches, 4]`, normalized `(cx, cy, w, h)`
 
-`vision-core` resolves detections against runtime text prompts and maps the winning prompt index back to the corresponding label.
+`neuriplo-tasks` resolves detections against runtime text prompts and maps the winning prompt index back to the corresponding label.
 
 ## Export
 
@@ -30,10 +30,10 @@ python export/open_vocab_detection/owlv2/export_owlv2_to_onnx.py \
 
 ## Notes
 
-- The host application should provide tokenizer assets to `vision-core` at runtime.
+- The host application should provide tokenizer assets to `neuriplo-tasks` at runtime.
   - Preferred: pass preloaded `vocab.json` and `merges.txt` contents through `TaskConfig`
   - Fallback: pass file paths if your app manages assets on disk
-- `pred_boxes` are normalized relative to the original image size and are converted to pixel coordinates in `vision-core`.
+- `pred_boxes` are normalized relative to the original image size and are converted to pixel coordinates in `neuriplo-tasks`.
 - If your exported model uses different output names, keep them semantically equivalent to:
   - `logits`
   - `objectness_logits`

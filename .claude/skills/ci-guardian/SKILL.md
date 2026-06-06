@@ -1,12 +1,12 @@
 ---
 name: ci-guardian
-description: Use whenever a vision-core CI failure needs fixing, whenever you see clang-format / clang-tidy / cppcheck / cmake / ctest output, whenever -DWERROR=ON build warnings need resolving, or whenever you're about to push and want to pre-empt the common failures. Contains the catalogued fix for every error class that has appeared in vision-core's CI history, plus the local-verify command for each.
+description: Use whenever a neuriplo-tasks CI failure needs fixing, whenever you see clang-format / clang-tidy / cppcheck / cmake / ctest output, whenever -DWERROR=ON build warnings need resolving, or whenever you're about to push and want to pre-empt the common failures. Contains the catalogued fix for every error class that has appeared in neuriplo-tasks's CI history, plus the local-verify command for each.
 ---
 
-# ci-guardian — vision-core CI failure playbook
+# ci-guardian — neuriplo-tasks CI failure playbook
 
 This is the single operational reference for every CI failure class
-`vision-core` has actually hit. Each section is a **bucket** the `ci-triage`
+`neuriplo-tasks` has actually hit. Each section is a **bucket** the `ci-triage`
 subagent maps onto, and each section ends with the **exact local command**
 that reproduces and verifies the fix.
 
@@ -95,7 +95,7 @@ find src -name '*.cpp' | xargs clang-tidy-18 -p build
 - `HeaderFilterRegex: (src|include)/.*` — only the library's own headers,
   never system or 3rdparty.
 
-### Common checks seen in vision-core
+### Common checks seen in neuriplo-tasks
 
 | Check | Fix |
 |---|---|
@@ -328,9 +328,9 @@ done
 - `definitely lost` / `indirectly lost`: free the owning allocation or replace
   manual ownership with RAII.
 - Third-party or OpenCV noise: prefer a narrow Valgrind suppression file only
-  after proving the report is outside vision-core code.
+  after proving the report is outside neuriplo-tasks code.
 
-Do not hide real vision-core leaks with suppressions.
+Do not hide real neuriplo-tasks leaks with suppressions.
 
 ---
 
