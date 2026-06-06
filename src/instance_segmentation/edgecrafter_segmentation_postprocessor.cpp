@@ -1,5 +1,6 @@
 #include "vision-core/instance_segmentation/edgecrafter_segmentation_postprocessor.hpp"
 
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/output_name_utils.hpp"
 #include "vision-core/core/tensor_utils.hpp"
 
@@ -102,8 +103,8 @@ std::vector<InstanceSegmentation> EdgeCrafterSegmentationPostprocessor::postproc
         InstanceSegmentation seg;
         seg.class_id = static_cast<float>(class_id);
         seg.class_confidence = score;
-        seg.bbox = clamped_bbox;
-        seg.mask = mask_full;
+        seg.bbox = fromCvRect(clamped_bbox);
+        seg.mask = fromCvMat(mask_full);
         seg.mask_height = mask_full.rows;
         seg.mask_width = mask_full.cols;
         segmentations.push_back(std::move(seg));

@@ -117,7 +117,7 @@ TEST_F(YoloPostprocessorTest, YoloNmsFreeFormat) {
     ASSERT_EQ(detections.size(), 1);
     EXPECT_EQ(detections[0].class_id, 1);
     EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.9f);
-    EXPECT_EQ(detections[0].bbox, cv::Rect(160, 80, 160, 160));
+    EXPECT_EQ(detections[0].bbox, BoundingBox(160, 80, 160, 160));
 }
 
 TEST_F(YoloPostprocessorTest, YoloNasFormatScalesXyxyFromModelSpace) {
@@ -134,7 +134,7 @@ TEST_F(YoloPostprocessorTest, YoloNasFormatScalesXyxyFromModelSpace) {
     ASSERT_EQ(detections.size(), 1);
     EXPECT_EQ(detections[0].class_id, 1);
     EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.8f);
-    EXPECT_EQ(detections[0].bbox, cv::Rect(160, 80, 160, 160));
+    EXPECT_EQ(detections[0].bbox, BoundingBox(160, 80, 160, 160));
 }
 
 TEST_F(YoloPostprocessorTest, YoloNasKeepsUnclampedBoxCrossingLetterboxPadding) {
@@ -146,7 +146,7 @@ TEST_F(YoloPostprocessorTest, YoloNasKeepsUnclampedBoxCrossingLetterboxPadding) 
     auto detections = processor.postprocess({Tensor(boxes, {1, 1, 4}), Tensor(scores, {1, 1, 1})}, cv::Size(640, 480));
 
     ASSERT_EQ(detections.size(), 1);
-    EXPECT_EQ(detections[0].bbox, cv::Rect(0, -80, 100, 100));
+    EXPECT_EQ(detections[0].bbox, BoundingBox(0, -80, 100, 100));
 }
 
 TEST_F(YoloPostprocessorTest, YoloV7E2EFormatScalesXyxyFromModelSpace) {
@@ -162,5 +162,5 @@ TEST_F(YoloPostprocessorTest, YoloV7E2EFormatScalesXyxyFromModelSpace) {
     ASSERT_EQ(detections.size(), 1);
     EXPECT_EQ(detections[0].class_id, 2);
     EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.85f);
-    EXPECT_EQ(detections[0].bbox, cv::Rect(160, 80, 160, 160));
+    EXPECT_EQ(detections[0].bbox, BoundingBox(160, 80, 160, 160));
 }

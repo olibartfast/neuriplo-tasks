@@ -1,5 +1,6 @@
 #include "vision-core/object_detection/rfdetr_postprocessor.hpp"
 
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/tensor_utils.hpp"
 
 #include <cmath>
@@ -97,7 +98,7 @@ std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor
         det.class_id = static_cast<float>(max_class_idx);
         det.class_confidence = max_score;
         det.bbox =
-            cv::Rect(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width), static_cast<int>(height));
+            BoundingBox(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width), static_cast<int>(height));
         detections.push_back(det);
     }
 

@@ -43,7 +43,8 @@ bool resultsEqual(const std::vector<Result>& lhs, const std::vector<Result>& rhs
         }
         const auto& left_depth = std::get<DepthEstimation>(lhs[i]);
         const auto& right_depth = std::get<DepthEstimation>(rhs[i]);
-        if (left_depth.depth.size() != right_depth.depth.size() ||
+        if (left_depth.depth.rows() != right_depth.depth.rows() ||
+            left_depth.depth.cols() != right_depth.depth.cols() ||
             left_depth.depth.type() != right_depth.depth.type()) {
             return false;
         }

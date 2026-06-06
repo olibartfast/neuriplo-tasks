@@ -1,5 +1,6 @@
 #include "vision-core/object_detection/yolo_postprocessor.hpp"
 
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/tensor_utils.hpp"
 
 #include <algorithm>
@@ -187,7 +188,7 @@ std::vector<Detection> decodeYoloStandardBatchSlice(
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = final_score;
-        det.bbox = scale_to_original(cx, cy, w, h, frame_size);
+        det.bbox = fromCvRect(scale_to_original(cx, cy, w, h, frame_size));
         detections.push_back(det);
     }
 
@@ -289,7 +290,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV4(const std::vector<Te
 
                 // Create a detection object
                 Detection detection;
-                detection.bbox = bbox;
+                detection.bbox = fromCvRect(bbox);
                 detection.class_confidence = score;
                 detection.class_id = static_cast<float>(label);
 
@@ -313,7 +314,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV4(const std::vector<Te
         std::vector<float> localConfidences;
         std::vector<size_t> classIndices = it->second;
         for (size_t i = 0; i < classIndices.size(); i++) {
-            localBoxes.push_back(detections[classIndices[i]].bbox);
+            localBoxes.push_back(toCvRect(detections[classIndices[i]].bbox));
             localConfidences.push_back(detections[classIndices[i]].class_confidence);
         }
         std::vector<int> nmsIndices;
@@ -356,7 +357,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(const Tensor& o
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = score;
-        det.bbox = scaleXyxyToOriginal(x1, y1, x2, y2, frame_size);
+        det.bbox = fromCvRect(scaleXyxyToOriginal(x1, y1, x2, y2, frame_size));
         detections.push_back(det);
     }
 
@@ -401,7 +402,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(const Tensor& boxes
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = max_score;
-        det.bbox = scaleXyxyToOriginal(x1, y1, x2, y2, frame_size);
+        det.bbox = fromCvRect(scaleXyxyToOriginal(x1, y1, x2, y2, frame_size));
         detections.push_back(det);
     }
 
@@ -423,7 +424,7 @@ void YoloPostprocessor::applyNMS(std::vector<Detection>& detections) {
             if (suppress[j])
                 continue;
 
-            cv::Rect intersection = detections[i].bbox & detections[j].bbox;
+            const BoundingBox intersection = detections[i].bbox.intersect(detections[j].bbox);
             float intersection_area = static_cast<float>(intersection.area());
             float union_area = static_cast<float>(detections[i].bbox.area()) +
                                static_cast<float>(detections[j].bbox.area()) - intersection_area;
@@ -489,7 +490,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(const Tensor& num
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = score;
-        det.bbox = scaleXyxyToOriginal(x1, y1, x2, y2, frame_size);
+        det.bbox = fromCvRect(scaleXyxyToOriginal(x1, y1, x2, y2, frame_size));
         detections.push_back(det);
     }
 

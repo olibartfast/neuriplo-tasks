@@ -25,7 +25,7 @@ class TestTask : public TaskInterface {
     std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override {
 
         // Simple test implementation - return one detection
-        Detection det(cv::Rect(10, 10, 50, 50), 0.9f, 0);
+        Detection det(BoundingBox(10, 10, 50, 50), 0.9f, 0);
         return {det};
     }
 

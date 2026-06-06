@@ -1,3 +1,4 @@
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/task_pipeline.hpp"
 
 #include <gtest/gtest.h>
@@ -9,7 +10,7 @@ using namespace vision_core;
 
 namespace {
 
-Detection makeDetection() { return Detection(cv::Rect(10, 20, 30, 40), 0.9F, 1); }
+Detection makeDetection() { return Detection(BoundingBox(10, 20, 30, 40), 0.9F, 1); }
 
 std::vector<Result> detectionToPose(const std::vector<Result>& inputs) {
     std::vector<Result> outputs;
@@ -44,7 +45,7 @@ std::vector<Result> detectionToSegmentation(const std::vector<Result>& inputs) {
         const auto& detection = std::get<Detection>(input);
         InstanceSegmentation segmentation(detection.bbox, detection.class_confidence,
                                           static_cast<int>(detection.class_id));
-        segmentation.mask = cv::Mat::ones(detection.bbox.height, detection.bbox.width, CV_8UC1);
+        segmentation.mask = fromCvMat(cv::Mat::ones(detection.bbox.height, detection.bbox.width, CV_8UC1));
         outputs.emplace_back(std::move(segmentation));
     }
 
@@ -61,7 +62,7 @@ TEST(TaskPipelineTest, EmptySequentialPipelineReturnsInputs) {
 
     ASSERT_EQ(outputs.size(), 1u);
     ASSERT_TRUE(std::holds_alternative<Detection>(outputs[0]));
-    EXPECT_EQ(std::get<Detection>(outputs[0]).bbox, cv::Rect(10, 20, 30, 40));
+    EXPECT_EQ(std::get<Detection>(outputs[0]).bbox, BoundingBox(10, 20, 30, 40));
 }
 
 TEST(TaskPipelineTest, RejectsEmptyStage) {
@@ -95,7 +96,7 @@ TEST(TaskPipelineTest, RunsDetectionToPoseStagesInOrder) {
     ASSERT_EQ(outputs.size(), 1u);
     ASSERT_TRUE(std::holds_alternative<PoseEstimation>(outputs[0]));
     const auto& pose = std::get<PoseEstimation>(outputs[0]);
-    EXPECT_EQ(pose.bbox, cv::Rect(10, 20, 30, 40));
+    EXPECT_EQ(pose.bbox, BoundingBox(10, 20, 30, 40));
     EXPECT_NEAR(pose.score, 1.0F, 0.001F);
     ASSERT_EQ(pose.keypoints.size(), 1u);
 }
@@ -109,7 +110,7 @@ TEST(TaskPipelineTest, SupportsDetectionToSegmentationPipeline) {
     ASSERT_EQ(outputs.size(), 1u);
     ASSERT_TRUE(std::holds_alternative<InstanceSegmentation>(outputs[0]));
     const auto& segmentation = std::get<InstanceSegmentation>(outputs[0]);
-    EXPECT_EQ(segmentation.bbox, cv::Rect(10, 20, 30, 40));
-    EXPECT_EQ(segmentation.mask.rows, 40);
-    EXPECT_EQ(segmentation.mask.cols, 30);
+    EXPECT_EQ(segmentation.bbox, BoundingBox(10, 20, 30, 40));
+    EXPECT_EQ(segmentation.mask.rows(), 40);
+    EXPECT_EQ(segmentation.mask.cols(), 30);
 }
