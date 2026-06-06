@@ -1,12 +1,12 @@
-#include "vision-core/object_detection/object_detection_task.hpp"
-#include "vision-core/object_detection/rtdetr_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/object_detection_task.hpp"
+#include "neuriplo/tasks/object_detection/rtdetr_postprocessor.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 #include <variant>
 #include <vector>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 class RtDetrPostprocessorTest : public ::testing::Test {
   protected:

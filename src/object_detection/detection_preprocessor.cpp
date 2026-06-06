@@ -1,6 +1,6 @@
-#include "vision-core/object_detection/detection_preprocessor.hpp"
+#include "neuriplo/tasks/object_detection/detection_preprocessor.hpp"
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 // Unified YOLO Preprocessor (handles ALL YOLO variants: v5-v12, v10, NAS)
 YoloPreprocessor::YoloPreprocessor(const cv::Size& input_size)
@@ -62,4 +62,4 @@ RfDetrPreprocessor::RfDetrPreprocessor(const cv::Size& input_size)
           true  // BGR to RGB
       }) {}
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

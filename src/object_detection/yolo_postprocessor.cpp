@@ -1,14 +1,14 @@
-#include "vision-core/object_detection/yolo_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/yolo_postprocessor.hpp"
 
-#include "vision-core/core/opencv_interop.hpp"
-#include "vision-core/core/tensor_utils.hpp"
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <functional>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 YoloPostprocessor::YoloPostprocessor(ObjectDetectionTask::ModelType model_type, const cv::Size& input_size,
                                      float confidence_threshold, float nms_threshold)
@@ -498,4 +498,4 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(const Tensor& num
     return detections;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

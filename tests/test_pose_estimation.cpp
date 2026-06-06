@@ -1,12 +1,12 @@
-#include "vision-core/pose_estimation/pose_estimation_task.hpp"
-#include "vision-core/pose_estimation/vit_pose_postprocessor.hpp"
-#include "vision-core/pose_estimation/yolo_pose_postprocessor.hpp"
+#include "neuriplo/tasks/pose_estimation/pose_estimation_task.hpp"
+#include "neuriplo/tasks/pose_estimation/vit_pose_postprocessor.hpp"
+#include "neuriplo/tasks/pose_estimation/yolo_pose_postprocessor.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 #include <vector>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 // ---------------------------------------------------------------------------
 // ViTPose tests

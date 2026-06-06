@@ -1,14 +1,14 @@
-#include "vision-core/core/model_info.hpp"
-#include "vision-core/core/result_types.hpp"
-#include "vision-core/core/task_config.hpp"
-#include "vision-core/core/task_factory.hpp"
-#include "vision-core/core/task_interface.hpp"
+#include "neuriplo/tasks/core/model_info.hpp"
+#include "neuriplo/tasks/core/result_types.hpp"
+#include "neuriplo/tasks/core/task_config.hpp"
+#include "neuriplo/tasks/core/task_factory.hpp"
+#include "neuriplo/tasks/core/task_interface.hpp"
 
 #include <gtest/gtest.h>
 #include <variant>
 #include <vector>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 // ============================================================
 // Helpers

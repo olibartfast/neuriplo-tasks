@@ -6,7 +6,7 @@
 # Supports both PyTorch-based and PaddlePaddle-based workflows.
 #
 # Usage:
-#   cd vision-core
+#   cd neuriplo-tasks
 #   export/detection/rtdetr/setup_env.sh --framework pytorch --env-name rtdetr-pytorch  --output-dir ./environments
 #   export/detection/rtdetr/setup_env.sh --framework paddlepaddle --env-name rtdetr-paddle --output-dir ./environments
 #   export/detection/rtdetr/setup_env.sh --help for more information.

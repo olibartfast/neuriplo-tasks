@@ -1,9 +1,9 @@
-#include "vision-core/core/image_matrix.hpp"
+#include "neuriplo/tasks/core/image_matrix.hpp"
 
 #include <opencv2/core/mat.hpp>
 #include <utility>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 struct ImageMatrix::Impl {
     cv::Mat data;
@@ -76,4 +76,4 @@ ImageMatrix fromCvMat(const cv::Mat& mat) {
     return matrix;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

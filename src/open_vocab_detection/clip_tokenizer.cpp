@@ -1,4 +1,4 @@
-#include "vision-core/open_vocab_detection/clip_tokenizer.hpp"
+#include "neuriplo/tasks/open_vocab_detection/clip_tokenizer.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -7,7 +7,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 namespace {
 
@@ -169,4 +169,4 @@ std::vector<int32_t> ClipTokenizer::tokenize(const std::string& text) const {
     return token_ids;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

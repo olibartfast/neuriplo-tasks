@@ -1,13 +1,13 @@
-#include "vision-core/optical_flow/raft_postprocessor.hpp"
+#include "neuriplo/tasks/optical_flow/raft_postprocessor.hpp"
 
-#include "vision-core/core/opencv_interop.hpp"
-#include "vision-core/core/tensor_utils.hpp"
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 RaftPostprocessor::RaftPostprocessor() {}
 
@@ -194,4 +194,4 @@ cv::Mat RaftPostprocessor::visualizeFlow(const cv::Mat& flow_x, const cv::Mat& f
     return flow_color;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

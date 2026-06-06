@@ -1,12 +1,12 @@
-#include "vision-core/depth_estimation/depth_estimation_task.hpp"
+#include "neuriplo/tasks/depth_estimation/depth_estimation_task.hpp"
 
-#include "vision-core/depth_estimation/depth_anything_v2_postprocessor.hpp"
-#include "vision-core/depth_estimation/depth_estimation_preprocessor.hpp"
+#include "neuriplo/tasks/depth_estimation/depth_anything_v2_postprocessor.hpp"
+#include "neuriplo/tasks/depth_estimation/depth_estimation_preprocessor.hpp"
 
 #include <algorithm>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 DepthEstimationTask::DepthEstimationTask(const ModelInfo& model_info, const std::string& model_name)
     : BaseTask(model_info), model_type_(detectModelType(model_name)), model_name_(model_name) {
@@ -97,4 +97,4 @@ cv::Size DepthEstimationTask::extractInputSize(const ModelInfo& model_info) {
     return cv::Size(width, height);
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

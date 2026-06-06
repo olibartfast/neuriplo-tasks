@@ -1,11 +1,11 @@
 #pragma once
 
-#include "vision-core/core/preprocessor.hpp"
-#include "vision-core/core/task_interface.hpp"
+#include "neuriplo/tasks/core/preprocessor.hpp"
+#include "neuriplo/tasks/core/task_interface.hpp"
 
 #include <memory>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 /**
  * @brief Base class for detection tasks
@@ -33,4 +33,4 @@ class BaseDetectionTask : public TaskInterface {
     float nms_threshold_;
 };
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

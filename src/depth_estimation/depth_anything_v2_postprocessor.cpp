@@ -1,12 +1,12 @@
-#include "vision-core/depth_estimation/depth_anything_v2_postprocessor.hpp"
+#include "neuriplo/tasks/depth_estimation/depth_anything_v2_postprocessor.hpp"
 
-#include "vision-core/core/opencv_interop.hpp"
-#include "vision-core/core/tensor_utils.hpp"
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 namespace {
 
@@ -102,4 +102,4 @@ std::vector<DepthEstimation> DepthAnythingV2Postprocessor::postprocess(const std
     return results;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

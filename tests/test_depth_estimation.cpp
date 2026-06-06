@@ -1,9 +1,9 @@
-#include "vision-core/core/model_info.hpp"
-#include "vision-core/depth_estimation/depth_estimation_task.hpp"
+#include "neuriplo/tasks/core/model_info.hpp"
+#include "neuriplo/tasks/depth_estimation/depth_estimation_task.hpp"
 
 #include <gtest/gtest.h>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 class DepthEstimationTest : public ::testing::Test {
   protected:
