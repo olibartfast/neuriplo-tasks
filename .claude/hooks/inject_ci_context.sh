@@ -18,6 +18,7 @@ Before editing any C/C++ under src/, include/, or tests/:
   - clang-tidy-18 runs over src/*.cpp against compile_commands.json in build/.
   - cppcheck runs --enable=warning --std=c++17 -I include src/.
   - -DWERROR=ON is a gate; do not introduce new compiler warnings.
+  - Valgrind runs Debug test binaries in CI; do not hide real leaks.
   - Do NOT commit model weights, ONNX graphs, tokenizers, or sample media.
     Extensions blocked: .weights .onnx .pt .pth .bin .safetensors .engine
     .trt .mp4 .avi .mov .jpg .jpeg .png (outside docs/).

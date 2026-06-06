@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `tests/test_batch_integration.cpp` — end-to-end `batchPreprocess` + `batchPostprocess` for classification and YOLO detection
 - `docs/batch_processing.md` — consumer migration guide (engine vs library, N=2 worked examples)
 - `task_pipeline.hpp` — composable `Result` pipeline stages for detection → pose / segmentation workflows
+- CI Valgrind job for Debug test binaries with strict definite/indirect leak and memory-error checks
 
 ### Changed
 - TaskFactory registry now uses named `TaskDescriptor` entries grouped by task family, with additional boundary tests for routing precedence.
