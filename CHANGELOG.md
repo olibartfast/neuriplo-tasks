@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.4.0] - 2026-06-07
 
 ### Changed
-- **Repository and API rename (ADR 0004):** `vision-core` → `neuriplo-tasks`.
+- **Repository and API rename:** `vision-core` → `neuriplo-tasks`.
   C++ namespace `vision_core` → `neuriplo_tasks`; public include root
   `vision-core/...` → `neuriplo/tasks/...`; CMake project/target/package
   `vision-core` → `neuriplo-tasks`; version env `VISION_CORE_VERSION` →
