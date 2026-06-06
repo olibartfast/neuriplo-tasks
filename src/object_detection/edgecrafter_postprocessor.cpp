@@ -1,5 +1,6 @@
 #include "vision-core/object_detection/edgecrafter_postprocessor.hpp"
 
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/output_name_utils.hpp"
 #include "vision-core/core/tensor_utils.hpp"
 
@@ -60,8 +61,8 @@ std::vector<Detection> EdgeCrafterPostprocessor::postprocess(const std::vector<T
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = score;
-        det.bbox = cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
-                            cv::Point(static_cast<int>(x2), static_cast<int>(y2)));
+        det.bbox = fromCvRect(cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
+                                       cv::Point(static_cast<int>(x2), static_cast<int>(y2))));
         detections.push_back(det);
     }
 
