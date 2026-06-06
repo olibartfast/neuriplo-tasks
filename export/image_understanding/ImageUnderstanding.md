@@ -41,7 +41,7 @@ wget -O models/gemma4/mmproj-gemma4-E2B-F16.gguf \
     "https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/mmproj-gemma4-E2B-F16.gguf"
 ```
 
-## Passing the Model Path to vision-inference
+## Passing the Model Path to neuriplo-infer
 
 The `model_path` field encodes both GGUFs using the `|mmproj=` suffix convention:
 
@@ -52,7 +52,7 @@ The `model_path` field encodes both GGUFs using the `|mmproj=` suffix convention
 Example:
 
 ```bash
-./vision-inference \
+./neuriplo-infer \
     --model_type gemma4 \
     --model_path "models/gemma4/gemma-4-E4B-it-Q4_K_M.gguf|mmproj=models/gemma4/mmproj-gemma4-E4B-F16.gguf" \
     --image input.jpg \

@@ -3,7 +3,7 @@
 How to run **N independent images** through a single `TaskInterface` using the
 Track B helpers (`batchPreprocess`, `batchPostprocess`). Intended for downstream
 repos such as [tritonic](https://github.com/olibartfast/tritonic) and
-[vision-inference](https://github.com/olibartfast/vision-inference).
+[neuriplo-infer](https://github.com/olibartfast/neuriplo-infer).
 
 **Related**
 

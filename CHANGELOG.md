@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-07
+
+### Changed
+- **Repository and API rename (ADR 0004):** `vision-core` → `neuriplo-tasks`.
+  C++ namespace `vision_core` → `neuriplo_tasks`; public include root
+  `vision-core/...` → `neuriplo/tasks/...`; CMake project/target/package
+  `vision-core` → `neuriplo-tasks`; version env `VISION_CORE_VERSION` →
+  `NEURIPLO_TASKS_VERSION`. Task contracts, result schema, tensor shapes, and
+  model type strings are unchanged.
+- Documentation updated to reference renamed siblings (`neuriplo-infer`,
+  `neuriplo-track`).
+
 ### Added
 - Batch processing utilities: `batch_types.hpp`, `batchPreprocess`, `batchPostprocess`
 - Domain batch adoption for classification (`[N,C]` logits), YOLO standard detection, depth, and ViTPose
