@@ -384,6 +384,31 @@ ctest --test-dir build-san --output-on-failure
 
 Sanitizers catch memory errors, use-after-free, undefined behaviour, and integer overflow at runtime with minimal code changes.
 
+### Valgrind (Optional)
+
+Build tests in Debug mode and run every test binary under Valgrind:
+
+```bash
+sudo apt-get install -y valgrind
+
+cmake -S . -B build-valgrind -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
+cmake --build build-valgrind --parallel
+
+for test_bin in build-valgrind/tests/test_*; do
+  [ -x "$test_bin" ] || continue
+  valgrind \
+    --error-exitcode=1 \
+    --leak-check=full \
+    --show-leak-kinds=definite,indirect \
+    --errors-for-leak-kinds=definite,indirect \
+    --track-origins=yes \
+    --num-callers=25 \
+    "$test_bin"
+done
+```
+
+CI runs this as a separate code-quality job.
+
 ### Pre-commit (Optional)
 
 [pre-commit](https://pre-commit.com/) runs `clang-format` and `cppcheck` automatically on every commit:
@@ -411,6 +436,7 @@ cmake --build build
 | `clang-tidy-18` | Static analysis (AST-based) | `find src -name '*.cpp' \| xargs clang-tidy-18 -p build` |
 | `cppcheck` | Static analysis (flow-based) | `cppcheck --enable=warning --std=c++17 -I include src/` |
 | ASan + UBSan | Runtime memory/UB detection | `-DSANITIZERS=ON` at configure time |
+| Valgrind | Runtime leak/error detection | `build-valgrind` + `valgrind --error-exitcode=1 ...` |
 | pre-commit | Automates format + cppcheck on commit | `pre-commit install` |
 
 ## License
@@ -425,4 +451,3 @@ Planned work is broken into atomic steps in **[docs/ROADMAP.md](docs/ROADMAP.md)
 **[docs/batch_support_matrix.md](docs/batch_support_matrix.md)**.
 Task-level refactor detail remains in
 **[docs/task_refactor_atomic_plan.md](docs/task_refactor_atomic_plan.md)**.
-

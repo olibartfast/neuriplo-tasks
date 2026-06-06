@@ -13,13 +13,14 @@ that reproduces and verifies the fix.
 If a new failure mode appears that isn't catalogued, fix it, then **add a
 section here**. The skill compounds in value; do not let it decay.
 
-The repo's five CI jobs (`.github/workflows/lint.yml`) are:
+The repo's six CI jobs (`.github/workflows/lint.yml`) are:
 
 1. `format-check` — clang-format-18 dry-run
 2. `clang-tidy` — clang-tidy-18 over `src/**/*.cpp`
 3. `cppcheck` — cppcheck with `--error-exitcode=1`
 4. `build-and-test` — cmake + build + ctest
-5. `build-warnings` — cmake with `-DWERROR=ON` + build
+5. `valgrind` — Debug test build under Valgrind
+6. `build-warnings` — cmake with `-DWERROR=ON` + build
 
 ---
 
@@ -293,6 +294,46 @@ a test by deleting the assertion.
 
 ---
 
+## §valgrind — runtime memory failures
+
+**Symptom.** CI `valgrind` job fails with Valgrind output containing one of:
+```
+ERROR SUMMARY: N errors from N contexts
+definitely lost:
+Invalid read
+Invalid write
+Use of uninitialised value
+```
+
+**Local reproduce.**
+```bash
+cmake -S . -B build-valgrind -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
+cmake --build build-valgrind --parallel
+for test_bin in build-valgrind/tests/test_*; do
+  [ -x "$test_bin" ] || continue
+  valgrind \
+    --error-exitcode=1 \
+    --leak-check=full \
+    --show-leak-kinds=definite,indirect \
+    --errors-for-leak-kinds=definite,indirect \
+    --track-origins=yes \
+    --num-callers=25 \
+    "$test_bin"
+done
+```
+
+**Fix.**
+- Invalid read/write or use-after-free: fix ownership/lifetime, then add or
+  tighten the regression test that exercises the lifetime.
+- `definitely lost` / `indirectly lost`: free the owning allocation or replace
+  manual ownership with RAII.
+- Third-party or OpenCV noise: prefer a narrow Valgrind suppression file only
+  after proving the report is outside vision-core code.
+
+Do not hide real vision-core leaks with suppressions.
+
+---
+
 ## §opencv — OpenCV-specific failures
 
 **Symptom.** Any of:
@@ -353,6 +394,15 @@ cmake -S . -B build -DBUILD_TESTS=ON -DWERROR=ON \
 cmake --build build --parallel && \
 find src -name '*.cpp' | xargs clang-tidy-18 -p build && \
 ctest --test-dir build --output-on-failure && \
+cmake -S . -B build-valgrind -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON && \
+cmake --build build-valgrind --parallel && \
+for test_bin in build-valgrind/tests/test_*; do \
+  [ -x "$test_bin" ] || continue; \
+  valgrind --error-exitcode=1 --leak-check=full \
+    --show-leak-kinds=definite,indirect \
+    --errors-for-leak-kinds=definite,indirect \
+    --track-origins=yes --num-callers=25 "$test_bin"; \
+done && \
 echo "OK — safe to push"
 ```
 
