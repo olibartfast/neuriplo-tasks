@@ -5,9 +5,9 @@
 Use the universal YOLO exporter supporting **all YOLO versions** (v5-v12, NAS, yolo26):
 
 ```bash
-# Clone vision-core if not already available
-git clone https://github.com/olibartfast/vision-core.git
-cd vision-core/export/detection/yolo
+# Clone neuriplo-tasks if not already available
+git clone https://github.com/olibartfast/neuriplo-tasks.git
+cd neuriplo-tasks/export/detection/yolo
 
 # For ultralytics-based models (v8, v9, v10, v11, v12, 26), i.e.
 # yolov8
@@ -34,7 +34,7 @@ yolo export model=best.pt format=torchscript   # for TorchScript format
 ```
 
 - **Output Format**: `[1, 84, 8400]` where 84 = 4 bbox coords + 80 class scores (no objectness score)
-- **Batched output**: `[N, 84, 8400]` with dynamic batch on export; vision-core decodes each batch slice (NMS per image).
+- **Batched output**: `[N, 84, 8400]` with dynamic batch on export; neuriplo-tasks decodes each batch slice (NMS per image).
 - **Model Type**: `yolo`
 
 ### TensorRT
@@ -96,7 +96,7 @@ python export.py --weights <yolov5_version>.pt --include onnx
 
 - **Output Format**: `[1, 25200, 85]` where 85 = 4 bbox coords + 1 objectness + 80 class scores
 - **Model Type**: `yolo`
-- **Note**: YOLOv5/v6/v7 have objectness score at index 4, which is handled automatically by vision-core
+- **Note**: YOLOv5/v6/v7 have objectness score at index 4, which is handled automatically by neuriplo-tasks
 
 ### Libtorch
 ```bash
@@ -148,9 +148,9 @@ From [lyuwenyu RT-DETR repository](https://github.com/lyuwenyu/RT-DETR/):
 Use the universal export launcher that supports **all RT-DETR versions** (v1, v2, v3, v4) as well as **D-FINE** and **DEIM** models:
 
 ```bash
-# Clone vision-core if not already available
-git clone https://github.com/olibartfast/vision-core.git
-cd vision-core/export/detection/rtdetr
+# Clone neuriplo-tasks if not already available
+git clone https://github.com/olibartfast/neuriplo-tasks.git
+cd neuriplo-tasks/export/detection/rtdetr
 
 bash export.sh \
     --config <path-to-config.yml> \
@@ -316,9 +316,9 @@ Follow the procedure described in the [RF-DETR documentation](https://github.com
 Run the export script with your desired parameters:
 
 ```bash
-# Clone vision-core if not already available
-git clone https://github.com/olibartfast/vision-core.git
-cd vision-core/export/detection/rfdetr
+# Clone neuriplo-tasks if not already available
+git clone https://github.com/olibartfast/neuriplo-tasks.git
+cd neuriplo-tasks/export/detection/rfdetr
 
 python export.py <input_params>  # use --help for details
 ```

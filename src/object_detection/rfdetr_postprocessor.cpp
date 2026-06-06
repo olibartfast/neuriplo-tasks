@@ -1,13 +1,13 @@
-#include "vision-core/object_detection/rfdetr_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/rfdetr_postprocessor.hpp"
 
-#include "vision-core/core/opencv_interop.hpp"
-#include "vision-core/core/tensor_utils.hpp"
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 RfDetrPostprocessor::RfDetrPostprocessor(const cv::Size& input_size, float confidence_threshold,
                                          const std::vector<std::string>& output_names)
@@ -105,4 +105,4 @@ std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor
     return detections;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

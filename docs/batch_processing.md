@@ -19,11 +19,11 @@ repos such as [tritonic](https://github.com/olibartfast/tritonic) and
 
 | Layer | Owns |
 |-------|------|
-| **vision-core** | Per-image preprocess (`TaskInterface::preprocess`), batched-tensor postprocess split where implemented, `ModelInfo` validation in batch helpers |
+| **neuriplo-tasks** | Per-image preprocess (`TaskInterface::preprocess`), batched-tensor postprocess split where implemented, `ModelInfo` validation in batch helpers |
 | **Inference engine** | Stack `pre.buffers` into `[N,C,H,W]` (or engine layout), run ONNX/Triton/TensorRT, return `vector<Tensor>` with leading batch `N` |
 | **Consumer app** | Image sourcing, dynamic batch sizing policy, mapping `post.results` back to request IDs |
 
-vision-core does **not** schedule GPU queues, allocate device memory, or call an
+neuriplo-tasks does **not** schedule GPU queues, allocate device memory, or call an
 inference runtime. Helpers only wrap existing task code and attach `batch_size`
 metadata.
 
@@ -54,12 +54,12 @@ Matches `tests/test_batch_integration.cpp` (`ClassificationPreprocessPostprocess
 ### 1. Configure the task
 
 ```cpp
-#include <vision-core/core/batch_postprocess.hpp>
-#include <vision-core/core/batch_preprocess.hpp>
-#include <vision-core/core/task_config.hpp>
-#include <vision-core/core/task_factory.hpp>
+#include <neuriplo/tasks/core/batch_postprocess.hpp>
+#include <neuriplo/tasks/core/batch_preprocess.hpp>
+#include <neuriplo/tasks/core/task_config.hpp>
+#include <neuriplo/tasks/core/task_factory.hpp>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 ModelInfo model_info;
 model_info.input_shapes = {{2, 3, 224, 224}};   // NCHW, N = 2
@@ -90,7 +90,7 @@ BatchPreprocessOutput pre = batchPreprocess(*task, request);
 `imageBatchSizeMatches(request, pre.batch_size)` should be true for standard
 image-batch tasks.
 
-### 3. Inference (engine — not in vision-core)
+### 3. Inference (engine — not in neuriplo-tasks)
 
 Stack `pre.buffers` into the layout your runtime expects (example: single input
 `[2, 3, 224, 224]` float tensor). Run the model. Build output tensors for
@@ -170,7 +170,7 @@ Export batched YOLO ONNX with a dynamic batch axis; see
 3. Set `max_batch_size_` on `ModelInfo` to match the engine cap.
 4. Keep `frame_size` as the **original** image size used for coordinate remap (first
    image is typical when all frames share the same letterbox policy).
-5. Add engine-side tests that `[N, …]` outputs match what vision-core postprocessors expect.
+5. Add engine-side tests that `[N, …]` outputs match what neuriplo-tasks postprocessors expect.
 
 **Do not** treat these as image batches without reading the matrix:
 

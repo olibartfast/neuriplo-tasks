@@ -1,10 +1,10 @@
-#include "vision-core/core/model_info.hpp"
-#include "vision-core/core/task_interface.hpp"
+#include "neuriplo/tasks/core/model_info.hpp"
+#include "neuriplo/tasks/core/task_interface.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 // Concrete implementation for testing
 class TestTask : public TaskInterface {

@@ -3,7 +3,7 @@
 #
 # PreToolUse hook for Bash.
 #
-# vision-core is a static C++ library; it has NO reason to ship model weights,
+# neuriplo-tasks is a static C++ library; it has NO reason to ship model weights,
 # ONNX graphs, tokenizers, or sample media in the repo. These files commonly
 # appear in the working tree during local inference testing and it's very easy
 # to stage them by accident (especially with `git add .`).
@@ -47,17 +47,17 @@ reject() {
     echo
     echo "Blocked path: $1"
     echo
-    echo "vision-core does not commit model weights, ONNX graphs, tokenizers,"
+    echo "neuriplo-tasks does not commit model weights, ONNX graphs, tokenizers,"
     echo "or sample media. If you genuinely need to track this file, add an"
     echo "explicit exception to .gitignore and update this hook."
     echo "To stage regardless (not recommended):"
-    echo "  VISION_CORE_ALLOW_BINARIES=1 <your command>"
+    echo "  NEURIPLO_TASKS_ALLOW_BINARIES=1 <your command>"
   } >&2
   exit 2
 }
 
 # Global opt-out for intentional exceptions.
-[[ "${VISION_CORE_ALLOW_BINARIES:-}" == "1" ]] && exit 0
+[[ "${NEURIPLO_TASKS_ALLOW_BINARIES:-}" == "1" ]] && exit 0
 
 # --- 1. Scan `git add` arguments ---------------------------------------
 if [[ "$command" == *"git add"* ]]; then

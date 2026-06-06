@@ -35,7 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - README Features list had drifted from the registered TaskFactory model types: restored RF-DETR and YOLOv4 under Object Detection, and YOLOv10-seg / YOLO26-seg under Instance Segmentation
 - README "Supported Model Types" table now documents previously undocumented routable aliases (`rtdetrultralytics`, `gemma`/`llama`/`llamacpp`) and the `resnet*` / `*tensorflow*` classification matching rules
-- `test_readme_model_types` resolves the README and `task_factory.cpp` paths relative to the `tests/` directory (`CMAKE_CURRENT_SOURCE_DIR`) instead of `CMAKE_SOURCE_DIR`, so the contract test works when vision-core is built as a FetchContent sub-project of another repo
+- `test_readme_model_types` resolves the README and `task_factory.cpp` paths relative to the `tests/` directory (`CMAKE_CURRENT_SOURCE_DIR`) instead of `CMAKE_SOURCE_DIR`, so the contract test works when neuriplo-tasks is built as a FetchContent sub-project of another repo
 
 ## [0.3.0] - 2026-05-21
 
@@ -82,8 +82,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - clang-format and clang-tidy configuration
 - CI workflow with lint, static analysis, build, and test jobs
 
-[Unreleased]: https://github.com/olibartfast/vision-core/compare/v0.3.1...HEAD
-[0.3.1]: https://github.com/olibartfast/vision-core/compare/v0.3.0...v0.3.1
-[0.3.0]: https://github.com/olibartfast/vision-core/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/olibartfast/vision-core/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/olibartfast/vision-core/releases/tag/v0.1.0
+[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/olibartfast/neuriplo-tasks/releases/tag/v0.1.0

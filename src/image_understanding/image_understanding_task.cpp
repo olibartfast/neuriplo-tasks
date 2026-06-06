@@ -1,6 +1,6 @@
-#include "vision-core/image_understanding/image_understanding_task.hpp"
+#include "neuriplo/tasks/image_understanding/image_understanding_task.hpp"
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 ImageUnderstandingTask::ImageUnderstandingTask(const ModelInfo& model_info, const std::string& /*model_name*/,
                                                const TaskConfig& config)
@@ -62,4 +62,4 @@ std::string ImageUnderstandingTask::decodeFloatBytes(const std::vector<TensorEle
     return result;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

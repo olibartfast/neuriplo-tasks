@@ -1,9 +1,9 @@
-#include "vision-core/core/bbox_processor.hpp"
+#include "neuriplo/tasks/core/bbox_processor.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 class BboxProcessorTest : public ::testing::Test {
   protected:

@@ -1,9 +1,9 @@
-#include "vision-core/core/base_task.hpp"
+#include "neuriplo/tasks/core/base_task.hpp"
 
 #include <stdexcept>
 #include <utility>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 BaseTask::BaseTask(const ModelInfo& model_info, std::string empty_input_message)
     : TaskInterface(model_info), empty_input_message_(std::move(empty_input_message)) {}
@@ -33,4 +33,4 @@ std::vector<Result> BaseTask::postprocess(const cv::Size& frame_size, const std:
 
 bool BaseTask::validateOutputs(const std::vector<Tensor>& tensors) const { return !tensors.empty(); }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

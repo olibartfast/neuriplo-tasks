@@ -1,9 +1,9 @@
-#include "vision-core/core/batch_types.hpp"
+#include "neuriplo/tasks/core/batch_types.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 TEST(BatchTypesTest, BatchRequestHoldsImages) {
     BatchRequest request;

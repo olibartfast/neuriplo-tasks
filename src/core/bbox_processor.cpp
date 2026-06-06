@@ -1,9 +1,9 @@
-#include "vision-core/core/bbox_processor.hpp"
+#include "neuriplo/tasks/core/bbox_processor.hpp"
 
 #include <algorithm>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 cv::Rect BBoxProcessor::calculate_bounding_box(const cv::Size& image_size, const std::vector<float>& bbox,
                                                int network_width, int network_height) {
@@ -101,4 +101,4 @@ void BBoxProcessor::clamp_to_bounds(cv::Rect& box, const cv::Size& image_size) n
     box.height = std::clamp(box.height, 0, image_size.height - box.y);
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

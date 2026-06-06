@@ -1,15 +1,15 @@
-#include "vision-core/pose_estimation/pose_estimation_task.hpp"
+#include "neuriplo/tasks/pose_estimation/pose_estimation_task.hpp"
 
-#include "vision-core/object_detection/detection_preprocessor.hpp"
-#include "vision-core/pose_estimation/edgecrafter_pose_postprocessor.hpp"
-#include "vision-core/pose_estimation/vit_pose_postprocessor.hpp"
-#include "vision-core/pose_estimation/yolo_pose_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/detection_preprocessor.hpp"
+#include "neuriplo/tasks/pose_estimation/edgecrafter_pose_postprocessor.hpp"
+#include "neuriplo/tasks/pose_estimation/vit_pose_postprocessor.hpp"
+#include "neuriplo/tasks/pose_estimation/yolo_pose_postprocessor.hpp"
 
 #include <algorithm>
 #include <stdexcept>
 #include <utility>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 class PosePreprocessStrategy {
   public:
@@ -187,4 +187,4 @@ std::unique_ptr<PosePostprocessor> PoseEstimationTask::createPostprocessor(Model
     }
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

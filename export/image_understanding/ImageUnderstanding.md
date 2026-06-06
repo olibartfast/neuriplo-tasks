@@ -1,6 +1,6 @@
 # Image Understanding (VLM) Model Setup
 
-Unlike other task types in `vision-core`, the `ImageUnderstanding` task does **not** use ONNX export.
+Unlike other task types in `neuriplo-tasks`, the `ImageUnderstanding` task does **not** use ONNX export.
 Models are downloaded as GGUF files and run via the [llama.cpp](https://github.com/ggerganov/llama.cpp) backend.
 
 ## Supported Models

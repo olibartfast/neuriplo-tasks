@@ -1,6 +1,6 @@
-#include "vision-core/core/task_interface.hpp"
+#include "neuriplo/tasks/core/task_interface.hpp"
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 TaskInterface::TaskInterface(const ModelInfo& model_info) : model_info_(model_info) {
     std::tie(input_width_, input_height_, input_channels_) = initializeInputDimensions(model_info_);
@@ -11,4 +11,4 @@ TaskInterface::TaskInterface(const ModelInfo& model_info) : model_info_(model_in
     }
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

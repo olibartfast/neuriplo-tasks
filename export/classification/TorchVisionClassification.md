@@ -6,9 +6,9 @@
 Use the provided export script for Torchvision models:
 
 ```bash
-# Clone vision-core if not already available
-git clone https://github.com/olibartfast/vision-core.git
-cd vision-core/export/classification/torchvision
+# Clone neuriplo-tasks if not already available
+git clone https://github.com/olibartfast/neuriplo-tasks.git
+cd neuriplo-tasks/export/classification/torchvision
 
 # Export ResNet50 to ONNX
 python export_torchvision_classifier.py --library torchvision --model resnet50 --export_format onnx --output_onnx resnet50.onnx
@@ -44,7 +44,7 @@ torch.onnx.export(resnet50,
 ### Batch inference (`N > 1`)
 
 - Export with dynamic batch on **input and output** (see `dynamic_axes` above) so the engine can run `[N,3,H,W]` → `[N,num_classes]`.
-- In vision-core, preprocess one buffer per image (`batchPreprocess`), stack for inference, then pass output shape `[N,C]` to `batchPostprocess` with `batch_size = N`. Postprocess returns **one top-1 class per batch index** when `N > 1` (full `top_k` applies only when `N = 1`).
+- In neuriplo-tasks, preprocess one buffer per image (`batchPreprocess`), stack for inference, then pass output shape `[N,C]` to `batchPostprocess` with `batch_size = N`. Postprocess returns **one top-1 class per batch index** when `N > 1` (full `top_k` applies only when `N = 1`).
 
  #### TensorRT
  Once you have your exported onnx model, using trtexec:

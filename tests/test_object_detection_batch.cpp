@@ -1,14 +1,14 @@
-#include "vision-core/core/batch_postprocess.hpp"
-#include "vision-core/core/batch_preprocess.hpp"
-#include "vision-core/core/task_factory.hpp"
-#include "vision-core/object_detection/yolo_postprocessor.hpp"
+#include "neuriplo/tasks/core/batch_postprocess.hpp"
+#include "neuriplo/tasks/core/batch_preprocess.hpp"
+#include "neuriplo/tasks/core/task_factory.hpp"
+#include "neuriplo/tasks/object_detection/yolo_postprocessor.hpp"
 
 #include <array>
 #include <cstring>
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 namespace {
 

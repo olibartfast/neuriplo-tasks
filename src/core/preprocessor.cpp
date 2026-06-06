@@ -1,9 +1,9 @@
-#include "vision-core/core/preprocessor.hpp"
+#include "neuriplo/tasks/core/preprocessor.hpp"
 
 #include <cstring>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 Preprocessor::Preprocessor(const PreprocessConfig& config) : config_(config) {}
 
@@ -91,4 +91,4 @@ std::vector<std::vector<uint8_t>> Preprocessor::preprocess(const std::vector<cv:
     return results;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

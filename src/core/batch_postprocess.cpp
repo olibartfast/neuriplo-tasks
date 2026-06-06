@@ -1,10 +1,10 @@
-#include "vision-core/core/batch_postprocess.hpp"
+#include "neuriplo/tasks/core/batch_postprocess.hpp"
 
-#include "vision-core/core/result_types.hpp"
+#include "neuriplo/tasks/core/result_types.hpp"
 
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 namespace {
 
@@ -72,4 +72,4 @@ BatchPostprocessOutput batchPostprocess(TaskInterface& task, const cv::Size& fra
     return finalizeOutput(std::move(results), batch_size, task.getTaskType());
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

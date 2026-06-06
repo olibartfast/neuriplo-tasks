@@ -1,5 +1,5 @@
-#include "vision-core/core/model_info.hpp"
-#include "vision-core/core/task_factory.hpp"
+#include "neuriplo/tasks/core/model_info.hpp"
+#include "neuriplo/tasks/core/task_factory.hpp"
 
 #include <future>
 #include <gtest/gtest.h>
@@ -7,7 +7,7 @@
 #include <utility>
 #include <vector>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 // Minimal test task for registration tests
 class TestTask : public TaskInterface {

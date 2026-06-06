@@ -1,7 +1,7 @@
-# vision-core — Agent & Contributor Instructions
+# neuriplo-tasks — Agent & Contributor Instructions
 
 This file is the **single source of truth** for coding conventions, tooling, and
-rules for working in `vision-core`. All other AI agent config files
+rules for working in `neuriplo-tasks`. All other AI agent config files
 (`CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`) defer to this
 file.
 
@@ -19,15 +19,15 @@ file.
 
 ## Project overview
 
-- **Artifact**: `libvision-core.a` — C++17 static library
-- **Source roots**: `src/`, `include/vision-core/`
+- **Artifact**: `libneuriplo-tasks.a` — C++17 static library
+- **Source roots**: `src/`, `include/neuriplo/tasks/`
 - **Tests**: `tests/` (GoogleTest, fetched via CMake `FetchContent`)
 - **Only runtime dependency**: OpenCV
 - **Consumers**: [tritonic](https://github.com/olibartfast/tritonic),
   [vision-inference](https://github.com/olibartfast/vision-inference)
-- **GitHub repo**: `https://github.com/olibartfast/vision-core`
+- **GitHub repo**: `https://github.com/olibartfast/neuriplo-tasks`
 
-`vision-core` provides framework-agnostic computer-vision pre/postprocessing
+`neuriplo-tasks` provides framework-agnostic computer-vision pre/postprocessing
 for inference engines.
 
 ---
@@ -157,7 +157,7 @@ Atomic roadmap (batch utilities, refactor phases, composite pipelines):
 [`docs/batch_support_matrix.md`](./docs/batch_support_matrix.md). Factory/strategy
 refactor detail: [`docs/task_refactor_atomic_plan.md`](./docs/task_refactor_atomic_plan.md).
 
-### Core abstractions (`include/vision-core/core/`)
+### Core abstractions (`include/neuriplo/tasks/core/`)
 
 | File                  | Purpose |
 |-----------------------|---------|

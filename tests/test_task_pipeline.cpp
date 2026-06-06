@@ -1,12 +1,12 @@
-#include "vision-core/core/opencv_interop.hpp"
-#include "vision-core/core/task_pipeline.hpp"
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/task_pipeline.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 #include <stdexcept>
 #include <vector>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 namespace {
 
