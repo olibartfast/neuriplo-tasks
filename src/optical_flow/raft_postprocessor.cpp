@@ -1,10 +1,13 @@
-#include "vision-core/optical_flow/raft_postprocessor.hpp"
+#include "neuriplo/tasks/optical_flow/raft_postprocessor.hpp"
+
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 RaftPostprocessor::RaftPostprocessor() {}
 
@@ -33,7 +36,7 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
         static std::vector<float> temp_buffer;
         temp_buffer.resize(flow_output.size());
         for (size_t i = 0; i < flow_output.size(); ++i) {
-            temp_buffer[i] = getTensorFloat(flow_output[i]);
+            temp_buffer[i] = tensorElementToFloat(flow_output[i]);
         }
         data = temp_buffer.data();
     }
@@ -50,9 +53,9 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             flow_ptr[y * width * 2 + x * 2] =
-                getTensorFloat(flow_output[static_cast<size_t>(u_channel_offset + y * width + x)]);
+                tensorElementToFloat(flow_output[static_cast<size_t>(u_channel_offset + y * width + x)]);
             flow_ptr[y * width * 2 + x * 2 + 1] =
-                getTensorFloat(flow_output[static_cast<size_t>(v_channel_offset + y * width + x)]);
+                tensorElementToFloat(flow_output[static_cast<size_t>(v_channel_offset + y * width + x)]);
         }
     }
 
@@ -76,7 +79,7 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     cv::Mat flow_v = flow_channels[1];
 
     OpticalFlow result;
-    result.raw_flow = flow.clone();
+    result.raw_flow = fromCvMat(flow.clone());
 
     // Calculate magnitude and max displacement
     cv::Mat magnitude, angle;
@@ -86,13 +89,9 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     result.max_displacement = static_cast<float>(max_disp);
 
     // Create color visualization using master branch approach
-    result.flow = visualizeFlow(flow_u, flow_v);
+    result.flow = fromCvMat(visualizeFlow(flow_u, flow_v));
 
     return {result};
-}
-
-float RaftPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
 }
 
 cv::Mat RaftPostprocessor::makeColorwheel() {
@@ -195,4 +194,4 @@ cv::Mat RaftPostprocessor::visualizeFlow(const cv::Mat& flow_x, const cv::Mat& f
     return flow_color;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

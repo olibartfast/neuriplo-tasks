@@ -1,12 +1,12 @@
-#include "vision-core/optical_flow/optical_flow_task.hpp"
+#include "neuriplo/tasks/optical_flow/optical_flow_task.hpp"
 
-#include "vision-core/optical_flow/optical_flow_preprocessor.hpp"
-#include "vision-core/optical_flow/raft_postprocessor.hpp"
+#include "neuriplo/tasks/optical_flow/optical_flow_preprocessor.hpp"
+#include "neuriplo/tasks/optical_flow/raft_postprocessor.hpp"
 
 #include <algorithm>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 OpticalFlowTask::OpticalFlowTask(const ModelInfo& model_info, const std::string& model_name)
     : TaskInterface(model_info), model_type_(detectModelType(model_name)), model_name_(model_name) {
@@ -139,4 +139,4 @@ cv::Size OpticalFlowTask::extractInputSize(const ModelInfo& model_info) {
     return cv::Size(width, height);
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

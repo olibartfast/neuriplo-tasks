@@ -1,4 +1,7 @@
-#include "vision-core/open_vocab_detection/owlv2_postprocessor.hpp"
+#include "neuriplo/tasks/open_vocab_detection/owlv2_postprocessor.hpp"
+
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -6,13 +9,9 @@
 #include <limits>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 namespace {
-
-float tensorElementToFloat(const TensorElement& element) {
-    return std::visit([](const auto& value) { return static_cast<float>(value); }, element);
-}
 
 float sigmoid(float value) {
     if (value >= 0.0F) {
@@ -145,11 +144,11 @@ std::vector<OpenVocabDetection> OWLv2Postprocessor::postprocess(const std::vecto
             label = prompt_labels_[static_cast<size_t>(best_prompt_index)];
         }
 
-        results.emplace_back(makeRectFromCenterBox(center_x, center_y, width, height, frame_size), best_score,
-                             best_prompt_index, std::move(label));
+        results.emplace_back(fromCvRect(makeRectFromCenterBox(center_x, center_y, width, height, frame_size)),
+                             best_score, best_prompt_index, std::move(label));
     }
 
     return results;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

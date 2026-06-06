@@ -1,9 +1,11 @@
-#include "vision-core/video_classification/video_classification_postprocessor.hpp"
+#include "neuriplo/tasks/video_classification/video_classification_postprocessor.hpp"
+
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
 #include <cmath>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 VideoClassificationPostprocessor::VideoClassificationPostprocessor(int top_k, bool apply_softmax)
     : top_k_(top_k), apply_softmax_(apply_softmax) {}
@@ -19,7 +21,7 @@ std::vector<VideoClassification> VideoClassificationPostprocessor::postprocess(c
     std::vector<float> scores;
     scores.reserve(output.size());
     for (const auto& element : output) {
-        scores.push_back(getTensorFloat(element));
+        scores.push_back(tensorElementToFloat(element));
     }
 
     // Apply softmax if needed
@@ -56,10 +58,6 @@ std::vector<VideoClassification> VideoClassificationPostprocessor::postprocess(c
     return classifications;
 }
 
-float VideoClassificationPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
-}
-
 void VideoClassificationPostprocessor::applySoftmax(std::vector<float>& logits) {
     if (logits.empty())
         return;
@@ -82,4 +80,4 @@ void VideoClassificationPostprocessor::applySoftmax(std::vector<float>& logits) 
     }
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

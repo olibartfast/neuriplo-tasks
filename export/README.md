@@ -13,16 +13,19 @@ export/
 ├── detection/
 │   ├── yolo/               # Universal YOLO export (v5-v12, NAS)
 │   ├── rtdetr/             # RT-DETR detection export
-│   └── rfdetr/             # RF-DETR detection export
+│   ├── rfdetr/             # RF-DETR detection export
+│   └── edgecrafter/        # EdgeCrafter detection export
 ├── segmentation/
-│   └── rfdetr/             # RF-DETR segmentation export
+│   ├── rfdetr/             # RF-DETR segmentation export
+│   └── edgecrafter/        # EdgeCrafter segmentation export
 ├── optical_flow/
 │   └── raft/               # RAFT optical flow export
 ├── open_vocab_detection/
 │   └── owlv2/              # OWLv2 open-vocabulary detection export
 ├── pose_estimation/
 │   ├── yolo_pose/          # YOLO pose export (v5/v8/v11/v26)
-│   └── vitpose/            # ViTPose pose estimation export
+│   ├── vitpose/            # ViTPose pose estimation export
+│   └── edgecrafter/        # EdgeCrafter pose estimation export
 ├── depth_estimation/
 │   └── depth_anything_v2/  # Depth Anything V2 depth export
 ├── gaussian_splatting/
@@ -43,7 +46,7 @@ Most tasks export to ONNX. The `image_understanding/` task is an exception — i
 ### Quick Start Examples
 
 ```bash
-cd /path/to/vision-core
+cd /path/to/neuriplo-tasks
 
 # Export YOLO model
 python export/detection/yolo/export.py --model yolov8n.pt --format onnx
@@ -82,6 +85,19 @@ python export/video_classification/timesformer/export_timesformer_to_onnx.py
 # See export/image_understanding/ImageUnderstanding.md for wget commands
 ```
 
+## Batched inference (dynamic batch axis)
+
+When exporting ONNX with a dynamic or fixed batch dimension on axis 0, align
+`ModelInfo.input_shapes` / `max_batch_size_` with the engine config and use
+neuriplo-tasks batch helpers for preprocess/postprocess split.
+
+| Topic | Document |
+|-------|----------|
+| End-to-end consumer flow (`N=2` images, engine vs library) | [docs/batch_processing.md](../docs/batch_processing.md) |
+| Per-task-family batch readiness | [docs/batch_support_matrix.md](../docs/batch_support_matrix.md) |
+| Classification `[N,C]` output | [classification/TorchVisionClassification.md](classification/TorchVisionClassification.md) |
+| YOLO `[N, 4+C, anchors]` output | [detection/ObjectDetection.md](detection/ObjectDetection.md) |
+
 ## Export Integration with Inference Engines
 
 These exported models can be used with:
@@ -92,16 +108,19 @@ These exported models can be used with:
 - Custom inference implementations
 
 Refer to:
-* [Object Detection](https://github.com/olibartfast/vision-core/blob/master/export/detection/ObjectDetection.md)
-* [Classification](https://github.com/olibartfast/vision-core/blob/master/export/classification/Classification.md)
+* [Object Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/ObjectDetection.md)
+* [Classification](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/classification/Classification.md)
 
-* [Instance Segmentation](https://github.com/olibartfast/vision-core/blob/master/export/segmentation/InstanceSegmentation.md)
-* [Optical Flow](https://github.com/olibartfast/vision-core/blob/master/export/optical_flow/OpticalFlow.md)
-* [Pose Estimation](https://github.com/olibartfast/vision-core/blob/master/export/pose_estimation/PoseEstimation.md)
-* [Depth Estimation](https://github.com/olibartfast/vision-core/blob/master/export/depth_estimation/DepthEstimation.md)
-* [Open-Vocabulary Detection](https://github.com/olibartfast/vision-core/blob/master/export/open_vocab_detection/OWLv2.md)
-* [Video Classification](https://github.com/olibartfast/vision-core/blob/master/export/video_classification/VideoClassification.md)
-* [Image Understanding (VLM)](https://github.com/olibartfast/vision-core/blob/master/export/image_understanding/ImageUnderstanding.md)
+* [Instance Segmentation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/segmentation/InstanceSegmentation.md)
+* [Optical Flow](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/optical_flow/OpticalFlow.md)
+* [Pose Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/PoseEstimation.md)
+* [Depth Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/depth_estimation/DepthEstimation.md)
+* [Open-Vocabulary Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/open_vocab_detection/OWLv2.md)
+* [Video Classification](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/video_classification/VideoClassification.md)
+* [Image Understanding (VLM)](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/image_understanding/ImageUnderstanding.md)
+* [EdgeCrafter Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/edgecrafter/README.md)
+* [EdgeCrafter Segmentation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/segmentation/edgecrafter/README.md)
+* [EdgeCrafter Pose Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/edgecrafter/README.md)
 
 
 For Triton-specific deployment tools, see [tritonic](https://github.com/olibartfast/tritonic/tree/master/deploy) repository.

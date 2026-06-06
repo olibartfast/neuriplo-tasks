@@ -1,12 +1,12 @@
-#include "vision-core/gaussian_splatting/gaussian_splatting_task.hpp"
+#include "neuriplo/tasks/gaussian_splatting/gaussian_splatting_task.hpp"
 
-#include "vision-core/gaussian_splatting/gaussian_splatting_preprocessor.hpp"
-#include "vision-core/gaussian_splatting/lgm_postprocessor.hpp"
+#include "neuriplo/tasks/gaussian_splatting/gaussian_splatting_preprocessor.hpp"
+#include "neuriplo/tasks/gaussian_splatting/lgm_postprocessor.hpp"
 
 #include <algorithm>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 GaussianSplattingTask::GaussianSplattingTask(const ModelInfo& model_info, const std::string& model_name)
     : TaskInterface(model_info), model_type_(detectModelType(model_name)), model_name_(model_name) {
@@ -127,4 +127,4 @@ cv::Size GaussianSplattingTask::extractInputSize(const ModelInfo& model_info) {
     return {width, height};
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

@@ -1,10 +1,13 @@
-#include "vision-core/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
+
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 RfDetrSegmentationPostprocessor::RfDetrSegmentationPostprocessor(const cv::Size& input_size, float confidence_threshold,
                                                                  float mask_threshold,
@@ -69,7 +72,7 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         int class_id = -1;
 
         for (int c = 0; c < num_classes; ++c) {
-            float logit = getTensorFloat(labels[static_cast<size_t>(i * num_classes + c)]);
+            float logit = tensorElementToFloat(labels[static_cast<size_t>(i * num_classes + c)]);
             float score = 1.0f / (1.0f + std::exp(-logit)); // sigmoid
             if (score > max_score) {
                 max_score = score;
@@ -87,10 +90,10 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         }
 
         // Extract box (cx, cy, w, h) in normalized coordinates
-        float cx = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 0)]);
-        float cy = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 1)]);
-        float w = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 2)]);
-        float h = getTensorFloat(boxes[static_cast<size_t>(i * 4 + 3)]);
+        float cx = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 0)]);
+        float cy = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 1)]);
+        float w = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 2)]);
+        float h = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 3)]);
 
         // Convert to frame coordinates
         float x_center = cx * static_cast<float>(frame_size.width);
@@ -104,8 +107,8 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         InstanceSegmentation seg;
         seg.class_id = static_cast<float>(class_id);
         seg.class_confidence = max_score;
-        seg.bbox = cv::Rect(static_cast<int>(x_min), static_cast<int>(y_min), static_cast<int>(width),
-                            static_cast<int>(height));
+        seg.bbox = BoundingBox(static_cast<int>(x_min), static_cast<int>(y_min), static_cast<int>(width),
+                               static_cast<int>(height));
 
         // Extract mask for this detection
         cv::Mat mask_logits(mask_h, mask_w, CV_32F);
@@ -114,7 +117,7 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         float min_val = 1.0f;
         for (int y = 0; y < mask_h; ++y) {
             for (int x = 0; x < mask_w; ++x) {
-                float logit = getTensorFloat(masks[static_cast<size_t>(mask_offset + y * mask_w + x)]);
+                float logit = tensorElementToFloat(masks[static_cast<size_t>(mask_offset + y * mask_w + x)]);
                 float val = 1.0f / (1.0f + std::exp(-logit)); // sigmoid
                 mask_logits.at<float>(y, x) = val;
                 max_val = std::max(max_val, val);
@@ -129,22 +132,27 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         // Threshold to binary
         cv::Mat mask_binary;
         cv::threshold(mask_resized, mask_binary, mask_threshold_, 1.0, cv::THRESH_BINARY);
-        mask_binary.convertTo(seg.mask, CV_8UC1, 255.0);
+        cv::Mat mask_uint8;
+        mask_binary.convertTo(mask_uint8, CV_8UC1, 255.0);
+        seg.mask = fromCvMat(mask_uint8);
 
         // Check mask content
 
         // Crop mask to bbox
         cv::Mat mask_cropped = cv::Mat::zeros(frame_size, CV_8UC1);
-        cv::Rect roi = seg.bbox & cv::Rect(0, 0, frame_size.width, frame_size.height);
+        const BoundingBox frame_bounds(0, 0, frame_size.width, frame_size.height);
+        const BoundingBox roi_box = seg.bbox.intersect(frame_bounds);
+        const cv::Rect roi = toCvRect(roi_box);
         if (roi.width > 0 && roi.height > 0) {
-            seg.mask(roi).copyTo(mask_cropped(roi));
+            toCvMat(seg.mask)(roi).copyTo(mask_cropped(roi));
         }
-        seg.mask = mask_cropped;
+        seg.mask = fromCvMat(mask_cropped);
 
         // Populate mask_data for visualization
         seg.mask_height = frame_size.height;
         seg.mask_width = frame_size.width;
-        seg.mask_data.assign(seg.mask.datastart, seg.mask.dataend);
+        const cv::Mat& mask_mat = toCvMat(seg.mask);
+        seg.mask_data.assign(mask_mat.datastart, mask_mat.dataend);
 
         segmentations.push_back(seg);
     }
@@ -152,12 +160,4 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
     return segmentations;
 }
 
-float RfDetrSegmentationPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
-}
-
-int RfDetrSegmentationPostprocessor::getTensorInt(const TensorElement& element) {
-    return std::visit([](auto&& value) -> int { return static_cast<int>(value); }, element);
-}
-
-} // namespace vision_core
+} // namespace neuriplo_tasks

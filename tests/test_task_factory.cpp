@@ -1,12 +1,13 @@
-#include "vision-core/core/model_info.hpp"
-#include "vision-core/core/task_factory.hpp"
+#include "neuriplo/tasks/core/model_info.hpp"
+#include "neuriplo/tasks/core/task_factory.hpp"
 
 #include <future>
 #include <gtest/gtest.h>
 #include <thread>
+#include <utility>
 #include <vector>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 // Minimal test task for registration tests
 class TestTask : public TaskInterface {
@@ -32,6 +33,22 @@ class TaskFactoryTest : public ::testing::Test {
         info.max_batch_size_ = 1;
         info.batch_size_ = 1;
         return info;
+    }
+
+    ModelInfo createVideoModelInfo() {
+        auto info = createValidModelInfo();
+        info.input_shapes = {{1, 16, 3, 224, 224}};
+        return info;
+    }
+
+    void expectAliasesRouteTo(const std::vector<const char*>& aliases, TaskType task_type) {
+        auto info = createValidModelInfo();
+
+        for (const char* alias : aliases) {
+            auto task = TaskFactory::createTaskInstance(alias, info);
+            ASSERT_NE(task, nullptr) << "null for alias: " << alias;
+            EXPECT_EQ(task->getTaskType(), task_type) << "alias: " << alias;
+        }
     }
 };
 
@@ -144,6 +161,70 @@ TEST_F(TaskFactoryTest, RtDetrUltralyticsLongFormAlias) {
     auto task = TaskFactory::createTaskInstance("rtdetrultralytics", info);
     ASSERT_NE(task, nullptr);
     EXPECT_EQ(task->getTaskType(), TaskType::Detection);
+}
+
+TEST_F(TaskFactoryTest, FactoryRoutesEveryTaskDomain) {
+    const std::vector<std::pair<const char*, TaskType>> aliases = {
+        {"yolov8", TaskType::Detection},
+        {"yoloseg", TaskType::InstanceSegmentation},
+        {"rfdetrseg", TaskType::InstanceSegmentation},
+        {"resnet50", TaskType::Classification},
+        {"raft", TaskType::OpticalFlow},
+        {"yolov8pose", TaskType::PoseEstimation},
+        {"depth-anything-v2", TaskType::DepthEstimation},
+        {"owlv2", TaskType::OpenVocabDetection},
+        {"lgm", TaskType::GaussianSplatting},
+        {"gemma4", TaskType::ImageUnderstanding},
+    };
+
+    auto info = createValidModelInfo();
+    for (const auto& alias : aliases) {
+        auto task = TaskFactory::createTaskInstance(alias.first, info);
+        ASSERT_NE(task, nullptr) << "null for alias: " << alias.first;
+        EXPECT_EQ(task->getTaskType(), alias.second) << "alias: " << alias.first;
+    }
+
+    for (const char* alias : {"videomae", "vivit", "timesformer"}) {
+        auto video_task = TaskFactory::createTaskInstance(alias, createVideoModelInfo());
+        ASSERT_NE(video_task, nullptr) << "null for alias: " << alias;
+        EXPECT_EQ(video_task->getTaskType(), TaskType::VideoClassification) << "alias: " << alias;
+    }
+}
+
+TEST_F(TaskFactoryTest, NormalizedAliasesRouteToSameTaskType) {
+    expectAliasesRouteTo({"YOLO-V8", "yolo_v8", " yolo v8 "}, TaskType::Detection);
+    expectAliasesRouteTo({"RT-DETR", "rt_detr", " RT DETR "}, TaskType::Detection);
+    expectAliasesRouteTo({"ViT-Classifier", "vit_classifier", " VIT CLASSIFIER "}, TaskType::Classification);
+    expectAliasesRouteTo({"Depth-Anything-V2", "depth_anything_v2", " DEPTH ANYTHING V2 "}, TaskType::DepthEstimation);
+    expectAliasesRouteTo({"LGM-Mini", "lgm_mini", " LGM MINI "}, TaskType::GaussianSplatting);
+    expectAliasesRouteTo({"Image-Understanding", "image_understanding", " IMAGE UNDERSTANDING "},
+                         TaskType::ImageUnderstanding);
+}
+
+TEST_F(TaskFactoryTest, PrefixAndSubstringAliasesRouteToDocumentedTaskTypes) {
+    expectAliasesRouteTo({"ecdet", "ecdet-lite", "edgecrafter-det", "edgecrafter"}, TaskType::Detection);
+    expectAliasesRouteTo({"ecseg", "ecseg-lite", "edgecrafter-seg"}, TaskType::InstanceSegmentation);
+    expectAliasesRouteTo({"resnet101", "custom-tensorflow-classifier"}, TaskType::Classification);
+    expectAliasesRouteTo({"ecpose", "ecpose-lite", "edgecrafter-pose"}, TaskType::PoseEstimation);
+    expectAliasesRouteTo({"fast-splat-model"}, TaskType::GaussianSplatting);
+}
+
+TEST_F(TaskFactoryTest, SpecificYoloAliasesPrecedeGenericDetection) {
+    expectAliasesRouteTo({"yolo-seg", "YOLO_SEG", " yolo seg ", "yolov8-seg"}, TaskType::InstanceSegmentation);
+    expectAliasesRouteTo({"yolo-pose", "YOLO_POSE", " yolo pose ", "yolov8-pose"}, TaskType::PoseEstimation);
+}
+
+TEST_F(TaskFactoryTest, SpecificDetrSegmentationAliasPrecedesDetection) {
+    expectAliasesRouteTo({"rfdetrseg", "RF-DETR-SEG", " rf detr seg "}, TaskType::InstanceSegmentation);
+    expectAliasesRouteTo({"rfdetr", "RF-DETR", " rf detr "}, TaskType::Detection);
+}
+
+TEST_F(TaskFactoryTest, SpecificEdgeCrafterAliasesPrecedeGenericDetection) {
+    expectAliasesRouteTo({"ecseg", "EC-SEG", " edgecrafter seg ", "edgecrafter-lite-seg"},
+                         TaskType::InstanceSegmentation);
+    expectAliasesRouteTo({"ecpose", "EC-POSE", " edgecrafter pose ", "edgecrafter-lite-pose"},
+                         TaskType::PoseEstimation);
+    expectAliasesRouteTo({"ecdet", "EC-DET", " edgecrafter det ", "edgecrafter"}, TaskType::Detection);
 }
 
 TEST_F(TaskFactoryTest, ImageUnderstandingAliases) {

@@ -1,6 +1,6 @@
-#include "vision-core/classification/classification_preprocessor.hpp"
+#include "neuriplo/tasks/classification/classification_preprocessor.hpp"
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 ClassifierPreprocessor::ClassifierPreprocessor(const cv::Size& input_size, bool use_imagenet_norm)
     : Preprocessor(PreprocessConfig{
@@ -36,4 +36,4 @@ ViTPreprocessor::ViTPreprocessor(const cv::Size& input_size)
           true  // BGR to RGB
       }) {}
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

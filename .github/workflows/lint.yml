@@ -2,7 +2,7 @@ name: C++ Lint & Build
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, "feature/**", "feat/**"]
     paths-ignore:
       - '**.md'
       - 'export/**'
@@ -35,7 +35,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libopencv-dev
+          sudo apt-get install -y libopencv-dev ninja-build
 
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1
@@ -43,7 +43,7 @@ jobs:
           key: ${{ github.job }}-${{ runner.os }}
 
       - name: Generate compile_commands.json
-        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        run: cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Run clang-tidy
         run: |
@@ -77,7 +77,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libopencv-dev
+          sudo apt-get install -y libopencv-dev ninja-build
 
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1
@@ -85,13 +85,56 @@ jobs:
           key: ${{ github.job }}-${{ runner.os }}
 
       - name: Configure
-        run: cmake -S . -B build -DBUILD_TESTS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        run: cmake -S . -B build -G Ninja -DBUILD_TESTS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Build
         run: cmake --build build --parallel
 
       - name: Run tests
         run: ctest --test-dir build --output-on-failure
+
+  valgrind:
+    name: Valgrind
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopencv-dev valgrind
+
+      - name: Configure
+        run: cmake -S . -B build-valgrind -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build-valgrind --parallel
+
+      - name: Run tests under Valgrind
+        run: |
+          found_tests=0
+          for test_bin in build-valgrind/tests/test_*; do
+            if [ ! -x "$test_bin" ]; then
+              continue
+            fi
+
+            found_tests=1
+            echo "::group::$(basename "$test_bin")"
+            valgrind \
+              --error-exitcode=1 \
+              --leak-check=full \
+              --show-leak-kinds=definite,indirect \
+              --errors-for-leak-kinds=definite,indirect \
+              --track-origins=yes \
+              --num-callers=25 \
+              "$test_bin"
+            echo "::endgroup::"
+          done
+
+          if [ "$found_tests" -eq 0 ]; then
+            echo "No test binaries found under build-valgrind/tests"
+            exit 1
+          fi
 
   build-warnings:
     name: Build with Strict Warnings
@@ -102,7 +145,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libopencv-dev
+          sudo apt-get install -y libopencv-dev ninja-build
 
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1
@@ -110,7 +153,7 @@ jobs:
           key: ${{ github.job }}-${{ runner.os }}
 
       - name: Configure with -DWERROR=ON
-        run: cmake -S . -B build -DWERROR=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        run: cmake -S . -B build -G Ninja -DWERROR=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Build
         run: cmake --build build --parallel

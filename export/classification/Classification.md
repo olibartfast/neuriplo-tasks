@@ -1,6 +1,6 @@
 
-- [ViT Classification](https://github.com/olibartfast/vision-core/blob/master/export/classification/ViTClassification.md)
+- [ViT Classification](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/classification/ViTClassification.md)
 
-- [Torchvision Classification](https://github.com/olibartfast/vision-core/blob/master/export/classification/TorchVisionClassification.md)
+- [Torchvision Classification](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/classification/TorchVisionClassification.md)
 
-- [Tensorflow Classification](https://github.com/olibartfast/vision-core/blob/master/export/classification/TensorflowClassification.md)
+- [Tensorflow Classification](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/classification/TensorflowClassification.md)

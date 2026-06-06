@@ -1,10 +1,10 @@
-#include "vision-core/core/model_info.hpp"
-#include "vision-core/core/task_interface.hpp"
+#include "neuriplo/tasks/core/model_info.hpp"
+#include "neuriplo/tasks/core/task_interface.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 // Concrete implementation for testing
 class TestTask : public TaskInterface {
@@ -25,7 +25,7 @@ class TestTask : public TaskInterface {
     std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override {
 
         // Simple test implementation - return one detection
-        Detection det(cv::Rect(10, 10, 50, 50), 0.9f, 0);
+        Detection det(BoundingBox(10, 10, 50, 50), 0.9f, 0);
         return {det};
     }
 

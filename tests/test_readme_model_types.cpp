@@ -1,6 +1,6 @@
-#include "vision-core/core/model_info.hpp"
-#include "vision-core/core/task_config.hpp"
-#include "vision-core/core/task_factory.hpp"
+#include "neuriplo/tasks/core/model_info.hpp"
+#include "neuriplo/tasks/core/task_config.hpp"
+#include "neuriplo/tasks/core/task_factory.hpp"
 
 #include <cctype>
 #include <cstdint>
@@ -11,14 +11,14 @@
 #include <sstream>
 #include <string>
 
-#ifndef VISION_CORE_README_PATH
-#error "VISION_CORE_README_PATH must be defined via target_compile_definitions"
+#ifndef NEURIPLO_TASKS_README_PATH
+#error "NEURIPLO_TASKS_README_PATH must be defined via target_compile_definitions"
 #endif
-#ifndef VISION_CORE_TASK_FACTORY_PATH
-#error "VISION_CORE_TASK_FACTORY_PATH must be defined via target_compile_definitions"
+#ifndef NEURIPLO_TASKS_TASK_FACTORY_PATH
+#error "NEURIPLO_TASKS_TASK_FACTORY_PATH must be defined via target_compile_definitions"
 #endif
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 namespace {
 
@@ -86,15 +86,15 @@ ModelInfo makeValidModelInfo() {
 } // namespace
 
 TEST(ReadmeModelTypesContract, MarkersArePresent) {
-    const std::string readme = readFile(VISION_CORE_README_PATH);
-    ASSERT_FALSE(readme.empty()) << "README not readable at " << VISION_CORE_README_PATH;
+    const std::string readme = readFile(NEURIPLO_TASKS_README_PATH);
+    ASSERT_FALSE(readme.empty()) << "README not readable at " << NEURIPLO_TASKS_README_PATH;
     EXPECT_NE(readme.find(kMarkerStart), std::string::npos);
     EXPECT_NE(readme.find(kMarkerEnd), std::string::npos);
 }
 
 // Forward direction: every alias documented in the README routes via TaskFactory.
 TEST(ReadmeModelTypesContract, EveryQuotedAliasRoutesViaTaskFactory) {
-    const std::string readme = readFile(VISION_CORE_README_PATH);
+    const std::string readme = readFile(NEURIPLO_TASKS_README_PATH);
     ASSERT_FALSE(readme.empty());
 
     const std::string block = extractBlock(readme);
@@ -124,12 +124,12 @@ TEST(ReadmeModelTypesContract, EveryQuotedAliasRoutesViaTaskFactory) {
 // are prefix/substring matchers documented in README prose rather than as
 // quoted table rows.
 TEST(ReadmeModelTypesContract, EveryFactoryKeyIsDocumentedInReadme) {
-    static const std::set<std::string> kRoutingFragments = {"seg", "pose", "splat", "resnet", "tensorflow"};
+    static const std::set<std::string> kRoutingFragments = {"seg", "pose", "splat", "resnet", "tensorflow", "det"};
 
-    const std::string factory = readFile(VISION_CORE_TASK_FACTORY_PATH);
-    ASSERT_FALSE(factory.empty()) << "task_factory.cpp not readable at " << VISION_CORE_TASK_FACTORY_PATH;
+    const std::string factory = readFile(NEURIPLO_TASKS_TASK_FACTORY_PATH);
+    ASSERT_FALSE(factory.empty()) << "task_factory.cpp not readable at " << NEURIPLO_TASKS_TASK_FACTORY_PATH;
 
-    const std::string block = extractBlock(readFile(VISION_CORE_README_PATH));
+    const std::string block = extractBlock(readFile(NEURIPLO_TASKS_README_PATH));
     ASSERT_FALSE(block.empty());
 
     std::set<std::string> documented;
