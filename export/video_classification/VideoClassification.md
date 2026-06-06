@@ -81,7 +81,7 @@ transformers
 onnxruntime  # optional, for --test
 ```
 
-## Preprocessing (vision-core C++)
+## Preprocessing (neuriplo-tasks C++)
 
 Each model uses a different preprocessing pipeline in the C++ inference code:
 

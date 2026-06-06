@@ -52,4 +52,4 @@ onnxruntime  # optional, for --test
 ## Notes
 
 - Keep export input size aligned with your deployment model config for best runtime compatibility.
-- The C++ `vision-core` depth postprocessor accepts common depth output layouts, including `[B,H,W]` and `[B,1,H,W]`.
+- The C++ `neuriplo-tasks` depth postprocessor accepts common depth output layouts, including `[B,H,W]` and `[B,1,H,W]`.

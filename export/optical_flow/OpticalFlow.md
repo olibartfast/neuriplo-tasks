@@ -3,12 +3,12 @@
 ## RAFT
 
 ## Export Options
-To export, use the raft_exporter from vision-core:
+To export, use the raft_exporter from neuriplo-tasks:
 
 ```bash
-# Clone vision-core if not already available
-git clone https://github.com/olibartfast/vision-core.git
-cd vision-core/export/optical_flow/raft
+# Clone neuriplo-tasks if not already available
+git clone https://github.com/olibartfast/neuriplo-tasks.git
+cd neuriplo-tasks/export/optical_flow/raft
 
 python raft_exporter.py [options]
 ```

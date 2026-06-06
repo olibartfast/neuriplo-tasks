@@ -1,9 +1,12 @@
-#include "vision-core/object_detection/rtdetr_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/rtdetr_postprocessor.hpp"
+
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <iostream>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 RtDetrPostprocessor::RtDetrPostprocessor(ObjectDetectionTask::ModelType model_type, const cv::Size& input_size,
                                          float confidence_threshold, const std::vector<std::string>& output_names)
@@ -77,25 +80,25 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETR(const Tensor& scor
     float r_h = static_cast<float>(frame_size.height) / static_cast<float>(input_size_.height);
 
     for (int i = 0; i < num_dets; ++i) {
-        float score = getTensorFloat(scores.data[static_cast<size_t>(i)]);
+        float score = tensorElementToFloat(scores.data[static_cast<size_t>(i)]);
 
         if (score < confidence_threshold_)
             continue;
 
-        int class_id = getTensorInt(labels.data[static_cast<size_t>(i)]);
+        int class_id = tensorElementToInt(labels.data[static_cast<size_t>(i)]);
         if (class_id < 0)
             continue;
 
-        float x1 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 0)]) * r_w;
-        float y1 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 1)]) * r_h;
-        float x2 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 2)]) * r_w;
-        float y2 = getTensorFloat(boxes.data[static_cast<size_t>(i * 4 + 3)]) * r_h;
+        float x1 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 0)]) * r_w;
+        float y1 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 1)]) * r_h;
+        float x2 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 2)]) * r_w;
+        float y2 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 3)]) * r_h;
 
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = score;
-        det.bbox = cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
-                            cv::Point(static_cast<int>(x2), static_cast<int>(y2)));
+        det.bbox = fromCvRect(cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
+                                       cv::Point(static_cast<int>(x2), static_cast<int>(y2))));
         detections.push_back(det);
     }
 
@@ -125,7 +128,7 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(const Tensor& ou
         float max_score = 0.0f;
         int class_id = -1;
         for (int c = 0; c < num_classes; ++c) {
-            float score = getTensorFloat(output.data[static_cast<size_t>(offset + 4 + c)]);
+            float score = tensorElementToFloat(output.data[static_cast<size_t>(offset + 4 + c)]);
             if (score > max_score) {
                 max_score = score;
                 class_id = c;
@@ -135,28 +138,20 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(const Tensor& ou
         if (max_score < confidence_threshold_)
             continue;
 
-        float x1 = getTensorFloat(output.data[static_cast<size_t>(offset + 0)]) * r_w;
-        float y1 = getTensorFloat(output.data[static_cast<size_t>(offset + 1)]) * r_h;
-        float x2 = getTensorFloat(output.data[static_cast<size_t>(offset + 2)]) * r_w;
-        float y2 = getTensorFloat(output.data[static_cast<size_t>(offset + 3)]) * r_h;
+        float x1 = tensorElementToFloat(output.data[static_cast<size_t>(offset + 0)]) * r_w;
+        float y1 = tensorElementToFloat(output.data[static_cast<size_t>(offset + 1)]) * r_h;
+        float x2 = tensorElementToFloat(output.data[static_cast<size_t>(offset + 2)]) * r_w;
+        float y2 = tensorElementToFloat(output.data[static_cast<size_t>(offset + 3)]) * r_h;
 
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = max_score;
-        det.bbox = cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
-                            cv::Point(static_cast<int>(x2), static_cast<int>(y2)));
+        det.bbox = fromCvRect(cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
+                                       cv::Point(static_cast<int>(x2), static_cast<int>(y2))));
         detections.push_back(det);
     }
 
     return detections;
 }
 
-float RtDetrPostprocessor::getTensorFloat(const TensorElement& element) {
-    return std::visit([](auto&& value) -> float { return static_cast<float>(value); }, element);
-}
-
-int RtDetrPostprocessor::getTensorInt(const TensorElement& element) {
-    return std::visit([](auto&& value) -> int { return static_cast<int>(value); }, element);
-}
-
-} // namespace vision_core
+} // namespace neuriplo_tasks

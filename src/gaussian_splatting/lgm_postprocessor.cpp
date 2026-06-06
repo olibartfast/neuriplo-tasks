@@ -1,9 +1,11 @@
-#include "vision-core/gaussian_splatting/lgm_postprocessor.hpp"
+#include "neuriplo/tasks/gaussian_splatting/lgm_postprocessor.hpp"
+
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <stdexcept>
 #include <variant>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 namespace {
 
@@ -26,10 +28,6 @@ constexpr int IDX_SH_B = 13;
 constexpr int GAUSSIAN_FEATURES = 14;
 
 } // namespace
-
-float LgmPostprocessor::toFloat(const TensorElement& elem) {
-    return std::visit([](auto v) { return static_cast<float>(v); }, elem);
-}
 
 GaussianSplatting LgmPostprocessor::postprocess(const std::vector<TensorElement>& tensor_data,
                                                 const std::vector<int64_t>& shape) {
@@ -72,23 +70,23 @@ GaussianSplatting LgmPostprocessor::postprocess(const std::vector<TensorElement>
         const int base = i * feature_dim;
         Gaussian3D& g = result.gaussians[static_cast<size_t>(i)];
 
-        g.x = toFloat(tensor_data[static_cast<size_t>(base + IDX_X)]);
-        g.y = toFloat(tensor_data[static_cast<size_t>(base + IDX_Y)]);
-        g.z = toFloat(tensor_data[static_cast<size_t>(base + IDX_Z)]);
-        g.scale_x = toFloat(tensor_data[static_cast<size_t>(base + IDX_SCALE_X)]);
-        g.scale_y = toFloat(tensor_data[static_cast<size_t>(base + IDX_SCALE_Y)]);
-        g.scale_z = toFloat(tensor_data[static_cast<size_t>(base + IDX_SCALE_Z)]);
-        g.rot_w = toFloat(tensor_data[static_cast<size_t>(base + IDX_ROT_W)]);
-        g.rot_x = toFloat(tensor_data[static_cast<size_t>(base + IDX_ROT_X)]);
-        g.rot_y = toFloat(tensor_data[static_cast<size_t>(base + IDX_ROT_Y)]);
-        g.rot_z = toFloat(tensor_data[static_cast<size_t>(base + IDX_ROT_Z)]);
-        g.opacity = toFloat(tensor_data[static_cast<size_t>(base + IDX_OPACITY)]);
-        g.sh_r = toFloat(tensor_data[static_cast<size_t>(base + IDX_SH_R)]);
-        g.sh_g = toFloat(tensor_data[static_cast<size_t>(base + IDX_SH_G)]);
-        g.sh_b = toFloat(tensor_data[static_cast<size_t>(base + IDX_SH_B)]);
+        g.x = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_X)]);
+        g.y = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_Y)]);
+        g.z = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_Z)]);
+        g.scale_x = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_SCALE_X)]);
+        g.scale_y = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_SCALE_Y)]);
+        g.scale_z = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_SCALE_Z)]);
+        g.rot_w = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_ROT_W)]);
+        g.rot_x = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_ROT_X)]);
+        g.rot_y = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_ROT_Y)]);
+        g.rot_z = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_ROT_Z)]);
+        g.opacity = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_OPACITY)]);
+        g.sh_r = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_SH_R)]);
+        g.sh_g = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_SH_G)]);
+        g.sh_b = tensorElementToFloat(tensor_data[static_cast<size_t>(base + IDX_SH_B)]);
     }
 
     return result;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

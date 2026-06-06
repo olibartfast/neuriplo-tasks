@@ -1,15 +1,15 @@
-#include "vision-core/depth_estimation/depth_estimation_task.hpp"
+#include "neuriplo/tasks/depth_estimation/depth_estimation_task.hpp"
 
-#include "vision-core/depth_estimation/depth_anything_v2_postprocessor.hpp"
-#include "vision-core/depth_estimation/depth_estimation_preprocessor.hpp"
+#include "neuriplo/tasks/depth_estimation/depth_anything_v2_postprocessor.hpp"
+#include "neuriplo/tasks/depth_estimation/depth_estimation_preprocessor.hpp"
 
 #include <algorithm>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 DepthEstimationTask::DepthEstimationTask(const ModelInfo& model_info, const std::string& model_name)
-    : TaskInterface(model_info), model_type_(detectModelType(model_name)), model_name_(model_name) {
+    : BaseTask(model_info), model_type_(detectModelType(model_name)), model_name_(model_name) {
     cv::Size input_size = extractInputSize(model_info);
     input_width_ = input_size.width;
     input_height_ = input_size.height;
@@ -27,34 +27,12 @@ DepthEstimationTask::DepthEstimationTask(const ModelInfo& model_info, const std:
 
 DepthEstimationTask::~DepthEstimationTask() = default;
 
-std::vector<std::vector<uint8_t>> DepthEstimationTask::preprocess(const std::vector<cv::Mat>& imgs) {
-    std::vector<std::vector<uint8_t>> results;
-    results.reserve(imgs.size());
+const Preprocessor& DepthEstimationTask::getPreprocessor() const { return *preprocessor_; }
 
-    for (const auto& img : imgs) {
-        if (img.empty()) {
-            throw std::invalid_argument("Empty input image provided");
-        }
-        results.push_back(preprocessor_->preprocess(img));
-    }
-
-    return results;
-}
-
-std::vector<Result> DepthEstimationTask::postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) {
-    if (tensors.empty()) {
-        return {};
-    }
-
+std::vector<Result> DepthEstimationTask::decode(const cv::Size& frame_size, const std::vector<Tensor>& tensors) {
     auto depths = postprocessor_->postprocess(tensors[0].data, tensors[0].shape, frame_size);
 
-    std::vector<Result> results;
-    results.reserve(depths.size());
-    for (const auto& depth : depths) {
-        results.emplace_back(depth);
-    }
-
-    return results;
+    return toResults(depths);
 }
 
 DepthEstimationTask::ModelType DepthEstimationTask::detectModelType(const std::string& model_name) {
@@ -119,4 +97,4 @@ cv::Size DepthEstimationTask::extractInputSize(const ModelInfo& model_info) {
     return cv::Size(width, height);
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

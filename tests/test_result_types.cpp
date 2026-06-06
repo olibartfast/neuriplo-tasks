@@ -1,9 +1,44 @@
-#include "vision-core/core/result_types.hpp"
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/result_types.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
+#include <string>
+#include <type_traits>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
+
+namespace {
+
+std::string resultTypeName(const Result& result) {
+    return visitResult(result, [](const auto& value) -> std::string {
+        using T = std::decay_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, Classification>) {
+            return "classification";
+        } else if constexpr (std::is_same_v<T, Detection>) {
+            return "detection";
+        } else if constexpr (std::is_same_v<T, OpenVocabDetection>) {
+            return "open_vocab_detection";
+        } else if constexpr (std::is_same_v<T, InstanceSegmentation>) {
+            return "instance_segmentation";
+        } else if constexpr (std::is_same_v<T, OpticalFlow>) {
+            return "optical_flow";
+        } else if constexpr (std::is_same_v<T, VideoClassification>) {
+            return "video_classification";
+        } else if constexpr (std::is_same_v<T, PoseEstimation>) {
+            return "pose_estimation";
+        } else if constexpr (std::is_same_v<T, DepthEstimation>) {
+            return "depth_estimation";
+        } else if constexpr (std::is_same_v<T, GaussianSplatting>) {
+            return "gaussian_splatting";
+        } else if constexpr (std::is_same_v<T, ImageUnderstanding>) {
+            return "image_understanding";
+        }
+    });
+}
+
+} // namespace
 
 class ResultTypesTest : public ::testing::Test {
   protected:
@@ -23,6 +58,20 @@ TEST_F(ResultTypesTest, ClassificationParameterizedConstruction) {
     EXPECT_FLOAT_EQ(cls.class_confidence, 0.95f);
 }
 
+TEST_F(ResultTypesTest, TensorElementToFloatCoversSupportedScalarTypes) {
+    EXPECT_FLOAT_EQ(tensorElementToFloat(TensorElement{1.25f}), 1.25f);
+    EXPECT_FLOAT_EQ(tensorElementToFloat(TensorElement{int32_t{-2}}), -2.0f);
+    EXPECT_FLOAT_EQ(tensorElementToFloat(TensorElement{int64_t{3}}), 3.0f);
+    EXPECT_FLOAT_EQ(tensorElementToFloat(TensorElement{uint8_t{4}}), 4.0f);
+}
+
+TEST_F(ResultTypesTest, TensorElementToIntCoversSupportedScalarTypes) {
+    EXPECT_EQ(tensorElementToInt(TensorElement{1.75f}), 1);
+    EXPECT_EQ(tensorElementToInt(TensorElement{int32_t{-2}}), -2);
+    EXPECT_EQ(tensorElementToInt(TensorElement{int64_t{3}}), 3);
+    EXPECT_EQ(tensorElementToInt(TensorElement{uint8_t{4}}), 4);
+}
+
 TEST_F(ResultTypesTest, DetectionDefaultConstruction) {
     Detection det;
     EXPECT_FLOAT_EQ(det.class_id, -1.0f);
@@ -34,7 +83,7 @@ TEST_F(ResultTypesTest, DetectionDefaultConstruction) {
 }
 
 TEST_F(ResultTypesTest, DetectionParameterizedConstruction) {
-    cv::Rect bbox(100, 200, 50, 75);
+    BoundingBox bbox(100, 200, 50, 75);
     Detection det(bbox, 0.85f, 3);
 
     EXPECT_FLOAT_EQ(det.class_id, 3.0f);
@@ -46,7 +95,7 @@ TEST_F(ResultTypesTest, DetectionParameterizedConstruction) {
 }
 
 TEST_F(ResultTypesTest, DetectionInheritsFromClassification) {
-    Detection det(cv::Rect(10, 20, 30, 40), 0.9f, 7);
+    Detection det(BoundingBox(10, 20, 30, 40), 0.9f, 7);
 
     // Can use as Classification
     Classification& cls_ref = det;
@@ -64,7 +113,7 @@ TEST_F(ResultTypesTest, InstanceSegmentationDefaultConstruction) {
 }
 
 TEST_F(ResultTypesTest, InstanceSegmentationParameterizedConstruction) {
-    cv::Rect bbox(50, 60, 100, 120);
+    BoundingBox bbox(50, 60, 100, 120);
     InstanceSegmentation seg(bbox, 0.92f, 1);
 
     EXPECT_FLOAT_EQ(seg.class_id, 1.0f);
@@ -74,7 +123,7 @@ TEST_F(ResultTypesTest, InstanceSegmentationParameterizedConstruction) {
 }
 
 TEST_F(ResultTypesTest, InstanceSegmentationInheritsFromDetection) {
-    InstanceSegmentation seg(cv::Rect(1, 2, 3, 4), 0.8f, 2);
+    InstanceSegmentation seg(BoundingBox(1, 2, 3, 4), 0.8f, 2);
 
     // Can use as Detection
     Detection& det_ref = seg;
@@ -107,12 +156,12 @@ TEST_F(ResultTypesTest, OpticalFlowDefaultConstruction) {
 
 TEST_F(ResultTypesTest, OpticalFlowWithData) {
     OpticalFlow flow;
-    flow.flow = cv::Mat(100, 100, CV_8UC3, cv::Scalar(0, 0, 255));
-    flow.raw_flow = cv::Mat(100, 100, CV_32FC2);
+    flow.flow = fromCvMat(cv::Mat(100, 100, CV_8UC3, cv::Scalar(0, 0, 255)));
+    flow.raw_flow = fromCvMat(cv::Mat(100, 100, CV_32FC2));
     flow.max_displacement = 15.5f;
 
-    EXPECT_EQ(flow.flow.rows, 100);
-    EXPECT_EQ(flow.flow.cols, 100);
+    EXPECT_EQ(flow.flow.rows(), 100);
+    EXPECT_EQ(flow.flow.cols(), 100);
     EXPECT_EQ(flow.raw_flow.type(), CV_32FC2);
     EXPECT_FLOAT_EQ(flow.max_displacement, 15.5f);
 }
@@ -149,7 +198,7 @@ TEST_F(ResultTypesTest, ResultVariantHoldsClassification) {
 }
 
 TEST_F(ResultTypesTest, ResultVariantHoldsDetection) {
-    Detection det(cv::Rect(1, 2, 3, 4), 0.9f, 5);
+    Detection det(BoundingBox(1, 2, 3, 4), 0.9f, 5);
     Result result = det;
 
     EXPECT_TRUE(std::holds_alternative<Detection>(result));
@@ -166,7 +215,7 @@ TEST_F(ResultTypesTest, OpenVocabDetectionDefaultConstruction) {
 }
 
 TEST_F(ResultTypesTest, OpenVocabDetectionParameterizedConstruction) {
-    OpenVocabDetection det(cv::Rect(11, 12, 13, 14), 0.77f, 2, "cat");
+    OpenVocabDetection det(BoundingBox(11, 12, 13, 14), 0.77f, 2, "cat");
     EXPECT_EQ(det.bbox.x, 11);
     EXPECT_EQ(det.bbox.y, 12);
     EXPECT_FLOAT_EQ(det.score, 0.77f);
@@ -175,7 +224,7 @@ TEST_F(ResultTypesTest, OpenVocabDetectionParameterizedConstruction) {
 }
 
 TEST_F(ResultTypesTest, ResultVariantHoldsOpenVocabDetection) {
-    OpenVocabDetection det(cv::Rect(0, 1, 2, 3), 0.91f, 1, "vehicle");
+    OpenVocabDetection det(BoundingBox(0, 1, 2, 3), 0.91f, 1, "vehicle");
     Result result = det;
 
     EXPECT_TRUE(std::holds_alternative<OpenVocabDetection>(result));
@@ -184,7 +233,7 @@ TEST_F(ResultTypesTest, ResultVariantHoldsOpenVocabDetection) {
 }
 
 TEST_F(ResultTypesTest, ResultVariantHoldsInstanceSegmentation) {
-    InstanceSegmentation seg(cv::Rect(10, 20, 30, 40), 0.95f, 2);
+    InstanceSegmentation seg(BoundingBox(10, 20, 30, 40), 0.95f, 2);
     Result result = seg;
 
     EXPECT_TRUE(std::holds_alternative<InstanceSegmentation>(result));
@@ -219,10 +268,41 @@ TEST_F(ResultTypesTest, DepthEstimationDefaultConstruction) {
 
 TEST_F(ResultTypesTest, ResultVariantHoldsDepthEstimation) {
     DepthEstimation depth;
-    depth.depth = cv::Mat::ones(10, 10, CV_32FC1);
+    depth.depth = fromCvMat(cv::Mat::ones(10, 10, CV_32FC1));
     Result result = depth;
 
     EXPECT_TRUE(std::holds_alternative<DepthEstimation>(result));
+}
+
+TEST_F(ResultTypesTest, VisitResultAcceptsEveryResultAlternative) {
+    const std::vector<Result> results = {
+        Classification{},      Detection{},      OpenVocabDetection{}, InstanceSegmentation{}, OpticalFlow{},
+        VideoClassification{}, PoseEstimation{}, DepthEstimation{},    GaussianSplatting{},    ImageUnderstanding{},
+    };
+    const std::vector<std::string> expected = {
+        "classification",        "detection",        "open_vocab_detection",
+        "instance_segmentation", "optical_flow",     "video_classification",
+        "pose_estimation",       "depth_estimation", "gaussian_splatting",
+        "image_understanding",
+    };
+
+    ASSERT_EQ(results.size(), expected.size());
+    for (size_t index = 0; index < results.size(); ++index) {
+        EXPECT_EQ(resultTypeName(results[index]), expected[index]);
+    }
+}
+
+TEST_F(ResultTypesTest, VisitResultAllowsMutableVisitors) {
+    Result result = Classification{};
+
+    visitResult(result, [](auto& value) {
+        using T = std::decay_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, Classification>) {
+            value.class_id = 42.0f;
+        }
+    });
+
+    EXPECT_FLOAT_EQ(std::get<Classification>(result).class_id, 42.0f);
 }
 
 TEST_F(ResultTypesTest, TaskTypeEnumValues) {

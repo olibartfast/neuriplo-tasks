@@ -6,7 +6,9 @@ string(STRIP "${PROJECT_VERSION_RAW}" PROJECT_VERSION_RAW)
 # Extract semver (strip -dev or other suffixes)
 string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" PROJECT_SEMVER "${PROJECT_VERSION_RAW}")
 
-project(vision-core VERSION ${PROJECT_SEMVER} LANGUAGES CXX)
+project(neuriplo-tasks VERSION ${PROJECT_SEMVER} LANGUAGES CXX)
+
+include(cmake/CompileSpeed.cmake)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -55,16 +57,22 @@ find_package(OpenCV REQUIRED)
 # All library sources - UNIFIED ARCHITECTURE
 set(CORE_SOURCES
     # Core
+    src/core/batch_preprocess.cpp
+    src/core/batch_postprocess.cpp
+    src/core/base_task.cpp
     src/core/bbox_processor.cpp
+    src/core/image_matrix.cpp
     src/core/preprocessor.cpp
     src/core/task_interface.cpp
     src/core/task_factory.cpp
+    src/core/task_pipeline.cpp
 
     # Unified Tasks (no separate postprocessors - all internal)
     src/object_detection/object_detection_task.cpp
     src/object_detection/yolo_postprocessor.cpp
     src/object_detection/rtdetr_postprocessor.cpp
     src/object_detection/rfdetr_postprocessor.cpp
+    src/object_detection/edgecrafter_postprocessor.cpp
     src/classification/classification_task.cpp
     src/classification/classification_postprocessor.cpp
     src/classification/torchvision_postprocessor.cpp
@@ -73,6 +81,7 @@ set(CORE_SOURCES
     src/instance_segmentation/instance_segmentation_task.cpp
     src/instance_segmentation/yolo_segmentation_postprocessor.cpp
     src/instance_segmentation/rfdetr_segmentation_postprocessor.cpp
+    src/instance_segmentation/edgecrafter_segmentation_postprocessor.cpp
     src/optical_flow/optical_flow_task.cpp
     src/optical_flow/raft_postprocessor.cpp
     src/open_vocab_detection/clip_tokenizer.cpp
@@ -83,6 +92,7 @@ set(CORE_SOURCES
     src/pose_estimation/pose_estimation_task.cpp
     src/pose_estimation/vit_pose_postprocessor.cpp
     src/pose_estimation/yolo_pose_postprocessor.cpp
+    src/pose_estimation/edgecrafter_pose_postprocessor.cpp
     src/video_classification/video_classification_task.cpp
     src/video_classification/video_classification_preprocessor.cpp
     src/video_classification/video_classification_postprocessor.cpp
@@ -102,89 +112,101 @@ set(CORE_SOURCES
 
 set(CORE_HEADERS
     # Core
-    include/vision-core/core/result_types.hpp
-    include/vision-core/core/bbox_processor.hpp
-    include/vision-core/core/preprocessor.hpp
-    include/vision-core/core/model_info.hpp
-    include/vision-core/core/task_interface.hpp
-    include/vision-core/core/task_factory.hpp
+    include/neuriplo/tasks/core/bounding_box.hpp
+    include/neuriplo/tasks/core/image_matrix.hpp
+    include/neuriplo/tasks/core/opencv_interop.hpp
+    include/neuriplo/tasks/core/result_types.hpp
+    include/neuriplo/tasks/core/batch_types.hpp
+    include/neuriplo/tasks/core/batch_preprocess.hpp
+    include/neuriplo/tasks/core/batch_postprocess.hpp
+    include/neuriplo/tasks/core/base_task.hpp
+    include/neuriplo/tasks/core/bbox_processor.hpp
+    include/neuriplo/tasks/core/preprocessor.hpp
+    include/neuriplo/tasks/core/model_info.hpp
+    include/neuriplo/tasks/core/task_interface.hpp
+    include/neuriplo/tasks/core/task_factory.hpp
+    include/neuriplo/tasks/core/task_pipeline.hpp
 
     # Unified Task Headers (postprocessing is internal)
-    include/vision-core/object_detection/object_detection_task.hpp
-    include/vision-core/object_detection/postprocessor.hpp
-    include/vision-core/object_detection/yolo_postprocessor.hpp
-    include/vision-core/object_detection/rtdetr_postprocessor.hpp
-    include/vision-core/object_detection/rfdetr_postprocessor.hpp
-    include/vision-core/classification/classification_task.hpp
-    include/vision-core/classification/classification_postprocessor.hpp
-    include/vision-core/classification/torchvision_postprocessor.hpp
-    include/vision-core/classification/vit_postprocessor.hpp
-    include/vision-core/classification/tensorflow_postprocessor.hpp
-    include/vision-core/instance_segmentation/instance_segmentation_task.hpp
-    include/vision-core/instance_segmentation/segmentation_postprocessor.hpp
-    include/vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp
-    include/vision-core/instance_segmentation/rfdetr_segmentation_postprocessor.hpp
-    include/vision-core/optical_flow/optical_flow_task.hpp
-    include/vision-core/optical_flow/optical_flow_postprocessor.hpp
-    include/vision-core/optical_flow/raft_postprocessor.hpp
-    include/vision-core/open_vocab_detection/clip_tokenizer.hpp
-    include/vision-core/open_vocab_detection/open_vocab_detection_task.hpp
-    include/vision-core/open_vocab_detection/owlv2_postprocessor.hpp
-    include/vision-core/open_vocab_detection/postprocessor.hpp
-    include/vision-core/open_vocab_detection/bert_tokenizer.hpp
-    include/vision-core/open_vocab_detection/grounding_dino_postprocessor.hpp
-    include/vision-core/pose_estimation/pose_estimation_task.hpp
-    include/vision-core/pose_estimation/pose_postprocessor.hpp
-    include/vision-core/pose_estimation/vit_pose_postprocessor.hpp
-    include/vision-core/pose_estimation/yolo_pose_postprocessor.hpp
-    include/vision-core/video_classification/video_classification_task.hpp
-    include/vision-core/video_classification/video_classification_preprocessor.hpp
-    include/vision-core/video_classification/video_classification_postprocessor.hpp
+    include/neuriplo/tasks/object_detection/object_detection_task.hpp
+    include/neuriplo/tasks/object_detection/postprocessor.hpp
+    include/neuriplo/tasks/object_detection/yolo_postprocessor.hpp
+    include/neuriplo/tasks/object_detection/rtdetr_postprocessor.hpp
+    include/neuriplo/tasks/object_detection/rfdetr_postprocessor.hpp
+    include/neuriplo/tasks/object_detection/edgecrafter_postprocessor.hpp
+    include/neuriplo/tasks/classification/classification_task.hpp
+    include/neuriplo/tasks/classification/classification_logits_layout.hpp
+    include/neuriplo/tasks/classification/classification_postprocessor.hpp
+    include/neuriplo/tasks/classification/torchvision_postprocessor.hpp
+    include/neuriplo/tasks/classification/vit_postprocessor.hpp
+    include/neuriplo/tasks/classification/tensorflow_postprocessor.hpp
+    include/neuriplo/tasks/instance_segmentation/instance_segmentation_task.hpp
+    include/neuriplo/tasks/instance_segmentation/segmentation_postprocessor.hpp
+    include/neuriplo/tasks/instance_segmentation/yolo_segmentation_postprocessor.hpp
+    include/neuriplo/tasks/instance_segmentation/rfdetr_segmentation_postprocessor.hpp
+    include/neuriplo/tasks/instance_segmentation/edgecrafter_segmentation_postprocessor.hpp
+    include/neuriplo/tasks/optical_flow/optical_flow_task.hpp
+    include/neuriplo/tasks/optical_flow/optical_flow_postprocessor.hpp
+    include/neuriplo/tasks/optical_flow/raft_postprocessor.hpp
+    include/neuriplo/tasks/open_vocab_detection/clip_tokenizer.hpp
+    include/neuriplo/tasks/open_vocab_detection/open_vocab_detection_task.hpp
+    include/neuriplo/tasks/open_vocab_detection/owlv2_postprocessor.hpp
+    include/neuriplo/tasks/open_vocab_detection/postprocessor.hpp
+    include/neuriplo/tasks/open_vocab_detection/bert_tokenizer.hpp
+    include/neuriplo/tasks/open_vocab_detection/grounding_dino_postprocessor.hpp
+    include/neuriplo/tasks/pose_estimation/pose_estimation_task.hpp
+    include/neuriplo/tasks/pose_estimation/pose_postprocessor.hpp
+    include/neuriplo/tasks/pose_estimation/vit_pose_postprocessor.hpp
+    include/neuriplo/tasks/pose_estimation/yolo_pose_postprocessor.hpp
+    include/neuriplo/tasks/pose_estimation/edgecrafter_pose_postprocessor.hpp
+    include/neuriplo/tasks/video_classification/video_classification_task.hpp
+    include/neuriplo/tasks/video_classification/video_classification_preprocessor.hpp
+    include/neuriplo/tasks/video_classification/video_classification_postprocessor.hpp
 
     # Preprocessor Headers (still separate as they're reusable)
-    include/vision-core/object_detection/detection_preprocessor.hpp
-    include/vision-core/classification/classification_preprocessor.hpp
-    include/vision-core/optical_flow/optical_flow_preprocessor.hpp
-    include/vision-core/depth_estimation/depth_estimation_task.hpp
-    include/vision-core/depth_estimation/depth_estimation_preprocessor.hpp
-    include/vision-core/depth_estimation/depth_estimation_postprocessor.hpp
-    include/vision-core/depth_estimation/depth_anything_v2_postprocessor.hpp
-    include/vision-core/gaussian_splatting/gaussian_splatting_task.hpp
-    include/vision-core/gaussian_splatting/gaussian_splatting_preprocessor.hpp
-    include/vision-core/gaussian_splatting/gaussian_splatting_postprocessor.hpp
-    include/vision-core/gaussian_splatting/lgm_postprocessor.hpp
-    include/vision-core/image_understanding/image_understanding_task.hpp
+    include/neuriplo/tasks/object_detection/detection_preprocessor.hpp
+    include/neuriplo/tasks/classification/classification_preprocessor.hpp
+    include/neuriplo/tasks/optical_flow/optical_flow_preprocessor.hpp
+    include/neuriplo/tasks/depth_estimation/depth_estimation_task.hpp
+    include/neuriplo/tasks/depth_estimation/depth_estimation_preprocessor.hpp
+    include/neuriplo/tasks/depth_estimation/depth_estimation_postprocessor.hpp
+    include/neuriplo/tasks/depth_estimation/depth_anything_v2_postprocessor.hpp
+    include/neuriplo/tasks/gaussian_splatting/gaussian_splatting_task.hpp
+    include/neuriplo/tasks/gaussian_splatting/gaussian_splatting_preprocessor.hpp
+    include/neuriplo/tasks/gaussian_splatting/gaussian_splatting_postprocessor.hpp
+    include/neuriplo/tasks/gaussian_splatting/lgm_postprocessor.hpp
+    include/neuriplo/tasks/image_understanding/image_understanding_task.hpp
 )
 
 # Create library
-add_library(vision-core ${CORE_SOURCES} ${CORE_HEADERS})
-add_library(vision-core::vision-core ALIAS vision-core)
+add_library(neuriplo-tasks ${CORE_SOURCES} ${CORE_HEADERS})
+add_library(neuriplo-tasks::neuriplo-tasks ALIAS neuriplo-tasks)
 
-target_include_directories(vision-core
+target_include_directories(neuriplo-tasks
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(vision-core
+target_link_libraries(neuriplo-tasks
     PUBLIC
         ${OpenCV_LIBS}
 )
 
 # Set compile features and warnings
-target_compile_features(vision-core PUBLIC cxx_std_17)
+target_compile_features(neuriplo-tasks PUBLIC cxx_std_17)
 
 if(MSVC)
-    target_compile_options(vision-core PRIVATE /W4 /WX)
+    target_compile_options(neuriplo-tasks PRIVATE /W4 /WX)
 else()
-    target_compile_options(vision-core PRIVATE ${PROJECT_WARNING_FLAGS})
+    target_compile_options(neuriplo-tasks PRIVATE ${PROJECT_WARNING_FLAGS})
 endif()
 
 # Install rules
 include(GNUInstallDirs)
 
-install(TARGETS vision-core
-    EXPORT vision-core-targets
+install(TARGETS neuriplo-tasks
+    EXPORT neuriplo-tasks-targets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -196,31 +218,31 @@ install(DIRECTORY include/
     FILES_MATCHING PATTERN "*.hpp"
 )
 
-install(EXPORT vision-core-targets
-    FILE vision-core-targets.cmake
-    NAMESPACE vision-core::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vision-core
+install(EXPORT neuriplo-tasks-targets
+    FILE neuriplo-tasks-targets.cmake
+    NAMESPACE neuriplo-tasks::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/neuriplo-tasks
 )
 
 # Create config file
 include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/vision-core-config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/vision-core-config.cmake
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vision-core
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/neuriplo-tasks-config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/neuriplo-tasks-config.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/neuriplo-tasks
 )
 
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/vision-core-config-version.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/neuriplo-tasks-config-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion
 )
 
 install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/vision-core-config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/vision-core-config-version.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vision-core
+    ${CMAKE_CURRENT_BINARY_DIR}/neuriplo-tasks-config.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/neuriplo-tasks-config-version.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/neuriplo-tasks
 )
 
 # Tests
@@ -230,7 +252,7 @@ if(BUILD_TESTS)
 endif()
 
 # Print configuration summary
-message(STATUS "vision-core configuration:")
+message(STATUS "neuriplo-tasks configuration:")
 message(STATUS "  Version: ${PROJECT_VERSION}")
 message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "  Build tests: ${BUILD_TESTS}")

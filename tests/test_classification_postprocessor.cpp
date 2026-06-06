@@ -1,13 +1,13 @@
-#include "vision-core/classification/classification_postprocessor.hpp"
-#include "vision-core/classification/tensorflow_postprocessor.hpp"
-#include "vision-core/classification/torchvision_postprocessor.hpp"
-#include "vision-core/classification/vit_postprocessor.hpp"
+#include "neuriplo/tasks/classification/classification_postprocessor.hpp"
+#include "neuriplo/tasks/classification/tensorflow_postprocessor.hpp"
+#include "neuriplo/tasks/classification/torchvision_postprocessor.hpp"
+#include "neuriplo/tasks/classification/vit_postprocessor.hpp"
 
 #include <gtest/gtest.h>
 #include <variant>
 #include <vector>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 class ClassificationPostprocessorTest : public ::testing::Test {
   protected:
@@ -91,4 +91,17 @@ TEST_F(ClassificationPostprocessorTest, EmptyInput) {
     DefaultClassificationPostprocessor processor(1, true);
     auto results = processor.postprocess({}, {});
     EXPECT_TRUE(results.empty());
+}
+
+TEST_F(ClassificationPostprocessorTest, BatchedLogitsReturnOnePerBatchIndex) {
+    TorchvisionPostprocessor processor(5, false);
+
+    std::vector<float> logits = {0.1f, 0.2f, 3.0f, 0.0f, 0.0f, 1.0f, 4.0f, 0.5f};
+    std::vector<int64_t> shape = {2, 4};
+
+    auto results = processor.postprocess(createLogits(logits), shape);
+
+    ASSERT_EQ(results.size(), 2u);
+    EXPECT_EQ(results[0].class_id, 2);
+    EXPECT_EQ(results[1].class_id, 2);
 }

@@ -1,7 +1,7 @@
-# vision-core — Agent & Contributor Instructions
+# neuriplo-tasks — Agent & Contributor Instructions
 
 This file is the **single source of truth** for coding conventions, tooling, and
-rules for working in `vision-core`. All other AI agent config files
+rules for working in `neuriplo-tasks`. All other AI agent config files
 (`CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`) defer to this
 file.
 
@@ -19,15 +19,15 @@ file.
 
 ## Project overview
 
-- **Artifact**: `libvision-core.a` — C++17 static library
-- **Source roots**: `src/`, `include/vision-core/`
+- **Artifact**: `libneuriplo-tasks.a` — C++17 static library
+- **Source roots**: `src/`, `include/neuriplo/tasks/`
 - **Tests**: `tests/` (GoogleTest, fetched via CMake `FetchContent`)
 - **Only runtime dependency**: OpenCV
 - **Consumers**: [tritonic](https://github.com/olibartfast/tritonic),
   [vision-inference](https://github.com/olibartfast/vision-inference)
-- **GitHub repo**: `https://github.com/olibartfast/vision-core`
+- **GitHub repo**: `https://github.com/olibartfast/neuriplo-tasks`
 
-`vision-core` provides framework-agnostic computer-vision pre/postprocessing
+`neuriplo-tasks` provides framework-agnostic computer-vision pre/postprocessing
 for inference engines.
 
 ---
@@ -57,6 +57,21 @@ ctest --test-dir build-san --output-on-failure
 # Treat warnings as errors (matches the build-warnings CI job)
 cmake -S . -B build -DWERROR=ON
 cmake --build build --parallel
+
+# Run tests under Valgrind (matches the valgrind CI job)
+cmake -S . -B build-valgrind -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
+cmake --build build-valgrind --parallel
+for test_bin in build-valgrind/tests/test_*; do
+  [ -x "$test_bin" ] || continue
+  valgrind \
+    --error-exitcode=1 \
+    --leak-check=full \
+    --show-leak-kinds=definite,indirect \
+    --errors-for-leak-kinds=definite,indirect \
+    --track-origins=yes \
+    --num-callers=25 \
+    "$test_bin"
+done
 ```
 
 Pre-commit hooks run clang-format and cppcheck automatically:
@@ -74,6 +89,7 @@ Pre-commit hooks run clang-format and cppcheck automatically:
 | `clang-tidy-18`   | Static analysis on `src/` + `include/`   | `.clang-tidy`       |
 | `cppcheck`        | Additional static analysis               | `.pre-commit-config.yaml` |
 | `ctest` / GoogleTest | Unit tests                            | `tests/CMakeLists.txt` |
+| `valgrind`        | Runtime memory/leak checks on test binaries | `.github/workflows/lint.yml` |
 | `-DWERROR=ON`     | Treat compiler warnings as errors        | `CMakeLists.txt`    |
 
 ### Formatting
@@ -129,15 +145,33 @@ cppcheck --enable=warning --std=c++17 \
 2. **`TaskInterface` / `TaskFactory`** — unified interface;
    `TaskFactory::createTaskInstance(model_type_string, model_info)` returns a
    `std::unique_ptr<TaskInterface>` that handles both pre- and postprocessing.
+   Task creation is a **built-in, compile-time registry** in `task_factory.cpp`.
+   Third-party or runtime task plugins are **out of scope** unless explicitly
+   added as a product requirement (use a separate extension registry, not an
+   ever-growing internal table).
 
-### Core abstractions (`include/vision-core/core/`)
+### Planned work
+
+Atomic roadmap (batch utilities, refactor phases, composite pipelines):
+[`docs/ROADMAP.md`](./docs/ROADMAP.md). Batch readiness audit (B0):
+[`docs/batch_support_matrix.md`](./docs/batch_support_matrix.md). Factory/strategy
+refactor detail: [`docs/task_refactor_atomic_plan.md`](./docs/task_refactor_atomic_plan.md).
+
+### Core abstractions (`include/neuriplo/tasks/core/`)
 
 | File                  | Purpose |
 |-----------------------|---------|
 | `task_interface.hpp`  | Abstract base: `preprocess(vector<cv::Mat>) → vector<vector<uint8_t>>`, `postprocess(cv::Size, vector<Tensor>) → vector<Result>` |
 | `task_factory.hpp`    | `TaskFactory::createTaskInstance(string, ModelInfo)` — normalises the model-type string (strip `-`, `_`, whitespace; lowercase) and dispatches |
-| `result_types.hpp`    | `Result = std::variant<Classification, Detection, InstanceSegmentation, OpticalFlow, VideoClassification, PoseEstimation, DepthEstimation>` |
+| `result_types.hpp`    | `Result` variant plus optional `visitResult()` helper (forwards to `std::visit`); OpenCV-free (`BoundingBox`, `ImageMatrix`) |
+| `bounding_box.hpp`    | Pixel-space `BoundingBox` replacing `cv::Rect` in public result types |
+| `image_matrix.hpp`    | Opaque `ImageMatrix` replacing `cv::Mat` in public result types |
+| `opencv_interop.hpp`  | `toCvRect` / `fromCvRect` / `toCvMat` / `fromCvMat` conversion at OpenCV boundaries |
 | `model_info.hpp`      | `ModelInfo`: `input_shapes`, `input_formats` (`FORMAT_NCHW` / `FORMAT_NHWC`), `input_names`, `output_names` |
+| `batch_types.hpp`     | `BatchRequest`, `BatchPreprocessOutput`, `BatchPostprocessOutput`, invariant helpers |
+| `batch_preprocess.hpp`| `batchPreprocess(task, BatchRequest)` — per-image preprocess + `batch_size` metadata |
+| `batch_postprocess.hpp`| `batchPostprocess(task, frame_size, tensors, batch_size)` — postprocess + batch alignment |
+| `task_pipeline.hpp` | `TaskPipeline` / `SequentialTaskPipeline` — explicit `Result` stage composition for multi-task flows |
 | `preprocessor.hpp`    | Base preprocessor utilities |
 | `bbox_processor.hpp`  | Bounding-box coordinate transformations |
 
@@ -175,9 +209,12 @@ struct Tensor {
 checked in order:
 
 1. Segmentation before generic YOLO: `"yoloseg"`, `"rfdetrseg"`, `yolo*seg*`
+1b. EdgeCrafter segmentation: `ecseg*`, `edgecrafter*seg*` → `InstanceSegmentationTask` (with `EdgeCrafterSegmentationPostprocessor`)
 2. YOLO pose: `yolo*pose*` → `PoseEstimationTask` (with `YoloPosePostprocessor`)
+2b. EdgeCrafter pose: `ecpose*`, `edgecrafter*pose*` → `PoseEstimationTask` (with `EdgeCrafterPosePostprocessor`)
 3. YOLO prefix: any `yolo*` → `ObjectDetectionTask`
 4. `"rtdetr"`, `"rfdetr"` → `ObjectDetectionTask`
+4b. EdgeCrafter detection: `ecdet*`, `edgecrafter*` → `ObjectDetectionTask` (with `EdgeCrafterPostprocessor`)
 5. `"owlv2"`, `"owlvit"`, `"groundingdino"` → `OpenVocabDetectionTask`
 6. `"lgm"`, `"grm"`, `*splat*` → `GaussianSplattingTask`
 7. `"torchvisionclassifier"`, `"vitclassifier"`, `"tensorflowclassifier"`, `resnet*`, `*tensorflow*` → `ClassificationTask`
@@ -202,13 +239,14 @@ them in the tool config instead.
 
 ## CI
 
-`.github/workflows/lint.yml` runs five jobs in parallel on every push/PR:
+`.github/workflows/lint.yml` runs six jobs in parallel on every push/PR:
 
 1. **format-check** — `clang-format-18 --dry-run --Werror` on `src include tests`
 2. **clang-tidy** — `clang-tidy-18 -p build` on every `src/**/*.cpp`
 3. **cppcheck** — `cppcheck --enable=warning --std=c++17 --error-exitcode=1 -I include src/`
 4. **build-and-test** — `cmake -DBUILD_TESTS=ON`, `cmake --build`, `ctest --output-on-failure`
-5. **build-warnings** — `cmake -DWERROR=ON`, `cmake --build` (no tests)
+5. **valgrind** — Debug test build, every `build-valgrind/tests/test_*` binary under Valgrind
+6. **build-warnings** — `cmake -DWERROR=ON`, `cmake --build` (no tests)
 
 If any job is red, the push is broken.
 
@@ -262,11 +300,13 @@ job categories consistently fail in local Docker:
 | `format-check` | `clang-format-18` not installed in the act container image | Run locally by the pre-push hook before calling act |
 | `clang-tidy`, `build-and-test`, `build-warnings` | `ccache-action` requires GitHub auth (token) inside Docker | Validated by real GitHub CI after push |
 | `cppcheck` | Works fine in act | Run via act in both pre-commit and pre-push hooks |
+| `valgrind` | Runtime job is intentionally slow for local hooks | Run locally on demand or validated by real GitHub CI after push |
 
 **Rule**: never expand the pre-push hook to `act push -W .github/workflows/lint.yml`
-(no `-j` filter) — that runs all five jobs and will always fail locally on the
-ccache-auth and clang-format-18 issues above. Only add a job to the hook when you
-have verified it works inside the act container without network access.
+(no `-j` filter) — that runs all jobs and will always fail locally on the
+ccache-auth, clang-format-18, and runtime-job issues above. Only add a job to
+the hook when you have verified it works inside the act container without
+network access.
 
 ---
 
@@ -323,7 +363,16 @@ cppcheck --enable=warning --std=c++17 \
   --error-exitcode=1 -I include src/ && \
 cmake -S . -B build -DBUILD_TESTS=ON -DWERROR=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && \
 cmake --build build --parallel && \
-ctest --test-dir build --output-on-failure
+ctest --test-dir build --output-on-failure && \
+cmake -S . -B build-valgrind -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON && \
+cmake --build build-valgrind --parallel && \
+for test_bin in build-valgrind/tests/test_*; do \
+  [ -x "$test_bin" ] || continue; \
+  valgrind --error-exitcode=1 --leak-check=full \
+    --show-leak-kinds=definite,indirect \
+    --errors-for-leak-kinds=definite,indirect \
+    --track-origins=yes --num-callers=25 "$test_bin"; \
+done
 ```
 
 If this is green locally, CI will be green.

@@ -1,6 +1,6 @@
-#include "vision-core/depth_estimation/depth_estimation_preprocessor.hpp"
+#include "neuriplo/tasks/depth_estimation/depth_estimation_preprocessor.hpp"
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 DepthAnythingV2Preprocessor::DepthAnythingV2Preprocessor(const cv::Size& input_size)
     : Preprocessor(PreprocessConfig{
@@ -10,4 +10,4 @@ DepthAnythingV2Preprocessor::DepthAnythingV2Preprocessor(const cv::Size& input_s
           true  // BGR to RGB
       }) {}
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

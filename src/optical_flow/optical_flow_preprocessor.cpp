@@ -1,6 +1,6 @@
-#include "vision-core/optical_flow/optical_flow_preprocessor.hpp"
+#include "neuriplo/tasks/optical_flow/optical_flow_preprocessor.hpp"
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 RaftPreprocessor::RaftPreprocessor(const cv::Size& input_size)
     : Preprocessor(PreprocessConfig{
@@ -64,4 +64,4 @@ std::vector<std::vector<uint8_t>> RaftPreprocessor::preprocess_pair(const cv::Ma
     return preprocessed_frames;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

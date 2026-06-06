@@ -1,65 +1,128 @@
-#include "vision-core/instance_segmentation/instance_segmentation_task.hpp"
+#include "neuriplo/tasks/instance_segmentation/instance_segmentation_task.hpp"
 
-#include "vision-core/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
-#include "vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp"
-#include "vision-core/object_detection/detection_preprocessor.hpp"
+#include "neuriplo/tasks/instance_segmentation/edgecrafter_segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/instance_segmentation/yolo_segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/detection_preprocessor.hpp"
 
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 
-namespace vision_core {
+namespace neuriplo_tasks {
+
+class InstanceSegmentationPreprocessStrategy {
+  public:
+    virtual ~InstanceSegmentationPreprocessStrategy() = default;
+
+    [[nodiscard]] virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) const = 0;
+};
+
+namespace {
+
+std::vector<uint8_t> encodeInt64Pair(int64_t first, int64_t second) {
+    std::vector<int64_t> values = {first, second};
+    const auto* begin = reinterpret_cast<const uint8_t*>(values.data());
+    const auto* end = begin + values.size() * sizeof(int64_t);
+    return {begin, end};
+}
+
+class SingleInputSegmentationPreprocessStrategy final : public InstanceSegmentationPreprocessStrategy {
+  public:
+    explicit SingleInputSegmentationPreprocessStrategy(std::unique_ptr<Preprocessor> preprocessor)
+        : preprocessor_(std::move(preprocessor)) {}
+
+    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) const override {
+        std::vector<std::vector<uint8_t>> results;
+        results.reserve(imgs.size());
+
+        for (const auto& img : imgs) {
+            if (img.empty()) {
+                throw std::invalid_argument("Empty input image provided");
+            }
+            results.push_back(preprocessor_->preprocess(img));
+        }
+
+        return results;
+    }
+
+  private:
+    std::unique_ptr<Preprocessor> preprocessor_;
+};
+
+class ModelInputSegmentationPreprocessStrategy final : public InstanceSegmentationPreprocessStrategy {
+  public:
+    ModelInputSegmentationPreprocessStrategy(std::unique_ptr<Preprocessor> preprocessor, const ModelInfo& model_info)
+        : preprocessor_(std::move(preprocessor)), model_info_(model_info) {}
+
+    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) const override {
+        std::vector<std::vector<uint8_t>> results;
+        results.reserve(model_info_.input_shapes.size());
+
+        if (imgs.empty() || imgs[0].empty()) {
+            throw std::invalid_argument("Empty input image provided");
+        }
+
+        const cv::Mat& img = imgs[0];
+
+        for (size_t i = 0; i < model_info_.input_names.size(); ++i) {
+            const auto& input_name = model_info_.input_names[i];
+            const auto& input_shape = model_info_.input_shapes[i];
+
+            if (input_shape.size() >= 3) {
+                results.push_back(preprocessor_->preprocess(img));
+            } else if (input_name == "orig_target_sizes" || input_name == "orig_size") {
+                results.push_back(encodeInt64Pair(static_cast<int64_t>(img.cols), static_cast<int64_t>(img.rows)));
+            } else {
+                results.emplace_back();
+            }
+        }
+
+        return results;
+    }
+
+  private:
+    std::unique_ptr<Preprocessor> preprocessor_;
+    ModelInfo model_info_;
+};
+
+} // namespace
 
 InstanceSegmentationTask::InstanceSegmentationTask(const ModelInfo& model_info, const std::string& model_name,
                                                    float confidence_threshold, float nms_threshold,
                                                    float mask_threshold)
     : TaskInterface(model_info), model_type_(detectModelType(model_name)), model_name_(model_name),
       confidence_threshold_(confidence_threshold), nms_threshold_(nms_threshold), mask_threshold_(mask_threshold) {
-    // Extract input dimensions
     cv::Size input_size = extractInputSize(model_info);
     input_width_ = input_size.width;
     input_height_ = input_size.height;
 
-    // Create appropriate preprocessor
-    preprocessor_ = createPreprocessor(model_type_, input_size);
-
-    if (!preprocessor_) {
+    preprocess_strategy_ = createPreprocessStrategy(model_type_, input_size);
+    if (!preprocess_strategy_) {
         throw std::runtime_error("Failed to create preprocessor for segmentation model: " + model_name);
     }
 
-    // Create appropriate postprocessor
     postprocessor_ = createPostprocessor(model_type_);
-
     if (!postprocessor_) {
         throw std::runtime_error("Failed to create postprocessor for segmentation model: " + model_name);
     }
 }
 
+InstanceSegmentationTask::~InstanceSegmentationTask() = default;
+
 std::vector<std::vector<uint8_t>> InstanceSegmentationTask::preprocess(const std::vector<cv::Mat>& imgs) {
-    std::vector<std::vector<uint8_t>> results;
-    results.reserve(imgs.size());
-
-    for (const auto& img : imgs) {
-        if (img.empty()) {
-            throw std::invalid_argument("Empty input image provided");
-        }
-        results.push_back(preprocessor_->preprocess(img));
-    }
-
-    return results;
+    return preprocess_strategy_->preprocess(imgs);
 }
 
 std::vector<Result> InstanceSegmentationTask::postprocess(const cv::Size& frame_size,
                                                           const std::vector<Tensor>& tensors) {
 
-    // Validate inputs
     if (!validateTensorInputs(tensors)) {
         return {};
     }
 
-    // Delegate to postprocessor
     auto segmentations = postprocessor_->postprocess(tensors, frame_size);
 
-    // Convert segmentations to results
     std::vector<Result> results;
     results.reserve(segmentations.size());
     for (const auto& segmentation : segmentations) {
@@ -73,23 +136,24 @@ InstanceSegmentationTask::ModelType InstanceSegmentationTask::detectModelType(co
     std::string lower_name = model_name;
     std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
 
-    // YOLOv10 segmentation
     if (lower_name.find("yolov10") != std::string::npos && lower_name.find("seg") != std::string::npos) {
         return ModelType::YOLO_V10_SEG;
     }
 
-    // YOLO26 segmentation
     if (lower_name.find("yolo26") != std::string::npos && lower_name.find("seg") != std::string::npos) {
         return ModelType::YOLO_26_SEG;
     }
 
-    // RF-DETR segmentation
+    if (lower_name.find("ecseg") == 0 ||
+        (lower_name.find("edgecrafter") == 0 && lower_name.find("seg") != std::string::npos)) {
+        return ModelType::EDGECRAFTER_SEG;
+    }
+
     if (lower_name.find("rfdetr") != std::string::npos || lower_name.find("rf-detr") != std::string::npos ||
         lower_name.find("rfdetrseg") != std::string::npos) {
         return ModelType::RF_DETR_SEG;
     }
 
-    // Default to YOLO segmentation (yoloseg)
     return ModelType::YOLO_SEG;
 }
 
@@ -101,11 +165,26 @@ std::unique_ptr<Preprocessor> InstanceSegmentationTask::createPreprocessor(Model
         return std::make_unique<YoloPreprocessor>(input_size);
 
     case ModelType::RF_DETR_SEG:
+    case ModelType::EDGECRAFTER_SEG:
         return std::make_unique<RfDetrPreprocessor>(input_size);
 
     default:
         return nullptr;
     }
+}
+
+std::unique_ptr<InstanceSegmentationPreprocessStrategy>
+InstanceSegmentationTask::createPreprocessStrategy(ModelType type, const cv::Size& input_size) {
+    auto preprocessor = createPreprocessor(type, input_size);
+    if (!preprocessor) {
+        return nullptr;
+    }
+
+    if (type == ModelType::EDGECRAFTER_SEG) {
+        return std::make_unique<ModelInputSegmentationPreprocessStrategy>(std::move(preprocessor), model_info_);
+    }
+
+    return std::make_unique<SingleInputSegmentationPreprocessStrategy>(std::move(preprocessor));
 }
 
 std::unique_ptr<SegmentationPostprocessor> InstanceSegmentationTask::createPostprocessor(ModelType type) {
@@ -122,14 +201,18 @@ std::unique_ptr<SegmentationPostprocessor> InstanceSegmentationTask::createPostp
         return std::make_unique<RfDetrSegmentationPostprocessor>(input_size, confidence_threshold_, mask_threshold_,
                                                                  model_info_.output_names);
 
+    case ModelType::EDGECRAFTER_SEG:
+        return std::make_unique<EdgeCrafterSegmentationPostprocessor>(confidence_threshold_, mask_threshold_,
+                                                                      model_info_.output_names);
+
     default:
         return nullptr;
     }
 }
 
 cv::Size InstanceSegmentationTask::extractInputSize(const ModelInfo& model_info) {
-    int width = 640;  // default
-    int height = 640; // default
+    int width = 640;
+    int height = 640;
 
     if (!model_info.input_shapes.empty() && model_info.input_shapes[0].size() >= 3) {
         const auto& shape = model_info.input_shapes[0];
@@ -142,13 +225,10 @@ cv::Size InstanceSegmentationTask::extractInputSize(const ModelInfo& model_info)
                 width = static_cast<int>(shape[2]);
             }
         } else if (shape.size() == 3) {
-            // 3D case: CHW or HWC
             if (model_info.input_formats[0] == "FORMAT_NCHW") {
-                // CHW
                 height = static_cast<int>(shape[1]);
                 width = static_cast<int>(shape[2]);
             } else if (model_info.input_formats[0] == "FORMAT_NHWC") {
-                // HWC
                 height = static_cast<int>(shape[0]);
                 width = static_cast<int>(shape[1]);
             }
@@ -164,7 +244,6 @@ bool InstanceSegmentationTask::validateTensorInputs(const std::vector<Tensor>& t
         return false;
     }
 
-    // Model-specific validation
     switch (model_type_) {
     case ModelType::YOLO_SEG:
     case ModelType::YOLO_V10_SEG:
@@ -174,9 +253,12 @@ bool InstanceSegmentationTask::validateTensorInputs(const std::vector<Tensor>& t
     case ModelType::RF_DETR_SEG:
         return tensors.size() >= 3;
 
+    case ModelType::EDGECRAFTER_SEG:
+        return tensors.size() >= 4;
+
     default:
         return false;
     }
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

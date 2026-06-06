@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Batch processing utilities: `batch_types.hpp`, `batchPreprocess`, `batchPostprocess`
+- Domain batch adoption for classification (`[N,C]` logits), YOLO standard detection, depth, and ViTPose
+- `tests/test_batch_integration.cpp` — end-to-end `batchPreprocess` + `batchPostprocess` for classification and YOLO detection
+- `docs/batch_processing.md` — consumer migration guide (engine vs library, N=2 worked examples)
+- `task_pipeline.hpp` — composable `Result` pipeline stages for detection → pose / segmentation workflows
+- CI Valgrind job for Debug test binaries with strict definite/indirect leak and memory-error checks
+
+### Changed
+- TaskFactory registry now uses named `TaskDescriptor` entries grouped by task family, with additional boundary tests for routing precedence.
+
 ## [0.3.2] - 2026-05-28
 
 ### Fixed
@@ -24,7 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - README Features list had drifted from the registered TaskFactory model types: restored RF-DETR and YOLOv4 under Object Detection, and YOLOv10-seg / YOLO26-seg under Instance Segmentation
 - README "Supported Model Types" table now documents previously undocumented routable aliases (`rtdetrultralytics`, `gemma`/`llama`/`llamacpp`) and the `resnet*` / `*tensorflow*` classification matching rules
-- `test_readme_model_types` resolves the README and `task_factory.cpp` paths relative to the `tests/` directory (`CMAKE_CURRENT_SOURCE_DIR`) instead of `CMAKE_SOURCE_DIR`, so the contract test works when vision-core is built as a FetchContent sub-project of another repo
+- `test_readme_model_types` resolves the README and `task_factory.cpp` paths relative to the `tests/` directory (`CMAKE_CURRENT_SOURCE_DIR`) instead of `CMAKE_SOURCE_DIR`, so the contract test works when neuriplo-tasks is built as a FetchContent sub-project of another repo
 
 ## [0.3.0] - 2026-05-21
 
@@ -71,8 +82,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - clang-format and clang-tidy configuration
 - CI workflow with lint, static analysis, build, and test jobs
 
-[Unreleased]: https://github.com/olibartfast/vision-core/compare/v0.3.1...HEAD
-[0.3.1]: https://github.com/olibartfast/vision-core/compare/v0.3.0...v0.3.1
-[0.3.0]: https://github.com/olibartfast/vision-core/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/olibartfast/vision-core/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/olibartfast/vision-core/releases/tag/v0.1.0
+[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/olibartfast/neuriplo-tasks/releases/tag/v0.1.0

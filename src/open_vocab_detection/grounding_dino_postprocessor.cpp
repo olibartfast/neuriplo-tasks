@@ -1,17 +1,16 @@
-#include "vision-core/open_vocab_detection/grounding_dino_postprocessor.hpp"
+#include "neuriplo/tasks/open_vocab_detection/grounding_dino_postprocessor.hpp"
+
+#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <limits>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 namespace {
-
-float tensorToFloat(const TensorElement& element) {
-    return std::visit([](const auto& value) { return static_cast<float>(value); }, element);
-}
 
 float sigmoid(float x) {
     if (x >= 0.0F) {
@@ -115,7 +114,7 @@ std::vector<OpenVocabDetection> GroundingDinoPostprocessor::postprocess(const st
                 float phrase_score = -std::numeric_limits<float>::infinity();
                 for (int tok = tok_start; tok < tok_end && tok < static_cast<int>(seq_len); ++tok) {
                     const size_t offset = static_cast<size_t>(query_idx * seq_len + static_cast<int64_t>(tok));
-                    const float s = sigmoid(tensorToFloat(logits.data[offset]));
+                    const float s = sigmoid(tensorElementToFloat(logits.data[offset]));
                     if (s > phrase_score) {
                         phrase_score = s;
                     }
@@ -130,7 +129,7 @@ std::vector<OpenVocabDetection> GroundingDinoPostprocessor::postprocess(const st
             // No phrase ranges: take the maximum over all tokens
             for (int64_t tok = 0; tok < seq_len; ++tok) {
                 const size_t offset = static_cast<size_t>(query_idx * seq_len + tok);
-                const float s = sigmoid(tensorToFloat(logits.data[offset]));
+                const float s = sigmoid(tensorElementToFloat(logits.data[offset]));
                 if (s > best_score) {
                     best_score = s;
                 }
@@ -142,10 +141,10 @@ std::vector<OpenVocabDetection> GroundingDinoPostprocessor::postprocess(const st
         }
 
         const size_t box_offset = static_cast<size_t>(query_idx * 4);
-        float cx = tensorToFloat(boxes.data[box_offset]);
-        float cy = tensorToFloat(boxes.data[box_offset + 1]);
-        float bw = tensorToFloat(boxes.data[box_offset + 2]);
-        float bh = tensorToFloat(boxes.data[box_offset + 3]);
+        float cx = tensorElementToFloat(boxes.data[box_offset]);
+        float cy = tensorElementToFloat(boxes.data[box_offset + 1]);
+        float bw = tensorElementToFloat(boxes.data[box_offset + 2]);
+        float bh = tensorElementToFloat(boxes.data[box_offset + 3]);
 
         // Grounding DINO always outputs normalised [cx, cy, w, h]
         if (std::max({std::fabs(cx), std::fabs(cy), std::fabs(bw), std::fabs(bh)}) <= 1.5F) {
@@ -168,11 +167,11 @@ std::vector<OpenVocabDetection> GroundingDinoPostprocessor::postprocess(const st
             label = prompt_labels_[static_cast<size_t>(best_phrase_idx)];
         }
 
-        results.emplace_back(makeRectFromCenterBox(cx, cy, bw, bh, frame_size), best_score, best_phrase_idx,
+        results.emplace_back(fromCvRect(makeRectFromCenterBox(cx, cy, bw, bh, frame_size)), best_score, best_phrase_idx,
                              std::move(label));
     }
 
     return results;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks
