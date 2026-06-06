@@ -181,8 +181,6 @@ set(CORE_HEADERS
 # Create library
 add_library(neuriplo-tasks ${CORE_SOURCES} ${CORE_HEADERS})
 add_library(neuriplo-tasks::neuriplo-tasks ALIAS neuriplo-tasks)
-add_library(vision-core ALIAS neuriplo-tasks)
-add_library(vision-core::vision-core ALIAS neuriplo-tasks)
 
 target_include_directories(neuriplo-tasks
     PUBLIC
@@ -235,20 +233,8 @@ configure_package_config_file(
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/neuriplo-tasks
 )
 
-configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/vision-core-config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/vision-core-config.cmake
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vision-core
-)
-
 write_basic_package_version_file(
     ${CMAKE_CURRENT_BINARY_DIR}/neuriplo-tasks-config-version.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
-
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/vision-core-config-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion
 )
@@ -257,12 +243,6 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/neuriplo-tasks-config.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/neuriplo-tasks-config-version.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/neuriplo-tasks
-)
-
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/vision-core-config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/vision-core-config-version.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vision-core
 )
 
 # Tests

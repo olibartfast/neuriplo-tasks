@@ -12,13 +12,13 @@ ViT (Vision Transformer) models apply transformer architectures to image classif
 
 For model export, use:
 ```bash
-# Clone vision-core if not already available
-git clone https://github.com/olibartfast/vision-core.git
-cd vision-core/export/classification/vit/onnx
+# Clone neuriplo-tasks if not already available
+git clone https://github.com/olibartfast/neuriplo-tasks.git
+cd neuriplo-tasks/export/classification/vit/onnx
 python export.py
 ```
 
-See [vision-core export documentation](https://github.com/olibartfast/vision-core/tree/main/export) for detailed usage.
+See [neuriplo-tasks export documentation](https://github.com/olibartfast/neuriplo-tasks/tree/main/export) for detailed usage.
 
 ## Quick Comparison
 

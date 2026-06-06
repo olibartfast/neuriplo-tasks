@@ -105,7 +105,7 @@ Steps:
 
 Files likely touched:
 
-- `include/vision-core/core/task_factory.hpp`
+- `include/neuriplo/tasks/core/task_factory.hpp`
 - `src/core/task_factory.cpp`
 - `tests/test_task_factory.cpp`
 
@@ -153,7 +153,7 @@ public:
 Files likely touched:
 
 - `src/object_detection/object_detection_task.cpp`
-- `include/vision-core/object_detection/object_detection_task.hpp`
+- `include/neuriplo/tasks/object_detection/object_detection_task.hpp`
 - Existing object detection postprocessors only when duplication is proven.
 - `tests/test_yolo_postprocessor.cpp`
 - `tests/test_rtdetr_postprocessor.cpp`
@@ -203,8 +203,8 @@ protected:
 
 Files likely touched:
 
-- `include/vision-core/core/task_interface.hpp` only if necessary.
-- New `include/vision-core/core/base_task.hpp`
+- `include/neuriplo/tasks/core/task_interface.hpp` only if necessary.
+- New `include/neuriplo/tasks/core/base_task.hpp`
 - New `src/core/base_task.cpp`
 - One task domain implementation.
 - Matching task tests.
@@ -277,7 +277,7 @@ decltype(auto) visitResult(const Result& result, Visitor&& visitor);
 
 Files likely touched:
 
-- `include/vision-core/core/result_types.hpp`
+- `include/neuriplo/tasks/core/result_types.hpp`
 - `tests/test_result_types.cpp`
 
 Verification:
@@ -308,7 +308,7 @@ Steps:
 1. Define pipeline API separately from `TaskInterface`.
 2. Keep each task independently runnable.
 3. Pass intermediate results explicitly.
-4. Avoid hiding inference engine boundary inside `vision-core`.
+4. Avoid hiding inference engine boundary inside `neuriplo-tasks`.
 5. Add tests with mocked task outputs.
 
 Candidate shape:
@@ -323,7 +323,7 @@ public:
 
 Files likely touched:
 
-- New `include/vision-core/core/task_pipeline.hpp`
+- New `include/neuriplo/tasks/core/task_pipeline.hpp`
 - New `src/core/task_pipeline.cpp`
 - New pipeline tests.
 

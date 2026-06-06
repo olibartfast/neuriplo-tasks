@@ -4,7 +4,7 @@ Export tools for pose estimation models to ONNX format.
 
 ## Supported Models
 
-| Model | Source | Input Size | Output Shape | vision-core type |
+| Model | Source | Input Size | Output Shape | neuriplo-tasks type |
 |-------|--------|------------|--------------|-----------------|
 | YOLOv8-pose | Ultralytics | 640×640 | `[1, 56, 8400]` | `yolov8pose` |
 | YOLO11-pose | Ultralytics | 640×640 | `[1, 56, 8400]` | `yolo11pose` |
@@ -113,7 +113,7 @@ yolo export model=yolov8n-pose.pt format=onnx imgsz=640 opset=12
 trtexec --onnx=yolov8n-pose.onnx --saveEngine=yolov8n-pose.engine --fp16
 ```
 
-### Preprocessing (vision-core C++)
+### Preprocessing (neuriplo-tasks C++)
 
 YOLO pose uses the same **letterbox** preprocessing as YOLO detection:
 - Resize with aspect ratio preserved, pad to square with grey (114, 114, 114)
@@ -160,7 +160,7 @@ python export/pose_estimation/vitpose/export_vitpose_to_onnx.py \
 | `--static-batch` | Disable dynamic batch size | off |
 | `--test` | Run ONNX Runtime inference test | off |
 
-### Preprocessing (vision-core C++)
+### Preprocessing (neuriplo-tasks C++)
 
 ViTPose uses standard ImageNet preprocessing:
 - Resize to 256×192 (or model-specific size)

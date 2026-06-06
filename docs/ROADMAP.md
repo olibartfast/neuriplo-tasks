@@ -1,4 +1,4 @@
-# vision-core Roadmap
+# neuriplo-tasks Roadmap
 
 Atomic execution plan for planned library work. Each step is sized for a
 single PR or commit series: build alone, tests green, no unrelated churn.
@@ -131,7 +131,7 @@ preprocess/postprocess patterns, `N=1` domains, test gaps, B5 adoption order.
 
 ### B1 — Batch contract header ✅
 
-**Deliverable:** `include/vision-core/core/batch_types.hpp` — `BatchRequest`,
+**Deliverable:** `include/neuriplo/tasks/core/batch_types.hpp` — `BatchRequest`,
 `BatchPreprocessOutput`, `BatchPostprocessOutput`, invariant helpers;
 `tests/test_batch_types.cpp`.
 
@@ -162,7 +162,7 @@ per-index ordering.
 
 **Steps**
 
-1. Add `include/vision-core/core/batch_postprocess.hpp`:
+1. Add `include/neuriplo/tasks/core/batch_postprocess.hpp`:
    - `BatchPostprocessOutput batchPostprocess(TaskInterface& task, const cv::Size& frame_size, const std::vector<Tensor>& tensors, int batch_size);`
 2. Default implementation: call `task.postprocess` once; if result count equals
    `batch_size`, return as-is; if result count is 1 and `batch_size > 1`,
@@ -175,7 +175,7 @@ per-index ordering.
 
 **Files**
 
-- `include/vision-core/core/batch_postprocess.hpp`
+- `include/neuriplo/tasks/core/batch_postprocess.hpp`
 - `src/core/batch_postprocess.cpp`
 - `tests/test_batch_postprocess.cpp`
 - Domain files only when override is required
@@ -299,7 +299,7 @@ Follow **Phase 7** in [task_refactor_atomic_plan.md](./task_refactor_atomic_plan
 1. Add `task_pipeline.hpp` / `task_pipeline.cpp` (new API, no `TaskInterface` change). ✅
 2. Implement one pipeline (e.g. detection → pose) with explicit intermediate
    `vector<Result>` passing. ✅
-3. Mock-task unit tests; no inference engine inside vision-core. ✅
+3. Mock-task unit tests; no inference engine inside neuriplo-tasks. ✅
 4. README + CHANGELOG under **Added**. ✅
 
 **Independent of Track B:** pipelines chain tasks; batch utilities scale images

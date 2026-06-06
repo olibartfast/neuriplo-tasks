@@ -6,7 +6,7 @@
 # for export pipelines.
 #
 # Usage:
-#   cd vision-core
+#   cd neuriplo-tasks
 #   export/detection/rtdetr/clone_repo.sh --version v4 --output-dir ./3rdparty/repositories
 #   export/detection/rtdetr/clone_repo.sh --help for more information.
 
@@ -331,7 +331,7 @@ main() {
     log_success "Repository setup complete!"
     echo
     log_info "Next steps:"
-    echo "  1. cd vision-core && export/detection/rtdetr/setup_env.sh"
+    echo "  1. cd neuriplo-tasks && export/detection/rtdetr/setup_env.sh"
     echo "  2. Run export: export/detection/rtdetr/export.sh --repo-dir $OUTPUT_DIR/${REPO_NAMES[$VERSION]}"
 }
 
