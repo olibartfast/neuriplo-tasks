@@ -1,15 +1,15 @@
-#include "vision-core/open_vocab_detection/open_vocab_detection_task.hpp"
+#include "neuriplo/tasks/open_vocab_detection/open_vocab_detection_task.hpp"
 
-#include "vision-core/object_detection/detection_preprocessor.hpp"
-#include "vision-core/open_vocab_detection/grounding_dino_postprocessor.hpp"
-#include "vision-core/open_vocab_detection/owlv2_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/detection_preprocessor.hpp"
+#include "neuriplo/tasks/open_vocab_detection/grounding_dino_postprocessor.hpp"
+#include "neuriplo/tasks/open_vocab_detection/owlv2_postprocessor.hpp"
 
 #include <algorithm>
 #include <cctype>
 #include <cstring>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 namespace {
 
@@ -267,4 +267,4 @@ std::vector<Result> OpenVocabDetectionTask::postprocess(const cv::Size& frame_si
     return results;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

@@ -1,9 +1,9 @@
-#include "vision-core/core/task_pipeline.hpp"
+#include "neuriplo/tasks/core/task_pipeline.hpp"
 
 #include <stdexcept>
 #include <utility>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 SequentialTaskPipeline::SequentialTaskPipeline(std::vector<TaskPipelineStage> stages) {
     for (auto& stage : stages) {
@@ -31,4 +31,4 @@ std::vector<Result> SequentialTaskPipeline::run(const std::vector<Result>& input
     return current;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

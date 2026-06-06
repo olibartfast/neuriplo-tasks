@@ -1,13 +1,13 @@
-#include "vision-core/classification/classification_postprocessor.hpp"
-#include "vision-core/classification/tensorflow_postprocessor.hpp"
-#include "vision-core/classification/torchvision_postprocessor.hpp"
-#include "vision-core/classification/vit_postprocessor.hpp"
+#include "neuriplo/tasks/classification/classification_postprocessor.hpp"
+#include "neuriplo/tasks/classification/tensorflow_postprocessor.hpp"
+#include "neuriplo/tasks/classification/torchvision_postprocessor.hpp"
+#include "neuriplo/tasks/classification/vit_postprocessor.hpp"
 
 #include <gtest/gtest.h>
 #include <variant>
 #include <vector>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 class ClassificationPostprocessorTest : public ::testing::Test {
   protected:

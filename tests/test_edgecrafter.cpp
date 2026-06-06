@@ -1,19 +1,19 @@
-#include "vision-core/core/model_info.hpp"
-#include "vision-core/core/task_config.hpp"
-#include "vision-core/core/task_factory.hpp"
-#include "vision-core/instance_segmentation/edgecrafter_segmentation_postprocessor.hpp"
-#include "vision-core/instance_segmentation/instance_segmentation_task.hpp"
-#include "vision-core/object_detection/edgecrafter_postprocessor.hpp"
-#include "vision-core/object_detection/object_detection_task.hpp"
-#include "vision-core/pose_estimation/edgecrafter_pose_postprocessor.hpp"
-#include "vision-core/pose_estimation/pose_estimation_task.hpp"
+#include "neuriplo/tasks/core/model_info.hpp"
+#include "neuriplo/tasks/core/task_config.hpp"
+#include "neuriplo/tasks/core/task_factory.hpp"
+#include "neuriplo/tasks/instance_segmentation/edgecrafter_segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/instance_segmentation/instance_segmentation_task.hpp"
+#include "neuriplo/tasks/object_detection/edgecrafter_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/object_detection_task.hpp"
+#include "neuriplo/tasks/pose_estimation/edgecrafter_pose_postprocessor.hpp"
+#include "neuriplo/tasks/pose_estimation/pose_estimation_task.hpp"
 
 #include <array>
 #include <cstring>
 #include <gtest/gtest.h>
 #include <opencv2/opencv.hpp>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 namespace {
 

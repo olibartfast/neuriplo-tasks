@@ -1,4 +1,4 @@
-# vision-core
+# neuriplo-tasks
 
 > 🚧 Status: Under Development — expect frequent updates.
 
@@ -24,18 +24,18 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Unified Tensor Interface**: Simplified API using `Tensor` struct that encapsulates data and shape information
 
 
-## Two Ways to Use vision-core
+## Two Ways to Use neuriplo-tasks
 
 ### 1. Direct Preprocessor/Postprocessor Usage (Flexible)
 
 Use individual preprocessors and postprocessors for maximum flexibility:
 
 ```cpp
-#include <vision-core/object_detection/yolo_postprocessor.hpp>
-#include <vision-core/object_detection/detection_preprocessor.hpp>
-#include <vision-core/object_detection/object_detection_task.hpp>
+#include <neuriplo/tasks/object_detection/yolo_postprocessor.hpp>
+#include <neuriplo/tasks/object_detection/detection_preprocessor.hpp>
+#include <neuriplo/tasks/object_detection/object_detection_task.hpp>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 // Object Detection with Preprocessing Example
 DetectionPreprocessor yolo_prep(cv::Size(640, 640));
@@ -70,11 +70,11 @@ std::vector<Detection> detections = postprocessor.postprocess(
 Use the unified task interface for integrated preprocessing and postprocessing:
 
 ```cpp
-#include <vision-core/core/task_factory.hpp>
-#include <vision-core/core/task_interface.hpp>
-#include <vision-core/core/model_info.hpp>
+#include <neuriplo/tasks/core/task_factory.hpp>
+#include <neuriplo/tasks/core/task_interface.hpp>
+#include <neuriplo/tasks/core/model_info.hpp>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 // Setup model info
 ModelInfo model_info;
@@ -125,11 +125,11 @@ batch metadata or per-domain split logic.
 **Headers:** `batch_types.hpp`, `batch_preprocess.hpp`, `batch_postprocess.hpp`
 
 ```cpp
-#include <vision-core/core/batch_preprocess.hpp>
-#include <vision-core/core/batch_postprocess.hpp>
-#include <vision-core/core/task_factory.hpp>
+#include <neuriplo/tasks/core/batch_preprocess.hpp>
+#include <neuriplo/tasks/core/batch_postprocess.hpp>
+#include <neuriplo/tasks/core/task_factory.hpp>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 ModelInfo model_info;
 model_info.input_shapes = {{2, 3, 224, 224}};
@@ -167,9 +167,9 @@ Use it for workflows such as detection → pose or detection → segmentation af
 has produced its own `Result` vector.
 
 ```cpp
-#include <vision-core/core/task_pipeline.hpp>
+#include <neuriplo/tasks/core/task_pipeline.hpp>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 SequentialTaskPipeline pipeline;
 pipeline.addStage([](const std::vector<Result>& detections) {
@@ -186,8 +186,8 @@ auto next_results = pipeline.run(detection_results);
 ### As CMake Submodule
 
 ```cmake
-add_subdirectory(vision-core)
-target_link_libraries(your_target vision-core::vision-core)
+add_subdirectory(neuriplo-tasks)
+target_link_libraries(your_target neuriplo-tasks::neuriplo-tasks)
 ```
 
 ### As Installed Package
@@ -202,8 +202,8 @@ sudo cmake --install .
 
 ```cmake
 # In your CMakeLists.txt
-find_package(vision-core REQUIRED)
-target_link_libraries(your_target vision-core::vision-core)
+find_package(neuriplo-tasks REQUIRED)
+target_link_libraries(your_target neuriplo-tasks::neuriplo-tasks)
 ```
 
 ### Supported Model Types (TaskFactory)
@@ -274,7 +274,7 @@ The expected ONNX contract is:
 
 Results are returned as `OpenVocabDetection` entries containing `bbox`, `score`, `prompt_index`, and resolved `label`.
 
-For export details, see [export/open_vocab_detection/OWLv2.md](https://github.com/olibartfast/vision-core/blob/master/export/open_vocab_detection/OWLv2.md).
+For export details, see [export/open_vocab_detection/OWLv2.md](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/open_vocab_detection/OWLv2.md).
 
 **Image Understanding (VLM):**
 - `"gemma4"`, `"gemma"`, `"llama"`, `"llamacpp"`, `"imageunderstanding"` - Vision-language model image captioning / Q&A via llama.cpp backend
@@ -283,7 +283,7 @@ Input contract: `preprocess()` returns two tensors — `[0]` UTF-8 prompt bytes,
 
 Requires the llama.cpp `LLAMACPP` backend with an mmproj (vision projector) GGUF.
 
-For model download and setup details, see [export/image_understanding/ImageUnderstanding.md](https://github.com/olibartfast/vision-core/blob/master/export/image_understanding/ImageUnderstanding.md).
+For model download and setup details, see [export/image_understanding/ImageUnderstanding.md](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/image_understanding/ImageUnderstanding.md).
 
 **Gaussian Splatting:**
 - `"lgm"`, `"lgm-mini"` - LGM (Large Gaussian Model)
@@ -293,9 +293,9 @@ For model download and setup details, see [export/image_understanding/ImageUnder
 
 EdgeCrafter export and tensor contract details live in the task-specific docs:
 
-- [EdgeCrafter Detection](https://github.com/olibartfast/vision-core/blob/master/export/detection/edgecrafter/README.md)
-- [EdgeCrafter Segmentation](https://github.com/olibartfast/vision-core/blob/master/export/segmentation/edgecrafter/README.md)
-- [EdgeCrafter Pose Estimation](https://github.com/olibartfast/vision-core/blob/master/export/pose_estimation/edgecrafter/README.md)
+- [EdgeCrafter Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/edgecrafter/README.md)
+- [EdgeCrafter Segmentation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/segmentation/edgecrafter/README.md)
+- [EdgeCrafter Pose Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/edgecrafter/README.md)
 
 <!-- TASKFACTORY_MODEL_LIST:END -->
 

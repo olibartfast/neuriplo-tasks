@@ -1,15 +1,15 @@
-#include "vision-core/instance_segmentation/instance_segmentation_task.hpp"
+#include "neuriplo/tasks/instance_segmentation/instance_segmentation_task.hpp"
 
-#include "vision-core/instance_segmentation/edgecrafter_segmentation_postprocessor.hpp"
-#include "vision-core/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
-#include "vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp"
-#include "vision-core/object_detection/detection_preprocessor.hpp"
+#include "neuriplo/tasks/instance_segmentation/edgecrafter_segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/instance_segmentation/yolo_segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/object_detection/detection_preprocessor.hpp"
 
 #include <algorithm>
 #include <stdexcept>
 #include <utility>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 class InstanceSegmentationPreprocessStrategy {
   public:
@@ -261,4 +261,4 @@ bool InstanceSegmentationTask::validateTensorInputs(const std::vector<Tensor>& t
     }
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

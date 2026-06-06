@@ -1,16 +1,16 @@
-#include "vision-core/classification/classification_task.hpp"
+#include "neuriplo/tasks/classification/classification_task.hpp"
 
-#include "vision-core/classification/classification_postprocessor.hpp"
-#include "vision-core/classification/classification_preprocessor.hpp"
-#include "vision-core/classification/tensorflow_postprocessor.hpp"
-#include "vision-core/classification/torchvision_postprocessor.hpp"
-#include "vision-core/classification/vit_postprocessor.hpp"
+#include "neuriplo/tasks/classification/classification_postprocessor.hpp"
+#include "neuriplo/tasks/classification/classification_preprocessor.hpp"
+#include "neuriplo/tasks/classification/tensorflow_postprocessor.hpp"
+#include "neuriplo/tasks/classification/torchvision_postprocessor.hpp"
+#include "neuriplo/tasks/classification/vit_postprocessor.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 ClassificationTask::ClassificationTask(const ModelInfo& model_info, const std::string& model_name, int top_k,
                                        bool apply_softmax)
@@ -128,4 +128,4 @@ cv::Size ClassificationTask::extractInputSize(const ModelInfo& model_info) {
     return cv::Size(width, height);
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

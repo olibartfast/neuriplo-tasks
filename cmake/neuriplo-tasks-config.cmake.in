@@ -1,0 +1,19 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/neuriplo-tasks-targets.cmake")
+
+if(NOT TARGET vision-core)
+    add_library(vision-core INTERFACE IMPORTED)
+    set_target_properties(vision-core PROPERTIES
+        INTERFACE_LINK_LIBRARIES neuriplo-tasks::neuriplo-tasks
+    )
+endif()
+
+if(NOT TARGET vision-core::vision-core)
+    add_library(vision-core::vision-core INTERFACE IMPORTED)
+    set_target_properties(vision-core::vision-core PROPERTIES
+        INTERFACE_LINK_LIBRARIES neuriplo-tasks::neuriplo-tasks
+    )
+endif()
+
+check_required_components(neuriplo-tasks)

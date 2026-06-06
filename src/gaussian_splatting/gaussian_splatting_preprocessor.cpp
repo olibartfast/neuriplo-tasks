@@ -1,6 +1,6 @@
-#include "vision-core/gaussian_splatting/gaussian_splatting_preprocessor.hpp"
+#include "neuriplo/tasks/gaussian_splatting/gaussian_splatting_preprocessor.hpp"
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 GaussianSplattingPreprocessor::GaussianSplattingPreprocessor(const cv::Size& input_size)
     : Preprocessor(PreprocessConfig{
@@ -10,4 +10,4 @@ GaussianSplattingPreprocessor::GaussianSplattingPreprocessor(const cv::Size& inp
           true  // BGR → RGB
       }) {}
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

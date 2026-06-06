@@ -14,7 +14,7 @@ This project uses two files to track releases:
 Contains a single line like `0.2.0-dev`.
 
 - The `-dev` suffix indicates unreleased development work on `develop`.
-- CMake reads this file at configure time and strips the suffix to set `project(vision-core VERSION X.Y.Z)`.
+- CMake reads this file at configure time and strips the suffix to set `project(neuriplo-tasks VERSION X.Y.Z)`.
 - Follows [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`.
 
 ## CHANGELOG.md
@@ -64,8 +64,8 @@ When merging a PR into `develop`, add a line under `[Unreleased]` in the appropr
    ```
    Update the comparison links at the bottom:
    ```markdown
-   [Unreleased]: https://github.com/olibartfast/vision-core/compare/v0.2.0...HEAD
-   [0.2.0]: https://github.com/olibartfast/vision-core/compare/v0.1.0...v0.2.0
+   [Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.2.0...HEAD
+   [0.2.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.1.0...v0.2.0
    ```
 
 4. **Merge into `master`** and tag:

@@ -1,10 +1,10 @@
-#include "vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/instance_segmentation/yolo_segmentation_postprocessor.hpp"
 
 #include <gtest/gtest.h>
 #include <variant>
 #include <vector>
 
-using namespace vision_core;
+using namespace neuriplo_tasks;
 
 class YoloSegmentationPostprocessorTest : public ::testing::Test {
   protected:

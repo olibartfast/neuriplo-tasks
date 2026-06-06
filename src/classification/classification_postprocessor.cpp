@@ -1,13 +1,13 @@
-#include "vision-core/classification/classification_postprocessor.hpp"
+#include "neuriplo/tasks/classification/classification_postprocessor.hpp"
 
-#include "vision-core/classification/classification_logits_layout.hpp"
-#include "vision-core/core/tensor_utils.hpp"
+#include "neuriplo/tasks/classification/classification_logits_layout.hpp"
+#include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <functional>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 namespace {
 
@@ -107,4 +107,4 @@ std::vector<Classification> DefaultClassificationPostprocessor::postprocess(cons
 
 void DefaultClassificationPostprocessor::applySoftmax(std::vector<float>& logits) { applySoftmaxInPlace(logits); }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

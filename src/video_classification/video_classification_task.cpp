@@ -1,13 +1,13 @@
-#include "vision-core/video_classification/video_classification_task.hpp"
+#include "neuriplo/tasks/video_classification/video_classification_task.hpp"
 
-#include "vision-core/video_classification/video_classification_postprocessor.hpp"
-#include "vision-core/video_classification/video_classification_preprocessor.hpp"
+#include "neuriplo/tasks/video_classification/video_classification_postprocessor.hpp"
+#include "neuriplo/tasks/video_classification/video_classification_preprocessor.hpp"
 
 #include <algorithm>
 #include <cstring>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 VideoClassificationTask::VideoClassificationTask(const ModelInfo& model_info, const std::string& model_name, int top_k,
                                                  bool apply_softmax)
@@ -132,4 +132,4 @@ void VideoClassificationTask::extractVideoInputSize(const ModelInfo& model_info)
     }
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

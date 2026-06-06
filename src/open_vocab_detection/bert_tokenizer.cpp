@@ -1,4 +1,4 @@
-#include "vision-core/open_vocab_detection/bert_tokenizer.hpp"
+#include "neuriplo/tasks/open_vocab_detection/bert_tokenizer.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -6,7 +6,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 namespace {
 
@@ -263,4 +263,4 @@ BertTokenizer::PhraseEncoding BertTokenizer::encodePhrases(const std::vector<std
     return result;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks

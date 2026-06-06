@@ -1,8 +1,8 @@
-#include "vision-core/video_classification/video_classification_preprocessor.hpp"
+#include "neuriplo/tasks/video_classification/video_classification_preprocessor.hpp"
 
 #include <cstring>
 
-namespace vision_core {
+namespace neuriplo_tasks {
 
 // ============ VideoMAEPreprocessor ============
 
@@ -140,4 +140,4 @@ std::vector<uint8_t> TimeSformerPreprocessor::preprocess(const cv::Mat& image) c
     return output;
 }
 
-} // namespace vision_core
+} // namespace neuriplo_tasks
