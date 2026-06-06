@@ -1,5 +1,6 @@
 #include "vision-core/pose_estimation/yolo_pose_postprocessor.hpp"
 
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/tensor_utils.hpp"
 
 #include <opencv2/dnn.hpp>
@@ -58,7 +59,7 @@ void YoloPosePostprocessor::applyNMS(std::vector<PoseEstimation>& poses) const {
     boxes.reserve(poses.size());
     scores.reserve(poses.size());
     for (const auto& p : poses) {
-        boxes.push_back(p.bbox);
+        boxes.push_back(toCvRect(p.bbox));
         scores.push_back(p.score);
     }
 
@@ -152,7 +153,7 @@ std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector
 
         PoseEstimation pose;
         pose.score = conf;
-        pose.bbox = scaleBoxToOriginal(cx, cy, w, h, original_size);
+        pose.bbox = fromCvRect(scaleBoxToOriginal(cx, cy, w, h, original_size));
 
         pose.keypoints.reserve(static_cast<size_t>(num_kpts));
         for (int j = 0; j < num_kpts; ++j) {

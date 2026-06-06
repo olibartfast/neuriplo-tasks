@@ -163,7 +163,10 @@ refactor detail: [`docs/task_refactor_atomic_plan.md`](./docs/task_refactor_atom
 |-----------------------|---------|
 | `task_interface.hpp`  | Abstract base: `preprocess(vector<cv::Mat>) → vector<vector<uint8_t>>`, `postprocess(cv::Size, vector<Tensor>) → vector<Result>` |
 | `task_factory.hpp`    | `TaskFactory::createTaskInstance(string, ModelInfo)` — normalises the model-type string (strip `-`, `_`, whitespace; lowercase) and dispatches |
-| `result_types.hpp`    | `Result` variant plus optional `visitResult()` helper (forwards to `std::visit`) |
+| `result_types.hpp`    | `Result` variant plus optional `visitResult()` helper (forwards to `std::visit`); OpenCV-free (`BoundingBox`, `ImageMatrix`) |
+| `bounding_box.hpp`    | Pixel-space `BoundingBox` replacing `cv::Rect` in public result types |
+| `image_matrix.hpp`    | Opaque `ImageMatrix` replacing `cv::Mat` in public result types |
+| `opencv_interop.hpp`  | `toCvRect` / `fromCvRect` / `toCvMat` / `fromCvMat` conversion at OpenCV boundaries |
 | `model_info.hpp`      | `ModelInfo`: `input_shapes`, `input_formats` (`FORMAT_NCHW` / `FORMAT_NHWC`), `input_names`, `output_names` |
 | `batch_types.hpp`     | `BatchRequest`, `BatchPreprocessOutput`, `BatchPostprocessOutput`, invariant helpers |
 | `batch_preprocess.hpp`| `batchPreprocess(task, BatchRequest)` — per-image preprocess + `batch_size` metadata |

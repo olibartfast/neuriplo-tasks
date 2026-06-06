@@ -1,4 +1,5 @@
 #include "vision-core/core/model_info.hpp"
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/result_types.hpp"
 #include "vision-core/core/task_factory.hpp"
 #include "vision-core/optical_flow/optical_flow_preprocessor.hpp"
@@ -161,8 +162,8 @@ TEST_F(OpticalFlowTest, RaftPostprocessorBasic) {
     const auto& flow = results[0];
     // Note: flow visualization is not implemented yet, so flow.flow will be empty
     // EXPECT_FALSE(flow.flow.empty()); // TODO: uncomment when visualization is implemented
-    EXPECT_FALSE(flow.raw_flow.empty());    // Raw flow should exist
-    EXPECT_EQ(flow.raw_flow.channels(), 2); // Two channels (x, y flow)
+    EXPECT_FALSE(flow.raw_flow.empty());       // Raw flow should exist
+    EXPECT_EQ(flow.raw_flow.type(), CV_32FC2); // Two channels (x, y flow)
     // max_displacement is not calculated in current implementation
     // EXPECT_GE(flow.max_displacement, 0.0f); // TODO: uncomment when max_displacement is implemented
 }
@@ -198,7 +199,7 @@ TEST_F(OpticalFlowTest, FullPipelineSimulation) {
     const auto& flow = std::get<OpticalFlow>(results[0]);
     EXPECT_FALSE(flow.flow.empty());
     EXPECT_FALSE(flow.raw_flow.empty());
-    EXPECT_EQ(flow.raw_flow.channels(), 2);
+    EXPECT_EQ(flow.raw_flow.type(), CV_32FC2);
     EXPECT_GE(flow.max_displacement, 0.0f);
 }
 
@@ -245,8 +246,8 @@ TEST_F(OpticalFlowTest, OpticalFlowResultStructure) {
     EXPECT_FLOAT_EQ(flow_result.max_displacement, 0.0f);
 
     // Test assignment
-    flow_result.flow = cv::Mat::zeros(100, 100, CV_8UC3);
-    flow_result.raw_flow = cv::Mat::zeros(100, 100, CV_32FC2);
+    flow_result.flow = fromCvMat(cv::Mat::zeros(100, 100, CV_8UC3));
+    flow_result.raw_flow = fromCvMat(cv::Mat::zeros(100, 100, CV_32FC2));
     flow_result.max_displacement = 10.5f;
 
     EXPECT_FALSE(flow_result.flow.empty());

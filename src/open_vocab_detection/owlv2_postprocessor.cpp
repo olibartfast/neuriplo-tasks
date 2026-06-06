@@ -1,5 +1,6 @@
 #include "vision-core/open_vocab_detection/owlv2_postprocessor.hpp"
 
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/tensor_utils.hpp"
 
 #include <algorithm>
@@ -143,8 +144,8 @@ std::vector<OpenVocabDetection> OWLv2Postprocessor::postprocess(const std::vecto
             label = prompt_labels_[static_cast<size_t>(best_prompt_index)];
         }
 
-        results.emplace_back(makeRectFromCenterBox(center_x, center_y, width, height, frame_size), best_score,
-                             best_prompt_index, std::move(label));
+        results.emplace_back(fromCvRect(makeRectFromCenterBox(center_x, center_y, width, height, frame_size)),
+                             best_score, best_prompt_index, std::move(label));
     }
 
     return results;

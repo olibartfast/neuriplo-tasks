@@ -107,8 +107,8 @@ void EdgeCrafterPosePostprocessor::deriveBboxFromKeypoints(PoseEstimation& pose)
     }
 
     if (any) {
-        pose.bbox = cv::Rect(static_cast<int>(x_min), static_cast<int>(y_min), static_cast<int>(x_max - x_min),
-                             static_cast<int>(y_max - y_min));
+        pose.bbox = BoundingBox(static_cast<int>(x_min), static_cast<int>(y_min), static_cast<int>(x_max - x_min),
+                                static_cast<int>(y_max - y_min));
     }
 }
 

@@ -1,5 +1,6 @@
 #include "vision-core/object_detection/rtdetr_postprocessor.hpp"
 
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/tensor_utils.hpp"
 
 #include <iostream>
@@ -96,8 +97,8 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETR(const Tensor& scor
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = score;
-        det.bbox = cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
-                            cv::Point(static_cast<int>(x2), static_cast<int>(y2)));
+        det.bbox = fromCvRect(cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
+                                       cv::Point(static_cast<int>(x2), static_cast<int>(y2))));
         detections.push_back(det);
     }
 
@@ -145,8 +146,8 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(const Tensor& ou
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = max_score;
-        det.bbox = cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
-                            cv::Point(static_cast<int>(x2), static_cast<int>(y2)));
+        det.bbox = fromCvRect(cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
+                                       cv::Point(static_cast<int>(x2), static_cast<int>(y2))));
         detections.push_back(det);
     }
 

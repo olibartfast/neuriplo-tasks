@@ -1,5 +1,6 @@
 #include "vision-core/open_vocab_detection/grounding_dino_postprocessor.hpp"
 
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/tensor_utils.hpp"
 
 #include <algorithm>
@@ -166,7 +167,7 @@ std::vector<OpenVocabDetection> GroundingDinoPostprocessor::postprocess(const st
             label = prompt_labels_[static_cast<size_t>(best_phrase_idx)];
         }
 
-        results.emplace_back(makeRectFromCenterBox(cx, cy, bw, bh, frame_size), best_score, best_phrase_idx,
+        results.emplace_back(fromCvRect(makeRectFromCenterBox(cx, cy, bw, bh, frame_size)), best_score, best_phrase_idx,
                              std::move(label));
     }
 

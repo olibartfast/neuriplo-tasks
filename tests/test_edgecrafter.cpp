@@ -163,8 +163,8 @@ TEST(EdgeCrafterSegmentationTest, BasicPostprocess) {
     EXPECT_GT(segmentations[0].bbox.width, 0);
     EXPECT_GT(segmentations[0].bbox.height, 0);
     EXPECT_FALSE(segmentations[0].mask.empty());
-    EXPECT_EQ(segmentations[0].mask.rows, 480);
-    EXPECT_EQ(segmentations[0].mask.cols, 640);
+    EXPECT_EQ(segmentations[0].mask.rows(), 480);
+    EXPECT_EQ(segmentations[0].mask.cols(), 640);
 }
 
 TEST(EdgeCrafterSegmentationTest, FiltersBelowThreshold) {
@@ -304,7 +304,7 @@ TEST(EdgeCrafterDetectionTest, UsesOutputNamesWhenTensorsAreReordered) {
     ASSERT_EQ(detections.size(), 1u);
     EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.9f);
     EXPECT_EQ(detections[0].class_id, 5);
-    EXPECT_EQ(detections[0].bbox, cv::Rect(100, 100, 200, 200));
+    EXPECT_EQ(detections[0].bbox, BoundingBox(100, 100, 200, 200));
 }
 
 TEST(EdgeCrafterSegmentationTest, UsesOutputNamesWhenTensorsAreReordered) {
@@ -330,7 +330,7 @@ TEST(EdgeCrafterSegmentationTest, UsesOutputNamesWhenTensorsAreReordered) {
     ASSERT_EQ(segmentations.size(), 1u);
     EXPECT_FLOAT_EQ(segmentations[0].class_confidence, 0.9f);
     EXPECT_EQ(segmentations[0].class_id, 5);
-    EXPECT_EQ(segmentations[0].bbox, cv::Rect(100, 100, 200, 200));
+    EXPECT_EQ(segmentations[0].bbox, BoundingBox(100, 100, 200, 200));
 }
 
 TEST(EdgeCrafterPoseTest, UsesOutputNamesWhenTensorsAreReordered) {
@@ -354,7 +354,7 @@ TEST(EdgeCrafterPoseTest, UsesOutputNamesWhenTensorsAreReordered) {
     ASSERT_EQ(poses.size(), 1u);
     EXPECT_NEAR(poses[0].score, 0.9f, 0.01f);
     ASSERT_EQ(poses[0].keypoints.size(), 2u);
-    EXPECT_EQ(poses[0].bbox, cv::Rect(100, 150, 20, 40));
+    EXPECT_EQ(poses[0].bbox, BoundingBox(100, 150, 20, 40));
 }
 
 // ---------------------------------------------------------------------------

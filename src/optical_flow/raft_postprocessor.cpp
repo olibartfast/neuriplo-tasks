@@ -1,5 +1,6 @@
 #include "vision-core/optical_flow/raft_postprocessor.hpp"
 
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/tensor_utils.hpp"
 
 #include <algorithm>
@@ -78,7 +79,7 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     cv::Mat flow_v = flow_channels[1];
 
     OpticalFlow result;
-    result.raw_flow = flow.clone();
+    result.raw_flow = fromCvMat(flow.clone());
 
     // Calculate magnitude and max displacement
     cv::Mat magnitude, angle;
@@ -88,7 +89,7 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     result.max_displacement = static_cast<float>(max_disp);
 
     // Create color visualization using master branch approach
-    result.flow = visualizeFlow(flow_u, flow_v);
+    result.flow = fromCvMat(visualizeFlow(flow_u, flow_v));
 
     return {result};
 }

@@ -1,5 +1,6 @@
 #include "vision-core/instance_segmentation/yolo_segmentation_postprocessor.hpp"
 
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/tensor_utils.hpp"
 
 #include <algorithm>
@@ -143,8 +144,8 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
         InstanceSegmentation seg;
         seg.class_id = static_cast<float>(det.class_id);
         seg.class_confidence = det.confidence;
-        seg.bbox = bbox;
-        seg.mask = final_mask;
+        seg.bbox = fromCvRect(bbox);
+        seg.mask = fromCvMat(final_mask);
         seg.mask_height = final_mask.rows;
         seg.mask_width = final_mask.cols;
 
@@ -288,8 +289,8 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tenso
         InstanceSegmentation seg;
         seg.class_id = static_cast<float>(class_id);
         seg.class_confidence = score;
-        seg.bbox = bbox;
-        seg.mask = mask_full;
+        seg.bbox = fromCvRect(bbox);
+        seg.mask = fromCvMat(mask_full);
         seg.mask_height = mask_full.rows;
         seg.mask_width = mask_full.cols;
 
