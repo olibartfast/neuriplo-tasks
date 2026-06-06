@@ -8,6 +8,8 @@ string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" PROJECT_SEMVER "${PROJECT_VERSION
 
 project(vision-core VERSION ${PROJECT_SEMVER} LANGUAGES CXX)
 
+include(cmake/CompileSpeed.cmake)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -59,6 +61,7 @@ set(CORE_SOURCES
     src/core/batch_postprocess.cpp
     src/core/base_task.cpp
     src/core/bbox_processor.cpp
+    src/core/image_matrix.cpp
     src/core/preprocessor.cpp
     src/core/task_interface.cpp
     src/core/task_factory.cpp
@@ -109,6 +112,9 @@ set(CORE_SOURCES
 
 set(CORE_HEADERS
     # Core
+    include/vision-core/core/bounding_box.hpp
+    include/vision-core/core/image_matrix.hpp
+    include/vision-core/core/opencv_interop.hpp
     include/vision-core/core/result_types.hpp
     include/vision-core/core/batch_types.hpp
     include/vision-core/core/batch_preprocess.hpp

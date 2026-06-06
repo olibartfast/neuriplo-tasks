@@ -59,8 +59,8 @@ TEST_F(DepthEstimationTest, PostprocessConvertsDepthMap) {
     ASSERT_TRUE(std::holds_alternative<DepthEstimation>(results[0]));
 
     const auto& depth = std::get<DepthEstimation>(results[0]);
-    EXPECT_EQ(depth.depth.rows, 8);
-    EXPECT_EQ(depth.depth.cols, 10);
+    EXPECT_EQ(depth.depth.rows(), 8);
+    EXPECT_EQ(depth.depth.cols(), 10);
     EXPECT_EQ(depth.depth.type(), CV_32FC1);
     EXPECT_EQ(depth.normalized_depth.type(), CV_32FC1);
     EXPECT_LE(depth.min_depth, depth.max_depth);

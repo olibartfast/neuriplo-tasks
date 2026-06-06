@@ -1,3 +1,4 @@
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/result_types.hpp"
 #include "vision-core/core/tensor_utils.hpp"
 
@@ -82,7 +83,7 @@ TEST_F(ResultTypesTest, DetectionDefaultConstruction) {
 }
 
 TEST_F(ResultTypesTest, DetectionParameterizedConstruction) {
-    cv::Rect bbox(100, 200, 50, 75);
+    BoundingBox bbox(100, 200, 50, 75);
     Detection det(bbox, 0.85f, 3);
 
     EXPECT_FLOAT_EQ(det.class_id, 3.0f);
@@ -94,7 +95,7 @@ TEST_F(ResultTypesTest, DetectionParameterizedConstruction) {
 }
 
 TEST_F(ResultTypesTest, DetectionInheritsFromClassification) {
-    Detection det(cv::Rect(10, 20, 30, 40), 0.9f, 7);
+    Detection det(BoundingBox(10, 20, 30, 40), 0.9f, 7);
 
     // Can use as Classification
     Classification& cls_ref = det;
@@ -112,7 +113,7 @@ TEST_F(ResultTypesTest, InstanceSegmentationDefaultConstruction) {
 }
 
 TEST_F(ResultTypesTest, InstanceSegmentationParameterizedConstruction) {
-    cv::Rect bbox(50, 60, 100, 120);
+    BoundingBox bbox(50, 60, 100, 120);
     InstanceSegmentation seg(bbox, 0.92f, 1);
 
     EXPECT_FLOAT_EQ(seg.class_id, 1.0f);
@@ -122,7 +123,7 @@ TEST_F(ResultTypesTest, InstanceSegmentationParameterizedConstruction) {
 }
 
 TEST_F(ResultTypesTest, InstanceSegmentationInheritsFromDetection) {
-    InstanceSegmentation seg(cv::Rect(1, 2, 3, 4), 0.8f, 2);
+    InstanceSegmentation seg(BoundingBox(1, 2, 3, 4), 0.8f, 2);
 
     // Can use as Detection
     Detection& det_ref = seg;
@@ -155,12 +156,12 @@ TEST_F(ResultTypesTest, OpticalFlowDefaultConstruction) {
 
 TEST_F(ResultTypesTest, OpticalFlowWithData) {
     OpticalFlow flow;
-    flow.flow = cv::Mat(100, 100, CV_8UC3, cv::Scalar(0, 0, 255));
-    flow.raw_flow = cv::Mat(100, 100, CV_32FC2);
+    flow.flow = fromCvMat(cv::Mat(100, 100, CV_8UC3, cv::Scalar(0, 0, 255)));
+    flow.raw_flow = fromCvMat(cv::Mat(100, 100, CV_32FC2));
     flow.max_displacement = 15.5f;
 
-    EXPECT_EQ(flow.flow.rows, 100);
-    EXPECT_EQ(flow.flow.cols, 100);
+    EXPECT_EQ(flow.flow.rows(), 100);
+    EXPECT_EQ(flow.flow.cols(), 100);
     EXPECT_EQ(flow.raw_flow.type(), CV_32FC2);
     EXPECT_FLOAT_EQ(flow.max_displacement, 15.5f);
 }
@@ -197,7 +198,7 @@ TEST_F(ResultTypesTest, ResultVariantHoldsClassification) {
 }
 
 TEST_F(ResultTypesTest, ResultVariantHoldsDetection) {
-    Detection det(cv::Rect(1, 2, 3, 4), 0.9f, 5);
+    Detection det(BoundingBox(1, 2, 3, 4), 0.9f, 5);
     Result result = det;
 
     EXPECT_TRUE(std::holds_alternative<Detection>(result));
@@ -214,7 +215,7 @@ TEST_F(ResultTypesTest, OpenVocabDetectionDefaultConstruction) {
 }
 
 TEST_F(ResultTypesTest, OpenVocabDetectionParameterizedConstruction) {
-    OpenVocabDetection det(cv::Rect(11, 12, 13, 14), 0.77f, 2, "cat");
+    OpenVocabDetection det(BoundingBox(11, 12, 13, 14), 0.77f, 2, "cat");
     EXPECT_EQ(det.bbox.x, 11);
     EXPECT_EQ(det.bbox.y, 12);
     EXPECT_FLOAT_EQ(det.score, 0.77f);
@@ -223,7 +224,7 @@ TEST_F(ResultTypesTest, OpenVocabDetectionParameterizedConstruction) {
 }
 
 TEST_F(ResultTypesTest, ResultVariantHoldsOpenVocabDetection) {
-    OpenVocabDetection det(cv::Rect(0, 1, 2, 3), 0.91f, 1, "vehicle");
+    OpenVocabDetection det(BoundingBox(0, 1, 2, 3), 0.91f, 1, "vehicle");
     Result result = det;
 
     EXPECT_TRUE(std::holds_alternative<OpenVocabDetection>(result));
@@ -232,7 +233,7 @@ TEST_F(ResultTypesTest, ResultVariantHoldsOpenVocabDetection) {
 }
 
 TEST_F(ResultTypesTest, ResultVariantHoldsInstanceSegmentation) {
-    InstanceSegmentation seg(cv::Rect(10, 20, 30, 40), 0.95f, 2);
+    InstanceSegmentation seg(BoundingBox(10, 20, 30, 40), 0.95f, 2);
     Result result = seg;
 
     EXPECT_TRUE(std::holds_alternative<InstanceSegmentation>(result));
@@ -267,7 +268,7 @@ TEST_F(ResultTypesTest, DepthEstimationDefaultConstruction) {
 
 TEST_F(ResultTypesTest, ResultVariantHoldsDepthEstimation) {
     DepthEstimation depth;
-    depth.depth = cv::Mat::ones(10, 10, CV_32FC1);
+    depth.depth = fromCvMat(cv::Mat::ones(10, 10, CV_32FC1));
     Result result = depth;
 
     EXPECT_TRUE(std::holds_alternative<DepthEstimation>(result));

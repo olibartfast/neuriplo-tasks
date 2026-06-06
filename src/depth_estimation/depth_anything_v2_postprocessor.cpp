@@ -1,5 +1,6 @@
 #include "vision-core/depth_estimation/depth_anything_v2_postprocessor.hpp"
 
+#include "vision-core/core/opencv_interop.hpp"
 #include "vision-core/core/tensor_utils.hpp"
 
 #include <algorithm>
@@ -91,8 +92,8 @@ std::vector<DepthEstimation> DepthAnythingV2Postprocessor::postprocess(const std
         }
 
         DepthEstimation estimation;
-        estimation.depth = depth;
-        estimation.normalized_depth = normalized_depth;
+        estimation.depth = fromCvMat(depth);
+        estimation.normalized_depth = fromCvMat(normalized_depth);
         estimation.min_depth = static_cast<float>(min_value);
         estimation.max_depth = static_cast<float>(max_value);
         results.push_back(std::move(estimation));
