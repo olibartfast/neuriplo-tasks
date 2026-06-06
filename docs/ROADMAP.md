@@ -256,7 +256,7 @@ AGENTS table rows, roadmap checkbox checked.
 
 ### B6 — Consumer migration note ✅
 
-**Purpose:** downstream repos (tritonic, vision-inference) know how to adopt.
+**Purpose:** downstream repos (tritonic, neuriplo-infer) know how to adopt.
 
 **Steps**
 
