@@ -4,8 +4,8 @@
 
 A set of framework-agnostic computer vision algorithms including common pre-processing and post-processing steps designed to be reused across multiple inference engine projects such as:
 * [tritonic](https://github.com/olibartfast/tritonic)
-* [vision-inference](https://github.com/olibartfast/vision-inference)
-* [vision-tracking](https://github.com/olibartfast/vision-tracking)
+* [neuriplo-infer](https://github.com/olibartfast/neuriplo-infer)
+* [neuriplo-track](https://github.com/olibartfast/neuriplo-track)
 
 ## Features
 

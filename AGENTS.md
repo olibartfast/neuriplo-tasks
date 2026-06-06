@@ -24,7 +24,7 @@ file.
 - **Tests**: `tests/` (GoogleTest, fetched via CMake `FetchContent`)
 - **Only runtime dependency**: OpenCV
 - **Consumers**: [tritonic](https://github.com/olibartfast/tritonic),
-  [vision-inference](https://github.com/olibartfast/vision-inference)
+  [neuriplo-infer](https://github.com/olibartfast/neuriplo-infer)
 - **GitHub repo**: `https://github.com/olibartfast/neuriplo-tasks`
 
 `neuriplo-tasks` provides framework-agnostic computer-vision pre/postprocessing
