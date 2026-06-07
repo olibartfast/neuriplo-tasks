@@ -362,7 +362,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(const Tensor& o
     }
 
     // End-to-end models (YOLOv10/YOLO26) typically don't need NMS, but we can apply it if needed
-    // applyNMS(detections);
+    applyNMS(detections);
     return detections;
 }
 
@@ -422,6 +422,8 @@ void YoloPostprocessor::applyNMS(std::vector<Detection>& detections) {
 
         for (size_t j = i + 1; j < detections.size(); ++j) {
             if (suppress[j])
+                continue;
+            if (static_cast<int>(detections[i].class_id) != static_cast<int>(detections[j].class_id))
                 continue;
 
             const BoundingBox intersection = detections[i].bbox.intersect(detections[j].bbox);
