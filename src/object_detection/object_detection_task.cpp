@@ -24,6 +24,25 @@ namespace {
 
 enum class SizeInputMode : uint8_t { InputSize, OriginalSize };
 
+bool hasTwoElements(const std::vector<int64_t>& shape) {
+    if (shape.empty()) {
+        return false;
+    }
+
+    int64_t elements = 1;
+    for (const auto dim : shape) {
+        if (dim <= 0) {
+            return false;
+        }
+        elements *= dim;
+    }
+    return elements == 2;
+}
+
+bool isSizeInput(const std::string& input_name, const std::vector<int64_t>& input_shape) {
+    return input_name == "orig_target_sizes" || input_name == "orig_size" || hasTwoElements(input_shape);
+}
+
 std::vector<uint8_t> encodeInt64Pair(int64_t first, int64_t second) {
     std::vector<int64_t> values = {first, second};
     const auto* begin = reinterpret_cast<const uint8_t*>(values.data());
@@ -77,7 +96,7 @@ class ModelInputDetectionPreprocessStrategy final : public DetectionPreprocessSt
 
             if (input_shape.size() >= 3) {
                 results.push_back(preprocessor_->preprocess(img));
-            } else if (input_name == "orig_target_sizes" || input_name == "orig_size") {
+            } else if (isSizeInput(input_name, input_shape)) {
                 if (size_input_mode_ == SizeInputMode::OriginalSize) {
                     results.push_back(encodeInt64Pair(static_cast<int64_t>(img.cols), static_cast<int64_t>(img.rows)));
                 } else {
