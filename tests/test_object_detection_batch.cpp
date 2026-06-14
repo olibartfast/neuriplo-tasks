@@ -36,6 +36,12 @@ ModelInfo multiInputDetectionModelInfo() {
     return info;
 }
 
+ModelInfo genericMultiInputDetectionModelInfo() {
+    ModelInfo info = multiInputDetectionModelInfo();
+    info.input_names = {"input_0", "input_1"};
+    return info;
+}
+
 std::array<int64_t, 2> decodeInt64Pair(const std::vector<uint8_t>& buffer) {
     std::array<int64_t, 2> values{};
     std::memcpy(values.data(), buffer.data(), values.size() * sizeof(int64_t));
@@ -126,6 +132,21 @@ TEST(ObjectDetectionBatchTest, RtDetrPreprocessUsesModelInputSizeMetadata) {
 
 TEST(ObjectDetectionBatchTest, EdgeCrafterPreprocessUsesOriginalImageSizeMetadata) {
     auto task = TaskFactory::createTaskInstance("edgecrafter", multiInputDetectionModelInfo());
+    ASSERT_NE(task, nullptr);
+
+    const auto buffers = task->preprocess({cv::Mat::zeros(123, 456, CV_8UC3)});
+
+    ASSERT_EQ(buffers.size(), 2u);
+    EXPECT_FALSE(buffers[0].empty());
+    ASSERT_EQ(buffers[1].size(), 2u * sizeof(int64_t));
+
+    const auto sizes = decodeInt64Pair(buffers[1]);
+    EXPECT_EQ(sizes[0], 456);
+    EXPECT_EQ(sizes[1], 123);
+}
+
+TEST(ObjectDetectionBatchTest, EdgeCrafterPreprocessUsesShapeWhenSizeInputNameIsGeneric) {
+    auto task = TaskFactory::createTaskInstance("edgecrafter", genericMultiInputDetectionModelInfo());
     ASSERT_NE(task, nullptr);
 
     const auto buffers = task->preprocess({cv::Mat::zeros(123, 456, CV_8UC3)});
