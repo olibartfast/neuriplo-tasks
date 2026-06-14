@@ -6,10 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.4.1] - 2026-06-07
+## [0.4.1] - 2026-06-14
 
 ### Fixed
 - YOLOv10/YOLO26 NMS-free detection now applies class-aware NMS so duplicate TFLite end-to-end detections collapse without suppressing overlapping detections from different classes.
+- Object detection tasks now handle YOLO models with a generic `size` input (no explicit anchor count) without crashing.
 
 ## [0.4.0] - 2026-06-07
 
