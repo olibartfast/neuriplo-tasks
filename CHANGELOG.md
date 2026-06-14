@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-06-14
+
+### Fixed
+- YOLOv10/YOLO26 NMS-free detection now applies class-aware NMS so duplicate TFLite end-to-end detections collapse without suppressing overlapping detections from different classes.
+- Object detection tasks now handle YOLO models with a generic `size` input (no explicit anchor count) without crashing.
+
 ## [0.4.0] - 2026-06-07
 
 ### Changed
@@ -94,7 +100,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - clang-format and clang-tidy configuration
 - CI workflow with lint, static analysis, build, and test jobs
 
-[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.3.2...v0.4.0
+[0.3.2]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.1.0...v0.2.0

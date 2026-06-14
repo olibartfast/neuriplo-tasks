@@ -120,6 +120,45 @@ TEST_F(YoloPostprocessorTest, YoloNmsFreeFormat) {
     EXPECT_EQ(detections[0].bbox, BoundingBox(160, 80, 160, 160));
 }
 
+TEST_F(YoloPostprocessorTest, YoloNmsFreeAppliesNmsPerClass) {
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NMS_FREE, cv::Size(640, 640), 0.25f, 0.45f);
+
+    const int num_dets = 300;
+    const int dims = 6;
+    std::vector<TensorElement> output(num_dets * dims, 0.0f);
+
+    // Overlapping class-1 detections should collapse to the higher score.
+    output[0] = 0.25f;
+    output[1] = 0.25f;
+    output[2] = 0.50f;
+    output[3] = 0.50f;
+    output[4] = 0.90f;
+    output[5] = 1.0f;
+
+    output[6] = 0.26f;
+    output[7] = 0.26f;
+    output[8] = 0.51f;
+    output[9] = 0.51f;
+    output[10] = 0.80f;
+    output[11] = 1.0f;
+
+    // Same box, different class: class-aware NMS should keep it.
+    output[12] = 0.25f;
+    output[13] = 0.25f;
+    output[14] = 0.50f;
+    output[15] = 0.50f;
+    output[16] = 0.70f;
+    output[17] = 2.0f;
+
+    auto detections = processor.postprocess({Tensor(output, {1, num_dets, dims})}, cv::Size(640, 480));
+
+    ASSERT_EQ(detections.size(), 2);
+    EXPECT_EQ(detections[0].class_id, 1);
+    EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.9f);
+    EXPECT_EQ(detections[1].class_id, 2);
+    EXPECT_FLOAT_EQ(detections[1].class_confidence, 0.7f);
+}
+
 TEST_F(YoloPostprocessorTest, YoloNasFormatScalesXyxyFromModelSpace) {
     YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NAS, cv::Size(640, 640), 0.25f, 0.45f);
 
