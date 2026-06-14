@@ -76,7 +76,22 @@ When merging a PR into `develop`, add a line under `[Unreleased]` in the appropr
    git push origin master --tags
    ```
 
-5. **Bump develop** — merge back and set the next dev version:
+5. **Create the GitHub Release** for the tag — **mandatory, never skip**:
+   Extract the release section from `CHANGELOG.md` (everything under
+   `## [X.Y.Z]` down to the next `## [` header) and pass it via `--notes`:
+   ```
+   gh release create v0.2.0 --repo olibartfast/neuriplo-tasks --title "v0.2.0" \
+     --notes "$(sed -n '/^## \[0\.2\.0\]/,/^## \[/{ /^## \[/!p}' CHANGELOG.md | sed '/^$/N;/^\n$/d')"
+   ```
+
+   Never use `--generate-notes` — it produces commit-based notes that bypass
+   the curated `CHANGELOG.md`. The changelog is the single source of truth.
+
+   Every tag must have a corresponding release. There must never be a tag
+   visible on GitHub without a matching release entry. If you discover a
+   missing release (tag exists, release does not), create it immediately.
+
+6. **Bump develop** — merge back and set the next dev version:
    ```
    git checkout develop
    git merge release/0.2.0
