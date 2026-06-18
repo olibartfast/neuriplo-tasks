@@ -25,7 +25,7 @@ class PoseEstimationTask : public TaskInterface {
     std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
 
   private:
-    enum class ModelType : uint8_t { UNKNOWN, YOLO, VITPOSE, EDGECRAFTER };
+    enum class ModelType : uint8_t { RFDETRPOSE, UNKNOWN, YOLO, VITPOSE, EDGECRAFTER };
 
     std::unique_ptr<PosePreprocessStrategy> preprocess_strategy_;
     std::unique_ptr<PosePostprocessor> postprocessor_;

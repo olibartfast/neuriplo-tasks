@@ -2,6 +2,7 @@
 
 #include "neuriplo/tasks/object_detection/detection_preprocessor.hpp"
 #include "neuriplo/tasks/pose_estimation/edgecrafter_pose_postprocessor.hpp"
+#include "neuriplo/tasks/pose_estimation/rfdetr_pose_postprocessor.hpp"
 #include "neuriplo/tasks/pose_estimation/vit_pose_postprocessor.hpp"
 #include "neuriplo/tasks/pose_estimation/yolo_pose_postprocessor.hpp"
 
@@ -26,6 +27,9 @@ std::vector<uint8_t> encodeInt64Pair(int64_t first, int64_t second) {
     const auto* end = begin + values.size() * sizeof(int64_t);
     return {begin, end};
 }
+
+constexpr float kDefaultRfDetrKeypointUncertaintyAlpha = 0.5F;
+constexpr float kDefaultEdgeCrafterKeypointThreshold = 0.3F;
 
 class SingleInputPosePreprocessStrategy final : public PosePreprocessStrategy {
   public:
@@ -119,6 +123,11 @@ PoseEstimationTask::ModelType PoseEstimationTask::detectModelType(const std::str
     std::string lower_name = model_type;
     std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
 
+    if (lower_name.find("rfdetr") == 0 &&
+        (lower_name.find("pose") != std::string::npos || lower_name.find("keypoint") != std::string::npos ||
+         lower_name.find("kpt") != std::string::npos)) {
+        return ModelType::RFDETRPOSE;
+    }
     if (lower_name.find("yolo") == 0) {
         return ModelType::YOLO;
     }
@@ -135,6 +144,9 @@ PoseEstimationTask::ModelType PoseEstimationTask::detectModelType(const std::str
 
 std::unique_ptr<Preprocessor> PoseEstimationTask::createPreprocessor(ModelType type, const cv::Size& input_size) {
     switch (type) {
+    case ModelType::RFDETRPOSE:
+        return std::make_unique<RfDetrPreprocessor>(input_size);
+
     case ModelType::YOLO:
         return std::make_unique<YoloPreprocessor>(input_size);
 
@@ -173,6 +185,10 @@ std::unique_ptr<PosePostprocessor> PoseEstimationTask::createPostprocessor(Model
                                                                            float confidence_threshold,
                                                                            float nms_threshold) {
     switch (type) {
+    case ModelType::RFDETRPOSE:
+        return std::make_unique<RfDetrPosePostprocessor>(input_size, confidence_threshold,
+                                                         kDefaultRfDetrKeypointUncertaintyAlpha);
+
     case ModelType::YOLO:
         return std::make_unique<YoloPosePostprocessor>(input_size, confidence_threshold, nms_threshold);
 
@@ -180,7 +196,8 @@ std::unique_ptr<PosePostprocessor> PoseEstimationTask::createPostprocessor(Model
         return std::make_unique<ViTPosePostprocessor>();
 
     case ModelType::EDGECRAFTER:
-        return std::make_unique<EdgeCrafterPosePostprocessor>(confidence_threshold, 0.3F, model_info_.output_names);
+        return std::make_unique<EdgeCrafterPosePostprocessor>(
+            confidence_threshold, kDefaultEdgeCrafterKeypointThreshold, model_info_.output_names);
 
     default:
         return nullptr;
