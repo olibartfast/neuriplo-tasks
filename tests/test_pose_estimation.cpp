@@ -1,4 +1,5 @@
 #include "neuriplo/tasks/pose_estimation/pose_estimation_task.hpp"
+#include "neuriplo/tasks/pose_estimation/rfdetr_pose_postprocessor.hpp"
 #include "neuriplo/tasks/pose_estimation/vit_pose_postprocessor.hpp"
 #include "neuriplo/tasks/pose_estimation/yolo_pose_postprocessor.hpp"
 
@@ -142,6 +143,164 @@ TEST(PoseEstimationTaskTest, TaskTypeYoloPose) {
 
     // Various YOLO pose name variants
     for (const auto& name : {"yolov8pose", "yolov5pose", "yolov11pose", "yolo26pose"}) {
+        PoseEstimationTask task(info, name);
+        EXPECT_EQ(task.getTaskType(), TaskType::PoseEstimation) << "Failed for: " << name;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// RF-DETR pose postprocessor tests
+// ---------------------------------------------------------------------------
+
+// Helper: build synthetic 3-tensor RF-DETR keypoint output
+// dets: [1, 1, 4], labels: [1, 1, num_classes], keypoints: [1, 1, num_classes*num_kpts, 8]
+static std::vector<Tensor> makeRfDetrPoseTensors(float det_cx, float det_cy, float det_w, float det_h,
+                                                 float person_logit, int num_classes, int num_kpts,
+                                                 const std::vector<float>& keypoint_data) {
+    std::vector<TensorElement> dets(4);
+    dets[0] = det_cx;
+    dets[1] = det_cy;
+    dets[2] = det_w;
+    dets[3] = det_h;
+
+    std::vector<TensorElement> labels(static_cast<size_t>(num_classes), -10.0f);
+    if (num_classes > 1) {
+        labels[1] = person_logit;
+    }
+
+    int keypoint_dim2 = num_classes * num_kpts;
+    size_t kp_total = static_cast<size_t>(keypoint_dim2 * 8);
+    std::vector<TensorElement> kps(kp_total, 0.0f);
+    for (size_t i = 0; i < keypoint_data.size(); ++i) {
+        kps[i] = keypoint_data[i];
+    }
+
+    return {Tensor(dets, {1, 1, 4}), Tensor(labels, {1, 1, static_cast<int64_t>(num_classes)}),
+            Tensor(kps, {1, 1, static_cast<int64_t>(keypoint_dim2), 8})};
+}
+
+TEST(RfDetrPosePostprocessorTest, DetectsSinglePerson) {
+    cv::Size input_size(640, 640);
+    cv::Size frame_size(640, 640);
+
+    RfDetrPosePostprocessor pp(input_size, 0.25f, 0.5f, {0, 17});
+
+    int num_classes = 2;
+    int num_kpts = 17;
+    int keypoint_dim2 = num_classes * num_kpts;
+
+    std::vector<float> kp_data(static_cast<size_t>(keypoint_dim2 * 8), 0.0f);
+
+    // Fill person keypoints at offset num_kpts*8 (class 1)
+    for (int k = 0; k < num_kpts; ++k) {
+        size_t base = static_cast<size_t>(num_kpts + k) * 8;
+        kp_data[base + 0] = 0.5f;
+        kp_data[base + 1] = 0.5f;
+        kp_data[base + 2] = 5.0f;
+        kp_data[base + 3] = 5.0f;
+        kp_data[base + 4] = 0.0f;
+        kp_data[base + 5] = 0.0f;
+        kp_data[base + 6] = 0.0f;
+        kp_data[base + 7] = 0.0f;
+    }
+
+    auto tensors = makeRfDetrPoseTensors(0.5f, 0.5f, 0.25f, 0.25f, 10.0f, num_classes, num_kpts, kp_data);
+    auto results = pp.postprocess(tensors, frame_size, input_size);
+
+    ASSERT_EQ(results.size(), 1u);
+    EXPECT_GT(results[0].score, 0.0f);
+    EXPECT_GT(results[0].bbox.width, 0);
+    EXPECT_GT(results[0].bbox.height, 0);
+    EXPECT_EQ(static_cast<int>(results[0].keypoints.size()), num_kpts);
+
+    // Each keypoint at frame center (320, 320)
+    for (const auto& kp : results[0].keypoints) {
+        EXPECT_NEAR(kp.x, 320.0f, 0.1f);
+        EXPECT_NEAR(kp.y, 320.0f, 0.1f);
+        EXPECT_GT(kp.confidence, 0.5f);
+        EXPECT_GT(kp.visibility, 0.5f);
+    }
+}
+
+TEST(RfDetrPosePostprocessorTest, CovarianceRoundTrips) {
+    cv::Size input_size(640, 640);
+    cv::Size frame_size(640, 640);
+
+    int num_kpts = 1;
+    RfDetrPosePostprocessor pp(input_size, 0.25f, 0.5f, {0, num_kpts});
+
+    int num_classes = 2;
+    int keypoint_dim2 = num_classes * num_kpts;
+
+    std::vector<float> kp_data(static_cast<size_t>(keypoint_dim2 * 8), 0.0f);
+
+    // Single person keypoint with non-trivial Cholesky: L11=2, L21=1, L22=2
+    // → det=16, cov00=5/16=0.3125, cov01=-2/16=-0.125, cov10=-0.125, cov11=4/16=0.25
+    size_t base = static_cast<size_t>(num_kpts) * 8;
+    kp_data[base + 0] = 0.3f;
+    kp_data[base + 1] = 0.6f;
+    kp_data[base + 2] = 5.0f;
+    kp_data[base + 3] = 5.0f;
+    kp_data[base + 4] = std::log(2.0f);
+    kp_data[base + 5] = 1.0f;
+    kp_data[base + 6] = std::log(2.0f);
+    kp_data[base + 7] = 0.0f;
+
+    auto tensors = makeRfDetrPoseTensors(0.5f, 0.5f, 0.25f, 0.25f, 10.0f, num_classes, num_kpts, kp_data);
+    auto results = pp.postprocess(tensors, frame_size, input_size);
+
+    ASSERT_EQ(results.size(), 1u);
+    ASSERT_EQ(results[0].keypoints.size(), 1u);
+
+    const auto& kp = results[0].keypoints[0];
+    EXPECT_NEAR(kp.x, 0.3f * 640.0f, 0.1f);
+    EXPECT_NEAR(kp.y, 0.6f * 640.0f, 0.1f);
+
+    EXPECT_NEAR(kp.covariance[0], 0.3125f, 0.01f);
+    EXPECT_NEAR(kp.covariance[1], -0.125f, 0.01f);
+    EXPECT_NEAR(kp.covariance[2], -0.125f, 0.01f);
+    EXPECT_NEAR(kp.covariance[3], 0.25f, 0.01f);
+
+    // Covariance diagonal entries should be positive
+    EXPECT_GT(kp.covariance[0], 0.0f);
+    EXPECT_GT(kp.covariance[3], 0.0f);
+}
+
+TEST(RfDetrPosePostprocessorTest, FiltersBelowThreshold) {
+    cv::Size input_size(640, 640);
+    cv::Size frame_size(640, 640);
+
+    RfDetrPosePostprocessor pp(input_size, 0.9f, 0.5f, {0, 17});
+
+    int num_classes = 2;
+    int num_kpts = 17;
+    int keypoint_dim2 = num_classes * num_kpts;
+    std::vector<float> kp_data(static_cast<size_t>(keypoint_dim2 * 8), 0.0f);
+
+    auto tensors = makeRfDetrPoseTensors(0.5f, 0.5f, 0.25f, 0.25f, -5.0f, num_classes, num_kpts, kp_data);
+    auto results = pp.postprocess(tensors, frame_size, input_size);
+
+    EXPECT_TRUE(results.empty());
+}
+
+TEST(RfDetrPosePostprocessorTest, EmptyTensorReturnsEmpty) {
+    cv::Size input_size(640, 640);
+    cv::Size frame_size(640, 640);
+
+    RfDetrPosePostprocessor pp(input_size, 0.25f, 0.5f, {0, 17});
+    EXPECT_THROW(pp.postprocess({}, frame_size, input_size), std::runtime_error);
+}
+
+// ---------------------------------------------------------------------------
+// TaskFactory routing test for RF-DETR pose
+// ---------------------------------------------------------------------------
+
+TEST(PoseEstimationTaskTest, TaskTypeRfDetrPose) {
+    ModelInfo info;
+    info.input_shapes = {{1, 3, 640, 640}};
+    info.input_formats = {"FORMAT_NCHW"};
+
+    for (const auto& name : {"rfdetrpose", "rfdetrkeypoint", "rfdetr+kpt", "rfdetr_pose"}) {
         PoseEstimationTask task(info, name);
         EXPECT_EQ(task.getTaskType(), TaskType::PoseEstimation) << "Failed for: " << name;
     }
