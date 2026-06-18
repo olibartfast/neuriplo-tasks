@@ -69,8 +69,7 @@ std::vector<PoseEstimation> RfDetrPosePostprocessor::postprocess(const std::vect
             continue;
         }
 
-        max_class_idx -= 1;
-        if (max_class_idx < 0) {
+        if (max_class_idx < 1) {
             continue;
         }
 
