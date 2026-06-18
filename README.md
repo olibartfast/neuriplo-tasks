@@ -290,13 +290,6 @@ For model download and setup details, see [export/image_understanding/ImageUnder
 - `"grm"` - GRM
 - `"gaussiansplatting"`, any string containing `"splat"` - generic alias
 
-
-EdgeCrafter export and tensor contract details live in the task-specific docs:
-
-- [EdgeCrafter Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/edgecrafter/README.md)
-- [EdgeCrafter Segmentation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/segmentation/edgecrafter/README.md)
-- [EdgeCrafter Pose Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/edgecrafter/README.md)
-
 <!-- TASKFACTORY_MODEL_LIST:END -->
 
 ## Building

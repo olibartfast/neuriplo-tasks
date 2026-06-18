@@ -3,6 +3,7 @@
 #include "neuriplo/tasks/core/bounding_box.hpp"
 #include "neuriplo/tasks/core/image_matrix.hpp"
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -88,6 +89,8 @@ struct Keypoint {
     float x{0.0f};
     float y{0.0f};
     float confidence{0.0f};
+    float visibility{0.0f};
+    std::array<float, 4> covariance{};
 };
 
 /**
