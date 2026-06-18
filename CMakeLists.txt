@@ -93,6 +93,7 @@ set(CORE_SOURCES
     src/pose_estimation/vit_pose_postprocessor.cpp
     src/pose_estimation/yolo_pose_postprocessor.cpp
     src/pose_estimation/edgecrafter_pose_postprocessor.cpp
+    src/pose_estimation/rfdetr_pose_postprocessor.cpp
     src/video_classification/video_classification_task.cpp
     src/video_classification/video_classification_preprocessor.cpp
     src/video_classification/video_classification_postprocessor.cpp
@@ -159,6 +160,7 @@ set(CORE_HEADERS
     include/neuriplo/tasks/pose_estimation/vit_pose_postprocessor.hpp
     include/neuriplo/tasks/pose_estimation/yolo_pose_postprocessor.hpp
     include/neuriplo/tasks/pose_estimation/edgecrafter_pose_postprocessor.hpp
+    include/neuriplo/tasks/pose_estimation/rfdetr_pose_postprocessor.hpp
     include/neuriplo/tasks/video_classification/video_classification_task.hpp
     include/neuriplo/tasks/video_classification/video_classification_preprocessor.hpp
     include/neuriplo/tasks/video_classification/video_classification_postprocessor.hpp

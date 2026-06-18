@@ -88,6 +88,12 @@ const std::vector<TaskDescriptor>& taskDescriptors() {
          [](const std::string& normalized) { return startsWith(normalized, "ecseg"); }, createSegmentationTask},
 
         // Pose before generic YOLO / EdgeCrafter detection.
+        {"RfDetrPose", TaskFamily::PoseEstimation,
+         [](const std::string& normalized) {
+             return startsWith(normalized, "rfdetr") &&
+                    (contains(normalized, "pose") || contains(normalized, "keypoint") || contains(normalized, "kpt"));
+         },
+         createPoseTask},
         {"YoloPose", TaskFamily::PoseEstimation,
          [](const std::string& normalized) { return startsWith(normalized, "yolo") && contains(normalized, "pose"); },
          createPoseTask},

@@ -14,7 +14,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: VideoMAE, ViViT, TimeSformer
 - **Optical Flow**: RAFT
-- **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter
+- **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose
 - **Depth Estimation**: Depth Anything V2
 - **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO
 - **Gaussian Splatting**: LGM, LGM-mini, GRM (feed-forward image → 3D Gaussians)
@@ -255,8 +255,11 @@ Any model type starting with `resnet` (e.g. `resnet50`) or containing `tensorflo
 - `"yolo11pose"`, `"yolo11-pose"` - YOLO11 pose
 - `"yolo26pose"`, `"yolo26-pose"` - YOLO26 pose
 - `"yolov5pose"`, `"yolov5-pose"` - YOLOv5 pose
+- `"rfdetrpose"`, `"rfdetr-pose"`, `"rfdetrkeypoint"`, `"rfdetr-keypoint"`, `"rfdetrkpt"`, `"rfdetr-kpt"` - RF-DETR keypoint pose (single-stage, returns bbox + 17 coco keypoints with visibility and per-keypoint covariance)
 - `"vitpose"` - ViTPose (top-down, heatmap-based)
 - `"ecpose"` - EdgeCrafter pose estimation (any string starting with `ecpose`, or `edgecrafter` and containing `pose`)
+
+RF-DETR keypoint models output per-keypoint visibility and 2×2 pixel covariance (decoded from Cholesky L via the ONNX `log_l11`, `l21`, `log_l22` channels). Keypoints are filtered by an uncertainty-weighted score fusion that discounts high-covariance predictions.
 
 **Depth Estimation:**
 - `"depth_anything_v2"`, `"depth-anything-v2"` - Depth Anything V2

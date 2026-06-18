@@ -75,3 +75,23 @@ cmake configure, build, ctest, clang-format check.
 - Route `rfdetr+pose` before generic `rfdetr`: follows YOLO-pose pattern
 - Covariance always computed: consumers ignore if unneeded
 - `keypoint_counts_` hardcoded to COCO person: sufficient for v1
+
+## Parallelization plan (3 waves)
+
+### Wave 1 (no interdependencies — parallel)
+| Subagent | Steps | Files |
+|----------|-------|-------|
+| A | 3. RfDetrPosePostprocessor impl | `src/pose_estimation/rfdetr_pose_postprocessor.cpp` (new) |
+| B | 4–7. ModelType + wiring (preprocessor, postprocessor, factory) | `pose_estimation_task.cpp`, `task_factory.cpp` |
+| C | 9–10. Export script + export README | `export/pose_estimation/rfdetr/` (new) |
+| D | 11. README.md update | `README.md` |
+
+### Wave 2 (depends on A+B)
+| | Steps | Files |
+|--|-------|-------|
+| | 8. Tests | `tests/test_pose_estimation.cpp` |
+
+### Wave 3 (depends on everything)
+| | Steps | Files |
+|--|-------|-------|
+| | 12. Build & verify | cmake + ctest + clang-format |
