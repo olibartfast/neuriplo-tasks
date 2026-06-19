@@ -164,19 +164,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache OpenCV
-        id: cache-opencv
+      - name: Cache vcpkg installed packages
+        id: cache-vcpkg
         uses: actions/cache@v4
         with:
-          path: C:\opencv
-          key: opencv-4.12.0-windows-msvc-v1
+          path: |
+            C:\vcpkg\installed
+            C:\vcpkg\packages
+          key: vcpkg-opencv4-x64-windows-v1
 
-      - name: Install OpenCV (pre-built)
-        if: steps.cache-opencv.outputs.cache-hit != 'true'
+      - name: Install OpenCV via vcpkg
+        if: steps.cache-vcpkg.outputs.cache-hit != 'true'
         shell: pwsh
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/opencv/opencv/releases/download/4.12.0/opencv-4.12.0-windows.exe" -OutFile opencv.exe
-          7z x opencv.exe -oC:\opencv -y
+        run: vcpkg install opencv4:x64-windows --recurse
 
       - name: Configure CMake
         shell: pwsh
@@ -184,7 +184,7 @@ jobs:
           cmake -S . -B build `
             -DBUILD_TESTS=ON `
             -DWERROR=ON `
-            -DOpenCV_DIR="C:\opencv\opencv\build"
+            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake"
 
       - name: Build (Release)
         run: cmake --build build --config Release --parallel
