@@ -182,8 +182,8 @@ jobs:
         shell: pwsh
         run: |
           cmake -S . -B build `
-            -G "Visual Studio 17 2022" -A x64 `
             -DBUILD_TESTS=ON `
+            -DWERROR=ON `
             -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake"
 
       - name: Build (Release)
