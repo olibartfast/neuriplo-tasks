@@ -337,6 +337,13 @@ find src include tests -name '*.cpp' -o -name '*.hpp' | \
 The `format_on_edit.sh` hook does this automatically for Claude Code edits,
 but running it manually is the safest gate before `git commit`.
 
+### Hyperlink verification
+
+When editing `README.md` or any documentation with hyperlinks:
+- Verify all relative links resolve to existing files in the repo (`ls <path>`).
+- Verify absolute GitHub URLs are reachable (use `curl -sI <url>` or a quick fetch).
+- Prefer absolute GitHub blob/tree URLs over fragile cross-repo relative paths (e.g. `../../../neuriplo/docs/foo.md`).
+
 ### Update README.md when adding a new task type
 
 When adding a new task type to `TaskFactory`, **always update ALL of the following in `README.md`**:
