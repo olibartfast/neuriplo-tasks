@@ -9,7 +9,7 @@ single PR or commit series: build alone, tests green, no unrelated churn.
 |----------|--------|
 | [batch_support_matrix.md](./batch_support_matrix.md) | Per-family batch readiness (B0 audit) |
 | [batch_processing.md](./batch_processing.md) | Consumer migration guide (B6) |
-| [task_refactor_atomic_plan.md](./task_refactor_atomic_plan.md) | Factory registry, strategies, `visitResult`, composite pipelines |
+| [task_refactor_atomic_plan.md](./plans/task_refactor_atomic_plan.md) | Factory registry, strategies, `visitResult`, composite pipelines |
 | [Versioning.md](./Versioning.md) | Release and changelog workflow |
 | [AGENTS.md](../AGENTS.md) | CI gate, contracts, coding rules |
 
