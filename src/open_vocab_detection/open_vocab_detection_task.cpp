@@ -175,14 +175,20 @@ std::pair<std::vector<int32_t>, std::vector<int32_t>> OpenVocabDetectionTask::en
 }
 
 std::vector<std::vector<uint8_t>> OpenVocabDetectionTask::preprocess(const std::vector<cv::Mat>& imgs) {
-    if (imgs.empty() || imgs[0].empty()) {
-        throw std::invalid_argument("Empty input image provided");
+    for (const auto& img : imgs) {
+        if (img.empty()) {
+            throw std::invalid_argument("Empty input image provided");
+        }
     }
 
-    const cv::Mat& image = imgs[0];
     std::vector<std::vector<uint8_t>> results;
     if (model_info_.input_shapes.empty()) {
-        results.push_back(image_preprocessor_->preprocess(image));
+        std::vector<uint8_t> batched;
+        for (const auto& img : imgs) {
+            auto buf = image_preprocessor_->preprocess(img);
+            batched.insert(batched.end(), buf.begin(), buf.end());
+        }
+        results.push_back(std::move(batched));
         return results;
     }
 
@@ -192,7 +198,7 @@ std::vector<std::vector<uint8_t>> OpenVocabDetectionTask::preprocess(const std::
     std::vector<int32_t> attention_mask;
     bool needs_text_inputs = false;
 
-    // Determine text-input context length and encode prompts
+    // Determine text-input context length and encode prompts (shared across all images in batch)
     for (size_t index = 0; index < model_info_.input_shapes.size(); ++index) {
         const std::string input_name = index < model_info_.input_names.size() ? model_info_.input_names[index] : "";
         const std::string normalized = normalizeModelName(input_name);
@@ -203,7 +209,6 @@ std::vector<std::vector<uint8_t>> OpenVocabDetectionTask::preprocess(const std::
                                            : config_.max_text_queries;
 
             if (model_type_ == ModelType::GroundingDino && bert_tokenizer_) {
-                // Grounding DINO: encode all phrases as a single concatenated sequence
                 const std::vector<std::string> prompts = extractPrompts(config_);
                 if (!prompts.empty()) {
                     auto encoded = bert_tokenizer_->encodePhrases(prompts, context_length);
@@ -211,7 +216,6 @@ std::vector<std::vector<uint8_t>> OpenVocabDetectionTask::preprocess(const std::
                     attention_mask = std::move(encoded.attention_mask);
                 }
             } else {
-                // OWL-ViT / OWLv2: encode each prompt independently (CLIP tokenizer)
                 const auto encoded = encodePrompts(context_length);
                 input_ids = encoded.first;
                 attention_mask = encoded.second;
@@ -238,13 +242,17 @@ std::vector<std::vector<uint8_t>> OpenVocabDetectionTask::preprocess(const std::
         const std::string normalized = normalizeModelName(input_name);
 
         if (isImageInput(input_name, input_shape)) {
-            results.push_back(image_preprocessor_->preprocess(image));
+            std::vector<uint8_t> batched;
+            for (const auto& img : imgs) {
+                auto buf = image_preprocessor_->preprocess(img);
+                batched.insert(batched.end(), buf.begin(), buf.end());
+            }
+            results.push_back(std::move(batched));
         } else if (normalized.find("inputids") != std::string::npos) {
             results.push_back(toByteBuffer(input_ids));
         } else if (normalized.find("attentionmask") != std::string::npos) {
             results.push_back(toByteBuffer(attention_mask));
         } else if (normalized.find("tokentypeids") != std::string::npos) {
-            // All-zero token type IDs required by some models (e.g. Grounding DINO)
             results.push_back(toByteBuffer(std::vector<int32_t>(input_ids.size(), 0)));
         } else {
             results.emplace_back();

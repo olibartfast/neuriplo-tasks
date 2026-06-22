@@ -74,32 +74,42 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETR(const Tensor& scor
         return {};
     }
 
-    int num_dets = static_cast<int>(scores.shape[1]);
+    const int batch = static_cast<int>(scores.shape[0]);
+    const int num_dets = static_cast<int>(scores.shape[1]);
+    const size_t batch_scores_stride = static_cast<size_t>(num_dets);
+    const size_t batch_boxes_stride = static_cast<size_t>(num_dets) * 4;
+    const size_t batch_labels_stride = static_cast<size_t>(num_dets);
 
     float r_w = static_cast<float>(frame_size.width) / static_cast<float>(input_size_.width);
     float r_h = static_cast<float>(frame_size.height) / static_cast<float>(input_size_.height);
 
-    for (int i = 0; i < num_dets; ++i) {
-        float score = tensorElementToFloat(scores.data[static_cast<size_t>(i)]);
+    for (int b = 0; b < batch; ++b) {
+        const size_t scores_batch_offset = static_cast<size_t>(b) * batch_scores_stride;
+        const size_t boxes_batch_offset = static_cast<size_t>(b) * batch_boxes_stride;
+        const size_t labels_batch_offset = static_cast<size_t>(b) * batch_labels_stride;
 
-        if (score < confidence_threshold_)
-            continue;
+        for (int i = 0; i < num_dets; ++i) {
+            float score = tensorElementToFloat(scores.data[scores_batch_offset + static_cast<size_t>(i)]);
 
-        int class_id = tensorElementToInt(labels.data[static_cast<size_t>(i)]);
-        if (class_id < 0)
-            continue;
+            if (score < confidence_threshold_)
+                continue;
 
-        float x1 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 0)]) * r_w;
-        float y1 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 1)]) * r_h;
-        float x2 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 2)]) * r_w;
-        float y2 = tensorElementToFloat(boxes.data[static_cast<size_t>(i * 4 + 3)]) * r_h;
+            int class_id = tensorElementToInt(labels.data[labels_batch_offset + static_cast<size_t>(i)]);
+            if (class_id < 0)
+                continue;
 
-        Detection det;
-        det.class_id = static_cast<float>(class_id);
-        det.class_confidence = score;
-        det.bbox = fromCvRect(cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
-                                       cv::Point(static_cast<int>(x2), static_cast<int>(y2))));
-        detections.push_back(det);
+            float x1 = tensorElementToFloat(boxes.data[boxes_batch_offset + static_cast<size_t>(i * 4 + 0)]) * r_w;
+            float y1 = tensorElementToFloat(boxes.data[boxes_batch_offset + static_cast<size_t>(i * 4 + 1)]) * r_h;
+            float x2 = tensorElementToFloat(boxes.data[boxes_batch_offset + static_cast<size_t>(i * 4 + 2)]) * r_w;
+            float y2 = tensorElementToFloat(boxes.data[boxes_batch_offset + static_cast<size_t>(i * 4 + 3)]) * r_h;
+
+            Detection det;
+            det.class_id = static_cast<float>(class_id);
+            det.class_confidence = score;
+            det.bbox = fromCvRect(cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
+                                           cv::Point(static_cast<int>(x2), static_cast<int>(y2))));
+            detections.push_back(det);
+        }
     }
 
     return detections;
@@ -112,43 +122,50 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(const Tensor& ou
     if (output.shape.size() < 3)
         return {};
 
-    int num_dets = static_cast<int>(output.shape[1]);
-    int dims = static_cast<int>(output.shape[2]);
-    int num_classes = dims - 4;
+    const int batch = static_cast<int>(output.shape[0]);
+    const int num_dets = static_cast<int>(output.shape[1]);
+    const int dims = static_cast<int>(output.shape[2]);
+    const int num_classes = dims - 4;
 
     if (num_classes <= 0)
         return {};
 
+    const size_t batch_stride = static_cast<size_t>(num_dets) * static_cast<size_t>(dims);
+
     float r_w = static_cast<float>(frame_size.width) / static_cast<float>(input_size_.width);
     float r_h = static_cast<float>(frame_size.height) / static_cast<float>(input_size_.height);
 
-    for (int i = 0; i < num_dets; ++i) {
-        int offset = i * dims;
+    for (int b = 0; b < batch; ++b) {
+        const size_t batch_offset = static_cast<size_t>(b) * batch_stride;
 
-        float max_score = 0.0f;
-        int class_id = -1;
-        for (int c = 0; c < num_classes; ++c) {
-            float score = tensorElementToFloat(output.data[static_cast<size_t>(offset + 4 + c)]);
-            if (score > max_score) {
-                max_score = score;
-                class_id = c;
+        for (int i = 0; i < num_dets; ++i) {
+            size_t offset = batch_offset + static_cast<size_t>(i) * static_cast<size_t>(dims);
+
+            float max_score = 0.0f;
+            int class_id = -1;
+            for (int c = 0; c < num_classes; ++c) {
+                float score = tensorElementToFloat(output.data[offset + 4 + static_cast<size_t>(c)]);
+                if (score > max_score) {
+                    max_score = score;
+                    class_id = c;
+                }
             }
+
+            if (max_score < confidence_threshold_)
+                continue;
+
+            float x1 = tensorElementToFloat(output.data[offset + 0]) * r_w;
+            float y1 = tensorElementToFloat(output.data[offset + 1]) * r_h;
+            float x2 = tensorElementToFloat(output.data[offset + 2]) * r_w;
+            float y2 = tensorElementToFloat(output.data[offset + 3]) * r_h;
+
+            Detection det;
+            det.class_id = static_cast<float>(class_id);
+            det.class_confidence = max_score;
+            det.bbox = fromCvRect(cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
+                                           cv::Point(static_cast<int>(x2), static_cast<int>(y2))));
+            detections.push_back(det);
         }
-
-        if (max_score < confidence_threshold_)
-            continue;
-
-        float x1 = tensorElementToFloat(output.data[static_cast<size_t>(offset + 0)]) * r_w;
-        float y1 = tensorElementToFloat(output.data[static_cast<size_t>(offset + 1)]) * r_h;
-        float x2 = tensorElementToFloat(output.data[static_cast<size_t>(offset + 2)]) * r_w;
-        float y2 = tensorElementToFloat(output.data[static_cast<size_t>(offset + 3)]) * r_h;
-
-        Detection det;
-        det.class_id = static_cast<float>(class_id);
-        det.class_confidence = max_score;
-        det.bbox = fromCvRect(cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
-                                       cv::Point(static_cast<int>(x2), static_cast<int>(y2))));
-        detections.push_back(det);
     }
 
     return detections;

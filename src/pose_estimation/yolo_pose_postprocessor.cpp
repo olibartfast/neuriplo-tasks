@@ -88,8 +88,9 @@ std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector
     if (shape.size() < 3)
         return {};
 
-    int dim1 = static_cast<int>(shape[1]);
-    int dim2 = static_cast<int>(shape[2]);
+    const int batch = static_cast<int>(shape[0]);
+    const int dim1 = static_cast<int>(shape[1]);
+    const int dim2 = static_cast<int>(shape[2]);
 
     // YOLOv5 (with objectness): [batch, anchors, channels] → dim2 < dim1
     // YOLOv8+  (no objectness): [batch, channels, anchors] → dim1 < dim2
@@ -97,6 +98,7 @@ std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector
 
     int channels = has_objectness ? dim2 : dim1;
     int anchors = has_objectness ? dim1 : dim2;
+    const size_t batch_stride = static_cast<size_t>(channels) * static_cast<size_t>(anchors);
 
     // Determine keypoint layout:
     //   Format A: 4 bbox + 1 conf + 3*kpts          → kpts_start = 5
@@ -116,63 +118,72 @@ std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector
 
     std::vector<PoseEstimation> poses;
 
-    for (int i = 0; i < anchors; ++i) {
-        float conf = 0.0f;
-        float cx, cy, w, h;
+    for (int b = 0; b < batch; ++b) {
+        const size_t batch_offset = static_cast<size_t>(b) * batch_stride;
 
-        if (has_objectness) {
-            float obj = tensorElementToFloat(data[static_cast<size_t>(i * channels + 4)]);
-            if (obj < confidence_threshold_)
-                continue;
+        for (int i = 0; i < anchors; ++i) {
+            float conf = 0.0f;
+            float cx, cy, w, h;
 
-            if (kpts_start == 6) {
-                // Separate class score (YOLOv5 with single person class)
-                float cls = tensorElementToFloat(data[static_cast<size_t>(i * channels + 5)]);
-                conf = obj * cls;
-            } else {
-                conf = obj;
-            }
-
-            if (conf < confidence_threshold_)
-                continue;
-
-            cx = tensorElementToFloat(data[static_cast<size_t>(i * channels + 0)]);
-            cy = tensorElementToFloat(data[static_cast<size_t>(i * channels + 1)]);
-            w = tensorElementToFloat(data[static_cast<size_t>(i * channels + 2)]);
-            h = tensorElementToFloat(data[static_cast<size_t>(i * channels + 3)]);
-        } else {
-            conf = tensorElementToFloat(data[static_cast<size_t>(4 * anchors + i)]);
-            if (conf < confidence_threshold_)
-                continue;
-
-            cx = tensorElementToFloat(data[static_cast<size_t>(0 * anchors + i)]);
-            cy = tensorElementToFloat(data[static_cast<size_t>(1 * anchors + i)]);
-            w = tensorElementToFloat(data[static_cast<size_t>(2 * anchors + i)]);
-            h = tensorElementToFloat(data[static_cast<size_t>(3 * anchors + i)]);
-        }
-
-        PoseEstimation pose;
-        pose.score = conf;
-        pose.bbox = fromCvRect(scaleBoxToOriginal(cx, cy, w, h, original_size));
-
-        pose.keypoints.reserve(static_cast<size_t>(num_kpts));
-        for (int j = 0; j < num_kpts; ++j) {
-            float kx, ky, kconf;
             if (has_objectness) {
-                kx = tensorElementToFloat(data[static_cast<size_t>(i * channels + kpts_start + j * 3 + 0)]);
-                ky = tensorElementToFloat(data[static_cast<size_t>(i * channels + kpts_start + j * 3 + 1)]);
-                kconf = tensorElementToFloat(data[static_cast<size_t>(i * channels + kpts_start + j * 3 + 2)]);
+                float obj = tensorElementToFloat(data[batch_offset + static_cast<size_t>(i * channels + 4)]);
+                if (obj < confidence_threshold_)
+                    continue;
+
+                if (kpts_start == 6) {
+                    float cls = tensorElementToFloat(data[batch_offset + static_cast<size_t>(i * channels + 5)]);
+                    conf = obj * cls;
+                } else {
+                    conf = obj;
+                }
+
+                if (conf < confidence_threshold_)
+                    continue;
+
+                cx = tensorElementToFloat(data[batch_offset + static_cast<size_t>(i * channels + 0)]);
+                cy = tensorElementToFloat(data[batch_offset + static_cast<size_t>(i * channels + 1)]);
+                w = tensorElementToFloat(data[batch_offset + static_cast<size_t>(i * channels + 2)]);
+                h = tensorElementToFloat(data[batch_offset + static_cast<size_t>(i * channels + 3)]);
             } else {
-                kx = tensorElementToFloat(data[static_cast<size_t>((kpts_start + j * 3 + 0) * anchors + i)]);
-                ky = tensorElementToFloat(data[static_cast<size_t>((kpts_start + j * 3 + 1) * anchors + i)]);
-                kconf = tensorElementToFloat(data[static_cast<size_t>((kpts_start + j * 3 + 2) * anchors + i)]);
+                conf = tensorElementToFloat(data[batch_offset + static_cast<size_t>(4 * anchors + i)]);
+                if (conf < confidence_threshold_)
+                    continue;
+
+                cx = tensorElementToFloat(data[batch_offset + static_cast<size_t>(0 * anchors + i)]);
+                cy = tensorElementToFloat(data[batch_offset + static_cast<size_t>(1 * anchors + i)]);
+                w = tensorElementToFloat(data[batch_offset + static_cast<size_t>(2 * anchors + i)]);
+                h = tensorElementToFloat(data[batch_offset + static_cast<size_t>(3 * anchors + i)]);
             }
 
-            cv::Point2f scaled = scaleKptToOriginal(kx, ky, original_size);
-            pose.keypoints.push_back({scaled.x, scaled.y, kconf});
-        }
+            PoseEstimation pose;
+            pose.score = conf;
+            pose.bbox = fromCvRect(scaleBoxToOriginal(cx, cy, w, h, original_size));
 
-        poses.push_back(std::move(pose));
+            pose.keypoints.reserve(static_cast<size_t>(num_kpts));
+            for (int j = 0; j < num_kpts; ++j) {
+                float kx, ky, kconf;
+                if (has_objectness) {
+                    kx = tensorElementToFloat(
+                        data[batch_offset + static_cast<size_t>(i * channels + kpts_start + j * 3 + 0)]);
+                    ky = tensorElementToFloat(
+                        data[batch_offset + static_cast<size_t>(i * channels + kpts_start + j * 3 + 1)]);
+                    kconf = tensorElementToFloat(
+                        data[batch_offset + static_cast<size_t>(i * channels + kpts_start + j * 3 + 2)]);
+                } else {
+                    kx = tensorElementToFloat(
+                        data[batch_offset + static_cast<size_t>((kpts_start + j * 3 + 0) * anchors + i)]);
+                    ky = tensorElementToFloat(
+                        data[batch_offset + static_cast<size_t>((kpts_start + j * 3 + 1) * anchors + i)]);
+                    kconf = tensorElementToFloat(
+                        data[batch_offset + static_cast<size_t>((kpts_start + j * 3 + 2) * anchors + i)]);
+                }
+
+                cv::Point2f scaled = scaleKptToOriginal(kx, ky, original_size);
+                pose.keypoints.push_back({scaled.x, scaled.y, kconf});
+            }
+
+            poses.push_back(std::move(pose));
+        }
     }
 
     applyNMS(poses);

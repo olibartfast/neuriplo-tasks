@@ -37,53 +37,67 @@ std::vector<PoseEstimation> EdgeCrafterPosePostprocessor::postprocess(const std:
         return {};
     }
 
-    int num_dets = static_cast<int>(scores_tensor.shape[1]);
-    int num_kpts = static_cast<int>(keypoints_tensor.shape[2]);
-    int kpt_dim = static_cast<int>(keypoints_tensor.shape[3]);
+    const int batch = static_cast<int>(scores_tensor.shape[0]);
+    const int num_dets = static_cast<int>(scores_tensor.shape[1]);
+    const int num_kpts = static_cast<int>(keypoints_tensor.shape[2]);
+    const int kpt_dim = static_cast<int>(keypoints_tensor.shape[3]);
 
     if (kpt_dim != 2 && kpt_dim != 3) {
         return {};
     }
 
+    const size_t batch_scores_stride = static_cast<size_t>(num_dets);
+    const size_t batch_keypoints_stride =
+        static_cast<size_t>(num_dets) * static_cast<size_t>(num_kpts) * static_cast<size_t>(kpt_dim);
+    const size_t batch_labels_stride = static_cast<size_t>(num_dets);
+
     std::vector<PoseEstimation> poses;
-    poses.reserve(static_cast<size_t>(num_dets));
+    poses.reserve(static_cast<size_t>(batch * num_dets));
 
     static constexpr int kLabelOffset = -1;
 
-    for (int i = 0; i < num_dets; ++i) {
-        float score = tensorElementToFloat(scores_tensor.data[static_cast<size_t>(i)]);
+    for (int b = 0; b < batch; ++b) {
+        const size_t scores_batch_offset = static_cast<size_t>(b) * batch_scores_stride;
+        const size_t keypoints_batch_offset = static_cast<size_t>(b) * batch_keypoints_stride;
+        const size_t labels_batch_offset = static_cast<size_t>(b) * batch_labels_stride;
 
-        if (score < confidence_threshold_) {
-            continue;
+        for (int i = 0; i < num_dets; ++i) {
+            float score = tensorElementToFloat(scores_tensor.data[scores_batch_offset + static_cast<size_t>(i)]);
+
+            if (score < confidence_threshold_) {
+                continue;
+            }
+
+            int class_id =
+                tensorElementToInt(labels_tensor.data[labels_batch_offset + static_cast<size_t>(i)]) + kLabelOffset;
+            if (class_id < 0) {
+                continue;
+            }
+
+            PoseEstimation pose;
+            pose.score = score;
+            pose.bbox = {};
+
+            pose.keypoints.reserve(static_cast<size_t>(num_kpts));
+            const size_t detection_offset = keypoints_batch_offset + static_cast<size_t>(i) *
+                                                                         static_cast<size_t>(num_kpts) *
+                                                                         static_cast<size_t>(kpt_dim);
+            for (int k = 0; k < num_kpts; ++k) {
+                const size_t keypoint_offset = detection_offset + static_cast<size_t>(k) * static_cast<size_t>(kpt_dim);
+                float kx = tensorElementToFloat(keypoints_tensor.data[keypoint_offset + 0U]);
+                float ky = tensorElementToFloat(keypoints_tensor.data[keypoint_offset + 1U]);
+                float kconf = kpt_dim == 3 ? tensorElementToFloat(keypoints_tensor.data[keypoint_offset + 2U]) : 1.0F;
+
+                Keypoint kp;
+                kp.x = kx;
+                kp.y = ky;
+                kp.confidence = kconf;
+                pose.keypoints.push_back(kp);
+            }
+
+            deriveBboxFromKeypoints(pose);
+            poses.push_back(std::move(pose));
         }
-
-        int class_id = tensorElementToInt(labels_tensor.data[static_cast<size_t>(i)]) + kLabelOffset;
-        if (class_id < 0) {
-            continue;
-        }
-
-        PoseEstimation pose;
-        pose.score = score;
-        pose.bbox = {};
-
-        pose.keypoints.reserve(static_cast<size_t>(num_kpts));
-        const size_t detection_offset =
-            static_cast<size_t>(i) * static_cast<size_t>(num_kpts) * static_cast<size_t>(kpt_dim);
-        for (int k = 0; k < num_kpts; ++k) {
-            const size_t keypoint_offset = detection_offset + static_cast<size_t>(k) * static_cast<size_t>(kpt_dim);
-            float kx = tensorElementToFloat(keypoints_tensor.data[keypoint_offset + 0U]);
-            float ky = tensorElementToFloat(keypoints_tensor.data[keypoint_offset + 1U]);
-            float kconf = kpt_dim == 3 ? tensorElementToFloat(keypoints_tensor.data[keypoint_offset + 2U]) : 1.0F;
-
-            Keypoint kp;
-            kp.x = kx;
-            kp.y = ky;
-            kp.confidence = kconf;
-            pose.keypoints.push_back(kp);
-        }
-
-        deriveBboxFromKeypoints(pose);
-        poses.push_back(std::move(pose));
     }
 
     return poses;
