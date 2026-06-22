@@ -161,7 +161,7 @@ cppcheck --enable=warning --std=c++17 \
 Atomic roadmap (batch utilities, refactor phases, composite pipelines):
 [`docs/ROADMAP.md`](./docs/ROADMAP.md). Batch readiness audit (B0):
 [`docs/batch_support_matrix.md`](./docs/batch_support_matrix.md). Factory/strategy
-refactor detail: [`docs/task_refactor_atomic_plan.md`](./docs/task_refactor_atomic_plan.md).
+refactor detail: [`docs/plans/task_refactor_atomic_plan.md`](./docs/plans/task_refactor_atomic_plan.md).
 
 ### Core abstractions (`include/neuriplo/tasks/core/`)
 

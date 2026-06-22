@@ -441,9 +441,8 @@ MIT License
 
 ## Roadmap
 
-Planned work is broken into atomic steps in **[docs/ROADMAP.md](docs/ROADMAP.md)**
-(factory refactor, batch utilities, composite pipelines). Batch consumer guide:
-**[docs/batch_processing.md](docs/batch_processing.md)**. Per-task-family readiness:
-**[docs/batch_support_matrix.md](docs/batch_support_matrix.md)**.
-Task-level refactor detail remains in
-**[docs/task_refactor_atomic_plan.md](docs/task_refactor_atomic_plan.md)**.
+Atomic execution plan and status tracking in **[docs/ROADMAP.md](docs/ROADMAP.md)**
+— factory refactor (Done), Track B batch utilities (Done), composite pipelines (Done).
+Batch consumer guide: **[docs/batch_processing.md](docs/batch_processing.md)**.
+Per-task-family batch readiness: **[docs/batch_support_matrix.md](docs/batch_support_matrix.md)**.
+Task-level refactor detail: **[docs/plans/task_refactor_atomic_plan.md](docs/plans/task_refactor_atomic_plan.md)**.
