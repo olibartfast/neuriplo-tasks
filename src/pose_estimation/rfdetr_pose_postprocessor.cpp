@@ -145,6 +145,7 @@ std::vector<PoseEstimation> RfDetrPosePostprocessor::postprocess(const std::vect
         if (num_kpts > 0 && trace_sum > 0.0f) {
             float trace_avg = trace_sum / static_cast<float>(num_kpts);
             float uncertainty_reduction = std::exp(-keypoint_uncertainty_alpha_ * std::log(trace_avg));
+            uncertainty_reduction = std::min(1.0f, uncertainty_reduction);
             final_score = max_score * uncertainty_reduction;
         }
 
