@@ -1,6 +1,6 @@
-# Batch support matrix (B6 audit)
+# Batch support matrix ([B6](./ROADMAP.md#b6) audit)
 
-Hand-maintained audit of built-in `TaskFactory` families as of **Track B6**
+Hand-maintained audit of built-in `TaskFactory` families as of **Track [B6](./ROADMAP.md#b6)**
 (all batch utilities landed; domain adoption complete for classification,
 detection, depth, and pose). Consumer adoption flow: [batch_processing.md](./batch_processing.md).
 
@@ -154,7 +154,7 @@ Tests default `batch_size_ = 1` (`tests/test_task_factory.cpp`, `tests/test_read
 
 ---
 
-## Domain adoption summary (B4/B5)
+## Domain adoption summary ([B4](./ROADMAP.md#b4)/[B5](./ROADMAP.md#b5))
 
 | Domain | Batch preprocess | Batch postprocess | Integration test | Status |
 |--------|-----------------|-------------------|-----------------|--------|
@@ -183,4 +183,4 @@ Update this file when:
 - A new `TaskFactory` family is registered.
 - A domain moves from **Partial** to **Ready** (both preprocess and postprocess columns become Yes).
 
-**B6 stop criteria:** met — B0 audit complete, B1–B3 utilities landed, B4 domain adoption complete, B5 integration tests pass, B6 consumer guide published.
+**[B6](./ROADMAP.md#b6) stop criteria:** met — [B0](./ROADMAP.md#b0) audit complete, [B1](./ROADMAP.md#b1)–[B3](./ROADMAP.md#b3) utilities landed, [B4](./ROADMAP.md#b4) domain adoption complete, [B5](./ROADMAP.md#b5) integration tests pass, [B6](./ROADMAP.md#b6) consumer guide published.
