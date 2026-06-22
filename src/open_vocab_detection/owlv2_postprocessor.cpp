@@ -82,70 +82,80 @@ std::vector<OpenVocabDetection> OWLv2Postprocessor::postprocess(const std::vecto
         return results;
     }
 
-    const int64_t num_boxes = boxes.shape.size() >= 2 ? boxes.shape[boxes.shape.size() - 2] : 0;
+    const int64_t batch = boxes.shape.size() >= 3 ? boxes.shape[0] : 1;
+    const int64_t num_boxes = boxes.shape[boxes.shape.size() - 2];
     const int64_t box_dims = boxes.shape.back();
     const int64_t num_prompts = logits.shape.back();
     if (num_boxes <= 0 || box_dims != 4 || num_prompts <= 0) {
         return results;
     }
 
-    const size_t boxes_per_item = static_cast<size_t>(num_boxes * box_dims);
-    const size_t logits_per_item = static_cast<size_t>(num_boxes * num_prompts);
-    if (boxes.data.size() < boxes_per_item || logits.data.size() < logits_per_item) {
+    const size_t batch_boxes_stride = static_cast<size_t>(num_boxes) * static_cast<size_t>(box_dims);
+    const size_t batch_logits_stride = static_cast<size_t>(num_boxes) * static_cast<size_t>(num_prompts);
+    const size_t boxes_needed = static_cast<size_t>(batch) * batch_boxes_stride;
+    const size_t logits_needed = static_cast<size_t>(batch) * batch_logits_stride;
+    if (boxes.data.size() < boxes_needed || logits.data.size() < logits_needed) {
         return results;
     }
 
-    for (int64_t box_index = 0; box_index < num_boxes; ++box_index) {
-        float best_score = -std::numeric_limits<float>::infinity();
-        int best_prompt_index = -1;
+    for (int64_t b = 0; b < batch; ++b) {
+        const size_t boxes_batch_offset = static_cast<size_t>(b) * batch_boxes_stride;
+        const size_t logits_batch_offset = static_cast<size_t>(b) * batch_logits_stride;
 
-        for (int64_t prompt_index = 0; prompt_index < num_prompts; ++prompt_index) {
-            const size_t offset = static_cast<size_t>(box_index * num_prompts + prompt_index);
-            const float score = sigmoid(tensorElementToFloat(logits.data[offset]));
-            if (score > best_score) {
-                best_score = score;
-                best_prompt_index = static_cast<int>(prompt_index);
+        for (int64_t box_index = 0; box_index < num_boxes; ++box_index) {
+            float best_score = -std::numeric_limits<float>::infinity();
+            int best_prompt_index = -1;
+
+            for (int64_t prompt_index = 0; prompt_index < num_prompts; ++prompt_index) {
+                const size_t offset = logits_batch_offset + static_cast<size_t>(box_index * num_prompts + prompt_index);
+                const float score = sigmoid(tensorElementToFloat(logits.data[offset]));
+                if (score > best_score) {
+                    best_score = score;
+                    best_prompt_index = static_cast<int>(prompt_index);
+                }
             }
+
+            const size_t objectness_index =
+                static_cast<size_t>(b) * static_cast<size_t>(num_boxes) + static_cast<size_t>(box_index);
+            if (objectness_ptr != nullptr && !objectness_ptr->shape.empty() &&
+                objectness_ptr->data.size() > objectness_index) {
+                best_score *= sigmoid(tensorElementToFloat(objectness_ptr->data[objectness_index]));
+            }
+
+            if (best_score < confidence_threshold_ || best_score < text_threshold_) {
+                continue;
+            }
+
+            const size_t box_offset = boxes_batch_offset + static_cast<size_t>(box_index * 4);
+            float center_x = tensorElementToFloat(boxes.data[box_offset]);
+            float center_y = tensorElementToFloat(boxes.data[box_offset + 1]);
+            float width = tensorElementToFloat(boxes.data[box_offset + 2]);
+            float height = tensorElementToFloat(boxes.data[box_offset + 3]);
+
+            // OWL-style exports commonly emit normalized cx, cy, w, h.
+            if (std::max({std::fabs(center_x), std::fabs(center_y), std::fabs(width), std::fabs(height)}) <= 1.5F) {
+                center_x *= static_cast<float>(frame_size.width);
+                center_y *= static_cast<float>(frame_size.height);
+                width *= static_cast<float>(frame_size.width);
+                height *= static_cast<float>(frame_size.height);
+            } else if (input_size_.width > 0 && input_size_.height > 0 &&
+                       (frame_size.width != input_size_.width || frame_size.height != input_size_.height)) {
+                const float scale_x = static_cast<float>(frame_size.width) / static_cast<float>(input_size_.width);
+                const float scale_y = static_cast<float>(frame_size.height) / static_cast<float>(input_size_.height);
+                center_x *= scale_x;
+                center_y *= scale_y;
+                width *= scale_x;
+                height *= scale_y;
+            }
+
+            std::string label;
+            if (best_prompt_index >= 0 && static_cast<size_t>(best_prompt_index) < prompt_labels_.size()) {
+                label = prompt_labels_[static_cast<size_t>(best_prompt_index)];
+            }
+
+            results.emplace_back(fromCvRect(makeRectFromCenterBox(center_x, center_y, width, height, frame_size)),
+                                 best_score, best_prompt_index, std::move(label));
         }
-
-        if (objectness_ptr != nullptr && !objectness_ptr->shape.empty() &&
-            objectness_ptr->data.size() > static_cast<size_t>(box_index)) {
-            best_score *= sigmoid(tensorElementToFloat(objectness_ptr->data[static_cast<size_t>(box_index)]));
-        }
-
-        if (best_score < confidence_threshold_ || best_score < text_threshold_) {
-            continue;
-        }
-
-        const size_t box_offset = static_cast<size_t>(box_index * 4);
-        float center_x = tensorElementToFloat(boxes.data[box_offset]);
-        float center_y = tensorElementToFloat(boxes.data[box_offset + 1]);
-        float width = tensorElementToFloat(boxes.data[box_offset + 2]);
-        float height = tensorElementToFloat(boxes.data[box_offset + 3]);
-
-        // OWL-style exports commonly emit normalized cx, cy, w, h.
-        if (std::max({std::fabs(center_x), std::fabs(center_y), std::fabs(width), std::fabs(height)}) <= 1.5F) {
-            center_x *= static_cast<float>(frame_size.width);
-            center_y *= static_cast<float>(frame_size.height);
-            width *= static_cast<float>(frame_size.width);
-            height *= static_cast<float>(frame_size.height);
-        } else if (input_size_.width > 0 && input_size_.height > 0 &&
-                   (frame_size.width != input_size_.width || frame_size.height != input_size_.height)) {
-            const float scale_x = static_cast<float>(frame_size.width) / static_cast<float>(input_size_.width);
-            const float scale_y = static_cast<float>(frame_size.height) / static_cast<float>(input_size_.height);
-            center_x *= scale_x;
-            center_y *= scale_y;
-            width *= scale_x;
-            height *= scale_y;
-        }
-
-        std::string label;
-        if (best_prompt_index >= 0 && static_cast<size_t>(best_prompt_index) < prompt_labels_.size()) {
-            label = prompt_labels_[static_cast<size_t>(best_prompt_index)];
-        }
-
-        results.emplace_back(fromCvRect(makeRectFromCenterBox(center_x, center_y, width, height, frame_size)),
-                             best_score, best_prompt_index, std::move(label));
     }
 
     return results;
