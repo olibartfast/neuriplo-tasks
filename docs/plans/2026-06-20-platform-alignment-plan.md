@@ -1,18 +1,13 @@
-# Platform alignment plan (neuriplo-platform orchestrator → neuriplo-tasks)
+# Task contract and positioning alignment plan
 
 Date: 2026-06-20
 
 Status: Planned
 
-Source: [neuriplo-platform production roadmap](https://github.com/olibartfast/neuriplo-platform/blob/main/docs/architecture/production-roadmap.md)
-(items 9, 11), [ADR 0006](https://github.com/olibartfast/neuriplo-platform/blob/main/docs/adr/0006-generative-serving-over-openai-protocol.md),
-[ADR 0009](https://github.com/olibartfast/neuriplo-platform/blob/main/docs/adr/0009-evolve-to-ai-infrastructure-gpu-serving-platform.md),
-[task contract](https://github.com/olibartfast/neuriplo-platform/blob/main/contracts/task-contract.md),
-[result contract](https://github.com/olibartfast/neuriplo-platform/blob/main/contracts/result-contract.md).
-
-Goal: align `neuriplo-tasks` with the neuriplo-platform production roadmap
-(ADRs 0006, 0009; production-roadmap items 9, 11; task/result contract
-graduation) in atomic reviewable steps.
+Goal: evolve `neuriplo-tasks` from a computer-vision toolkit to AI inference
+task contracts (computer vision as the first domain), add contract boundary
+and architecture-fitness tests, and provide opt-in result serialization
+helpers, in atomic reviewable steps.
 
 Non-goals:
 
@@ -21,7 +16,7 @@ Non-goals:
 - Do not add runtime dependencies beyond OpenCV.
 - Do not reimplement serving or inference-side serialization — this repo owns
   the typed result structures and their semantics only.
-- Do not rename repos, namespaces, or CMake targets (ADR 0004 already settled).
+- Do not rename repos, namespaces, or CMake targets.
 
 Guardrails:
 
@@ -32,12 +27,11 @@ Guardrails:
 
 ---
 
-## Phase 1 — Positioning refresh (ADR 0009 alignment)
+## Phase 1 — Positioning refresh
 
-Purpose: reflect the platform's evolution from "computer-vision
-toolkit" to "AI inference task contracts — CV as first domain." README,
-AGENTS.md, and header-landing-page comments updated in one PR. No code
-changes.
+Purpose: reflect the evolution from "computer-vision toolkit" to "AI
+inference task contracts — CV as first domain." README, AGENTS.md, and
+header-landing-page comments updated in one PR. No code changes.
 
 Steps:
 
@@ -62,8 +56,8 @@ Steps:
      neuriplo-kserve-runtime consumes via the task contract at serving scale.
 
 3. **CHANGELOG.md**: add `[Unreleased]` entry under **Changed**:
-   "README and AGENTS repositioned to reflect AI-infrastructure platform
-   framing (CV as first task domain)."
+   "README and AGENTS repositioned to reflect AI-infrastructure framing
+   (CV as first task domain)."
 
 4. **Header check**: grep `include/` for "vision" framing in doc comments.
    Fix any that say "vision task" where "task" alone is accurate.
@@ -92,15 +86,14 @@ algorithms" in the lede; AGENTS matches; all existing tests green.
 
 ## Phase 2 — Contract audit and boundary tests
 
-Purpose: the platform `contracts/task-contract.md` and
-`contracts/result-contract.md` are Draft. Audit `neuriplo-tasks` code
-against their stated compatibility rules and add boundary tests that
-lock the rules in this repo so future changes can't drift.
+Purpose: audit `neuriplo-tasks` task and result contract semantics and add
+boundary tests that lock the rules in this repo so future changes can't
+drift.
 
 Steps:
 
 1. Audit check (read-only, one document update):
-   - Walk each compatibility rule in task-contract.md and result-contract.md.
+   - Walk each compatibility rule in the task and result type contracts.
    - Tick off which rules are already verified by existing tests and which are
      implicit.
    - Add a `docs/plans/contract-audit.md` (short, 1-page) with findings.
@@ -147,9 +140,9 @@ test regresses.
 
 ## Phase 3 — Architecture fitness test (production-roadmap Item 9)
 
-Purpose: the platform requires "neuriplo-tasks must not depend on
-neuriplo-infer." Add a compile-time guard that breaks the build if anyone
-accidentally adds such a dependency.
+Purpose: `neuriplo-tasks` must not depend on `neuriplo-infer`. Add a
+compile-time guard that breaks the build if anyone accidentally adds such a
+dependency.
 
 Steps:
 
@@ -186,11 +179,9 @@ add such a dependency fails the test.
 
 ## Phase 4 — Result serialization helpers (opt-in, low-risk)
 
-Purpose: the platform `result-contract.md` has a draft JSON schema for
-detection results, but "No producer ships this yet." Provide zero-dependency
-serialization helpers in neuriplo-tasks so `neuriplo-infer` and
-`neuriplo-kserve-runtime` can emit machine-readable results without
-reimplementing the schema.
+Purpose: provide zero-dependency serialization helpers in neuriplo-tasks so
+`neuriplo-infer` and `neuriplo-kserve-runtime` can emit machine-readable
+results without reimplementing the schema.
 
 Non-goals: do not add a JSON library dependency (nlohmann, RapidJSON, etc.).
 The helper emits structured data (key-value pairs, nested maps) as a simple
@@ -201,7 +192,7 @@ Steps:
 
 1. Add `include/neuriplo/tasks/core/result_serialization.hpp`:
    - `std::string serializeDetection(const Detection& d, const std::string& label, int image_width, int image_height)`
-     → produces the JSON-object shape matching `result-contract.md` schema.
+      → produces a structured JSON-object shape for detection results.
    - `std::string serializeOpenVocabDetection(const OpenVocabDetection& d, int image_width, int image_height)`
      → same.
    - Both are < 50 lines each. No third-party dependency. Uses `std::ostringstream`
@@ -233,7 +224,7 @@ ctest --test-dir build --output-on-failure
 ```
 
 Stop criteria: `test_result_serialization` passes; serialized strings match
-the field semantics in `result-contract.md`; no new dependencies.
+the field semantics of the result types; no new dependencies.
 
 ---
 
@@ -253,8 +244,6 @@ Steps:
    - **Added**: contract boundary tests, architecture fitness test, result
      serialization helpers (Phases 2–4).
 3. If `docs/plans/contract-audit.md` has gaps, note them as follow-up issues.
-4. Run `scripts/check_platform.py` in `neuriplo-platform` to confirm no
-   platform-level validation breaks against the new state.
 
 Files:
 
@@ -262,8 +251,7 @@ Files:
 - `CHANGELOG.md`
 - Possibly `docs/plans/contract-audit.md`
 
-Stop criteria: roadmap and changelog reflect completed phases; platform
-validator green (or explainable skip).
+Stop criteria: roadmap and changelog reflect completed phases.
 
 ---
 
@@ -283,10 +271,10 @@ validator green (or explainable skip).
 
 | # | Commit subject | Phase |
 |---|----------------|-------|
-| 1 | `docs: reposition README and AGENTS for AI-infrastructure framing (ADR 0009)` | 1 |
+| 1 | `docs: reposition README and AGENTS for AI-infrastructure framing` | 1 |
 | 2 | `test: add contract boundary tests for Result, BoundingBox, TaskType semantics` | 2 |
 | 3 | `test: add architecture fitness test (no neuriplo-infer dependency)` | 3 |
 | 4 | `feat(core): add result serialization helpers for Detection and OpenVocabDetection` | 4 |
-| 5 | `docs: update ROADMAP and CHANGELOG for platform alignment phases 1-4` | 5 |
+| 5 | `docs: update ROADMAP and CHANGELOG for alignment phases 1-4` | 5 |
 
 Each commit must pass the local gate.
