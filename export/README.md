@@ -25,6 +25,7 @@ export/
 ├── pose_estimation/
 │   ├── yolo_pose/          # YOLO pose export (v5/v8/v11/v26)
 │   ├── vitpose/            # ViTPose pose estimation export
+│   ├── rfdetr/             # RF-DETR keypoint pose estimation export
 │   └── edgecrafter/        # EdgeCrafter pose estimation export
 ├── depth_estimation/
 │   └── depth_anything_v2/  # Depth Anything V2 depth export
@@ -62,6 +63,9 @@ python export/pose_estimation/yolo_pose/export.py --model yolov8n-pose.pt --form
 
 # Export ViTPose
 python export/pose_estimation/vitpose/export_vitpose_to_onnx.py
+
+# Export RF-DETR keypoint pose
+python export/pose_estimation/rfdetr/export_keypoint.py --model_type medium
 
 # Export Depth Anything V2
 python export/depth_estimation/depth_anything_v2/export_depth_anything_v2_to_onnx.py
@@ -120,6 +124,7 @@ Refer to:
 * [Image Understanding (VLM)](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/image_understanding/ImageUnderstanding.md)
 * [EdgeCrafter Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/edgecrafter/README.md)
 * [EdgeCrafter Segmentation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/segmentation/edgecrafter/README.md)
+* [RF-DETR Keypoint Pose Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/rfdetr/README.md)
 * [EdgeCrafter Pose Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/edgecrafter/README.md)
 
 

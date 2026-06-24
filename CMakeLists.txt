@@ -46,9 +46,13 @@ endif()
 # Enable sanitizers in debug builds (opt-in via -DSANITIZERS=ON)
 option(SANITIZERS "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 if(SANITIZERS)
-    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
-    add_link_options(-fsanitize=address,undefined)
-    message(STATUS "Sanitizers: AddressSanitizer + UndefinedBehaviorSanitizer enabled")
+    if(MSVC)
+        message(WARNING "SANITIZERS is not configured for MSVC in this project; skipping sanitizer flags")
+    else()
+        add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+        add_link_options(-fsanitize=address,undefined)
+        message(STATUS "Sanitizers: AddressSanitizer + UndefinedBehaviorSanitizer enabled")
+    endif()
 endif()
 
 # Find OpenCV
@@ -93,6 +97,7 @@ set(CORE_SOURCES
     src/pose_estimation/vit_pose_postprocessor.cpp
     src/pose_estimation/yolo_pose_postprocessor.cpp
     src/pose_estimation/edgecrafter_pose_postprocessor.cpp
+    src/pose_estimation/rfdetr_pose_postprocessor.cpp
     src/video_classification/video_classification_task.cpp
     src/video_classification/video_classification_preprocessor.cpp
     src/video_classification/video_classification_postprocessor.cpp
@@ -159,6 +164,7 @@ set(CORE_HEADERS
     include/neuriplo/tasks/pose_estimation/vit_pose_postprocessor.hpp
     include/neuriplo/tasks/pose_estimation/yolo_pose_postprocessor.hpp
     include/neuriplo/tasks/pose_estimation/edgecrafter_pose_postprocessor.hpp
+    include/neuriplo/tasks/pose_estimation/rfdetr_pose_postprocessor.hpp
     include/neuriplo/tasks/video_classification/video_classification_task.hpp
     include/neuriplo/tasks/video_classification/video_classification_preprocessor.hpp
     include/neuriplo/tasks/video_classification/video_classification_postprocessor.hpp
@@ -182,6 +188,10 @@ set(CORE_HEADERS
 add_library(neuriplo-tasks ${CORE_SOURCES} ${CORE_HEADERS})
 add_library(neuriplo-tasks::neuriplo-tasks ALIAS neuriplo-tasks)
 
+if(WIN32 AND BUILD_SHARED_LIBS)
+    set_target_properties(neuriplo-tasks PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
+
 target_include_directories(neuriplo-tasks
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -197,7 +207,10 @@ target_link_libraries(neuriplo-tasks
 target_compile_features(neuriplo-tasks PUBLIC cxx_std_17)
 
 if(MSVC)
-    target_compile_options(neuriplo-tasks PRIVATE /W4 /WX)
+    target_compile_options(neuriplo-tasks PRIVATE /W4)
+    if(WERROR)
+        target_compile_options(neuriplo-tasks PRIVATE /WX)
+    endif()
 else()
     target_compile_options(neuriplo-tasks PRIVATE ${PROJECT_WARNING_FLAGS})
 endif()

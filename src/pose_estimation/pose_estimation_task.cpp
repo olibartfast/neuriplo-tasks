@@ -2,6 +2,7 @@
 
 #include "neuriplo/tasks/object_detection/detection_preprocessor.hpp"
 #include "neuriplo/tasks/pose_estimation/edgecrafter_pose_postprocessor.hpp"
+#include "neuriplo/tasks/pose_estimation/rfdetr_pose_postprocessor.hpp"
 #include "neuriplo/tasks/pose_estimation/vit_pose_postprocessor.hpp"
 #include "neuriplo/tasks/pose_estimation/yolo_pose_postprocessor.hpp"
 
@@ -20,12 +21,8 @@ class PosePreprocessStrategy {
 
 namespace {
 
-std::vector<uint8_t> encodeInt64Pair(int64_t first, int64_t second) {
-    std::vector<int64_t> values = {first, second};
-    const auto* begin = reinterpret_cast<const uint8_t*>(values.data());
-    const auto* end = begin + values.size() * sizeof(int64_t);
-    return {begin, end};
-}
+constexpr float kDefaultRfDetrKeypointUncertaintyAlpha = 0.5F;
+constexpr float kDefaultEdgeCrafterKeypointThreshold = 0.3F;
 
 class SingleInputPosePreprocessStrategy final : public PosePreprocessStrategy {
   public:
@@ -49,20 +46,33 @@ class ModelInputPosePreprocessStrategy final : public PosePreprocessStrategy {
         std::vector<std::vector<uint8_t>> results;
         results.reserve(model_info_.input_shapes.size());
 
-        if (imgs.empty() || imgs[0].empty()) {
-            throw std::invalid_argument("Empty input image provided");
+        for (const auto& img : imgs) {
+            if (img.empty()) {
+                throw std::invalid_argument("Empty input image provided");
+            }
         }
-
-        const cv::Mat& img = imgs[0];
 
         for (size_t i = 0; i < model_info_.input_names.size(); ++i) {
             const auto& input_name = model_info_.input_names[i];
             const auto& input_shape = model_info_.input_shapes[i];
 
             if (input_shape.size() >= 3) {
-                results.push_back(preprocessor_->preprocess(img));
+                std::vector<uint8_t> batched;
+                for (const auto& img : imgs) {
+                    auto buf = preprocessor_->preprocess(img);
+                    batched.insert(batched.end(), buf.begin(), buf.end());
+                }
+                results.push_back(std::move(batched));
             } else if (input_name == "orig_target_sizes" || input_name == "orig_size") {
-                results.push_back(encodeInt64Pair(static_cast<int64_t>(img.cols), static_cast<int64_t>(img.rows)));
+                std::vector<int64_t> all_sizes;
+                all_sizes.reserve(imgs.size() * 2);
+                for (const auto& img : imgs) {
+                    all_sizes.push_back(static_cast<int64_t>(img.cols));
+                    all_sizes.push_back(static_cast<int64_t>(img.rows));
+                }
+                const auto* begin = reinterpret_cast<const uint8_t*>(all_sizes.data());
+                const auto* end = begin + all_sizes.size() * sizeof(int64_t);
+                results.emplace_back(begin, end);
             } else {
                 results.emplace_back();
             }
@@ -119,6 +129,11 @@ PoseEstimationTask::ModelType PoseEstimationTask::detectModelType(const std::str
     std::string lower_name = model_type;
     std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
 
+    if (lower_name.find("rfdetr") == 0 &&
+        (lower_name.find("pose") != std::string::npos || lower_name.find("keypoint") != std::string::npos ||
+         lower_name.find("kpt") != std::string::npos)) {
+        return ModelType::RFDETRPOSE;
+    }
     if (lower_name.find("yolo") == 0) {
         return ModelType::YOLO;
     }
@@ -135,6 +150,9 @@ PoseEstimationTask::ModelType PoseEstimationTask::detectModelType(const std::str
 
 std::unique_ptr<Preprocessor> PoseEstimationTask::createPreprocessor(ModelType type, const cv::Size& input_size) {
     switch (type) {
+    case ModelType::RFDETRPOSE:
+        return std::make_unique<RfDetrPreprocessor>(input_size);
+
     case ModelType::YOLO:
         return std::make_unique<YoloPreprocessor>(input_size);
 
@@ -173,6 +191,10 @@ std::unique_ptr<PosePostprocessor> PoseEstimationTask::createPostprocessor(Model
                                                                            float confidence_threshold,
                                                                            float nms_threshold) {
     switch (type) {
+    case ModelType::RFDETRPOSE:
+        return std::make_unique<RfDetrPosePostprocessor>(input_size, confidence_threshold,
+                                                         kDefaultRfDetrKeypointUncertaintyAlpha);
+
     case ModelType::YOLO:
         return std::make_unique<YoloPosePostprocessor>(input_size, confidence_threshold, nms_threshold);
 
@@ -180,7 +202,8 @@ std::unique_ptr<PosePostprocessor> PoseEstimationTask::createPostprocessor(Model
         return std::make_unique<ViTPosePostprocessor>();
 
     case ModelType::EDGECRAFTER:
-        return std::make_unique<EdgeCrafterPosePostprocessor>(confidence_threshold, 0.3F, model_info_.output_names);
+        return std::make_unique<EdgeCrafterPosePostprocessor>(
+            confidence_threshold, kDefaultEdgeCrafterKeypointThreshold, model_info_.output_names);
 
     default:
         return nullptr;

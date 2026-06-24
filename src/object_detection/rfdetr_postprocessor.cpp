@@ -48,58 +48,67 @@ std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor
 
     std::vector<Detection> detections;
 
-    // RF-DETR outputs: dets [1, 300, 4] and labels [1, 300, num_classes] as logits
+    // RF-DETR outputs: dets [batch, 300, 4] and labels [batch, 300, num_classes] as logits
     if (box_shape.size() < 3 || logit_shape.size() < 3) {
         return {};
     }
 
-    int num_dets = static_cast<int>(box_shape[1]);
-    int num_classes = static_cast<int>(logit_shape[2]);
+    const int batch = static_cast<int>(box_shape[0]);
+    const int num_dets = static_cast<int>(box_shape[1]);
+    const int num_classes = static_cast<int>(logit_shape[2]);
+    const size_t box_batch_stride = static_cast<size_t>(num_dets) * 4;
+    const size_t logit_batch_stride = static_cast<size_t>(num_dets) * static_cast<size_t>(num_classes);
 
     // Scale factors from input size to frame size
     float scale_w = static_cast<float>(frame_size.width) / static_cast<float>(input_size_.width);
     float scale_h = static_cast<float>(frame_size.height) / static_cast<float>(input_size_.height);
 
-    for (int i = 0; i < num_dets; ++i) {
-        float max_score = 0.0f;
-        int max_class_idx = -1;
+    for (int b = 0; b < batch; ++b) {
+        const size_t box_batch_offset = static_cast<size_t>(b) * box_batch_stride;
+        const size_t logit_batch_offset = static_cast<size_t>(b) * logit_batch_stride;
 
-        // Find max class score applying sigmoid to logits
-        for (int c = 0; c < num_classes; ++c) {
-            float logit = tensorElementToFloat(logits[static_cast<size_t>(i * num_classes + c)]);
-            float score = 1.0f / (1.0f + std::exp(-logit));
-            if (score > max_score) {
-                max_score = score;
-                max_class_idx = c;
+        for (int i = 0; i < num_dets; ++i) {
+            float max_score = 0.0f;
+            int max_class_idx = -1;
+
+            for (int c = 0; c < num_classes; ++c) {
+                float logit =
+                    tensorElementToFloat(logits[logit_batch_offset + static_cast<size_t>(i * num_classes + c)]);
+                float score = 1.0f / (1.0f + std::exp(-logit));
+                if (score > max_score) {
+                    max_score = score;
+                    max_class_idx = c;
+                }
             }
+
+            if (max_score < confidence_threshold_)
+                continue;
+
+            max_class_idx -= 1;
+            if (max_class_idx < 0)
+                continue;
+
+            float cx = tensorElementToFloat(boxes[box_batch_offset + static_cast<size_t>(i * 4 + 0)]) *
+                       static_cast<float>(input_size_.width);
+            float cy = tensorElementToFloat(boxes[box_batch_offset + static_cast<size_t>(i * 4 + 1)]) *
+                       static_cast<float>(input_size_.height);
+            float w = tensorElementToFloat(boxes[box_batch_offset + static_cast<size_t>(i * 4 + 2)]) *
+                      static_cast<float>(input_size_.width);
+            float h = tensorElementToFloat(boxes[box_batch_offset + static_cast<size_t>(i * 4 + 3)]) *
+                      static_cast<float>(input_size_.height);
+
+            float x = (cx - w / 2.0f) * scale_w;
+            float y = (cy - h / 2.0f) * scale_h;
+            float width = w * scale_w;
+            float height = h * scale_h;
+
+            Detection det;
+            det.class_id = static_cast<float>(max_class_idx);
+            det.class_confidence = max_score;
+            det.bbox = BoundingBox(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width),
+                                   static_cast<int>(height));
+            detections.push_back(det);
         }
-
-        if (max_score < confidence_threshold_)
-            continue;
-
-        // RF-DETR class indices are 1-based
-        max_class_idx -= 1;
-        if (max_class_idx < 0)
-            continue;
-
-        // Boxes are normalized cx,cy,w,h format
-        float cx = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 0)]) * static_cast<float>(input_size_.width);
-        float cy = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 1)]) * static_cast<float>(input_size_.height);
-        float w = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 2)]) * static_cast<float>(input_size_.width);
-        float h = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 3)]) * static_cast<float>(input_size_.height);
-
-        // Convert to x,y,w,h and scale to frame size
-        float x = (cx - w / 2.0f) * scale_w;
-        float y = (cy - h / 2.0f) * scale_h;
-        float width = w * scale_w;
-        float height = h * scale_h;
-
-        Detection det;
-        det.class_id = static_cast<float>(max_class_idx);
-        det.class_confidence = max_score;
-        det.bbox =
-            BoundingBox(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width), static_cast<int>(height));
-        detections.push_back(det);
     }
 
     return detections;

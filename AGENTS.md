@@ -12,6 +12,12 @@ file.
   commands and allowed change classes when automating.
 - **Branches**: `develop` is the integration branch for normal work; `master`
   is release-only.
+- **Releases must align with tags**: Every Git tag (e.g., `v0.4.1`) must have
+  a corresponding GitHub Release. Never push a tag without also creating the
+  release via `gh release create`. Release notes must come from `CHANGELOG.md`
+  — never use `--generate-notes`. If a tag exists without a release, create
+  the release immediately. See [`docs/Versioning.md`](./docs/Versioning.md)
+  for the full release workflow.
 - **Priorities when reviewing a change**: correctness → backward compatibility
   → task-contract stability → shape/dtype assumptions → performance regressions.
 
@@ -155,7 +161,7 @@ cppcheck --enable=warning --std=c++17 \
 Atomic roadmap (batch utilities, refactor phases, composite pipelines):
 [`docs/ROADMAP.md`](./docs/ROADMAP.md). Batch readiness audit (B0):
 [`docs/batch_support_matrix.md`](./docs/batch_support_matrix.md). Factory/strategy
-refactor detail: [`docs/task_refactor_atomic_plan.md`](./docs/task_refactor_atomic_plan.md).
+refactor detail: [`docs/plans/task_refactor_atomic_plan.md`](./docs/plans/task_refactor_atomic_plan.md).
 
 ### Core abstractions (`include/neuriplo/tasks/core/`)
 
@@ -330,6 +336,13 @@ find src include tests -name '*.cpp' -o -name '*.hpp' | \
 
 The `format_on_edit.sh` hook does this automatically for Claude Code edits,
 but running it manually is the safest gate before `git commit`.
+
+### Hyperlink verification
+
+When editing `README.md` or any documentation with hyperlinks:
+- Verify all relative links resolve to existing files in the repo (`ls <path>`).
+- Verify absolute GitHub URLs are reachable (use `curl -sI <url>` or a quick fetch).
+- Prefer absolute GitHub blob/tree URLs over fragile cross-repo relative paths (e.g. `../../../neuriplo/docs/foo.md`).
 
 ### Update README.md when adding a new task type
 

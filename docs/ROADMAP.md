@@ -7,9 +7,9 @@ single PR or commit series: build alone, tests green, no unrelated churn.
 
 | Document | Scope |
 |----------|--------|
-| [batch_support_matrix.md](./batch_support_matrix.md) | Per-family batch readiness (B0 audit) |
-| [batch_processing.md](./batch_processing.md) | Consumer migration guide (B6) |
-| [task_refactor_atomic_plan.md](./task_refactor_atomic_plan.md) | Factory registry, strategies, `visitResult`, composite pipelines |
+| [batch_support_matrix.md](./batch_support_matrix.md) | Per-family batch readiness ([B0](#b0) audit) |
+| [batch_processing.md](./batch_processing.md) | Consumer migration guide ([B6](#b6)) |
+| [task_refactor_atomic_plan.md](./plans/task_refactor_atomic_plan.md) | Factory registry, strategies, `visitResult`, composite pipelines |
 | [Versioning.md](./Versioning.md) | Release and changelog workflow |
 | [AGENTS.md](../AGENTS.md) | CI gate, contracts, coding rules |
 
@@ -34,13 +34,13 @@ shipping inference on documented model types.
 | Refactor | Phase 7 — composite `TaskPipeline` API | **Done** |
 | Refactor | Phase 8 — docs/sync cleanup | **Planned** (ongoing per release) |
 | Factory | Track D — descriptor registry auditability | **Done** |
-| **Batch** | B0 — capability audit (`batch_support_matrix.md`) | **Done** |
-| **Batch** | B1 — batch contract types (`batch_types.hpp`) | **Done** |
-| **Batch** | B2 — preprocess batch packer (`batch_preprocess`) | **Done** |
-| **Batch** | B3 — postprocess batch splitter (`batch_postprocess`) | **Done** |
-| **Batch** | B4 — domain adoption (classification, det, depth, pose) | **Done** |
-| **Batch** | B5 — integration test & README contract | **Done** |
-| **Batch** | B6 — consumer migration guide | **Done** |
+| **Batch** | [B0](#b0) — capability audit (`batch_support_matrix.md`) | **Done** |
+| **Batch** | [B1](#b1) — batch contract types (`batch_types.hpp`) | **Done** |
+| **Batch** | [B2](#b2) — preprocess batch packer (`batch_preprocess`) | **Done** |
+| **Batch** | [B3](#b3) — postprocess batch splitter (`batch_postprocess`) | **Done** |
+| **Batch** | [B4](#b4) — domain adoption (classification, det, depth, pose) | **Done** |
+| **Batch** | [B5](#b5) — integration test & README contract | **Done** |
+| **Batch** | [B6](#b6) — consumer migration guide | **Done** |
 
 Update the **Status** column when a track lands; check README roadmap bullets
 against this file on each merge.
@@ -116,19 +116,21 @@ the same task contract without reimplementing pack/split logic per domain.
 
 ---
 
+<a id="b0"></a>
 ### B0 — Batch capability audit ✅
 
 **Purpose:** know which domains are batch-ready before writing shared utilities.
 
 **Deliverable:** [`batch_support_matrix.md`](./batch_support_matrix.md) — summary table,
-preprocess/postprocess patterns, `N=1` domains, test gaps, B5 adoption order.
+preprocess/postprocess patterns, `N=1` domains, test gaps, [B5](#b5) adoption order.
 
 **Stop criteria:** met — every `TaskFactory` family has Ready / Partial / N/A.
 
-**Next:** B1 — `batch_types.hpp` contract header (no task changes).
+**Next:** [B1](#b1) — `batch_types.hpp` contract header (no task changes).
 
 ---
 
+<a id="b1"></a>
 ### B1 — Batch contract header ✅
 
 **Deliverable:** `include/neuriplo/tasks/core/batch_types.hpp` — `BatchRequest`,
@@ -137,10 +139,11 @@ preprocess/postprocess patterns, `N=1` domains, test gaps, B5 adoption order.
 
 **Stop criteria:** met — header in `CORE_HEADERS`; no task includes it yet.
 
-**Next:** B3 — `batch_postprocess` helper.
+**Next:** [B3](#b3) — `batch_postprocess` helper.
 
 ---
 
+<a id="b2"></a>
 ### B2 — Preprocess batch packer ✅
 
 **Deliverable:** `batch_preprocess.hpp` / `batch_preprocess.cpp` —
@@ -151,10 +154,11 @@ empty batch and `max_batch_size_`; `TaskInterface::getModelInfo()` for limits;
 **Stop criteria:** met — bit-identical to direct preprocess at N=1; N=2 yields two
 buffers when `max_batch_size_ >= 2`.
 
-**Next:** B3 — `batch_postprocess` helper.
+**Next:** [B3](#b3) — `batch_postprocess` helper.
 
 ---
 
+<a id="b3"></a>
 ### B3 — Postprocess batch splitter ✅
 
 **Purpose:** map batched inference tensors to `vector<Result>` with stable
@@ -171,7 +175,7 @@ per-index ordering.
    multiple results per batch (depth, gaussian splatting): thin wrappers, no
    math changes in first PR.
 4. Tests: synthetic tensors with leading dim `N=2` for one Ready domain from
-   B0 matrix.
+    [B0](#b0) matrix.
 
 **Files**
 
@@ -189,10 +193,11 @@ per-index ordering.
 **Stop criteria:** met — depth `N = 2` round-trip; `N = 1` matches direct
 `postprocess`; Gaussian splatting keeps single aggregate result.
 
-**Next:** B4 — domain adoption (one PR per family).
+**Next:** [B4](#b4) — domain adoption (one PR per family).
 
 ---
 
+<a id="b4"></a>
 ### B4 — Domain adoption ✅
 
 **Purpose:** move from generic helpers to tested batch contracts per task.
@@ -217,10 +222,11 @@ per-index ordering.
 **Stop criteria:** met for classification, YOLO detection, depth, and ViTPose —
 `test_*_batch.cpp` suites added; `batch_size = 1` regressions unchanged.
 
-**Next:** B5 — integration test and README contract.
+**Next:** [B5](#b5) — integration test and README contract.
 
 ---
 
+<a id="b5"></a>
 ### B5 — Integration test and README contract ✅
 
 **Purpose:** lock public promise for batch utilities.
@@ -254,6 +260,7 @@ AGENTS table rows, roadmap checkbox checked.
 
 ---
 
+<a id="b6"></a>
 ### B6 — Consumer migration note ✅
 
 **Purpose:** downstream repos (tritonic, neuriplo-infer) know how to adopt.
