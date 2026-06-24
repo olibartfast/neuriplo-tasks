@@ -124,7 +124,8 @@ TEST(ReadmeModelTypesContract, EveryQuotedAliasRoutesViaTaskFactory) {
 // are prefix/substring matchers documented in README prose rather than as
 // quoted table rows.
 TEST(ReadmeModelTypesContract, EveryFactoryKeyIsDocumentedInReadme) {
-    static const std::set<std::string> kRoutingFragments = {"seg", "pose", "splat", "resnet", "tensorflow", "det"};
+    static const std::set<std::string> kRoutingFragments = {"seg", "pose", "splat",    "resnet",
+                                                            "kpt", "det",  "keypoint", "tensorflow"};
 
     const std::string factory = readFile(NEURIPLO_TASKS_TASK_FACTORY_PATH);
     ASSERT_FALSE(factory.empty()) << "task_factory.cpp not readable at " << NEURIPLO_TASKS_TASK_FACTORY_PATH;

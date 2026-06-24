@@ -49,8 +49,10 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
         return {};
     }
 
-    int channels = static_cast<int>(dets_shape[1]);
-    int anchors = static_cast<int>(dets_shape[2]);
+    const int batch = static_cast<int>(dets_shape[0]);
+    const int channels = static_cast<int>(dets_shape[1]);
+    const int anchors = static_cast<int>(dets_shape[2]);
+    const size_t batch_stride = static_cast<size_t>(channels) * static_cast<size_t>(anchors);
     int num_mask_coeffs = 32;
     int num_classes = channels - 4 - num_mask_coeffs;
 
@@ -67,89 +69,92 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
         protos_data[i] = tensorElementToFloat(protos_data_raw[i]);
     }
 
-    // Collect all detections before NMS
-    std::vector<Detection> detections;
+    const int num_protos = static_cast<int>(protos_shape[1]);
+    const size_t proto_batch_stride =
+        static_cast<size_t>(num_protos) * static_cast<size_t>(proto_h) * static_cast<size_t>(proto_w);
 
-    for (int i = 0; i < anchors; ++i) {
-        // Find max class score
-        float max_score = 0.0f;
-        int class_id = -1;
-
-        for (int c = 0; c < num_classes; ++c) {
-            float score = tensorElementToFloat(dets_data[static_cast<size_t>((c + 4) * anchors + i)]);
-            if (score > max_score) {
-                max_score = score;
-                class_id = c;
-            }
-        }
-
-        if (max_score < confidence_threshold_) {
-            continue;
-        }
-
-        // Extract box (cx, cy, w, h)
-        float cx = tensorElementToFloat(dets_data[static_cast<size_t>(0 * anchors + i)]);
-        float cy = tensorElementToFloat(dets_data[static_cast<size_t>(1 * anchors + i)]);
-        float w = tensorElementToFloat(dets_data[static_cast<size_t>(2 * anchors + i)]);
-        float h = tensorElementToFloat(dets_data[static_cast<size_t>(3 * anchors + i)]);
-
-        float x1 = cx - w / 2.0f;
-        float y1 = cy - h / 2.0f;
-        float x2 = cx + w / 2.0f;
-        float y2 = cy + h / 2.0f;
-
-        // Extract mask coefficients
-        std::vector<float> mask_coeffs;
-        mask_coeffs.reserve(static_cast<size_t>(num_mask_coeffs));
-        for (int m = 0; m < num_mask_coeffs; ++m) {
-            mask_coeffs.push_back(
-                tensorElementToFloat(dets_data[static_cast<size_t>((4 + num_classes + m) * anchors + i)]));
-        }
-
-        Detection det;
-        det.class_id = class_id;
-        det.confidence = max_score;
-        det.x1 = x1;
-        det.y1 = y1;
-        det.x2 = x2;
-        det.y2 = y2;
-        det.mask_coeffs = mask_coeffs;
-
-        detections.push_back(det);
-    }
-
-    // Apply NMS
-    std::vector<Detection> nms_detections = applyNMS(detections);
-
-    // Process masks for NMS survivors
     std::vector<InstanceSegmentation> segmentations;
 
-    for (const auto& det : nms_detections) {
-        // Generate mask from coefficients and prototypes
-        cv::Mat mask = generateMask(det.mask_coeffs, protos_data.data(), proto_h, proto_w);
+    for (int b = 0; b < batch; ++b) {
+        const size_t batch_offset = static_cast<size_t>(b) * batch_stride;
+        const size_t proto_offset = static_cast<size_t>(b) * proto_batch_stride;
 
-        // Scale bbox to original image coordinates
-        cv::Rect bbox = scaleToOriginal(det.x1, det.y1, det.x2, det.y2, frame_size);
+        // Collect detections for this batch slice
+        std::vector<Detection> detections;
 
-        // Crop and resize mask to bbox
-        cv::Mat final_mask = cropAndResizeMask(mask, det.x1, det.y1, det.x2, det.y2, bbox, frame_size);
+        for (int i = 0; i < anchors; ++i) {
+            float max_score = 0.0f;
+            int class_id = -1;
 
-        // Check if mask has any content
-        double max_val = 0.0;
-        cv::minMaxLoc(final_mask, nullptr, &max_val);
-        if (max_val <= 0.0) {
-            continue;
+            for (int c = 0; c < num_classes; ++c) {
+                float score =
+                    tensorElementToFloat(dets_data[batch_offset + static_cast<size_t>((c + 4) * anchors + i)]);
+                if (score > max_score) {
+                    max_score = score;
+                    class_id = c;
+                }
+            }
+
+            if (max_score < confidence_threshold_) {
+                continue;
+            }
+
+            float cx = tensorElementToFloat(dets_data[batch_offset + static_cast<size_t>(0 * anchors + i)]);
+            float cy = tensorElementToFloat(dets_data[batch_offset + static_cast<size_t>(1 * anchors + i)]);
+            float w = tensorElementToFloat(dets_data[batch_offset + static_cast<size_t>(2 * anchors + i)]);
+            float h = tensorElementToFloat(dets_data[batch_offset + static_cast<size_t>(3 * anchors + i)]);
+
+            float x1 = cx - w / 2.0f;
+            float y1 = cy - h / 2.0f;
+            float x2 = cx + w / 2.0f;
+            float y2 = cy + h / 2.0f;
+
+            std::vector<float> mask_coeffs;
+            mask_coeffs.reserve(static_cast<size_t>(num_mask_coeffs));
+            for (int m = 0; m < num_mask_coeffs; ++m) {
+                mask_coeffs.push_back(tensorElementToFloat(
+                    dets_data[batch_offset + static_cast<size_t>((4 + num_classes + m) * anchors + i)]));
+            }
+
+            Detection det;
+            det.class_id = class_id;
+            det.confidence = max_score;
+            det.x1 = x1;
+            det.y1 = y1;
+            det.x2 = x2;
+            det.y2 = y2;
+            det.mask_coeffs = mask_coeffs;
+
+            detections.push_back(det);
         }
 
-        InstanceSegmentation seg;
-        seg.class_id = static_cast<float>(det.class_id);
-        seg.class_confidence = det.confidence;
-        seg.bbox = fromCvRect(bbox);
-        seg.mask = fromCvMat(final_mask);
-        seg.mask_height = final_mask.rows;
-        seg.mask_width = final_mask.cols;
+        // Apply NMS within this batch slice
+        std::vector<Detection> nms_detections = applyNMS(detections);
 
-        segmentations.push_back(seg);
+        // Process masks for NMS survivors using this batch's prototype data
+        for (const auto& det : nms_detections) {
+            cv::Mat mask = generateMask(det.mask_coeffs, protos_data.data() + proto_offset, proto_h, proto_w);
+
+            cv::Rect bbox = scaleToOriginal(det.x1, det.y1, det.x2, det.y2, frame_size);
+
+            cv::Mat final_mask = cropAndResizeMask(mask, det.x1, det.y1, det.x2, det.y2, bbox, frame_size);
+
+            double max_val = 0.0;
+            cv::minMaxLoc(final_mask, nullptr, &max_val);
+            if (max_val <= 0.0) {
+                continue;
+            }
+
+            InstanceSegmentation seg;
+            seg.class_id = static_cast<float>(det.class_id);
+            seg.class_confidence = det.confidence;
+            seg.bbox = fromCvRect(bbox);
+            seg.mask = fromCvMat(final_mask);
+            seg.mask_height = final_mask.rows;
+            seg.mask_width = final_mask.cols;
+
+            segmentations.push_back(seg);
+        }
     }
 
     return segmentations;
@@ -177,124 +182,120 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tenso
         return {};
     }
 
-    int num_dets = static_cast<int>(dets_shape[1]);     // 300
-    int det_dims = static_cast<int>(dets_shape[2]);     // 38
-    int num_protos = static_cast<int>(protos_shape[1]); // 32
-    int proto_h = static_cast<int>(protos_shape[2]);    // 160
-    int proto_w = static_cast<int>(protos_shape[3]);    // 160
+    const int batch = static_cast<int>(dets_shape[0]);
+    const int num_dets = static_cast<int>(dets_shape[1]);     // 300
+    const int det_dims = static_cast<int>(dets_shape[2]);     // 38
+    const int num_protos = static_cast<int>(protos_shape[1]); // 32
+    const int proto_h = static_cast<int>(protos_shape[2]);    // 160
+    const int proto_w = static_cast<int>(protos_shape[3]);    // 160
 
     if (det_dims < 38 || num_protos != 32) {
         return {};
     }
 
+    const size_t dets_batch_stride = static_cast<size_t>(num_dets) * static_cast<size_t>(det_dims);
+    const size_t protos_batch_stride =
+        static_cast<size_t>(num_protos) * static_cast<size_t>(proto_h) * static_cast<size_t>(proto_w);
+
     std::vector<InstanceSegmentation> segmentations;
 
-    // Extract prototype data once
-    std::vector<float> protos_data(static_cast<size_t>(num_protos * proto_h * proto_w));
+    // Extract prototype data once (all batches)
+    std::vector<float> protos_data(static_cast<size_t>(batch * num_protos * proto_h * proto_w));
     for (size_t i = 0; i < protos_data.size(); ++i) {
         protos_data[i] = tensorElementToFloat(protos_tensor.data[i]);
     }
 
-    for (int i = 0; i < num_dets; ++i) {
-        // Extract detection data
-        const size_t base = static_cast<size_t>(i * det_dims);
-        float x1 = tensorElementToFloat(dets_tensor.data[base + 0]);
-        float y1 = tensorElementToFloat(dets_tensor.data[base + 1]);
-        float x2 = tensorElementToFloat(dets_tensor.data[base + 2]);
-        float y2 = tensorElementToFloat(dets_tensor.data[base + 3]);
-        float score = tensorElementToFloat(dets_tensor.data[base + 4]);
-        int class_id = static_cast<int>(tensorElementToFloat(dets_tensor.data[base + 5]));
+    for (int b = 0; b < batch; ++b) {
+        const size_t dets_batch_offset = static_cast<size_t>(b) * dets_batch_stride;
+        const size_t protos_batch_offset = static_cast<size_t>(b) * protos_batch_stride;
 
-        // Filter by confidence
-        if (score < confidence_threshold_) {
-            continue;
-        }
+        for (int i = 0; i < num_dets; ++i) {
+            const size_t base = dets_batch_offset + static_cast<size_t>(i * det_dims);
+            float x1 = tensorElementToFloat(dets_tensor.data[base + 0]);
+            float y1 = tensorElementToFloat(dets_tensor.data[base + 1]);
+            float x2 = tensorElementToFloat(dets_tensor.data[base + 2]);
+            float y2 = tensorElementToFloat(dets_tensor.data[base + 3]);
+            float score = tensorElementToFloat(dets_tensor.data[base + 4]);
+            int class_id = static_cast<int>(tensorElementToFloat(dets_tensor.data[base + 5]));
 
-        // Extract mask coefficients (32 values starting at index 6)
-        std::vector<float> mask_coeffs;
-        mask_coeffs.reserve(32);
-        for (int c = 0; c < 32; ++c) {
-            mask_coeffs.push_back(tensorElementToFloat(dets_tensor.data[base + 6 + static_cast<size_t>(c)]));
-        }
-
-        // Generate mask at proto resolution (160x160)
-        cv::Mat mask_proto = cv::Mat::zeros(proto_h, proto_w, CV_32F);
-
-        for (int h = 0; h < proto_h; ++h) {
-            for (int w = 0; w < proto_w; ++w) {
-                float sum = 0.0f;
-                for (int c = 0; c < num_protos; ++c) {
-                    int pidx = c * proto_h * proto_w + h * proto_w + w;
-                    sum += mask_coeffs[static_cast<size_t>(c)] * protos_data[static_cast<size_t>(pidx)];
-                }
-                // Apply sigmoid activation
-                mask_proto.at<float>(h, w) = 1.0f / (1.0f + std::exp(-sum));
+            if (score < confidence_threshold_) {
+                continue;
             }
+
+            std::vector<float> mask_coeffs;
+            mask_coeffs.reserve(32);
+            for (int c = 0; c < 32; ++c) {
+                mask_coeffs.push_back(tensorElementToFloat(dets_tensor.data[base + 6 + static_cast<size_t>(c)]));
+            }
+
+            cv::Mat mask_proto = cv::Mat::zeros(proto_h, proto_w, CV_32F);
+
+            for (int h = 0; h < proto_h; ++h) {
+                for (int w = 0; w < proto_w; ++w) {
+                    float sum = 0.0f;
+                    for (int c = 0; c < num_protos; ++c) {
+                        size_t pidx =
+                            protos_batch_offset + static_cast<size_t>(c * proto_h * proto_w + h * proto_w + w);
+                        sum += mask_coeffs[static_cast<size_t>(c)] * protos_data[pidx];
+                    }
+                    mask_proto.at<float>(h, w) = 1.0f / (1.0f + std::exp(-sum));
+                }
+            }
+
+            float scale_x = static_cast<float>(proto_w) / static_cast<float>(input_size_.width);
+            float scale_y = static_cast<float>(proto_h) / static_cast<float>(input_size_.height);
+
+            int proto_x1 = static_cast<int>(x1 * scale_x);
+            int proto_y1 = static_cast<int>(y1 * scale_y);
+            int proto_x2 = static_cast<int>(x2 * scale_x);
+            int proto_y2 = static_cast<int>(y2 * scale_y);
+
+            proto_x1 = std::max(0, std::min(proto_x1, proto_w - 1));
+            proto_y1 = std::max(0, std::min(proto_y1, proto_h - 1));
+            proto_x2 = std::max(proto_x1 + 1, std::min(proto_x2, proto_w));
+            proto_y2 = std::max(proto_y1 + 1, std::min(proto_y2, proto_h));
+
+            cv::Rect proto_bbox(proto_x1, proto_y1, proto_x2 - proto_x1, proto_y2 - proto_y1);
+
+            if (proto_bbox.width <= 0 || proto_bbox.height <= 0) {
+                continue;
+            }
+
+            cv::Mat mask_cropped = mask_proto(proto_bbox).clone();
+
+            double max_val = 0.0;
+            cv::minMaxLoc(mask_cropped, nullptr, &max_val);
+            if (max_val <= 0.0) {
+                continue;
+            }
+
+            cv::Rect bbox = scaleToOriginal(x1, y1, x2, y2, frame_size);
+
+            bbox.x = std::max(0, std::min(bbox.x, frame_size.width - 1));
+            bbox.y = std::max(0, std::min(bbox.y, frame_size.height - 1));
+            bbox.width = std::max(1, std::min(bbox.width, frame_size.width - bbox.x));
+            bbox.height = std::max(1, std::min(bbox.height, frame_size.height - bbox.y));
+
+            cv::Mat mask_resized;
+            cv::resize(mask_cropped, mask_resized, cv::Size(bbox.width, bbox.height), 0, 0, cv::INTER_LINEAR);
+
+            cv::Mat mask_binary;
+            cv::threshold(mask_resized, mask_binary, mask_threshold_, 255, cv::THRESH_BINARY);
+            mask_binary.convertTo(mask_binary, CV_8UC1);
+
+            cv::Mat mask_full = cv::Mat::zeros(frame_size, CV_8UC1);
+            mask_binary.copyTo(mask_full(bbox));
+
+            InstanceSegmentation seg;
+            seg.class_id = static_cast<float>(class_id);
+            seg.class_confidence = score;
+            seg.bbox = fromCvRect(bbox);
+            seg.mask = fromCvMat(mask_full);
+            seg.mask_height = mask_full.rows;
+            seg.mask_width = mask_full.cols;
+
+            segmentations.push_back(seg);
         }
-
-        // Scale bbox coordinates from input space to proto mask space
-        float scale_x = static_cast<float>(proto_w) / static_cast<float>(input_size_.width);
-        float scale_y = static_cast<float>(proto_h) / static_cast<float>(input_size_.height);
-
-        int proto_x1 = static_cast<int>(x1 * scale_x);
-        int proto_y1 = static_cast<int>(y1 * scale_y);
-        int proto_x2 = static_cast<int>(x2 * scale_x);
-        int proto_y2 = static_cast<int>(y2 * scale_y);
-
-        // Clamp to proto dimensions
-        proto_x1 = std::max(0, std::min(proto_x1, proto_w - 1));
-        proto_y1 = std::max(0, std::min(proto_y1, proto_h - 1));
-        proto_x2 = std::max(proto_x1 + 1, std::min(proto_x2, proto_w));
-        proto_y2 = std::max(proto_y1 + 1, std::min(proto_y2, proto_h));
-
-        // Crop mask to bbox region in proto space
-        cv::Rect proto_bbox(proto_x1, proto_y1, proto_x2 - proto_x1, proto_y2 - proto_y1);
-
-        if (proto_bbox.width <= 0 || proto_bbox.height <= 0) {
-            continue;
-        }
-
-        cv::Mat mask_cropped = mask_proto(proto_bbox).clone();
-
-        // Check if mask has any content (equivalent to Python's masks.amax() > 0)
-        double max_val = 0.0;
-        cv::minMaxLoc(mask_cropped, nullptr, &max_val);
-        if (max_val <= 0.0) {
-            continue;
-        }
-
-        // Apply letterbox inverse transformation to bounding box
-        cv::Rect bbox = scaleToOriginal(x1, y1, x2, y2, frame_size);
-
-        // Ensure bbox is within frame bounds
-        bbox.x = std::max(0, std::min(bbox.x, frame_size.width - 1));
-        bbox.y = std::max(0, std::min(bbox.y, frame_size.height - 1));
-        bbox.width = std::max(1, std::min(bbox.width, frame_size.width - bbox.x));
-        bbox.height = std::max(1, std::min(bbox.height, frame_size.height - bbox.y));
-
-        // Resize cropped mask to bbox size in original frame
-        cv::Mat mask_resized;
-        cv::resize(mask_cropped, mask_resized, cv::Size(bbox.width, bbox.height), 0, 0, cv::INTER_LINEAR);
-
-        // Threshold mask
-        cv::Mat mask_binary;
-        cv::threshold(mask_resized, mask_binary, mask_threshold_, 255, cv::THRESH_BINARY);
-        mask_binary.convertTo(mask_binary, CV_8UC1);
-
-        // Create full-frame mask and place the bbox mask in it
-        cv::Mat mask_full = cv::Mat::zeros(frame_size, CV_8UC1);
-        mask_binary.copyTo(mask_full(bbox));
-
-        // Create segmentation result
-        InstanceSegmentation seg;
-        seg.class_id = static_cast<float>(class_id);
-        seg.class_confidence = score;
-        seg.bbox = fromCvRect(bbox);
-        seg.mask = fromCvMat(mask_full);
-        seg.mask_height = mask_full.rows;
-        seg.mask_width = mask_full.cols;
-
-        segmentations.push_back(seg);
     }
 
     return segmentations;

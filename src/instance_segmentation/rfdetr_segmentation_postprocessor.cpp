@@ -59,102 +59,109 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         return {};
     }
 
-    int num_dets = static_cast<int>(boxes_shape[1]);
-    int num_classes = static_cast<int>(labels_shape[2]);
-    int mask_h = static_cast<int>(masks_shape[2]);
-    int mask_w = static_cast<int>(masks_shape[3]);
+    const int batch = static_cast<int>(boxes_shape[0]);
+    const int num_dets = static_cast<int>(boxes_shape[1]);
+    const int num_classes = static_cast<int>(labels_shape[2]);
+    const int mask_h = static_cast<int>(masks_shape[2]);
+    const int mask_w = static_cast<int>(masks_shape[3]);
 
-    // Scale factors from input to frame
+    const size_t box_batch_stride = static_cast<size_t>(num_dets) * 4;
+    const size_t labels_batch_stride = static_cast<size_t>(num_dets) * static_cast<size_t>(num_classes);
+    const size_t masks_batch_stride =
+        static_cast<size_t>(num_dets) * static_cast<size_t>(mask_h) * static_cast<size_t>(mask_w);
 
-    for (int i = 0; i < num_dets; ++i) {
-        // Find max class score (apply sigmoid to logits)
-        float max_score = 0.0f;
-        int class_id = -1;
+    for (int b = 0; b < batch; ++b) {
+        const size_t box_batch_offset = static_cast<size_t>(b) * box_batch_stride;
+        const size_t labels_batch_offset = static_cast<size_t>(b) * labels_batch_stride;
+        const size_t masks_batch_offset = static_cast<size_t>(b) * masks_batch_stride;
 
-        for (int c = 0; c < num_classes; ++c) {
-            float logit = tensorElementToFloat(labels[static_cast<size_t>(i * num_classes + c)]);
-            float score = 1.0f / (1.0f + std::exp(-logit)); // sigmoid
-            if (score > max_score) {
-                max_score = score;
-                class_id = c;
+        for (int i = 0; i < num_dets; ++i) {
+            float max_score = 0.0f;
+            int class_id = -1;
+
+            for (int c = 0; c < num_classes; ++c) {
+                float logit =
+                    tensorElementToFloat(labels[labels_batch_offset + static_cast<size_t>(i * num_classes + c)]);
+                float score = 1.0f / (1.0f + std::exp(-logit));
+                if (score > max_score) {
+                    max_score = score;
+                    class_id = c;
+                }
             }
-        }
 
-        if (max_score < confidence_threshold_) {
-            continue;
-        }
-
-        // RF-DETR uses 1-based class ids, adjust to 0-based
-        if (class_id > 0) {
-            class_id -= 1;
-        }
-
-        // Extract box (cx, cy, w, h) in normalized coordinates
-        float cx = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 0)]);
-        float cy = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 1)]);
-        float w = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 2)]);
-        float h = tensorElementToFloat(boxes[static_cast<size_t>(i * 4 + 3)]);
-
-        // Convert to frame coordinates
-        float x_center = cx * static_cast<float>(frame_size.width);
-        float y_center = cy * static_cast<float>(frame_size.height);
-        float width = w * static_cast<float>(frame_size.width);
-        float height = h * static_cast<float>(frame_size.height);
-
-        float x_min = x_center - width / 2.0f;
-        float y_min = y_center - height / 2.0f;
-
-        InstanceSegmentation seg;
-        seg.class_id = static_cast<float>(class_id);
-        seg.class_confidence = max_score;
-        seg.bbox = BoundingBox(static_cast<int>(x_min), static_cast<int>(y_min), static_cast<int>(width),
-                               static_cast<int>(height));
-
-        // Extract mask for this detection
-        cv::Mat mask_logits(mask_h, mask_w, CV_32F);
-        int mask_offset = i * mask_h * mask_w;
-        float max_val = 0.0f;
-        float min_val = 1.0f;
-        for (int y = 0; y < mask_h; ++y) {
-            for (int x = 0; x < mask_w; ++x) {
-                float logit = tensorElementToFloat(masks[static_cast<size_t>(mask_offset + y * mask_w + x)]);
-                float val = 1.0f / (1.0f + std::exp(-logit)); // sigmoid
-                mask_logits.at<float>(y, x) = val;
-                max_val = std::max(max_val, val);
-                min_val = std::min(min_val, val);
+            if (max_score < confidence_threshold_) {
+                continue;
             }
+
+            if (class_id > 0) {
+                class_id -= 1;
+            }
+
+            float cx = tensorElementToFloat(boxes[box_batch_offset + static_cast<size_t>(i * 4 + 0)]);
+            float cy = tensorElementToFloat(boxes[box_batch_offset + static_cast<size_t>(i * 4 + 1)]);
+            float w = tensorElementToFloat(boxes[box_batch_offset + static_cast<size_t>(i * 4 + 2)]);
+            float h = tensorElementToFloat(boxes[box_batch_offset + static_cast<size_t>(i * 4 + 3)]);
+
+            float x_center = cx * static_cast<float>(frame_size.width);
+            float y_center = cy * static_cast<float>(frame_size.height);
+            float width = w * static_cast<float>(frame_size.width);
+            float height = h * static_cast<float>(frame_size.height);
+
+            float x_min = x_center - width / 2.0f;
+            float y_min = y_center - height / 2.0f;
+
+            InstanceSegmentation seg;
+            seg.class_id = static_cast<float>(class_id);
+            seg.class_confidence = max_score;
+            seg.bbox = BoundingBox(static_cast<int>(x_min), static_cast<int>(y_min), static_cast<int>(width),
+                                   static_cast<int>(height));
+
+            cv::Mat mask_logits(mask_h, mask_w, CV_32F);
+            size_t mask_offset =
+                masks_batch_offset + static_cast<size_t>(i) * static_cast<size_t>(mask_h) * static_cast<size_t>(mask_w);
+            float max_val = 0.0f;
+            float min_val = 1.0f;
+            for (int y = 0; y < mask_h; ++y) {
+                for (int x = 0; x < mask_w; ++x) {
+                    float logit = tensorElementToFloat(masks[mask_offset + static_cast<size_t>(y * mask_w + x)]);
+                    float val = 1.0f / (1.0f + std::exp(-logit)); // sigmoid
+                    mask_logits.at<float>(y, x) = val;
+                    max_val = std::max(max_val, val);
+                    min_val = std::min(min_val, val);
+                }
+            }
+
+            // Resize mask to frame size
+            cv::Mat mask_resized;
+            cv::resize(mask_logits, mask_resized, frame_size, 0, 0, cv::INTER_LINEAR);
+
+            // Threshold to binary
+            cv::Mat mask_binary;
+            cv::threshold(mask_resized, mask_binary, mask_threshold_, 1.0, cv::THRESH_BINARY);
+            cv::Mat mask_uint8;
+            mask_binary.convertTo(mask_uint8, CV_8UC1, 255.0);
+            seg.mask = fromCvMat(mask_uint8);
+
+            // Check mask content
+
+            // Crop mask to bbox
+            cv::Mat mask_cropped = cv::Mat::zeros(frame_size, CV_8UC1);
+            const BoundingBox frame_bounds(0, 0, frame_size.width, frame_size.height);
+            const BoundingBox roi_box = seg.bbox.intersect(frame_bounds);
+            const cv::Rect roi = toCvRect(roi_box);
+            if (roi.width > 0 && roi.height > 0) {
+                toCvMat(seg.mask)(roi).copyTo(mask_cropped(roi));
+            }
+            seg.mask = fromCvMat(mask_cropped);
+
+            // Populate mask_data for visualization
+            seg.mask_height = frame_size.height;
+            seg.mask_width = frame_size.width;
+            const cv::Mat& mask_mat = toCvMat(seg.mask);
+            seg.mask_data.assign(mask_mat.datastart, mask_mat.dataend);
+
+            segmentations.push_back(seg);
         }
-
-        // Resize mask to frame size
-        cv::Mat mask_resized;
-        cv::resize(mask_logits, mask_resized, frame_size, 0, 0, cv::INTER_LINEAR);
-
-        // Threshold to binary
-        cv::Mat mask_binary;
-        cv::threshold(mask_resized, mask_binary, mask_threshold_, 1.0, cv::THRESH_BINARY);
-        cv::Mat mask_uint8;
-        mask_binary.convertTo(mask_uint8, CV_8UC1, 255.0);
-        seg.mask = fromCvMat(mask_uint8);
-
-        // Check mask content
-
-        // Crop mask to bbox
-        cv::Mat mask_cropped = cv::Mat::zeros(frame_size, CV_8UC1);
-        const BoundingBox frame_bounds(0, 0, frame_size.width, frame_size.height);
-        const BoundingBox roi_box = seg.bbox.intersect(frame_bounds);
-        const cv::Rect roi = toCvRect(roi_box);
-        if (roi.width > 0 && roi.height > 0) {
-            toCvMat(seg.mask)(roi).copyTo(mask_cropped(roi));
-        }
-        seg.mask = fromCvMat(mask_cropped);
-
-        // Populate mask_data for visualization
-        seg.mask_height = frame_size.height;
-        seg.mask_width = frame_size.width;
-        const cv::Mat& mask_mat = toCvMat(seg.mask);
-        seg.mask_data.assign(mask_mat.datastart, mask_mat.dataend);
-
-        segmentations.push_back(seg);
     }
 
     return segmentations;
