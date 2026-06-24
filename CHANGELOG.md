@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-24
+
+### Added
+- RF-DETR keypoint pose estimation (`RfDetrPose` task family). TaskFactory now
+  routes `rfdetrpose`, `rfdetr-pose`, `rfdetrkeypoint`, `rfdetr-keypoint`,
+  `rfdetrkpt`, and `rfdetr-kpt` to single-stage pose estimation returning the
+  bounding box plus 17 COCO keypoints with per-keypoint visibility and a 2x2
+  pixel covariance (decoded from the Cholesky factor via the `log_l11`, `l21`,
+  and `log_l22` ONNX channels).
+- `Keypoint` extended with `visibility` and `covariance` fields, backed by the
+  new `RfDetrPosePostprocessor`.
+- Batch (shape[0]) support across 10 postprocessors and multi-image stacking in
+  4 preprocess strategies; 16 model families are now batch-ready.
+- Windows (MSVC + vcpkg) build and test support, including
+  `target_link_whole_archive` wiring for post-merge tests.
+- `export/pose_estimation/rfdetr/export_keypoint.py` keypoint exporter.
+
+### Fixed
+- Pose uncertainty reduction is clamped so keypoint scores can no longer exceed 1.0.
+- RF-DETR keypoint export made compatible with the rfdetr export API.
+- Windows CI: OpenCV DLL directory added to PATH; the windows-2022 runner is
+  pinned and uses pre-built OpenCV binaries.
+
+### Changed
+- CI gained a PR branch-policy workflow and link linting.
+
 ## [0.4.1] - 2026-06-14
 
 ### Fixed
