@@ -191,6 +191,34 @@ TEST_F(TaskFactoryTest, FactoryRoutesEveryTaskDomain) {
     }
 }
 
+TEST_F(TaskFactoryTest, PlatformStableModelTypeStringsRouteToExpectedTaskTypes) {
+    const std::vector<std::pair<const char*, TaskType>> aliases = {
+        {"yolo", TaskType::Detection},
+        {"yolonas", TaskType::Detection},
+        {"rtdetr", TaskType::Detection},
+        {"rtdetrul", TaskType::Detection},
+        {"rfdetr", TaskType::Detection},
+        {"yoloseg", TaskType::InstanceSegmentation},
+        {"raft", TaskType::OpticalFlow},
+        {"vitpose", TaskType::PoseEstimation},
+        {"depth_anything_v2", TaskType::DepthEstimation},
+        {"owlv2", TaskType::OpenVocabDetection},
+    };
+
+    auto info = createValidModelInfo();
+    for (const auto& alias : aliases) {
+        auto task = TaskFactory::createTaskInstance(alias.first, info);
+        ASSERT_NE(task, nullptr) << "null for platform stable alias: " << alias.first;
+        EXPECT_EQ(task->getTaskType(), alias.second) << "platform stable alias: " << alias.first;
+    }
+
+    for (const char* alias : {"videomae", "vivit", "timesformer"}) {
+        auto task = TaskFactory::createTaskInstance(alias, createVideoModelInfo());
+        ASSERT_NE(task, nullptr) << "null for platform stable alias: " << alias;
+        EXPECT_EQ(task->getTaskType(), TaskType::VideoClassification) << "platform stable alias: " << alias;
+    }
+}
+
 TEST_F(TaskFactoryTest, NormalizedAliasesRouteToSameTaskType) {
     expectAliasesRouteTo({"YOLO-V8", "yolo_v8", " yolo v8 "}, TaskType::Detection);
     expectAliasesRouteTo({"RT-DETR", "rt_detr", " RT DETR "}, TaskType::Detection);
