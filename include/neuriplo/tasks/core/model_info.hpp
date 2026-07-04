@@ -1,7 +1,8 @@
 #pragma once
 
+#include "neuriplo/tasks/core/image.hpp"
+
 #include <cstdint>
-#include <opencv2/opencv.hpp>
 #include <string>
 #include <vector>
 
@@ -20,7 +21,7 @@ struct ModelInfo {
     std::vector<std::string> input_formats;         ///< Input formats (FORMAT_NCHW, FORMAT_NHWC)
     std::vector<std::string> input_names;           ///< Input tensor names
     std::vector<std::string> output_names;          ///< Output tensor names
-    std::vector<int> input_types;                   ///< OpenCV data types
+    std::vector<PixelType> input_types;             ///< Per-input data types
     int max_batch_size_{1};                         ///< Maximum batch size
     int batch_size_{1};                             ///< Current batch size
 
@@ -51,7 +52,7 @@ struct ModelInfo {
             input_formats.emplace_back("FORMAT_NCHW"); // Default format
         }
         if (input_types.size() < input_names.size()) {
-            input_types.push_back(CV_32F); // Default type
+            input_types.push_back(PixelType::Float32); // Default type
         }
     }
 
