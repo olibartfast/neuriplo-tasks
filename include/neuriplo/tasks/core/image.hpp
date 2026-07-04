@@ -51,6 +51,7 @@ struct Size {
     friend bool operator==(const Size& lhs, const Size& rhs) noexcept {
         return lhs.width == rhs.width && lhs.height == rhs.height;
     }
+    friend bool operator!=(const Size& lhs, const Size& rhs) noexcept { return !(lhs == rhs); }
 };
 
 /**

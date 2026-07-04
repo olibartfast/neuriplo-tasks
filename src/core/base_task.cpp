@@ -8,7 +8,7 @@ namespace neuriplo_tasks {
 BaseTask::BaseTask(const ModelInfo& model_info, std::string empty_input_message)
     : TaskInterface(model_info), empty_input_message_(std::move(empty_input_message)) {}
 
-std::vector<std::vector<uint8_t>> BaseTask::preprocess(const std::vector<cv::Mat>& imgs) {
+std::vector<std::vector<uint8_t>> BaseTask::preprocess(const std::vector<Image>& imgs) {
     std::vector<std::vector<uint8_t>> results;
     results.reserve(imgs.size());
 
@@ -17,13 +17,13 @@ std::vector<std::vector<uint8_t>> BaseTask::preprocess(const std::vector<cv::Mat
         if (img.empty()) {
             throw std::invalid_argument(empty_input_message_);
         }
-        results.push_back(preprocessor.preprocess(img));
+        results.push_back(preprocessor.preprocess(img.view()));
     }
 
     return results;
 }
 
-std::vector<Result> BaseTask::postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) {
+std::vector<Result> BaseTask::postprocess(const Size& frame_size, const std::vector<Tensor>& tensors) {
     if (!validateOutputs(tensors)) {
         return {};
     }
