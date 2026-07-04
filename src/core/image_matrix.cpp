@@ -1,12 +1,11 @@
 #include "neuriplo/tasks/core/image_matrix.hpp"
 
-#include <opencv2/core/mat.hpp>
 #include <utility>
 
 namespace neuriplo_tasks {
 
 struct ImageMatrix::Impl {
-    cv::Mat data;
+    Image data;
 };
 
 ImageMatrix::ImageMatrix() : impl_(std::make_shared<Impl>()) {}
@@ -41,11 +40,13 @@ ImageMatrix::~ImageMatrix() = default;
 
 bool ImageMatrix::empty() const noexcept { return !impl_ || impl_->data.empty(); }
 
-int ImageMatrix::rows() const noexcept { return impl_ ? impl_->data.rows : 0; }
+int ImageMatrix::rows() const noexcept { return impl_ ? impl_->data.height() : 0; }
 
-int ImageMatrix::cols() const noexcept { return impl_ ? impl_->data.cols : 0; }
+int ImageMatrix::cols() const noexcept { return impl_ ? impl_->data.width() : 0; }
 
-int ImageMatrix::type() const noexcept { return impl_ ? impl_->data.type() : 0; }
+int ImageMatrix::channels() const noexcept { return impl_ ? impl_->data.channels() : 0; }
+
+PixelType ImageMatrix::pixelType() const noexcept { return impl_ ? impl_->data.pixelType() : PixelType::UInt8; }
 
 ImageMatrix ImageMatrix::clone() const {
     ImageMatrix copy;
@@ -55,25 +56,26 @@ ImageMatrix ImageMatrix::clone() const {
     return copy;
 }
 
-const cv::Mat& toCvMat(const ImageMatrix& matrix) {
-    static const cv::Mat kEmpty;
+const std::uint8_t* ImageMatrix::data() const noexcept {
+    return (impl_ && !impl_->data.empty()) ? impl_->data.raw() : nullptr;
+}
+
+std::size_t ImageMatrix::sizeBytes() const noexcept {
+    return (impl_ && !impl_->data.empty()) ? impl_->data.sizeBytes() : 0;
+}
+
+ImageMatrix fromImage(Image image) {
+    ImageMatrix matrix;
+    matrix.impl_->data = std::move(image);
+    return matrix;
+}
+
+const Image& toImage(const ImageMatrix& matrix) {
+    static const Image kEmpty;
     if (!matrix.impl_ || matrix.impl_->data.empty()) {
         return kEmpty;
     }
     return matrix.impl_->data;
-}
-
-cv::Mat& mutableCvMat(ImageMatrix& matrix) {
-    if (!matrix.impl_) {
-        matrix.impl_ = std::make_shared<ImageMatrix::Impl>();
-    }
-    return matrix.impl_->data;
-}
-
-ImageMatrix fromCvMat(const cv::Mat& mat) {
-    ImageMatrix matrix;
-    mutableCvMat(matrix) = mat;
-    return matrix;
 }
 
 } // namespace neuriplo_tasks

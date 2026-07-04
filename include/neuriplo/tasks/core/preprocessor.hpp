@@ -1,8 +1,9 @@
 #pragma once
 
+#include "neuriplo/tasks/core/image.hpp"
+
 #include <array>
 #include <cstdint>
-#include <opencv2/opencv.hpp>
 #include <string>
 #include <vector>
 
@@ -25,7 +26,7 @@ enum class DataType : uint8_t { FLOAT32, UINT8, INT32, INT64 };
  * @brief Preprocessing configuration
  */
 struct PreprocessConfig {
-    cv::Size input_size; // Target input size
+    Size input_size;                 // Target input size
     ImageFormat format = ImageFormat::NCHW;
     DataType data_type = DataType::FLOAT32;
     bool normalize = true;            // Normalize to [0, 1]
@@ -46,10 +47,10 @@ class Preprocessor {
     /**
      * @brief Preprocess a single image
      *
-     * @param image Input image (BGR format from OpenCV)
+     * @param image Input image (BGR format, interleaved HxWxC)
      * @return Preprocessed data as byte vector
      */
-    [[nodiscard]] virtual std::vector<uint8_t> preprocess(const cv::Mat& image) const;
+    [[nodiscard]] virtual std::vector<uint8_t> preprocess(const ImageView& image) const;
 
     /**
      * @brief Preprocess multiple images
@@ -57,7 +58,7 @@ class Preprocessor {
      * @param images Input images
      * @return Vector of preprocessed data for each image
      */
-    [[nodiscard]] virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& images) const;
+    [[nodiscard]] virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& images) const;
 
   protected:
     /**
@@ -69,15 +70,13 @@ class Preprocessor {
      * @param data_type Output data type
      * @return Preprocessed data
      */
-    [[nodiscard]] std::vector<uint8_t> preprocess_image(const cv::Mat& image, const cv::Size& target_size,
+    [[nodiscard]] std::vector<uint8_t> preprocess_image(const ImageView& image, const Size& target_size,
                                                         ImageFormat format, DataType data_type) const;
 
     /**
-     * @brief Apply ImageNet normalization
-     *
-     * @param image Image to normalize (must be CV_32FC3)
+     * @brief Apply ImageNet normalization (in-place on a Float32 3-channel image)
      */
-    void apply_imagenet_normalization(cv::Mat& image) const;
+    void apply_imagenet_normalization(Image& image) const;
 
     PreprocessConfig config_;
 
