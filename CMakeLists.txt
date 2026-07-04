@@ -58,6 +58,10 @@ endif()
 # Find OpenCV
 find_package(OpenCV REQUIRED)
 
+# stb single-header libraries (vendored, header-only, public domain).
+# Added as a PRIVATE include path to avoid export-set complications.
+set(NEURIPLO_STB_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/stb)
+
 # All library sources - UNIFIED ARCHITECTURE
 set(CORE_SOURCES
     # Core
@@ -66,6 +70,8 @@ set(CORE_SOURCES
     src/core/base_task.cpp
     src/core/bbox_processor.cpp
     src/core/image_matrix.cpp
+    src/core/image_io.cpp
+    src/core/image_ops.cpp
     src/core/preprocessor.cpp
     src/core/task_interface.cpp
     src/core/task_factory.cpp
@@ -118,6 +124,8 @@ set(CORE_SOURCES
 set(CORE_HEADERS
     # Core
     include/neuriplo/tasks/core/bounding_box.hpp
+    include/neuriplo/tasks/core/image.hpp
+    include/neuriplo/tasks/core/image_io.hpp
     include/neuriplo/tasks/core/image_matrix.hpp
     include/neuriplo/tasks/core/opencv_interop.hpp
     include/neuriplo/tasks/core/result_types.hpp
@@ -196,6 +204,8 @@ target_include_directories(neuriplo-tasks
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
+    PRIVATE
+        ${NEURIPLO_STB_INCLUDE_DIR}
 )
 
 target_link_libraries(neuriplo-tasks

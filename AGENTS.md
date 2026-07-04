@@ -121,6 +121,7 @@ find src -name '*.cpp' | xargs clang-tidy-18 -p build
 cppcheck --enable=warning --std=c++17 \
   --suppress=missingIncludeSystem \
   --suppress=unmatchedSuppression \
+  --suppress=*:3rdparty/stb/* \
   --error-exitcode=1 \
   -I include src/
 ```
@@ -373,6 +374,7 @@ find src include tests -name '*.cpp' -o -name '*.hpp' | \
 cppcheck --enable=warning --std=c++17 \
   --suppress=missingIncludeSystem \
   --suppress=unmatchedSuppression \
+  --suppress=*:3rdparty/stb/* \
   --error-exitcode=1 -I include src/ && \
 cmake -S . -B build -DBUILD_TESTS=ON -DWERROR=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && \
 cmake --build build --parallel && \
