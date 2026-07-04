@@ -64,7 +64,7 @@ BatchPostprocessOutput finalizeOutput(std::vector<Result> results, int batch_siz
 
 } // namespace
 
-BatchPostprocessOutput batchPostprocess(TaskInterface& task, const cv::Size& frame_size,
+BatchPostprocessOutput batchPostprocess(TaskInterface& task, const Size& frame_size,
                                         const std::vector<Tensor>& tensors, int batch_size) {
     validateBatchSize(batch_size, task.getModelInfo());
 
