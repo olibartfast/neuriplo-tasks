@@ -3,7 +3,6 @@
 #include "neuriplo/tasks/core/result_types.hpp"
 #include "neuriplo/tasks/core/task_interface.hpp"
 
-#include <opencv2/core/types.hpp>
 #include <vector>
 
 namespace neuriplo_tasks {
@@ -22,7 +21,7 @@ class SegmentationPostprocessor {
      * @return Vector of InstanceSegmentation results
      */
     virtual std::vector<InstanceSegmentation> postprocess(const std::vector<Tensor>& tensors,
-                                                          const cv::Size& frame_size) = 0;
+                                                          const Size& frame_size) = 0;
 };
 
 } // namespace neuriplo_tasks

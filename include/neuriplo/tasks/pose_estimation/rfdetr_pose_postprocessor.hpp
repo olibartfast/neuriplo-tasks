@@ -3,7 +3,6 @@
 #include "neuriplo/tasks/core/task_interface.hpp"
 #include "neuriplo/tasks/pose_estimation/pose_postprocessor.hpp"
 
-#include <opencv2/core.hpp>
 #include <vector>
 
 namespace neuriplo_tasks {
@@ -24,14 +23,14 @@ namespace neuriplo_tasks {
  */
 class RfDetrPosePostprocessor : public PosePostprocessor {
   public:
-    RfDetrPosePostprocessor(const cv::Size& input_size, float confidence_threshold, float keypoint_uncertainty_alpha,
+    RfDetrPosePostprocessor(const Size& input_size, float confidence_threshold, float keypoint_uncertainty_alpha,
                             const std::vector<int>& keypoint_counts = {0, 17});
 
-    std::vector<PoseEstimation> postprocess(const std::vector<Tensor>& tensors, const cv::Size& original_size,
-                                            const cv::Size& input_size) override;
+    std::vector<PoseEstimation> postprocess(const std::vector<Tensor>& tensors, const Size& original_size,
+                                            const Size& input_size) override;
 
   private:
-    cv::Size input_size_;
+    Size input_size_;
     float confidence_threshold_;
     float keypoint_uncertainty_alpha_;
     std::vector<int> keypoint_counts_;

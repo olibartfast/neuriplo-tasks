@@ -6,7 +6,7 @@
 #include <cstring>
 #include <stdexcept>
 
-namespace neuriplo_tasks::image_ops {
+namespace neuriplo_tasks::vision::ops {
 
 namespace {
 
@@ -418,4 +418,4 @@ std::vector<int> nms(const std::vector<DetectionBox>& detections, float iou_thre
     return keep;
 }
 
-} // namespace neuriplo_tasks::image_ops
+} // namespace neuriplo_tasks::vision::ops

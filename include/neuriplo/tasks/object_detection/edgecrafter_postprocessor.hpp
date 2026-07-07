@@ -11,7 +11,7 @@ class EdgeCrafterPostprocessor : public Postprocessor {
   public:
     EdgeCrafterPostprocessor(float confidence_threshold, const std::vector<std::string>& output_names = {});
 
-    std::vector<Detection> postprocess(const std::vector<Tensor>& tensors, const cv::Size& frame_size) override;
+    std::vector<Detection> postprocess(const std::vector<Tensor>& tensors, const Size& frame_size) override;
 
   private:
     float confidence_threshold_;

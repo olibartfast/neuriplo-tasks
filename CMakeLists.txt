@@ -71,7 +71,7 @@ set(CORE_SOURCES
     src/core/bbox_processor.cpp
     src/core/image_matrix.cpp
     src/core/image_io.cpp
-    src/core/image_ops.cpp
+    src/core/vision/image_ops.cpp
     src/core/preprocessor.cpp
     src/core/task_interface.cpp
     src/core/task_factory.cpp
@@ -125,6 +125,9 @@ set(CORE_HEADERS
     # Core
     include/neuriplo/tasks/core/bounding_box.hpp
     include/neuriplo/tasks/core/image.hpp
+    include/neuriplo/tasks/core/vision/geometry.hpp
+    include/neuriplo/tasks/core/vision/image.hpp
+    src/core/vision/image_ops.hpp
     include/neuriplo/tasks/core/image_io.hpp
     include/neuriplo/tasks/core/image_matrix.hpp
     include/neuriplo/tasks/core/opencv_interop.hpp
@@ -206,6 +209,8 @@ target_include_directories(neuriplo-tasks
         $<INSTALL_INTERFACE:include>
     PRIVATE
         ${NEURIPLO_STB_INCLUDE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core
 )
 
 target_link_libraries(neuriplo-tasks

@@ -1,5 +1,6 @@
 #include "neuriplo/tasks/core/model_info.hpp"
 #include "neuriplo/tasks/depth_estimation/depth_estimation_task.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
 
@@ -13,7 +14,7 @@ class DepthEstimationTest : public ::testing::Test {
         info.input_formats = {"FORMAT_NCHW"};
         info.input_names = {"pixel_values"};
         info.output_names = {"predicted_depth"};
-        info.input_types = {CV_32F};
+        info.input_types = {neuriplo_tasks::PixelType::Float32};
         return info;
     }
 };
@@ -22,7 +23,7 @@ TEST_F(DepthEstimationTest, PreprocessReturnsTensorData) {
     auto model_info = createModelInfo();
     DepthEstimationTask task(model_info, "depth_anything_v2");
 
-    cv::Mat img = cv::Mat::zeros(300, 400, CV_8UC3);
+    neuriplo_tasks::Image img = neuriplo_tasks::vision_test::makeImage(400, 300, 3, 0);
     auto outputs = task.preprocess({img});
 
     ASSERT_EQ(outputs.size(), 1);
@@ -33,7 +34,7 @@ TEST_F(DepthEstimationTest, PreprocessRejectsEmptyImage) {
     auto model_info = createModelInfo();
     DepthEstimationTask task(model_info, "depth_anything_v2");
 
-    EXPECT_THROW(task.preprocess({cv::Mat()}), std::invalid_argument);
+    EXPECT_THROW(task.preprocess({neuriplo_tasks::Image()}), std::invalid_argument);
 }
 
 TEST_F(DepthEstimationTest, PostprocessConvertsDepthMap) {
@@ -53,7 +54,7 @@ TEST_F(DepthEstimationTest, PostprocessConvertsDepthMap) {
 
     Tensor output_tensor(data, {batch, height, width});
 
-    auto results = task.postprocess(cv::Size(10, 8), {output_tensor});
+    auto results = task.postprocess(neuriplo_tasks::Size(10, 8), {output_tensor});
 
     ASSERT_EQ(results.size(), 1);
     ASSERT_TRUE(std::holds_alternative<DepthEstimation>(results[0]));
@@ -61,8 +62,8 @@ TEST_F(DepthEstimationTest, PostprocessConvertsDepthMap) {
     const auto& depth = std::get<DepthEstimation>(results[0]);
     EXPECT_EQ(depth.depth.rows(), 8);
     EXPECT_EQ(depth.depth.cols(), 10);
-    EXPECT_EQ(depth.depth.type(), CV_32FC1);
-    EXPECT_EQ(depth.normalized_depth.type(), CV_32FC1);
+    EXPECT_EQ(depth.depth.pixelType(), neuriplo_tasks::PixelType::Float32);
+    EXPECT_EQ(depth.normalized_depth.pixelType(), neuriplo_tasks::PixelType::Float32);
     EXPECT_LE(depth.min_depth, depth.max_depth);
 }
 
@@ -70,7 +71,7 @@ TEST_F(DepthEstimationTest, PostprocessEmptyTensorReturnsEmptyResult) {
     auto model_info = createModelInfo();
     DepthEstimationTask task(model_info, "depth_anything_v2");
 
-    auto results = task.postprocess(cv::Size(10, 8), {});
+    auto results = task.postprocess(neuriplo_tasks::Size(10, 8), {});
     EXPECT_TRUE(results.empty());
 }
 

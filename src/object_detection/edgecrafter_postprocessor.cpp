@@ -1,6 +1,5 @@
 #include "neuriplo/tasks/object_detection/edgecrafter_postprocessor.hpp"
 
-#include "neuriplo/tasks/core/opencv_interop.hpp"
 #include "neuriplo/tasks/core/output_name_utils.hpp"
 #include "neuriplo/tasks/core/tensor_utils.hpp"
 
@@ -21,7 +20,7 @@ void EdgeCrafterPostprocessor::findOutputIndices(const std::vector<std::string>&
 }
 
 std::vector<Detection> EdgeCrafterPostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                             const cv::Size& /*frame_size*/) {
+                                                             const Size& /*frame_size*/) {
 
     if (tensors.size() < 3) {
         throw std::runtime_error("EdgeCrafter detection requires 3 output tensors (labels, boxes, scores)");
@@ -70,8 +69,8 @@ std::vector<Detection> EdgeCrafterPostprocessor::postprocess(const std::vector<T
             Detection det;
             det.class_id = static_cast<float>(class_id);
             det.class_confidence = score;
-            det.bbox = fromCvRect(cv::Rect(cv::Point(static_cast<int>(x1), static_cast<int>(y1)),
-                                           cv::Point(static_cast<int>(x2), static_cast<int>(y2))));
+            det.bbox = BoundingBox(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1),
+                                   static_cast<int>(y2 - y1));
             detections.push_back(det);
         }
     }

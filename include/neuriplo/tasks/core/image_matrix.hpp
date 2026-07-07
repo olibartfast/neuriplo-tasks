@@ -41,4 +41,7 @@ class ImageMatrix {
     friend const Image& toImage(const ImageMatrix& matrix);
 };
 
+[[nodiscard]] ImageMatrix fromImage(Image image);
+[[nodiscard]] const Image& toImage(const ImageMatrix& matrix);
+
 } // namespace neuriplo_tasks

@@ -1,9 +1,9 @@
 #include "neuriplo/tasks/core/batch_postprocess.hpp"
 #include "neuriplo/tasks/core/batch_preprocess.hpp"
 #include "neuriplo/tasks/core/task_factory.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 
 using namespace neuriplo_tasks;
 
@@ -15,7 +15,7 @@ ModelInfo depthModelInfo() {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"pixel_values"};
     info.output_names = {"predicted_depth"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
     info.batch_size_ = 2;
     info.max_batch_size_ = 2;
     return info;
@@ -39,7 +39,7 @@ TEST(DepthEstimationBatchTest, PostprocessReturnsTwoDepthMaps) {
     ASSERT_NE(task, nullptr);
 
     const std::vector<Tensor> tensors = {makeDepthTensor(2, 3, 4)};
-    const auto results = task->postprocess(cv::Size(40, 30), tensors);
+    const auto results = task->postprocess(neuriplo_tasks::Size(40, 30), tensors);
 
     ASSERT_EQ(results.size(), 2u);
     ASSERT_TRUE(std::holds_alternative<DepthEstimation>(results[0]));
@@ -51,10 +51,12 @@ TEST(DepthEstimationBatchTest, BatchHelpersRoundTrip) {
     ASSERT_NE(task, nullptr);
 
     BatchRequest request;
-    request.images = {cv::Mat::zeros(120, 160, CV_8UC3), cv::Mat::ones(100, 100, CV_8UC3)};
+    request.images = {neuriplo_tasks::vision_test::makeImage(160, 120, 3, 0),
+                      neuriplo_tasks::vision_test::makeImage(100, 100, 3, 1)};
 
     const auto pre = batchPreprocess(*task, request);
-    const auto post = batchPostprocess(*task, cv::Size(160, 120), {makeDepthTensor(2, 3, 4)}, pre.batch_size);
+    const auto post =
+        batchPostprocess(*task, neuriplo_tasks::Size(160, 120), {makeDepthTensor(2, 3, 4)}, pre.batch_size);
 
     EXPECT_EQ(post.batch_size, 2);
     EXPECT_TRUE(postprocessResultsMatchBatchSize(post));

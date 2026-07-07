@@ -22,7 +22,7 @@ class DepthEstimationPostprocessor {
      * @return Vector of depth estimation results
      */
     virtual std::vector<DepthEstimation> postprocess(const std::vector<TensorElement>& depth_output,
-                                                     const std::vector<int64_t>& shape, const cv::Size& frame_size) = 0;
+                                                     const std::vector<int64_t>& shape, const Size& frame_size) = 0;
 };
 
 } // namespace neuriplo_tasks

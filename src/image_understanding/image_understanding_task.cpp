@@ -1,5 +1,7 @@
 #include "neuriplo/tasks/image_understanding/image_understanding_task.hpp"
 
+#include "image_ops.hpp"
+
 namespace neuriplo_tasks {
 
 ImageUnderstandingTask::ImageUnderstandingTask(const ModelInfo& model_info, const std::string& /*model_name*/,
@@ -9,7 +11,7 @@ ImageUnderstandingTask::ImageUnderstandingTask(const ModelInfo& model_info, cons
     prompt_ = (it != config.extra_params.end() && !it->second.empty()) ? it->second : "Describe what you see.";
 }
 
-std::vector<std::vector<uint8_t>> ImageUnderstandingTask::preprocess(const std::vector<cv::Mat>& imgs) {
+std::vector<std::vector<uint8_t>> ImageUnderstandingTask::preprocess(const std::vector<Image>& imgs) {
     std::vector<uint8_t> prompt_bytes(prompt_.begin(), prompt_.end());
 
     if (imgs.empty() || imgs[0].empty()) {
@@ -17,10 +19,12 @@ std::vector<std::vector<uint8_t>> ImageUnderstandingTask::preprocess(const std::
     }
 
     // Encode image as: [nx(4B LE)][ny(4B LE)][RGB pixels]
-    cv::Mat rgb;
-    cv::cvtColor(imgs[0], rgb, cv::COLOR_BGR2RGB);
-    const uint32_t nx = static_cast<uint32_t>(rgb.cols);
-    const uint32_t ny = static_cast<uint32_t>(rgb.rows);
+    Image rgb = imgs[0].clone();
+    if (rgb.channels() == 3) {
+        image_ops::swapBgrRgb(rgb);
+    }
+    const uint32_t nx = static_cast<uint32_t>(rgb.width());
+    const uint32_t ny = static_cast<uint32_t>(rgb.height());
 
     const size_t pixel_bytes = static_cast<size_t>(nx) * ny * 3;
     std::vector<uint8_t> image_bytes;
@@ -32,20 +36,13 @@ std::vector<std::vector<uint8_t>> ImageUnderstandingTask::preprocess(const std::
     for (int i = 0; i < 4; ++i)
         image_bytes.push_back(static_cast<uint8_t>((ny >> (i * 8)) & 0xFF));
 
-    // Append pixel data
-    if (rgb.isContinuous()) {
-        image_bytes.insert(image_bytes.end(), rgb.data, rgb.data + pixel_bytes);
-    } else {
-        for (uint32_t row = 0; row < ny; ++row) {
-            const uint8_t* row_ptr = rgb.ptr(static_cast<int>(row));
-            image_bytes.insert(image_bytes.end(), row_ptr, row_ptr + nx * 3);
-        }
-    }
+    // Append pixel data (Image is always contiguous)
+    image_bytes.insert(image_bytes.end(), rgb.raw(), rgb.raw() + pixel_bytes);
 
     return {std::move(prompt_bytes), std::move(image_bytes)};
 }
 
-std::vector<Result> ImageUnderstandingTask::postprocess(const cv::Size& /*frame_size*/,
+std::vector<Result> ImageUnderstandingTask::postprocess(const Size& /*frame_size*/,
                                                         const std::vector<Tensor>& tensors) {
     if (tensors.empty() || tensors[0].data.empty()) {
         return {ImageUnderstanding{"(no response)"}};

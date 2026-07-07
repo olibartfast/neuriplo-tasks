@@ -1,5 +1,6 @@
 #include "neuriplo/tasks/core/model_info.hpp"
 #include "neuriplo/tasks/core/task_factory.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
 
@@ -13,7 +14,7 @@ class ConcreteTasksTest : public ::testing::Test {
         info.input_formats = {format};
         info.input_names = {"images"};
         info.output_names = {"output0"};
-        info.input_types = {CV_32F};
+        info.input_types = {neuriplo_tasks::PixelType::Float32};
         return info;
     }
 };
@@ -72,7 +73,8 @@ TEST_F(ConcreteTasksTest, CreateOwlv2Task) {
     info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW", "FORMAT_NCHW"};
     info.input_names = {"pixel_values", "input_ids", "attention_mask"};
     info.output_names = {"pred_boxes", "logits"};
-    info.input_types = {CV_32F, CV_32S, CV_32S};
+    info.input_types = {neuriplo_tasks::PixelType::Float32, neuriplo_tasks::PixelType::Int32,
+                        neuriplo_tasks::PixelType::Int32};
 
     TaskConfig cfg;
     cfg.text_prompts = {"cat", "dog"};
@@ -88,7 +90,8 @@ TEST_F(ConcreteTasksTest, CreateGroundingDinoTask) {
     info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW", "FORMAT_NCHW"};
     info.input_names = {"pixel_values", "input_ids", "attention_mask"};
     info.output_names = {"pred_boxes", "pred_logits"};
-    info.input_types = {CV_32F, CV_32S, CV_32S};
+    info.input_types = {neuriplo_tasks::PixelType::Float32, neuriplo_tasks::PixelType::Int32,
+                        neuriplo_tasks::PixelType::Int32};
 
     TaskConfig cfg;
     cfg.text_prompts = {"cat", "dog"};
@@ -103,8 +106,8 @@ TEST_F(ConcreteTasksTest, PreprocessExecution) {
     auto info = createValidModelInfo();
     auto task = TaskFactory::createTaskInstance("yolov8", info);
 
-    cv::Mat img = cv::Mat::zeros(100, 100, CV_8UC3);
-    std::vector<cv::Mat> images = {img};
+    neuriplo_tasks::Image img = neuriplo_tasks::vision_test::makeImage(100, 100, 3, 0);
+    std::vector<neuriplo_tasks::Image> images = {img};
 
     auto result = task->preprocess(images);
     EXPECT_FALSE(result.empty());

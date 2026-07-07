@@ -1,6 +1,6 @@
 #include "neuriplo/tasks/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
 
-#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "image_ops.hpp"
 #include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <cmath>
@@ -9,7 +9,7 @@
 
 namespace neuriplo_tasks {
 
-RfDetrSegmentationPostprocessor::RfDetrSegmentationPostprocessor(const cv::Size& input_size, float confidence_threshold,
+RfDetrSegmentationPostprocessor::RfDetrSegmentationPostprocessor(const Size& input_size, float confidence_threshold,
                                                                  float mask_threshold,
                                                                  const std::vector<std::string>& output_names)
     : input_size_(input_size), confidence_threshold_(confidence_threshold), mask_threshold_(mask_threshold) {
@@ -40,7 +40,7 @@ void RfDetrSegmentationPostprocessor::findOutputIndices(const std::vector<std::s
 }
 
 std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                                               const cv::Size& frame_size) {
+                                                                               const Size& frame_size) {
 
     if (tensors.size() < 3) {
         throw std::runtime_error("RF-DETR segmentation requires at least 3 output tensors");
@@ -116,7 +116,7 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
             seg.bbox = BoundingBox(static_cast<int>(x_min), static_cast<int>(y_min), static_cast<int>(width),
                                    static_cast<int>(height));
 
-            cv::Mat mask_logits(mask_h, mask_w, CV_32F);
+            Image mask_logits = Image::uninit(mask_w, mask_h, 1, PixelType::Float32);
             size_t mask_offset =
                 masks_batch_offset + static_cast<size_t>(i) * static_cast<size_t>(mask_h) * static_cast<size_t>(mask_w);
             float max_val = 0.0f;
@@ -124,41 +124,30 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
             for (int y = 0; y < mask_h; ++y) {
                 for (int x = 0; x < mask_w; ++x) {
                     float logit = tensorElementToFloat(masks[mask_offset + static_cast<size_t>(y * mask_w + x)]);
-                    float val = 1.0f / (1.0f + std::exp(-logit)); // sigmoid
-                    mask_logits.at<float>(y, x) = val;
+                    float val = 1.0f / (1.0f + std::exp(-logit));
+                    mask_logits.ptr<float>(y)[x] = val;
                     max_val = std::max(max_val, val);
                     min_val = std::min(min_val, val);
                 }
             }
 
-            // Resize mask to frame size
-            cv::Mat mask_resized;
-            cv::resize(mask_logits, mask_resized, frame_size, 0, 0, cv::INTER_LINEAR);
+            Image mask_resized =
+                image_ops::resize(mask_logits, frame_size.width, frame_size.height, image_ops::Interpolation::Linear);
 
-            // Threshold to binary
-            cv::Mat mask_binary;
-            cv::threshold(mask_resized, mask_binary, mask_threshold_, 1.0, cv::THRESH_BINARY);
-            cv::Mat mask_uint8;
-            mask_binary.convertTo(mask_uint8, CV_8UC1, 255.0);
-            seg.mask = fromCvMat(mask_uint8);
+            Image mask_binary = image_ops::thresholdBinary(mask_resized.view(), mask_threshold_, 1.0);
+            Image mask_uint8 = mask_binary.convertedTo(PixelType::UInt8, 255.0);
 
-            // Check mask content
-
-            // Crop mask to bbox
-            cv::Mat mask_cropped = cv::Mat::zeros(frame_size, CV_8UC1);
+            Image mask_cropped = Image::zeros(frame_size.width, frame_size.height, 1, PixelType::UInt8);
             const BoundingBox frame_bounds(0, 0, frame_size.width, frame_size.height);
             const BoundingBox roi_box = seg.bbox.intersect(frame_bounds);
-            const cv::Rect roi = toCvRect(roi_box);
-            if (roi.width > 0 && roi.height > 0) {
-                toCvMat(seg.mask)(roi).copyTo(mask_cropped(roi));
+            if (roi_box.width > 0 && roi_box.height > 0) {
+                image_ops::copyRegion(mask_uint8.view(), roi_box, mask_cropped, roi_box);
             }
-            seg.mask = fromCvMat(mask_cropped);
 
-            // Populate mask_data for visualization
             seg.mask_height = frame_size.height;
             seg.mask_width = frame_size.width;
-            const cv::Mat& mask_mat = toCvMat(seg.mask);
-            seg.mask_data.assign(mask_mat.datastart, mask_mat.dataend);
+            seg.mask_data.assign(mask_uint8.raw(), mask_uint8.raw() + mask_uint8.sizeBytes());
+            seg.mask = fromImage(std::move(mask_cropped));
 
             segmentations.push_back(seg);
         }

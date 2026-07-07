@@ -22,13 +22,14 @@ class BBoxProcessor {
      * accounting for letterbox padding used during preprocessing.
      */
     [[nodiscard]] static BoundingBox calculate_bounding_box(const Size& image_size, const std::vector<float>& bbox,
-                                                           int network_width, int network_height);
+                                                            int network_width, int network_height);
 
     /**
      * @brief Calculate bounding box from XYXY coordinates with letterbox scaling
      */
-    [[nodiscard]] static BoundingBox calculate_bounding_box_from_xyxy(const Size& image_size, const std::vector<float>& bbox,
-                                                                     int network_width, int network_height);
+    [[nodiscard]] static BoundingBox calculate_bounding_box_from_xyxy(const Size& image_size,
+                                                                      const std::vector<float>& bbox, int network_width,
+                                                                      int network_height);
 
     /**
      * @brief Scale bbox from network coordinates to image coordinates

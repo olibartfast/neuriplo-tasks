@@ -1,9 +1,9 @@
 #include "neuriplo/tasks/core/batch_postprocess.hpp"
 #include "neuriplo/tasks/core/task_config.hpp"
 #include "neuriplo/tasks/core/task_factory.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 
 using namespace neuriplo_tasks;
 
@@ -15,7 +15,7 @@ ModelInfo depthModelInfo(int max_batch_size) {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"pixel_values"};
     info.output_names = {"predicted_depth"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
     info.max_batch_size_ = max_batch_size;
     info.batch_size_ = 1;
     return info;
@@ -45,7 +45,7 @@ bool resultsEqual(const std::vector<Result>& lhs, const std::vector<Result>& rhs
         const auto& right_depth = std::get<DepthEstimation>(rhs[i]);
         if (left_depth.depth.rows() != right_depth.depth.rows() ||
             left_depth.depth.cols() != right_depth.depth.cols() ||
-            left_depth.depth.type() != right_depth.depth.type()) {
+            left_depth.depth.pixelType() != right_depth.depth.pixelType()) {
             return false;
         }
     }
@@ -58,7 +58,7 @@ TEST(BatchPostprocessTest, SingleBatchMatchesDirectPostprocess) {
     auto task = TaskFactory::createTaskInstance("depthanythingv2", depthModelInfo(2));
     ASSERT_NE(task, nullptr);
 
-    const cv::Size frame_size(40, 30);
+    const neuriplo_tasks::Size frame_size(40, 30);
     const std::vector<Tensor> tensors = {makeDepthTensor(1, 4, 5)};
 
     const auto direct = task->postprocess(frame_size, tensors);
@@ -73,7 +73,7 @@ TEST(BatchPostprocessTest, TwoBatchIndicesRoundTrip) {
     auto task = TaskFactory::createTaskInstance("depthanythingv2", depthModelInfo(2));
     ASSERT_NE(task, nullptr);
 
-    const cv::Size frame_size(64, 48);
+    const neuriplo_tasks::Size frame_size(64, 48);
     const std::vector<Tensor> tensors = {makeDepthTensor(2, 3, 4)};
 
     const auto direct = task->postprocess(frame_size, tensors);
@@ -91,7 +91,7 @@ TEST(BatchPostprocessTest, GaussianSplattingKeepsSingleAggregateResult) {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"image"};
     info.output_names = {"gaussians"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
     info.max_batch_size_ = 4;
 
     auto task = TaskFactory::createTaskInstance("lgm", info);
@@ -105,7 +105,7 @@ TEST(BatchPostprocessTest, GaussianSplattingKeepsSingleAggregateResult) {
     }
     const std::vector<Tensor> tensors = {Tensor(std::move(data), {num_gaussians, 14})};
 
-    const auto wrapped = batchPostprocess(*task, cv::Size(256, 256), tensors, 4);
+    const auto wrapped = batchPostprocess(*task, neuriplo_tasks::Size(256, 256), tensors, 4);
 
     EXPECT_EQ(wrapped.results.size(), 1u);
     EXPECT_EQ(wrapped.batch_size, 4);
@@ -118,7 +118,7 @@ TEST(BatchPostprocessTest, RejectsNonPositiveBatchSize) {
     ASSERT_NE(task, nullptr);
 
     const std::vector<Tensor> tensors = {makeDepthTensor(1, 2, 2)};
-    EXPECT_THROW(batchPostprocess(*task, cv::Size(10, 8), tensors, 0), std::invalid_argument);
+    EXPECT_THROW(batchPostprocess(*task, neuriplo_tasks::Size(10, 8), tensors, 0), std::invalid_argument);
 }
 
 TEST(BatchPostprocessTest, RejectsBatchExceedingMaxBatchSize) {
@@ -126,7 +126,7 @@ TEST(BatchPostprocessTest, RejectsBatchExceedingMaxBatchSize) {
     ASSERT_NE(task, nullptr);
 
     const std::vector<Tensor> tensors = {makeDepthTensor(2, 2, 2)};
-    EXPECT_THROW(batchPostprocess(*task, cv::Size(10, 8), tensors, 2), std::invalid_argument);
+    EXPECT_THROW(batchPostprocess(*task, neuriplo_tasks::Size(10, 8), tensors, 2), std::invalid_argument);
 }
 
 TEST(BatchPostprocessTest, ClassificationBatchSizeTwo) {
@@ -135,7 +135,7 @@ TEST(BatchPostprocessTest, ClassificationBatchSizeTwo) {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"input"};
     info.output_names = {"output"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
     info.max_batch_size_ = 2;
 
     TaskConfig config;
@@ -147,7 +147,7 @@ TEST(BatchPostprocessTest, ClassificationBatchSizeTwo) {
     std::vector<TensorElement> data = {0.1f, 0.2f, 3.0f, 0.0f, 2.0f, 4.0f, 0.5f, 0.1f};
     const std::vector<Tensor> tensors = {Tensor(std::move(data), {2, 4})};
 
-    const auto wrapped = batchPostprocess(*task, cv::Size(100, 80), tensors, 2);
+    const auto wrapped = batchPostprocess(*task, neuriplo_tasks::Size(100, 80), tensors, 2);
 
     EXPECT_EQ(wrapped.batch_size, 2);
     EXPECT_TRUE(postprocessResultsMatchBatchSize(wrapped));
@@ -157,7 +157,7 @@ TEST(BatchPostprocessTest, EmptyTensorsReturnsEmptyResults) {
     auto task = TaskFactory::createTaskInstance("depthanythingv2", depthModelInfo(2));
     ASSERT_NE(task, nullptr);
 
-    const auto wrapped = batchPostprocess(*task, cv::Size(10, 8), {}, 2);
+    const auto wrapped = batchPostprocess(*task, neuriplo_tasks::Size(10, 8), {}, 2);
 
     EXPECT_TRUE(wrapped.results.empty());
     EXPECT_EQ(wrapped.batch_size, 2);
