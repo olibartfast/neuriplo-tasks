@@ -9,7 +9,7 @@ single PR or commit series: build alone, tests green, no unrelated churn.
 |----------|--------|
 | [batch_support_matrix.md](./batch_support_matrix.md) | Per-family batch readiness ([B0](#b0) audit) |
 | [batch_processing.md](./batch_processing.md) | Consumer migration guide ([B6](#b6)) |
-| [task_refactor_atomic_plan.md](./plans/task_refactor_atomic_plan.md) | Factory registry, strategies, `visitResult`, composite pipelines |
+| [remove-opencv-stb-plan.md](./plans/remove-opencv-stb-plan.md) | Central vision layer and OpenCV dependency removal |
 | [Versioning.md](./Versioning.md) | Release and changelog workflow |
 | [AGENTS.md](../AGENTS.md) | CI gate, contracts, coding rules |
 
@@ -55,9 +55,9 @@ against this file on each merge.
   minor/major policy in `docs/Versioning.md`).
 - Do not change tensor dtype, channel order, or bbox math without tests and
   consumer migration notes.
-- No runtime dependencies beyond OpenCV.
+- Do not add new runtime dependencies to task code directly; route vision dependencies through the central vision layer and optional adapters.
 - Third-party / runtime task plugins remain **out of scope** unless product
-  requests Phase 2 in [task_refactor_atomic_plan.md](./task_refactor_atomic_plan.md).
+  explicitly reopens runtime plugin support.
 
 **Local gate** (run before every PR):
 
@@ -77,14 +77,14 @@ ctest --test-dir build --output-on-failure
 
 ## Track A — Task architecture refactor
 
-Full step-by-step phases 0–8 live in
-[task_refactor_atomic_plan.md](./task_refactor_atomic_plan.md).
+The detailed atomic plan has been retired after implementation. This roadmap is
+now the source of truth for remaining architecture work.
 
 **Next recommended phases** (only when duplication or audit pain is real):
 
-1. Maintain **Phase 4/5** only where future domains show real duplicate lifecycle or model-specific branching.
-2. Use **Phase 7** `TaskPipeline` for detection+pose / detection+seg workflows; pipelines compose *task results*, batch utilities compose *images* within one task.
-3. Keep **Phase 8** docs/sync cleanup current when public headers or task contracts change.
+1. Maintain shared lifecycle helpers only where future domains show real duplicate lifecycle or model-specific branching.
+2. Use `TaskPipeline` for detection+pose / detection+seg workflows; pipelines compose *task results*, batch utilities compose *images* within one task.
+3. Keep docs/sync cleanup current when public headers or task contracts change.
 
 Do **not** start Phase 2 (runtime plugin registry) without an explicit product
 requirement.
@@ -298,8 +298,6 @@ Each commit must pass the local gate for touched targets.
 
 **Goal:** detection + pose, detection + segmentation, without overloading
 `TaskInterface`.
-
-Follow **Phase 7** in [task_refactor_atomic_plan.md](./task_refactor_atomic_plan.md).
 
 **Atomic summary**
 
