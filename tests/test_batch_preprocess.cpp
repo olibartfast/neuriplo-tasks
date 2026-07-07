@@ -1,8 +1,8 @@
 #include "neuriplo/tasks/core/batch_preprocess.hpp"
 #include "neuriplo/tasks/core/task_factory.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 
 using namespace neuriplo_tasks;
 
@@ -14,7 +14,7 @@ ModelInfo classificationModelInfo(int max_batch_size) {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"input"};
     info.output_names = {"output"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
     info.max_batch_size_ = max_batch_size;
     info.batch_size_ = 1;
     return info;
@@ -26,7 +26,7 @@ ModelInfo detectionModelInfo(int max_batch_size) {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"images"};
     info.output_names = {"output0"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
     info.max_batch_size_ = max_batch_size;
     info.batch_size_ = 1;
     return info;
@@ -43,7 +43,7 @@ TEST(BatchPreprocessTest, SingleImageMatchesDirectPreprocess) {
     ASSERT_NE(task, nullptr);
 
     BatchRequest request;
-    request.images = {cv::Mat::zeros(100, 120, CV_8UC3)};
+    request.images = {neuriplo_tasks::vision_test::makeImage(120, 100, 3, 0)};
 
     const auto direct = task->preprocess(request.images);
     const auto wrapped = batchPreprocess(*task, request);
@@ -58,7 +58,8 @@ TEST(BatchPreprocessTest, TwoImagesReturnsTwoBuffers) {
     ASSERT_NE(task, nullptr);
 
     BatchRequest request;
-    request.images = {cv::Mat::zeros(80, 90, CV_8UC3), cv::Mat::ones(64, 64, CV_8UC3)};
+    request.images = {neuriplo_tasks::vision_test::makeImage(90, 80, 3, 0),
+                      neuriplo_tasks::vision_test::makeImage(64, 64, 3, 1)};
 
     const auto wrapped = batchPreprocess(*task, request);
 
@@ -74,7 +75,8 @@ TEST(BatchPreprocessTest, ObjectDetectionTwoImages) {
     ASSERT_NE(task, nullptr);
 
     BatchRequest request;
-    request.images = {cv::Mat::zeros(100, 100, CV_8UC3), cv::Mat::zeros(200, 150, CV_8UC3)};
+    request.images = {neuriplo_tasks::vision_test::makeImage(100, 100, 3, 0),
+                      neuriplo_tasks::vision_test::makeImage(150, 200, 3, 0)};
 
     const auto direct = task->preprocess(request.images);
     const auto wrapped = batchPreprocess(*task, request);
@@ -97,7 +99,8 @@ TEST(BatchPreprocessTest, RejectsBatchExceedingMaxBatchSize) {
     ASSERT_NE(task, nullptr);
 
     BatchRequest request;
-    request.images = {cv::Mat::zeros(10, 10, CV_8UC3), cv::Mat::zeros(10, 10, CV_8UC3)};
+    request.images = {neuriplo_tasks::vision_test::makeImage(10, 10, 3, 0),
+                      neuriplo_tasks::vision_test::makeImage(10, 10, 3, 0)};
 
     EXPECT_THROW(batchPreprocess(*task, request), std::invalid_argument);
 }

@@ -14,10 +14,10 @@ namespace neuriplo_tasks {
  */
 class VideoMAEPreprocessor : public Preprocessor {
   public:
-    explicit VideoMAEPreprocessor(const cv::Size& input_size);
+    explicit VideoMAEPreprocessor(const Size& input_size);
 
     using Preprocessor::preprocess;
-    [[nodiscard]] std::vector<uint8_t> preprocess(const cv::Mat& image) const override;
+    [[nodiscard]] std::vector<uint8_t> preprocess(const ImageView& image) const override;
 
   private:
     static constexpr std::array<float, 3> kMean = {0.485f, 0.456f, 0.406f};
@@ -33,10 +33,10 @@ class VideoMAEPreprocessor : public Preprocessor {
  */
 class VivitPreprocessor : public Preprocessor {
   public:
-    explicit VivitPreprocessor(const cv::Size& input_size);
+    explicit VivitPreprocessor(const Size& input_size);
 
     using Preprocessor::preprocess;
-    [[nodiscard]] std::vector<uint8_t> preprocess(const cv::Mat& image) const override;
+    [[nodiscard]] std::vector<uint8_t> preprocess(const ImageView& image) const override;
 
   private:
     static constexpr int kShortestEdge = 256;
@@ -53,10 +53,10 @@ class VivitPreprocessor : public Preprocessor {
  */
 class TimeSformerPreprocessor : public Preprocessor {
   public:
-    explicit TimeSformerPreprocessor(const cv::Size& input_size);
+    explicit TimeSformerPreprocessor(const Size& input_size);
 
     using Preprocessor::preprocess;
-    [[nodiscard]] std::vector<uint8_t> preprocess(const cv::Mat& image) const override;
+    [[nodiscard]] std::vector<uint8_t> preprocess(const ImageView& image) const override;
 
   private:
     static constexpr int kShortestEdge = 224;

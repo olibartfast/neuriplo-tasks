@@ -15,7 +15,7 @@ class InstanceSegmentationPreprocessStrategy {
   public:
     virtual ~InstanceSegmentationPreprocessStrategy() = default;
 
-    [[nodiscard]] virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) const = 0;
+    [[nodiscard]] virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) const = 0;
 };
 
 namespace {
@@ -25,7 +25,7 @@ class SingleInputSegmentationPreprocessStrategy final : public InstanceSegmentat
     explicit SingleInputSegmentationPreprocessStrategy(std::unique_ptr<Preprocessor> preprocessor)
         : preprocessor_(std::move(preprocessor)) {}
 
-    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) const override {
+    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) const override {
         std::vector<std::vector<uint8_t>> results;
         results.reserve(imgs.size());
 
@@ -33,7 +33,7 @@ class SingleInputSegmentationPreprocessStrategy final : public InstanceSegmentat
             if (img.empty()) {
                 throw std::invalid_argument("Empty input image provided");
             }
-            results.push_back(preprocessor_->preprocess(img));
+            results.push_back(preprocessor_->preprocess(img.view()));
         }
 
         return results;
@@ -48,7 +48,7 @@ class ModelInputSegmentationPreprocessStrategy final : public InstanceSegmentati
     ModelInputSegmentationPreprocessStrategy(std::unique_ptr<Preprocessor> preprocessor, const ModelInfo& model_info)
         : preprocessor_(std::move(preprocessor)), model_info_(model_info) {}
 
-    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) const override {
+    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) const override {
         std::vector<std::vector<uint8_t>> results;
         results.reserve(model_info_.input_shapes.size());
 
@@ -65,7 +65,7 @@ class ModelInputSegmentationPreprocessStrategy final : public InstanceSegmentati
             if (input_shape.size() >= 3) {
                 std::vector<uint8_t> batched;
                 for (const auto& img : imgs) {
-                    auto buf = preprocessor_->preprocess(img);
+                    auto buf = preprocessor_->preprocess(img.view());
                     batched.insert(batched.end(), buf.begin(), buf.end());
                 }
                 results.push_back(std::move(batched));
@@ -73,8 +73,8 @@ class ModelInputSegmentationPreprocessStrategy final : public InstanceSegmentati
                 std::vector<int64_t> all_sizes;
                 all_sizes.reserve(imgs.size() * 2);
                 for (const auto& img : imgs) {
-                    all_sizes.push_back(static_cast<int64_t>(img.cols));
-                    all_sizes.push_back(static_cast<int64_t>(img.rows));
+                    all_sizes.push_back(static_cast<int64_t>(img.cols()));
+                    all_sizes.push_back(static_cast<int64_t>(img.rows()));
                 }
                 const auto* begin = reinterpret_cast<const uint8_t*>(all_sizes.data());
                 const auto* end = begin + all_sizes.size() * sizeof(int64_t);
@@ -99,7 +99,7 @@ InstanceSegmentationTask::InstanceSegmentationTask(const ModelInfo& model_info, 
                                                    float mask_threshold)
     : TaskInterface(model_info), model_type_(detectModelType(model_name)), model_name_(model_name),
       confidence_threshold_(confidence_threshold), nms_threshold_(nms_threshold), mask_threshold_(mask_threshold) {
-    cv::Size input_size = extractInputSize(model_info);
+    Size input_size = extractInputSize(model_info);
     input_width_ = input_size.width;
     input_height_ = input_size.height;
 
@@ -116,12 +116,11 @@ InstanceSegmentationTask::InstanceSegmentationTask(const ModelInfo& model_info, 
 
 InstanceSegmentationTask::~InstanceSegmentationTask() = default;
 
-std::vector<std::vector<uint8_t>> InstanceSegmentationTask::preprocess(const std::vector<cv::Mat>& imgs) {
+std::vector<std::vector<uint8_t>> InstanceSegmentationTask::preprocess(const std::vector<Image>& imgs) {
     return preprocess_strategy_->preprocess(imgs);
 }
 
-std::vector<Result> InstanceSegmentationTask::postprocess(const cv::Size& frame_size,
-                                                          const std::vector<Tensor>& tensors) {
+std::vector<Result> InstanceSegmentationTask::postprocess(const Size& frame_size, const std::vector<Tensor>& tensors) {
 
     if (!validateTensorInputs(tensors)) {
         return {};
@@ -163,7 +162,7 @@ InstanceSegmentationTask::ModelType InstanceSegmentationTask::detectModelType(co
     return ModelType::YOLO_SEG;
 }
 
-std::unique_ptr<Preprocessor> InstanceSegmentationTask::createPreprocessor(ModelType type, const cv::Size& input_size) {
+std::unique_ptr<Preprocessor> InstanceSegmentationTask::createPreprocessor(ModelType type, const Size& input_size) {
     switch (type) {
     case ModelType::YOLO_SEG:
     case ModelType::YOLO_V10_SEG:
@@ -180,7 +179,7 @@ std::unique_ptr<Preprocessor> InstanceSegmentationTask::createPreprocessor(Model
 }
 
 std::unique_ptr<InstanceSegmentationPreprocessStrategy>
-InstanceSegmentationTask::createPreprocessStrategy(ModelType type, const cv::Size& input_size) {
+InstanceSegmentationTask::createPreprocessStrategy(ModelType type, const Size& input_size) {
     auto preprocessor = createPreprocessor(type, input_size);
     if (!preprocessor) {
         return nullptr;
@@ -194,7 +193,7 @@ InstanceSegmentationTask::createPreprocessStrategy(ModelType type, const cv::Siz
 }
 
 std::unique_ptr<SegmentationPostprocessor> InstanceSegmentationTask::createPostprocessor(ModelType type) {
-    cv::Size input_size(input_width_, input_height_);
+    Size input_size(input_width_, input_height_);
 
     switch (type) {
     case ModelType::YOLO_SEG:
@@ -216,7 +215,7 @@ std::unique_ptr<SegmentationPostprocessor> InstanceSegmentationTask::createPostp
     }
 }
 
-cv::Size InstanceSegmentationTask::extractInputSize(const ModelInfo& model_info) {
+Size InstanceSegmentationTask::extractInputSize(const ModelInfo& model_info) {
     int width = 640;
     int height = 640;
 
@@ -241,7 +240,7 @@ cv::Size InstanceSegmentationTask::extractInputSize(const ModelInfo& model_info)
         }
     }
 
-    return cv::Size(width, height);
+    return Size(width, height);
 }
 
 bool InstanceSegmentationTask::validateTensorInputs(const std::vector<Tensor>& tensors) const {

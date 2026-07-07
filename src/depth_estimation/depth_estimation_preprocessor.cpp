@@ -2,7 +2,7 @@
 
 namespace neuriplo_tasks {
 
-DepthAnythingV2Preprocessor::DepthAnythingV2Preprocessor(const cv::Size& input_size)
+DepthAnythingV2Preprocessor::DepthAnythingV2Preprocessor(const Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
           true, // normalize to [0,1]

@@ -17,7 +17,7 @@ ClassificationTask::ClassificationTask(const ModelInfo& model_info, const std::s
     : BaseTask(model_info), model_type_(detectModelType(model_name)), model_name_(model_name), top_k_(top_k),
       apply_softmax_(apply_softmax) {
     // Extract input dimensions
-    cv::Size input_size = extractInputSize(model_info);
+    Size input_size = extractInputSize(model_info);
     input_width_ = input_size.width;
     input_height_ = input_size.height;
 
@@ -40,7 +40,7 @@ ClassificationTask::~ClassificationTask() = default;
 
 const Preprocessor& ClassificationTask::getPreprocessor() const { return *preprocessor_; }
 
-std::vector<Result> ClassificationTask::decode(const cv::Size& /*frame_size*/, const std::vector<Tensor>& tensors) {
+std::vector<Result> ClassificationTask::decode(const Size& /*frame_size*/, const std::vector<Tensor>& tensors) {
     auto classifications = postprocessor_->postprocess(tensors[0].data, tensors[0].shape);
 
     return toResults(classifications);
@@ -64,7 +64,7 @@ ClassificationTask::ModelType ClassificationTask::detectModelType(const std::str
     return ModelType::TORCHVISION;
 }
 
-std::unique_ptr<Preprocessor> ClassificationTask::createPreprocessor(ModelType type, const cv::Size& input_size) {
+std::unique_ptr<Preprocessor> ClassificationTask::createPreprocessor(ModelType type, const Size& input_size) {
     switch (type) {
     case ModelType::TORCHVISION:
         return std::make_unique<TorchvisionPreprocessor>(input_size);
@@ -97,7 +97,7 @@ std::unique_ptr<ClassificationPostprocessor> ClassificationTask::createPostproce
     }
 }
 
-cv::Size ClassificationTask::extractInputSize(const ModelInfo& model_info) {
+Size ClassificationTask::extractInputSize(const ModelInfo& model_info) {
     int width = 224;  // default for most classifiers
     int height = 224; // default for most classifiers
 
@@ -125,7 +125,7 @@ cv::Size ClassificationTask::extractInputSize(const ModelInfo& model_info) {
         }
     }
 
-    return cv::Size(width, height);
+    return Size(width, height);
 }
 
 } // namespace neuriplo_tasks

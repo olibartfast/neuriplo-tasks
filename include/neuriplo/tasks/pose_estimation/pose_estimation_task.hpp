@@ -20,9 +20,9 @@ class PoseEstimationTask : public TaskInterface {
 
     TaskType getTaskType() override { return TaskType::PoseEstimation; }
 
-    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override;
+    std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) override;
 
-    std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
+    std::vector<Result> postprocess(const Size& frame_size, const std::vector<Tensor>& tensors) override;
 
   private:
     enum class ModelType : uint8_t { RFDETRPOSE, UNKNOWN, YOLO, VITPOSE, EDGECRAFTER };
@@ -34,9 +34,9 @@ class PoseEstimationTask : public TaskInterface {
 
     static ModelType detectModelType(const std::string& model_type);
 
-    std::unique_ptr<Preprocessor> createPreprocessor(ModelType type, const cv::Size& input_size);
-    std::unique_ptr<PosePreprocessStrategy> createPreprocessStrategy(ModelType type, const cv::Size& input_size);
-    std::unique_ptr<PosePostprocessor> createPostprocessor(ModelType type, const cv::Size& input_size,
+    std::unique_ptr<Preprocessor> createPreprocessor(ModelType type, const Size& input_size);
+    std::unique_ptr<PosePreprocessStrategy> createPreprocessStrategy(ModelType type, const Size& input_size);
+    std::unique_ptr<PosePostprocessor> createPostprocessor(ModelType type, const Size& input_size,
                                                            float confidence_threshold, float nms_threshold);
 };
 

@@ -22,8 +22,8 @@ void EdgeCrafterPosePostprocessor::findOutputIndices(const std::vector<std::stri
 }
 
 std::vector<PoseEstimation> EdgeCrafterPosePostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                                      const cv::Size& /*original_size*/,
-                                                                      const cv::Size& /*input_size*/) {
+                                                                      const Size& /*original_size*/,
+                                                                      const Size& /*input_size*/) {
 
     if (tensors.size() < 3) {
         throw std::runtime_error("EdgeCrafter pose requires 3 output tensors (labels, scores, keypoints)");

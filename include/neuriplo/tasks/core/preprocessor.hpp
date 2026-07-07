@@ -26,7 +26,7 @@ enum class DataType : uint8_t { FLOAT32, UINT8, INT32, INT64 };
  * @brief Preprocessing configuration
  */
 struct PreprocessConfig {
-    Size input_size;                 // Target input size
+    Size input_size; // Target input size
     ImageFormat format = ImageFormat::NCHW;
     DataType data_type = DataType::FLOAT32;
     bool normalize = true;            // Normalize to [0, 1]

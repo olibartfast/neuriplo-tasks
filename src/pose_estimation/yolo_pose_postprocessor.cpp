@@ -1,18 +1,15 @@
 #include "neuriplo/tasks/pose_estimation/yolo_pose_postprocessor.hpp"
 
-#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "image_ops.hpp"
 #include "neuriplo/tasks/core/tensor_utils.hpp"
-
-#include <opencv2/dnn.hpp>
 
 namespace neuriplo_tasks {
 
-YoloPosePostprocessor::YoloPosePostprocessor(const cv::Size& input_size, float confidence_threshold,
-                                             float nms_threshold)
+YoloPosePostprocessor::YoloPosePostprocessor(const Size& input_size, float confidence_threshold, float nms_threshold)
     : input_size_(input_size), confidence_threshold_(confidence_threshold), nms_threshold_(nms_threshold) {}
 
-cv::Rect YoloPosePostprocessor::scaleBoxToOriginal(float cx, float cy, float w, float h,
-                                                   const cv::Size& frame_size) const {
+BoundingBox YoloPosePostprocessor::scaleBoxToOriginal(float cx, float cy, float w, float h,
+                                                      const Size& frame_size) const {
     float r_w = static_cast<float>(input_size_.width) / static_cast<float>(frame_size.width);
     float r_h = static_cast<float>(input_size_.height) / static_cast<float>(frame_size.height);
 
@@ -30,10 +27,10 @@ cv::Rect YoloPosePostprocessor::scaleBoxToOriginal(float cx, float cy, float w, 
         width = static_cast<int>(w / r_h);
         height = static_cast<int>(h / r_h);
     }
-    return cv::Rect(x, y, width, height);
+    return BoundingBox(x, y, width, height);
 }
 
-cv::Point2f YoloPosePostprocessor::scaleKptToOriginal(float kx, float ky, const cv::Size& frame_size) const {
+Point2f YoloPosePostprocessor::scaleKptToOriginal(float kx, float ky, const Size& frame_size) const {
     float r_w = static_cast<float>(input_size_.width) / static_cast<float>(frame_size.width);
     float r_h = static_cast<float>(input_size_.height) / static_cast<float>(frame_size.height);
 
@@ -47,36 +44,31 @@ cv::Point2f YoloPosePostprocessor::scaleKptToOriginal(float kx, float ky, const 
         x = (kx - pad_w) / r_h;
         y = ky / r_h;
     }
-    return cv::Point2f(x, y);
+    return Point2f(x, y);
 }
 
 void YoloPosePostprocessor::applyNMS(std::vector<PoseEstimation>& poses) const {
     if (poses.empty())
         return;
 
-    std::vector<cv::Rect> boxes;
-    std::vector<float> scores;
-    boxes.reserve(poses.size());
-    scores.reserve(poses.size());
+    std::vector<image_ops::DetectionBox> det_boxes;
+    det_boxes.reserve(poses.size());
     for (const auto& p : poses) {
-        boxes.push_back(toCvRect(p.bbox));
-        scores.push_back(p.score);
+        det_boxes.push_back({p.bbox, p.score, 0});
     }
 
-    std::vector<int> indices;
-    cv::dnn::NMSBoxes(boxes, scores, confidence_threshold_, nms_threshold_, indices);
+    auto keep_indices = image_ops::nms(det_boxes, nms_threshold_);
 
     std::vector<PoseEstimation> filtered;
-    filtered.reserve(indices.size());
-    for (int idx : indices) {
+    filtered.reserve(keep_indices.size());
+    for (int idx : keep_indices) {
         filtered.push_back(poses[static_cast<size_t>(idx)]);
     }
     poses = std::move(filtered);
 }
 
 std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                               const cv::Size& original_size,
-                                                               const cv::Size& /*input_size*/) {
+                                                               const Size& original_size, const Size& /*input_size*/) {
     if (tensors.empty())
         return {};
 
@@ -157,7 +149,7 @@ std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector
 
             PoseEstimation pose;
             pose.score = conf;
-            pose.bbox = fromCvRect(scaleBoxToOriginal(cx, cy, w, h, original_size));
+            pose.bbox = scaleBoxToOriginal(cx, cy, w, h, original_size);
 
             pose.keypoints.reserve(static_cast<size_t>(num_kpts));
             for (int j = 0; j < num_kpts; ++j) {
@@ -178,7 +170,7 @@ std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector
                         data[batch_offset + static_cast<size_t>((kpts_start + j * 3 + 2) * anchors + i)]);
                 }
 
-                cv::Point2f scaled = scaleKptToOriginal(kx, ky, original_size);
+                Point2f scaled = scaleKptToOriginal(kx, ky, original_size);
                 pose.keypoints.push_back({scaled.x, scaled.y, kconf});
             }
 

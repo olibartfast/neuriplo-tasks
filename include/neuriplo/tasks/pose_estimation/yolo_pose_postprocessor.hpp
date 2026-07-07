@@ -3,8 +3,6 @@
 #include "neuriplo/tasks/core/task_interface.hpp"
 #include "neuriplo/tasks/pose_estimation/pose_postprocessor.hpp"
 
-#include <opencv2/core.hpp>
-
 namespace neuriplo_tasks {
 
 /**
@@ -20,18 +18,18 @@ namespace neuriplo_tasks {
  */
 class YoloPosePostprocessor : public PosePostprocessor {
   public:
-    YoloPosePostprocessor(const cv::Size& input_size, float confidence_threshold, float nms_threshold);
+    YoloPosePostprocessor(const Size& input_size, float confidence_threshold, float nms_threshold);
 
-    std::vector<PoseEstimation> postprocess(const std::vector<Tensor>& tensors, const cv::Size& original_size,
-                                            const cv::Size& input_size) override;
+    std::vector<PoseEstimation> postprocess(const std::vector<Tensor>& tensors, const Size& original_size,
+                                            const Size& input_size) override;
 
   private:
-    cv::Size input_size_;
+    Size input_size_;
     float confidence_threshold_;
     float nms_threshold_;
 
-    cv::Rect scaleBoxToOriginal(float cx, float cy, float w, float h, const cv::Size& frame_size) const;
-    cv::Point2f scaleKptToOriginal(float kx, float ky, const cv::Size& frame_size) const;
+    BoundingBox scaleBoxToOriginal(float cx, float cy, float w, float h, const Size& frame_size) const;
+    Point2f scaleKptToOriginal(float kx, float ky, const Size& frame_size) const;
     void applyNMS(std::vector<PoseEstimation>& poses) const;
 };
 

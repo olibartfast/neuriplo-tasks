@@ -17,7 +17,7 @@ class DetectionPreprocessStrategy {
   public:
     virtual ~DetectionPreprocessStrategy() = default;
 
-    [[nodiscard]] virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) const = 0;
+    [[nodiscard]] virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) const = 0;
 };
 
 namespace {
@@ -48,7 +48,7 @@ class SingleInputDetectionPreprocessStrategy final : public DetectionPreprocessS
     explicit SingleInputDetectionPreprocessStrategy(std::unique_ptr<Preprocessor> preprocessor)
         : preprocessor_(std::move(preprocessor)) {}
 
-    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) const override {
+    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) const override {
         std::vector<std::vector<uint8_t>> results;
         results.reserve(imgs.size());
 
@@ -56,7 +56,7 @@ class SingleInputDetectionPreprocessStrategy final : public DetectionPreprocessS
             if (img.empty()) {
                 throw std::invalid_argument("Empty input image provided");
             }
-            results.push_back(preprocessor_->preprocess(img));
+            results.push_back(preprocessor_->preprocess(img.view()));
         }
 
         return results;
@@ -69,11 +69,11 @@ class SingleInputDetectionPreprocessStrategy final : public DetectionPreprocessS
 class ModelInputDetectionPreprocessStrategy final : public DetectionPreprocessStrategy {
   public:
     ModelInputDetectionPreprocessStrategy(std::unique_ptr<Preprocessor> preprocessor, const ModelInfo& model_info,
-                                          const cv::Size& input_size, SizeInputMode size_input_mode)
+                                          const Size& input_size, SizeInputMode size_input_mode)
         : preprocessor_(std::move(preprocessor)), model_info_(model_info), input_size_(input_size),
           size_input_mode_(size_input_mode) {}
 
-    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) const override {
+    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) const override {
         std::vector<std::vector<uint8_t>> results;
         results.reserve(model_info_.input_shapes.size());
 
@@ -90,7 +90,7 @@ class ModelInputDetectionPreprocessStrategy final : public DetectionPreprocessSt
             if (input_shape.size() >= 3) {
                 std::vector<uint8_t> batched;
                 for (const auto& img : imgs) {
-                    auto buf = preprocessor_->preprocess(img);
+                    auto buf = preprocessor_->preprocess(img.view());
                     batched.insert(batched.end(), buf.begin(), buf.end());
                 }
                 results.push_back(std::move(batched));
@@ -99,8 +99,8 @@ class ModelInputDetectionPreprocessStrategy final : public DetectionPreprocessSt
                 all_sizes.reserve(imgs.size() * 2);
                 for (const auto& img : imgs) {
                     if (size_input_mode_ == SizeInputMode::OriginalSize) {
-                        all_sizes.push_back(static_cast<int64_t>(img.cols));
-                        all_sizes.push_back(static_cast<int64_t>(img.rows));
+                        all_sizes.push_back(static_cast<int64_t>(img.width()));
+                        all_sizes.push_back(static_cast<int64_t>(img.height()));
                     } else {
                         all_sizes.push_back(static_cast<int64_t>(input_size_.height));
                         all_sizes.push_back(static_cast<int64_t>(input_size_.width));
@@ -120,7 +120,7 @@ class ModelInputDetectionPreprocessStrategy final : public DetectionPreprocessSt
   private:
     std::unique_ptr<Preprocessor> preprocessor_;
     const ModelInfo& model_info_;
-    cv::Size input_size_;
+    Size input_size_;
     SizeInputMode size_input_mode_;
 };
 
@@ -131,7 +131,7 @@ ObjectDetectionTask::ObjectDetectionTask(const ModelInfo& model_info, const std:
     : TaskInterface(model_info), model_type_(detectModelType(model_name)), model_name_(model_name),
       confidence_threshold_(confidence_threshold), nms_threshold_(nms_threshold) {
     // Extract input dimensions
-    cv::Size input_size = extractInputSize(model_info);
+    Size input_size = extractInputSize(model_info);
     input_width_ = input_size.width;
     input_height_ = input_size.height;
 
@@ -149,11 +149,11 @@ ObjectDetectionTask::ObjectDetectionTask(const ModelInfo& model_info, const std:
     }
 }
 
-std::vector<std::vector<uint8_t>> ObjectDetectionTask::preprocess(const std::vector<cv::Mat>& imgs) {
+std::vector<std::vector<uint8_t>> ObjectDetectionTask::preprocess(const std::vector<Image>& imgs) {
     return preprocess_strategy_->preprocess(imgs);
 }
 
-std::vector<Result> ObjectDetectionTask::postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) {
+std::vector<Result> ObjectDetectionTask::postprocess(const Size& frame_size, const std::vector<Tensor>& tensors) {
 
     // Validate inputs
     if (!validateTensorInputs(tensors)) {
@@ -217,7 +217,7 @@ ObjectDetectionTask::ModelType ObjectDetectionTask::detectModelType(const std::s
 ObjectDetectionTask::~ObjectDetectionTask() = default;
 
 std::unique_ptr<DetectionPreprocessStrategy> ObjectDetectionTask::createPreprocessStrategy(ModelType type,
-                                                                                           const cv::Size& input_size) {
+                                                                                           const Size& input_size) {
     auto preprocessor = createPreprocessor(type, input_size);
     if (!preprocessor) {
         return nullptr;
@@ -235,7 +235,7 @@ std::unique_ptr<DetectionPreprocessStrategy> ObjectDetectionTask::createPreproce
     return std::make_unique<SingleInputDetectionPreprocessStrategy>(std::move(preprocessor));
 }
 
-std::unique_ptr<Preprocessor> ObjectDetectionTask::createPreprocessor(ModelType type, const cv::Size& input_size) {
+std::unique_ptr<Preprocessor> ObjectDetectionTask::createPreprocessor(ModelType type, const Size& input_size) {
     switch (type) {
     case ModelType::YOLO_STANDARD:
     case ModelType::YOLO_V4:
@@ -259,7 +259,7 @@ std::unique_ptr<Preprocessor> ObjectDetectionTask::createPreprocessor(ModelType 
     }
 }
 
-std::unique_ptr<Postprocessor> ObjectDetectionTask::createPostprocessor(ModelType type, const cv::Size& input_size) {
+std::unique_ptr<Postprocessor> ObjectDetectionTask::createPostprocessor(ModelType type, const Size& input_size) {
     switch (type) {
     case ModelType::YOLO_STANDARD:
     case ModelType::YOLO_V4:
@@ -283,7 +283,7 @@ std::unique_ptr<Postprocessor> ObjectDetectionTask::createPostprocessor(ModelTyp
     }
 }
 
-cv::Size ObjectDetectionTask::extractInputSize(const ModelInfo& model_info) {
+Size ObjectDetectionTask::extractInputSize(const ModelInfo& model_info) {
     int width = 640;  // default
     int height = 640; // default
 
@@ -311,7 +311,7 @@ cv::Size ObjectDetectionTask::extractInputSize(const ModelInfo& model_info) {
         }
     }
 
-    return cv::Size(width, height);
+    return Size(width, height);
 }
 
 bool ObjectDetectionTask::validateTensorInputs(const std::vector<Tensor>& tensors) const {

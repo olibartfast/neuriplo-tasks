@@ -7,11 +7,11 @@
 #include "neuriplo/tasks/object_detection/object_detection_task.hpp"
 #include "neuriplo/tasks/pose_estimation/edgecrafter_pose_postprocessor.hpp"
 #include "neuriplo/tasks/pose_estimation/pose_estimation_task.hpp"
+#include "vision_test_utils.hpp"
 
 #include <array>
 #include <cstring>
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 
 using namespace neuriplo_tasks;
 
@@ -23,7 +23,7 @@ ModelInfo createDetectionModelInfo() {
     info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW"};
     info.input_names = {"images", "orig_target_sizes"};
     info.output_names = {"labels", "boxes", "scores"};
-    info.input_types = {CV_32F, CV_32S};
+    info.input_types = {neuriplo_tasks::PixelType::Float32, neuriplo_tasks::PixelType::Int32};
     return info;
 }
 
@@ -33,7 +33,7 @@ ModelInfo createSegmentationModelInfo() {
     info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW"};
     info.input_names = {"images", "orig_target_sizes"};
     info.output_names = {"labels", "boxes", "scores", "masks"};
-    info.input_types = {CV_32F, CV_32S};
+    info.input_types = {neuriplo_tasks::PixelType::Float32, neuriplo_tasks::PixelType::Int32};
     return info;
 }
 
@@ -43,7 +43,7 @@ ModelInfo createPoseModelInfo() {
     info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW"};
     info.input_names = {"images", "orig_target_sizes"};
     info.output_names = {"labels", "scores", "keypoints"};
-    info.input_types = {CV_32F, CV_32S};
+    info.input_types = {neuriplo_tasks::PixelType::Float32, neuriplo_tasks::PixelType::Int32};
     return info;
 }
 
@@ -80,7 +80,7 @@ TEST(EdgeCrafterDetectionTest, BasicPostprocess) {
         Tensor(scores, {1, num_dets}),
     };
 
-    auto detections = pp.postprocess(tensors, cv::Size(640, 480));
+    auto detections = pp.postprocess(tensors, neuriplo_tasks::Size(640, 480));
 
     ASSERT_EQ(detections.size(), 1u);
     EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.9f);
@@ -104,7 +104,7 @@ TEST(EdgeCrafterDetectionTest, FiltersBelowThreshold) {
         Tensor(scores, {1, num_dets}),
     };
 
-    auto detections = pp.postprocess(tensors, cv::Size(640, 480));
+    auto detections = pp.postprocess(tensors, neuriplo_tasks::Size(640, 480));
     EXPECT_TRUE(detections.empty());
 }
 
@@ -121,13 +121,13 @@ TEST(EdgeCrafterDetectionTest, FiltersNegativeLabels) {
         Tensor(scores, {1, num_dets}),
     };
 
-    auto detections = pp.postprocess(tensors, cv::Size(640, 480));
+    auto detections = pp.postprocess(tensors, neuriplo_tasks::Size(640, 480));
     EXPECT_TRUE(detections.empty());
 }
 
 TEST(EdgeCrafterDetectionTest, EmptyInputThrows) {
     EdgeCrafterPostprocessor pp(0.5f);
-    EXPECT_THROW({ pp.postprocess({}, cv::Size(640, 480)); }, std::runtime_error);
+    EXPECT_THROW({ pp.postprocess({}, neuriplo_tasks::Size(640, 480)); }, std::runtime_error);
 }
 
 // ---------------------------------------------------------------------------
@@ -155,7 +155,7 @@ TEST(EdgeCrafterSegmentationTest, BasicPostprocess) {
         Tensor(masks, {1, num_dets, mask_h, mask_w}),
     };
 
-    auto segmentations = pp.postprocess(tensors, cv::Size(640, 480));
+    auto segmentations = pp.postprocess(tensors, neuriplo_tasks::Size(640, 480));
 
     ASSERT_EQ(segmentations.size(), 1u);
     EXPECT_FLOAT_EQ(segmentations[0].class_confidence, 0.9f);
@@ -182,13 +182,13 @@ TEST(EdgeCrafterSegmentationTest, FiltersBelowThreshold) {
         Tensor(masks, {1, num_dets, 160, 160}),
     };
 
-    auto segmentations = pp.postprocess(tensors, cv::Size(640, 480));
+    auto segmentations = pp.postprocess(tensors, neuriplo_tasks::Size(640, 480));
     EXPECT_TRUE(segmentations.empty());
 }
 
 TEST(EdgeCrafterSegmentationTest, EmptyInputThrows) {
     EdgeCrafterSegmentationPostprocessor pp(0.5f, 0.5f);
-    EXPECT_THROW({ pp.postprocess({}, cv::Size(640, 480)); }, std::runtime_error);
+    EXPECT_THROW({ pp.postprocess({}, neuriplo_tasks::Size(640, 480)); }, std::runtime_error);
 }
 
 // ---------------------------------------------------------------------------
@@ -222,7 +222,7 @@ TEST(EdgeCrafterPoseTest, BasicPostprocess17Keypoints) {
         Tensor(keypoints, {1, num_dets, num_kpts, kpt_dim}),
     };
 
-    auto poses = pp.postprocess(tensors, cv::Size(640, 480), cv::Size(640, 640));
+    auto poses = pp.postprocess(tensors, neuriplo_tasks::Size(640, 480), neuriplo_tasks::Size(640, 640));
 
     ASSERT_EQ(poses.size(), 1u);
     EXPECT_NEAR(poses[0].score, 0.9f, 0.01f);
@@ -257,7 +257,7 @@ TEST(EdgeCrafterPoseTest, LabelOffsetApplied) {
         Tensor(keypoints, {1, num_dets, num_kpts, kpt_dim}),
     };
 
-    auto poses = pp.postprocess(tensors, cv::Size(640, 480), cv::Size(640, 640));
+    auto poses = pp.postprocess(tensors, neuriplo_tasks::Size(640, 480), neuriplo_tasks::Size(640, 640));
     ASSERT_EQ(poses.size(), 1u);
     // With label offset -1, person (label 1) should NOT have class_id field on PoseEstimation
     // but we verify the bbox was derived correctly
@@ -276,13 +276,14 @@ TEST(EdgeCrafterPoseTest, FiltersLowScore) {
         Tensor(keypoints, {1, num_dets, 17, 3}),
     };
 
-    auto poses = pp.postprocess(tensors, cv::Size(640, 480), cv::Size(640, 640));
+    auto poses = pp.postprocess(tensors, neuriplo_tasks::Size(640, 480), neuriplo_tasks::Size(640, 640));
     EXPECT_TRUE(poses.empty());
 }
 
 TEST(EdgeCrafterPoseTest, EmptyInputThrows) {
     EdgeCrafterPosePostprocessor pp(0.5f, 0.3f);
-    EXPECT_THROW({ pp.postprocess({}, cv::Size(640, 480), cv::Size(640, 640)); }, std::runtime_error);
+    EXPECT_THROW(
+        { pp.postprocess({}, neuriplo_tasks::Size(640, 480), neuriplo_tasks::Size(640, 640)); }, std::runtime_error);
 }
 
 TEST(EdgeCrafterDetectionTest, UsesOutputNamesWhenTensorsAreReordered) {
@@ -299,7 +300,7 @@ TEST(EdgeCrafterDetectionTest, UsesOutputNamesWhenTensorsAreReordered) {
         Tensor(boxes, {1, num_dets, 4}),
     };
 
-    auto detections = pp.postprocess(tensors, cv::Size(640, 480));
+    auto detections = pp.postprocess(tensors, neuriplo_tasks::Size(640, 480));
 
     ASSERT_EQ(detections.size(), 1u);
     EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.9f);
@@ -325,7 +326,7 @@ TEST(EdgeCrafterSegmentationTest, UsesOutputNamesWhenTensorsAreReordered) {
         Tensor(boxes, {1, num_dets, 4}),
     };
 
-    auto segmentations = pp.postprocess(tensors, cv::Size(640, 480));
+    auto segmentations = pp.postprocess(tensors, neuriplo_tasks::Size(640, 480));
 
     ASSERT_EQ(segmentations.size(), 1u);
     EXPECT_FLOAT_EQ(segmentations[0].class_confidence, 0.9f);
@@ -349,7 +350,7 @@ TEST(EdgeCrafterPoseTest, UsesOutputNamesWhenTensorsAreReordered) {
         Tensor(scores, {1, num_dets}),
     };
 
-    auto poses = pp.postprocess(tensors, cv::Size(640, 480), cv::Size(640, 640));
+    auto poses = pp.postprocess(tensors, neuriplo_tasks::Size(640, 480), neuriplo_tasks::Size(640, 640));
 
     ASSERT_EQ(poses.size(), 1u);
     EXPECT_NEAR(poses[0].score, 0.9f, 0.01f);
@@ -373,7 +374,7 @@ TEST(EdgeCrafterDetectionTaskTest, TaskType) {
 TEST(EdgeCrafterDetectionTaskTest, PreprocessReturnsTwoOutputs) {
     auto info = createDetectionModelInfo();
     ObjectDetectionTask task(info, "ecdet_s");
-    cv::Mat img = cv::Mat::zeros(480, 640, CV_8UC3);
+    neuriplo_tasks::Image img = neuriplo_tasks::vision_test::makeImage(640, 480, 3, 0);
     auto outputs = task.preprocess({img});
     ASSERT_EQ(outputs.size(), 2u);
     EXPECT_FALSE(outputs[0].empty());
@@ -389,15 +390,15 @@ TEST(EdgeCrafterInstanceSegmentationTaskTest, TaskType) {
 TEST(EdgeCrafterInstanceSegmentationTaskTest, PreprocessReturnsTwoOutputs) {
     auto info = createSegmentationModelInfo();
     InstanceSegmentationTask task(info, "ecseg_s");
-    cv::Mat img = cv::Mat::zeros(480, 640, CV_8UC3);
+    neuriplo_tasks::Image img = neuriplo_tasks::vision_test::makeImage(640, 480, 3, 0);
     auto outputs = task.preprocess({img});
     ASSERT_EQ(outputs.size(), 2u);
     EXPECT_FALSE(outputs[0].empty());
     EXPECT_EQ(outputs[1].size(), 2u * sizeof(int64_t));
 
     const auto original_size = decodeInt64Pair(outputs[1]);
-    EXPECT_EQ(original_size[0], img.cols);
-    EXPECT_EQ(original_size[1], img.rows);
+    EXPECT_EQ(original_size[0], img.cols());
+    EXPECT_EQ(original_size[1], img.rows());
 }
 
 TEST(EdgeCrafterPoseTaskTest, TaskType) {
@@ -412,7 +413,7 @@ TEST(EdgeCrafterPoseTaskTest, TaskType) {
 TEST(EdgeCrafterPoseTaskTest, PreprocessReturnsTwoOutputs) {
     auto info = createPoseModelInfo();
     PoseEstimationTask task(info, "ecpose_s");
-    cv::Mat img = cv::Mat::zeros(480, 640, CV_8UC3);
+    neuriplo_tasks::Image img = neuriplo_tasks::vision_test::makeImage(640, 480, 3, 0);
     auto outputs = task.preprocess({img});
     ASSERT_EQ(outputs.size(), 2u);
     EXPECT_FALSE(outputs[0].empty());

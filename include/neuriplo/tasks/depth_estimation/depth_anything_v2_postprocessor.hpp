@@ -15,7 +15,7 @@ namespace neuriplo_tasks {
 class DepthAnythingV2Postprocessor : public DepthEstimationPostprocessor {
   public:
     std::vector<DepthEstimation> postprocess(const std::vector<TensorElement>& depth_output,
-                                             const std::vector<int64_t>& shape, const cv::Size& frame_size) override;
+                                             const std::vector<int64_t>& shape, const Size& frame_size) override;
 
   private:
 };

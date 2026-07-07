@@ -13,13 +13,13 @@ namespace neuriplo_tasks {
  */
 class RfDetrPostprocessor : public Postprocessor {
   public:
-    RfDetrPostprocessor(const cv::Size& input_size, float confidence_threshold,
+    RfDetrPostprocessor(const Size& input_size, float confidence_threshold,
                         const std::vector<std::string>& output_names = {});
 
-    std::vector<Detection> postprocess(const std::vector<Tensor>& tensors, const cv::Size& frame_size) override;
+    std::vector<Detection> postprocess(const std::vector<Tensor>& tensors, const Size& frame_size) override;
 
   private:
-    cv::Size input_size_;
+    Size input_size_;
     float confidence_threshold_;
     int dets_idx_{0};   // Index for dets (boxes) output
     int labels_idx_{1}; // Index for labels (logits) output

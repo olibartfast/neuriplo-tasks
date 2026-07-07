@@ -1,6 +1,5 @@
 #include "neuriplo/tasks/object_detection/rfdetr_postprocessor.hpp"
 
-#include "neuriplo/tasks/core/opencv_interop.hpp"
 #include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <cmath>
@@ -9,7 +8,7 @@
 
 namespace neuriplo_tasks {
 
-RfDetrPostprocessor::RfDetrPostprocessor(const cv::Size& input_size, float confidence_threshold,
+RfDetrPostprocessor::RfDetrPostprocessor(const Size& input_size, float confidence_threshold,
                                          const std::vector<std::string>& output_names)
     : input_size_(input_size), confidence_threshold_(confidence_threshold) {
     findOutputIndices(output_names);
@@ -34,8 +33,7 @@ void RfDetrPostprocessor::findOutputIndices(const std::vector<std::string>& outp
     }
 }
 
-std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                        const cv::Size& frame_size) {
+std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor>& tensors, const Size& frame_size) {
 
     if (tensors.size() < 2) {
         throw std::runtime_error("RF-DETR requires 2 output tensors (dets, labels)");

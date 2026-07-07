@@ -10,7 +10,7 @@ namespace neuriplo_tasks {
 
 GaussianSplattingTask::GaussianSplattingTask(const ModelInfo& model_info, const std::string& model_name)
     : TaskInterface(model_info), model_type_(detectModelType(model_name)), model_name_(model_name) {
-    cv::Size input_size = extractInputSize(model_info);
+    Size input_size = extractInputSize(model_info);
     input_width_ = input_size.width;
     input_height_ = input_size.height;
 
@@ -40,7 +40,7 @@ int GaussianSplattingTask::getRequiredFrames() const {
     }
 }
 
-std::vector<std::vector<uint8_t>> GaussianSplattingTask::preprocess(const std::vector<cv::Mat>& imgs) {
+std::vector<std::vector<uint8_t>> GaussianSplattingTask::preprocess(const std::vector<Image>& imgs) {
     std::vector<std::vector<uint8_t>> results;
     results.reserve(imgs.size());
 
@@ -48,14 +48,13 @@ std::vector<std::vector<uint8_t>> GaussianSplattingTask::preprocess(const std::v
         if (img.empty()) {
             throw std::invalid_argument("Empty input image provided to GaussianSplattingTask");
         }
-        results.push_back(preprocessor_->preprocess(img));
+        results.push_back(preprocessor_->preprocess(img.view()));
     }
 
     return results;
 }
 
-std::vector<Result> GaussianSplattingTask::postprocess(const cv::Size& /*frame_size*/,
-                                                       const std::vector<Tensor>& tensors) {
+std::vector<Result> GaussianSplattingTask::postprocess(const Size& /*frame_size*/, const std::vector<Tensor>& tensors) {
     if (tensors.empty()) {
         return {};
     }
@@ -77,8 +76,7 @@ GaussianSplattingTask::ModelType GaussianSplattingTask::detectModelType(const st
     return ModelType::LGM;
 }
 
-std::unique_ptr<Preprocessor> GaussianSplattingTask::createPreprocessor(ModelType /*type*/,
-                                                                        const cv::Size& input_size) {
+std::unique_ptr<Preprocessor> GaussianSplattingTask::createPreprocessor(ModelType /*type*/, const Size& input_size) {
     return std::make_unique<GaussianSplattingPreprocessor>(input_size);
 }
 
@@ -92,7 +90,7 @@ std::unique_ptr<GaussianSplattingPostprocessor> GaussianSplattingTask::createPos
     }
 }
 
-cv::Size GaussianSplattingTask::extractInputSize(const ModelInfo& model_info) {
+Size GaussianSplattingTask::extractInputSize(const ModelInfo& model_info) {
     // Default input size used by LGM / GRM
     int width = 256;
     int height = 256;

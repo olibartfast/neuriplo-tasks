@@ -7,15 +7,15 @@
 
 namespace neuriplo_tasks {
 
-RfDetrPosePostprocessor::RfDetrPosePostprocessor(const cv::Size& input_size, float confidence_threshold,
+RfDetrPosePostprocessor::RfDetrPosePostprocessor(const Size& input_size, float confidence_threshold,
                                                  float keypoint_uncertainty_alpha,
                                                  const std::vector<int>& keypoint_counts)
     : input_size_(input_size), confidence_threshold_(confidence_threshold),
       keypoint_uncertainty_alpha_(keypoint_uncertainty_alpha), keypoint_counts_(keypoint_counts) {}
 
 std::vector<PoseEstimation> RfDetrPosePostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                                 const cv::Size& original_size,
-                                                                 const cv::Size& /*input_size*/) {
+                                                                 const Size& original_size,
+                                                                 const Size& /*input_size*/) {
     if (tensors.size() < 3) {
         throw std::runtime_error("RF-DETR pose requires 3 output tensors (dets, labels, keypoints)");
     }

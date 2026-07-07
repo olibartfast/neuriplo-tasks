@@ -1,10 +1,9 @@
 #include "neuriplo/tasks/instance_segmentation/edgecrafter_segmentation_postprocessor.hpp"
 
-#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "image_ops.hpp"
 #include "neuriplo/tasks/core/output_name_utils.hpp"
 #include "neuriplo/tasks/core/tensor_utils.hpp"
 
-#include <opencv2/imgproc.hpp>
 #include <stdexcept>
 
 namespace neuriplo_tasks {
@@ -24,7 +23,7 @@ void EdgeCrafterSegmentationPostprocessor::findOutputIndices(const std::vector<s
 }
 
 std::vector<InstanceSegmentation> EdgeCrafterSegmentationPostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                                                    const cv::Size& frame_size) {
+                                                                                    const Size& frame_size) {
 
     if (tensors.size() < 4) {
         throw std::runtime_error("EdgeCrafter segmentation requires 4 output tensors (labels, boxes, scores, masks)");
@@ -83,44 +82,42 @@ std::vector<InstanceSegmentation> EdgeCrafterSegmentationPostprocessor::postproc
             int ix2 = std::min(frame_size.width, static_cast<int>(x2));
             int iy2 = std::min(frame_size.height, static_cast<int>(y2));
 
-            cv::Rect bbox(ix1, iy1, std::max(1, ix2 - ix1), std::max(1, iy2 - iy1));
+            BoundingBox bbox(ix1, iy1, std::max(1, ix2 - ix1), std::max(1, iy2 - iy1));
 
             const size_t mask_offset =
                 masks_batch_offset + static_cast<size_t>(i) * static_cast<size_t>(mask_h) * static_cast<size_t>(mask_w);
 
-            cv::Mat mask_small(mask_h, mask_w, CV_32F);
+            Image mask_small = Image::uninit(mask_w, mask_h, 1, PixelType::Float32);
             for (int h = 0; h < mask_h; ++h) {
                 for (int w = 0; w < mask_w; ++w) {
                     const size_t mask_index =
                         mask_offset + static_cast<size_t>(h) * static_cast<size_t>(mask_w) + static_cast<size_t>(w);
-                    mask_small.at<float>(h, w) = tensorElementToFloat(masks_tensor.data[mask_index]);
+                    mask_small.ptr<float>(h)[w] = tensorElementToFloat(masks_tensor.data[mask_index]);
                 }
             }
 
-            cv::Mat mask_resized;
-            cv::resize(mask_small, mask_resized, frame_size, 0, 0, cv::INTER_LINEAR);
+            Image mask_resized =
+                image_ops::resize(mask_small, frame_size.width, frame_size.height, image_ops::Interpolation::Linear);
 
-            cv::Mat mask_binary;
-            cv::threshold(mask_resized, mask_binary, mask_threshold_, 255, cv::THRESH_BINARY);
-            mask_binary.convertTo(mask_binary, CV_8UC1);
+            Image mask_binary = image_ops::thresholdBinary(mask_resized.view(), mask_threshold_, 255.0);
+            mask_binary.convertTo(PixelType::UInt8);
 
-            cv::Mat mask_full = cv::Mat::zeros(frame_size, CV_8UC1);
-            cv::Rect clamped_bbox = bbox;
+            BoundingBox clamped_bbox = bbox;
             clamped_bbox.x = std::max(0, std::min(bbox.x, frame_size.width - 1));
             clamped_bbox.y = std::max(0, std::min(bbox.y, frame_size.height - 1));
             clamped_bbox.width = std::max(1, std::min(bbox.width, frame_size.width - clamped_bbox.x));
             clamped_bbox.height = std::max(1, std::min(bbox.height, frame_size.height - clamped_bbox.y));
 
-            cv::Mat mask_cropped = mask_binary(clamped_bbox);
-            mask_cropped.copyTo(mask_full(clamped_bbox));
+            Image mask_full = Image::zeros(frame_size.width, frame_size.height, 1, PixelType::UInt8);
+            image_ops::copyRegion(mask_binary.view(), clamped_bbox, mask_full, clamped_bbox);
 
             InstanceSegmentation seg;
             seg.class_id = static_cast<float>(class_id);
             seg.class_confidence = score;
-            seg.bbox = fromCvRect(clamped_bbox);
-            seg.mask = fromCvMat(mask_full);
-            seg.mask_height = mask_full.rows;
-            seg.mask_width = mask_full.cols;
+            seg.bbox = clamped_bbox;
+            seg.mask_height = mask_full.height();
+            seg.mask_width = mask_full.width();
+            seg.mask = fromImage(std::move(mask_full));
             segmentations.push_back(std::move(seg));
         }
     }

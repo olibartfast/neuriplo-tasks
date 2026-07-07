@@ -1,17 +1,18 @@
 #include "neuriplo/tasks/core/batch_types.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 
 using namespace neuriplo_tasks;
 
 TEST(BatchTypesTest, BatchRequestHoldsImages) {
     BatchRequest request;
-    request.images = {cv::Mat::zeros(10, 10, CV_8UC3), cv::Mat::zeros(20, 30, CV_8UC3)};
+    request.images = {neuriplo_tasks::vision_test::makeImage(10, 10, 3, 0),
+                      neuriplo_tasks::vision_test::makeImage(30, 20, 3, 0)};
 
     EXPECT_EQ(request.images.size(), 2u);
-    EXPECT_EQ(request.images[0].rows, 10);
-    EXPECT_EQ(request.images[1].cols, 30);
+    EXPECT_EQ(request.images[0].rows(), 10);
+    EXPECT_EQ(request.images[1].cols(), 30);
 }
 
 TEST(BatchTypesTest, BatchPreprocessOutputDefaultConstruction) {
@@ -28,7 +29,7 @@ TEST(BatchTypesTest, BatchPostprocessOutputDefaultConstruction) {
 
 TEST(BatchTypesTest, ImageBatchSizeMatches) {
     BatchRequest request;
-    request.images = {cv::Mat::zeros(8, 8, CV_8UC3)};
+    request.images = {neuriplo_tasks::vision_test::makeImage(8, 8, 3, 0)};
 
     EXPECT_TRUE(imageBatchSizeMatches(request, 1));
     EXPECT_FALSE(imageBatchSizeMatches(request, 0));

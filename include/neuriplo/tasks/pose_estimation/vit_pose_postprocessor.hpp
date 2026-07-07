@@ -8,8 +8,8 @@ class ViTPosePostprocessor : public PosePostprocessor {
   public:
     ViTPosePostprocessor();
 
-    std::vector<PoseEstimation> postprocess(const std::vector<Tensor>& tensors, const cv::Size& original_size,
-                                            const cv::Size& input_size) override;
+    std::vector<PoseEstimation> postprocess(const std::vector<Tensor>& tensors, const Size& original_size,
+                                            const Size& input_size) override;
 };
 
 } // namespace neuriplo_tasks

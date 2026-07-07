@@ -1,8 +1,7 @@
-#include "neuriplo/tasks/core/opencv_interop.hpp"
 #include "neuriplo/tasks/core/task_pipeline.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 #include <stdexcept>
 #include <vector>
 
@@ -45,7 +44,8 @@ std::vector<Result> detectionToSegmentation(const std::vector<Result>& inputs) {
         const auto& detection = std::get<Detection>(input);
         InstanceSegmentation segmentation(detection.bbox, detection.class_confidence,
                                           static_cast<int>(detection.class_id));
-        segmentation.mask = fromCvMat(cv::Mat::ones(detection.bbox.height, detection.bbox.width, CV_8UC1));
+        segmentation.mask =
+            fromImage(neuriplo_tasks::vision_test::makeImage(detection.bbox.width, detection.bbox.height, 1, 1));
         outputs.emplace_back(std::move(segmentation));
     }
 
