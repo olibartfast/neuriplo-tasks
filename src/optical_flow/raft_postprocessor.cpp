@@ -157,7 +157,8 @@ Image RaftPostprocessor::visualizeFlow(const ImageView& flow_x, const ImageView&
     double mag_max = 0.0;
     image_ops::minMax(magnitude.view(), dummy_min, mag_max);
 
-    const float inv_two_pi = 1.0f / static_cast<float>(2.0 * M_PI);
+    constexpr double kPi = 3.14159265358979323846;
+    const float inv_two_pi = 1.0f / static_cast<float>(2.0 * kPi);
 
     if (mag_max > 0) {
         const float inv_mag_max = 1.0f / static_cast<float>(mag_max);

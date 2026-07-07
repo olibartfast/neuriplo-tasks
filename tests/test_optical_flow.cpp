@@ -5,6 +5,11 @@
 #include "neuriplo/tasks/optical_flow/raft_postprocessor.hpp"
 #include "vision_test_utils.hpp"
 
+#include <chrono>
+
+#if __has_include(<valgrind/valgrind.h>)
+#include <valgrind/valgrind.h>
+#endif
 #include <gtest/gtest.h>
 
 using namespace neuriplo_tasks;
@@ -273,6 +278,11 @@ TEST_F(OpticalFlowTest, DifferentInputSizes) {
 
 // Performance test: measure preprocessing time
 TEST_F(OpticalFlowTest, PreprocessingPerformance) {
+#if defined(RUNNING_ON_VALGRIND)
+    if (RUNNING_ON_VALGRIND) {
+        GTEST_SKIP() << "Performance timing is not meaningful under Valgrind";
+    }
+#endif
     auto info = createOpticalFlowModelInfo();
     auto task = TaskFactory::createTaskInstance("raft", info);
     ASSERT_NE(task, nullptr);
