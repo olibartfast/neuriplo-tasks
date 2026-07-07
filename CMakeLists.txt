@@ -199,6 +199,10 @@ set(CORE_HEADERS
 add_library(neuriplo-tasks ${CORE_SOURCES} ${CORE_HEADERS})
 add_library(neuriplo-tasks::neuriplo-tasks ALIAS neuriplo-tasks)
 
+if(MSVC)
+    target_compile_definitions(neuriplo-tasks PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
 if(WIN32 AND BUILD_SHARED_LIBS)
     set_target_properties(neuriplo-tasks PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
