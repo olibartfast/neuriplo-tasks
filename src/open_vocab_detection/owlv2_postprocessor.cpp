@@ -46,25 +46,26 @@ const Tensor* findTensorByNames(const std::vector<Tensor>& tensors, const std::v
     return nullptr;
 }
 
-BoundingBox makeRectFromCenterBox(float center_x, float center_y, float width, float height, const Size& frame_size) {
+vision::Rect makeRectFromCenterBox(float center_x, float center_y, float width, float height,
+                                   const vision::Size& frame_size) {
     const float x1 = std::max(0.0F, center_x - (width * 0.5F));
     const float y1 = std::max(0.0F, center_y - (height * 0.5F));
     const float x2 = std::min(static_cast<float>(frame_size.width), center_x + (width * 0.5F));
     const float y2 = std::min(static_cast<float>(frame_size.height), center_y + (height * 0.5F));
 
-    return BoundingBox(static_cast<int>(std::round(x1)), static_cast<int>(std::round(y1)),
-                       static_cast<int>(std::round(x2 - x1)), static_cast<int>(std::round(y2 - y1)));
+    return vision::Rect(static_cast<int>(std::round(x1)), static_cast<int>(std::round(y1)),
+                        static_cast<int>(std::round(x2 - x1)), static_cast<int>(std::round(y2 - y1)));
 }
 
 } // namespace
 
-OWLv2Postprocessor::OWLv2Postprocessor(const Size& input_size, float confidence_threshold, float text_threshold,
+OWLv2Postprocessor::OWLv2Postprocessor(const vision::Size& input_size, float confidence_threshold, float text_threshold,
                                        std::vector<std::string> prompt_labels, std::vector<std::string> output_names)
     : input_size_(input_size), confidence_threshold_(confidence_threshold), text_threshold_(text_threshold),
       prompt_labels_(std::move(prompt_labels)), output_names_(std::move(output_names)) {}
 
 std::vector<OpenVocabDetection> OWLv2Postprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                                const Size& frame_size) {
+                                                                const vision::Size& frame_size) {
     std::vector<OpenVocabDetection> results;
     if (tensors.size() < 2) {
         return results;

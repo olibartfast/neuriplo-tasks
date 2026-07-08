@@ -10,45 +10,45 @@ namespace neuriplo_tasks::vision::ops {
 
 namespace {
 
-[[nodiscard]] inline double readScalar(const std::uint8_t* base, std::size_t idx, PixelType pt) noexcept {
+[[nodiscard]] inline double readScalar(const std::uint8_t* base, std::size_t idx, vision::PixelType pt) noexcept {
     switch (pt) {
-    case PixelType::UInt8:
+    case vision::PixelType::UInt8:
         return static_cast<double>(base[idx]);
-    case PixelType::Float32:
+    case vision::PixelType::Float32:
         return static_cast<double>(reinterpret_cast<const float*>(base)[idx]);
-    case PixelType::Int32:
+    case vision::PixelType::Int32:
         return static_cast<double>(reinterpret_cast<const int32_t*>(base)[idx]);
     }
     return 0.0;
 }
 
-inline void writeScalar(std::uint8_t* base, std::size_t idx, PixelType pt, double v) noexcept {
+inline void writeScalar(std::uint8_t* base, std::size_t idx, vision::PixelType pt, double v) noexcept {
     switch (pt) {
-    case PixelType::UInt8: {
+    case vision::PixelType::UInt8: {
         const double clamped = std::clamp(v, 0.0, 255.0);
         base[idx] = static_cast<uint8_t>(clamped);
         break;
     }
-    case PixelType::Float32:
+    case vision::PixelType::Float32:
         reinterpret_cast<float*>(base)[idx] = static_cast<float>(v);
         break;
-    case PixelType::Int32:
+    case vision::PixelType::Int32:
         reinterpret_cast<int32_t*>(base)[idx] = static_cast<int32_t>(v);
         break;
     }
 }
 
-[[nodiscard]] inline std::size_t elemSize(PixelType pt) noexcept { return pixelTypeSize(pt); }
+[[nodiscard]] inline std::size_t elemSize(vision::PixelType pt) noexcept { return pixelTypeSize(pt); }
 
-template <typename View> [[nodiscard]] Image resizeBilinear(const View& src, int dw, int dh) {
+template <typename View> [[nodiscard]] vision::Image resizeBilinear(const View& src, int dw, int dh) {
     const int sw = src.width();
     const int sh = src.height();
     const int c = src.channels();
-    const PixelType pt = src.pixelType();
+    const vision::PixelType pt = src.pixelType();
     const std::size_t es = elemSize(pt);
     const std::size_t s_width = static_cast<std::size_t>(sw);
     const std::size_t s_channels = static_cast<std::size_t>(c);
-    Image out = Image::uninit(dw, dh, c, pt);
+    vision::Image out = vision::Image::uninit(dw, dh, c, pt);
     const double sx = static_cast<double>(sw) / static_cast<double>(dw);
     const double sy = static_cast<double>(sh) / static_cast<double>(dh);
     const std::uint8_t* sptr = static_cast<const std::uint8_t*>(src.raw());
@@ -97,16 +97,16 @@ template <typename View> [[nodiscard]] Image resizeBilinear(const View& src, int
     return out;
 }
 
-template <typename View> [[nodiscard]] Image resizeBicubic(const View& src, int dw, int dh) {
+template <typename View> [[nodiscard]] vision::Image resizeBicubic(const View& src, int dw, int dh) {
     // Bicubic kernel (a = -0.75), matching OpenCV INTER_CUBIC.
     const int sw = src.width();
     const int sh = src.height();
     const int c = src.channels();
-    const PixelType pt = src.pixelType();
+    const vision::PixelType pt = src.pixelType();
     const std::size_t es = elemSize(pt);
     const std::size_t s_width = static_cast<std::size_t>(sw);
     const std::size_t s_channels = static_cast<std::size_t>(c);
-    Image out = Image::uninit(dw, dh, c, pt);
+    vision::Image out = vision::Image::uninit(dw, dh, c, pt);
     const double sx = static_cast<double>(sw) / static_cast<double>(dw);
     const double sy = static_cast<double>(sh) / static_cast<double>(dh);
     const std::uint8_t* sptr = static_cast<const std::uint8_t*>(src.raw());
@@ -160,17 +160,17 @@ template <typename View> [[nodiscard]] Image resizeBicubic(const View& src, int 
     return out;
 }
 
-template <typename View> [[nodiscard]] Image resizeArea(const View& src, int dw, int dh) {
+template <typename View> [[nodiscard]] vision::Image resizeArea(const View& src, int dw, int dh) {
     // Area-pixel (box-filter) resampling, matching OpenCV INTER_AREA for
     // integer-ratio downsampling and approximating it for non-integer ratios.
     const int sw = src.width();
     const int sh = src.height();
     const int c = src.channels();
-    const PixelType pt = src.pixelType();
+    const vision::PixelType pt = src.pixelType();
     const std::size_t es = elemSize(pt);
     const std::size_t s_width = static_cast<std::size_t>(sw);
     const std::size_t s_channels = static_cast<std::size_t>(c);
-    Image out = Image::uninit(dw, dh, c, pt);
+    vision::Image out = vision::Image::uninit(dw, dh, c, pt);
     const std::uint8_t* sptr = static_cast<const std::uint8_t*>(src.raw());
     std::uint8_t* dptr = out.raw();
     const double sx = static_cast<double>(sw) / static_cast<double>(dw);
@@ -217,11 +217,11 @@ template <typename View> [[nodiscard]] Image resizeArea(const View& src, int dw,
 
 } // namespace
 
-Image resize(const Image& src, int dst_width, int dst_height, Interpolation interp) {
+vision::Image resize(const vision::Image& src, int dst_width, int dst_height, Interpolation interp) {
     return resize(src.view(), dst_width, dst_height, interp);
 }
 
-Image resize(const ImageView& src, int dst_width, int dst_height, Interpolation interp) {
+vision::Image resize(const vision::ImageView& src, int dst_width, int dst_height, Interpolation interp) {
     if (src.empty() || dst_width <= 0 || dst_height <= 0) {
         throw std::invalid_argument("resize: invalid source or destination geometry");
     }
@@ -236,7 +236,7 @@ Image resize(const ImageView& src, int dst_width, int dst_height, Interpolation 
     }
 }
 
-void swapBgrRgb(Image& img) {
+void swapBgrRgb(vision::Image& img) {
     if (img.channels() != 3) {
         return;
     }
@@ -253,13 +253,13 @@ void swapBgrRgb(Image& img) {
     }
 }
 
-Image thresholdBinary(const ImageView& src, double threshold, double max_value) {
+vision::Image thresholdBinary(const vision::ImageView& src, double threshold, double max_value) {
     if (src.channels() != 1) {
         throw std::invalid_argument("thresholdBinary expects a single-channel image");
     }
-    Image out(src.width(), src.height(), 1, src.pixelType());
+    vision::Image out(src.width(), src.height(), 1, src.pixelType());
     const std::size_t n = src.totalPixels();
-    const PixelType pt = src.pixelType();
+    const vision::PixelType pt = src.pixelType();
     const std::uint8_t* sptr = static_cast<const std::uint8_t*>(src.raw());
     std::uint8_t* dptr = out.raw();
     for (std::size_t i = 0; i < n; ++i) {
@@ -269,21 +269,21 @@ Image thresholdBinary(const ImageView& src, double threshold, double max_value) 
     return out;
 }
 
-std::vector<Image> splitChannels(const ImageView& src) {
+std::vector<vision::Image> splitChannels(const vision::ImageView& src) {
     const int c = src.channels();
     if (c <= 0) {
         return {};
     }
     const int w = src.width();
     const int h = src.height();
-    const PixelType pt = src.pixelType();
+    const vision::PixelType pt = src.pixelType();
     const std::size_t es = pixelTypeSize(pt);
     const std::size_t s_width = static_cast<std::size_t>(w);
     const std::size_t s_channels = static_cast<std::size_t>(c);
-    std::vector<Image> out;
+    std::vector<vision::Image> out;
     out.reserve(static_cast<std::size_t>(c));
     for (int ch = 0; ch < c; ++ch) {
-        out.push_back(Image::uninit(w, h, 1, pt));
+        out.push_back(vision::Image::uninit(w, h, 1, pt));
     }
     const std::uint8_t* sptr = static_cast<const std::uint8_t*>(src.raw());
     for (int y = 0; y < h; ++y) {
@@ -300,18 +300,18 @@ std::vector<Image> splitChannels(const ImageView& src) {
     return out;
 }
 
-Image mergeChannels(const std::vector<Image>& channels) {
+vision::Image mergeChannels(const std::vector<vision::Image>& channels) {
     if (channels.empty()) {
         throw std::invalid_argument("mergeChannels: no channels provided");
     }
     const int w = channels[0].width();
     const int h = channels[0].height();
-    const PixelType pt = channels[0].pixelType();
+    const vision::PixelType pt = channels[0].pixelType();
     const int c = static_cast<int>(channels.size());
     const std::size_t es = pixelTypeSize(pt);
     const std::size_t s_width = static_cast<std::size_t>(w);
     const std::size_t s_channels = static_cast<std::size_t>(c);
-    Image out = Image::uninit(w, h, c, pt);
+    vision::Image out = vision::Image::uninit(w, h, c, pt);
     for (int ch = 0; ch < c; ++ch) {
         if (channels[static_cast<std::size_t>(ch)].width() != w ||
             channels[static_cast<std::size_t>(ch)].height() != h ||
@@ -333,12 +333,12 @@ Image mergeChannels(const std::vector<Image>& channels) {
     return out;
 }
 
-void minMax(const ImageView& src, double& out_min, double& out_max) {
+void minMax(const vision::ImageView& src, double& out_min, double& out_max) {
     if (src.channels() != 1) {
         throw std::invalid_argument("minMax expects a single-channel image");
     }
     const std::size_t n = src.totalPixels();
-    const PixelType pt = src.pixelType();
+    const vision::PixelType pt = src.pixelType();
     const std::uint8_t* sptr = static_cast<const std::uint8_t*>(src.raw());
     if (n == 0) {
         out_min = 0.0;
@@ -360,12 +360,13 @@ void minMax(const ImageView& src, double& out_min, double& out_max) {
     out_max = mx;
 }
 
-void copyRegion(const ImageView& src, const BoundingBox& src_roi, Image& dst, const BoundingBox& dst_roi) {
+void copyRegion(const vision::ImageView& src, const vision::Rect& src_roi, vision::Image& dst,
+                const vision::Rect& dst_roi) {
     if (src_roi.width != dst_roi.width || src_roi.height != dst_roi.height) {
         throw std::invalid_argument("copyRegion: source and destination ROI sizes must match");
     }
     const int c = src.channels();
-    const PixelType pt = src.pixelType();
+    const vision::PixelType pt = src.pixelType();
     if (dst.channels() != c || dst.pixelType() != pt) {
         throw std::invalid_argument("copyRegion: source and destination pixel layout must match");
     }
@@ -406,7 +407,7 @@ std::vector<int> nms(const std::vector<DetectionBox>& detections, float iou_thre
             if (suppressed[jdx]) {
                 continue;
             }
-            const BoundingBox inter = detections[idx].bbox.intersect(detections[jdx].bbox);
+            const vision::Rect inter = detections[idx].bbox.intersect(detections[jdx].bbox);
             const float inter_area = static_cast<float>(inter.area());
             const float union_area =
                 static_cast<float>(detections[idx].bbox.area() + detections[jdx].bbox.area()) - inter_area;

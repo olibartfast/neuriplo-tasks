@@ -1,6 +1,6 @@
 # Centralize Computer Vision Primitives And Remove OpenCV Coupling
 
-**Status:** Implementation in progress (Phases 0-5 complete except namespace cleanup and optional numeric comparison tests)
+**Status:** Implementation in progress (Phases 0-5 complete)
 **Target version:** `v0.6.0`
 **Branch:** `feat/remove-opencv-stb`
 **Core correction:** do not replace scattered OpenCV usage with scattered stb usage. First centralize the computer-vision substrate, then put OpenCV, stb, or future libraries behind adapters.
@@ -134,7 +134,7 @@ Rules:
 
 - [x] Move current `Image`, `ImageView`, `Size`, `PixelType`, `Point2f`, and `BoundingBox` replacements into `include/neuriplo/tasks/core/vision/`.
 - [x] Decide whether `BoundingBox` remains task-domain terminology or aliases `vision::Rect`.
-- [ ] Add explicit namespace use in implementation code: `neuriplo_tasks::vision::Size`, not unqualified `Size` and not `using namespace`.
+- [x] Add explicit namespace use in implementation code: `neuriplo_tasks::vision::Size`, not unqualified `Size` and not `using namespace`.
 - [x] Add a short architecture note in this file explaining dependency direction.
 
 ### Phase 2 — Centralize Operations

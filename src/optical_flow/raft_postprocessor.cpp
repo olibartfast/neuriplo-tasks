@@ -12,7 +12,8 @@ namespace neuriplo_tasks {
 RaftPostprocessor::RaftPostprocessor() {}
 
 std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<TensorElement>& flow_output,
-                                                        const std::vector<int64_t>& shape, const Size& frame_size) {
+                                                        const std::vector<int64_t>& shape,
+                                                        const vision::Size& frame_size) {
 
     if (flow_output.empty() || shape.empty()) {
         return {};
@@ -31,8 +32,8 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     const int u_channel_offset = 0;
     const int v_channel_offset = height * width;
 
-    Image flow_u = Image::uninit(width, height, 1, PixelType::Float32);
-    Image flow_v = Image::uninit(width, height, 1, PixelType::Float32);
+    vision::Image flow_u = vision::Image::uninit(width, height, 1, vision::PixelType::Float32);
+    vision::Image flow_v = vision::Image::uninit(width, height, 1, vision::PixelType::Float32);
 
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
@@ -62,7 +63,7 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     const int fw = frame_size.width;
     const int fh = frame_size.height;
 
-    Image raw_flow = Image::uninit(fw, fh, 2, PixelType::Float32);
+    vision::Image raw_flow = vision::Image::uninit(fw, fh, 2, vision::PixelType::Float32);
     for (int y = 0; y < fh; ++y) {
         float* dst = raw_flow.ptr<float>(y);
         const float* su = flow_u.ptr<float>(y);
@@ -76,7 +77,7 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     OpticalFlow result;
     result.raw_flow = fromImage(raw_flow.clone());
 
-    Image magnitude = Image::uninit(fw, fh, 1, PixelType::Float32);
+    vision::Image magnitude = vision::Image::uninit(fw, fh, 1, vision::PixelType::Float32);
     for (int y = 0; y < fh; ++y) {
         const float* pu = flow_u.ptr<float>(y);
         const float* pv = flow_v.ptr<float>(y);
@@ -96,10 +97,10 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     return {result};
 }
 
-Image RaftPostprocessor::makeColorwheel() {
+vision::Image RaftPostprocessor::makeColorwheel() {
     const int RY = 15, YG = 6, GC = 4, CB = 11, BM = 13, MR = 6;
     const int ncols = RY + YG + GC + CB + BM + MR;
-    Image colorwheel(ncols, 1, 3, PixelType::UInt8);
+    vision::Image colorwheel(ncols, 1, 3, vision::PixelType::UInt8);
 
     int col = 0;
     auto setPixel = [&colorwheel](int c, int b, int g, int r) {
@@ -131,16 +132,16 @@ Image RaftPostprocessor::makeColorwheel() {
     return colorwheel;
 }
 
-Image RaftPostprocessor::visualizeFlow(const ImageView& flow_x, const ImageView& flow_y) {
+vision::Image RaftPostprocessor::visualizeFlow(const vision::ImageView& flow_x, const vision::ImageView& flow_y) {
     const int rows = flow_x.height();
     const int cols = flow_x.width();
 
     if (flow_x.empty() || flow_y.empty() || rows != flow_y.height() || cols != flow_y.width()) {
-        return Image();
+        return vision::Image();
     }
 
-    Image magnitude = Image::uninit(cols, rows, 1, PixelType::Float32);
-    Image angle = Image::uninit(cols, rows, 1, PixelType::Float32);
+    vision::Image magnitude = vision::Image::uninit(cols, rows, 1, vision::PixelType::Float32);
+    vision::Image angle = vision::Image::uninit(cols, rows, 1, vision::PixelType::Float32);
 
     for (int i = 0; i < rows; ++i) {
         const float* fx = flow_x.ptr<float>(i);
@@ -172,9 +173,9 @@ Image RaftPostprocessor::visualizeFlow(const ImageView& flow_x, const ImageView&
         }
     }
 
-    Image colorwheel = makeColorwheel();
+    vision::Image colorwheel = makeColorwheel();
     const int ncols = colorwheel.width();
-    Image flow_color(cols, rows, 3, PixelType::UInt8);
+    vision::Image flow_color(cols, rows, 3, vision::PixelType::UInt8);
 
     for (int i = 0; i < rows; ++i) {
         const float* mag = magnitude.ptr<float>(i);

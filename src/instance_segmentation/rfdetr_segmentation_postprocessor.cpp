@@ -9,8 +9,8 @@
 
 namespace neuriplo_tasks {
 
-RfDetrSegmentationPostprocessor::RfDetrSegmentationPostprocessor(const Size& input_size, float confidence_threshold,
-                                                                 float mask_threshold,
+RfDetrSegmentationPostprocessor::RfDetrSegmentationPostprocessor(const vision::Size& input_size,
+                                                                 float confidence_threshold, float mask_threshold,
                                                                  const std::vector<std::string>& output_names)
     : input_size_(input_size), confidence_threshold_(confidence_threshold), mask_threshold_(mask_threshold) {
     findOutputIndices(output_names);
@@ -40,7 +40,7 @@ void RfDetrSegmentationPostprocessor::findOutputIndices(const std::vector<std::s
 }
 
 std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                                               const Size& frame_size) {
+                                                                               const vision::Size& frame_size) {
 
     if (tensors.size() < 3) {
         throw std::runtime_error("RF-DETR segmentation requires at least 3 output tensors");
@@ -113,10 +113,10 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
             InstanceSegmentation seg;
             seg.class_id = static_cast<float>(class_id);
             seg.class_confidence = max_score;
-            seg.bbox = BoundingBox(static_cast<int>(x_min), static_cast<int>(y_min), static_cast<int>(width),
-                                   static_cast<int>(height));
+            seg.bbox = vision::Rect(static_cast<int>(x_min), static_cast<int>(y_min), static_cast<int>(width),
+                                    static_cast<int>(height));
 
-            Image mask_logits = Image::uninit(mask_w, mask_h, 1, PixelType::Float32);
+            vision::Image mask_logits = vision::Image::uninit(mask_w, mask_h, 1, vision::PixelType::Float32);
             size_t mask_offset =
                 masks_batch_offset + static_cast<size_t>(i) * static_cast<size_t>(mask_h) * static_cast<size_t>(mask_w);
             float max_val = 0.0f;
@@ -131,15 +131,16 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
                 }
             }
 
-            Image mask_resized =
+            vision::Image mask_resized =
                 image_ops::resize(mask_logits, frame_size.width, frame_size.height, image_ops::Interpolation::Linear);
 
-            Image mask_binary = image_ops::thresholdBinary(mask_resized.view(), mask_threshold_, 1.0);
-            Image mask_uint8 = mask_binary.convertedTo(PixelType::UInt8, 255.0);
+            vision::Image mask_binary = image_ops::thresholdBinary(mask_resized.view(), mask_threshold_, 1.0);
+            vision::Image mask_uint8 = mask_binary.convertedTo(vision::PixelType::UInt8, 255.0);
 
-            Image mask_cropped = Image::zeros(frame_size.width, frame_size.height, 1, PixelType::UInt8);
-            const BoundingBox frame_bounds(0, 0, frame_size.width, frame_size.height);
-            const BoundingBox roi_box = seg.bbox.intersect(frame_bounds);
+            vision::Image mask_cropped =
+                vision::Image::zeros(frame_size.width, frame_size.height, 1, vision::PixelType::UInt8);
+            const vision::Rect frame_bounds(0, 0, frame_size.width, frame_size.height);
+            const vision::Rect roi_box = seg.bbox.intersect(frame_bounds);
             if (roi_box.width > 0 && roi_box.height > 0) {
                 image_ops::copyRegion(mask_uint8.view(), roi_box, mask_cropped, roi_box);
             }

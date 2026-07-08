@@ -23,7 +23,7 @@ void EdgeCrafterSegmentationPostprocessor::findOutputIndices(const std::vector<s
 }
 
 std::vector<InstanceSegmentation> EdgeCrafterSegmentationPostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                                                    const Size& frame_size) {
+                                                                                    const vision::Size& frame_size) {
 
     if (tensors.size() < 4) {
         throw std::runtime_error("EdgeCrafter segmentation requires 4 output tensors (labels, boxes, scores, masks)");
@@ -82,12 +82,12 @@ std::vector<InstanceSegmentation> EdgeCrafterSegmentationPostprocessor::postproc
             int ix2 = std::min(frame_size.width, static_cast<int>(x2));
             int iy2 = std::min(frame_size.height, static_cast<int>(y2));
 
-            BoundingBox bbox(ix1, iy1, std::max(1, ix2 - ix1), std::max(1, iy2 - iy1));
+            vision::Rect bbox(ix1, iy1, std::max(1, ix2 - ix1), std::max(1, iy2 - iy1));
 
             const size_t mask_offset =
                 masks_batch_offset + static_cast<size_t>(i) * static_cast<size_t>(mask_h) * static_cast<size_t>(mask_w);
 
-            Image mask_small = Image::uninit(mask_w, mask_h, 1, PixelType::Float32);
+            vision::Image mask_small = vision::Image::uninit(mask_w, mask_h, 1, vision::PixelType::Float32);
             for (int h = 0; h < mask_h; ++h) {
                 for (int w = 0; w < mask_w; ++w) {
                     const size_t mask_index =
@@ -96,19 +96,20 @@ std::vector<InstanceSegmentation> EdgeCrafterSegmentationPostprocessor::postproc
                 }
             }
 
-            Image mask_resized =
+            vision::Image mask_resized =
                 image_ops::resize(mask_small, frame_size.width, frame_size.height, image_ops::Interpolation::Linear);
 
-            Image mask_binary = image_ops::thresholdBinary(mask_resized.view(), mask_threshold_, 255.0);
-            mask_binary.convertTo(PixelType::UInt8);
+            vision::Image mask_binary = image_ops::thresholdBinary(mask_resized.view(), mask_threshold_, 255.0);
+            mask_binary.convertTo(vision::PixelType::UInt8);
 
-            BoundingBox clamped_bbox = bbox;
+            vision::Rect clamped_bbox = bbox;
             clamped_bbox.x = std::max(0, std::min(bbox.x, frame_size.width - 1));
             clamped_bbox.y = std::max(0, std::min(bbox.y, frame_size.height - 1));
             clamped_bbox.width = std::max(1, std::min(bbox.width, frame_size.width - clamped_bbox.x));
             clamped_bbox.height = std::max(1, std::min(bbox.height, frame_size.height - clamped_bbox.y));
 
-            Image mask_full = Image::zeros(frame_size.width, frame_size.height, 1, PixelType::UInt8);
+            vision::Image mask_full =
+                vision::Image::zeros(frame_size.width, frame_size.height, 1, vision::PixelType::UInt8);
             image_ops::copyRegion(mask_binary.view(), clamped_bbox, mask_full, clamped_bbox);
 
             InstanceSegmentation seg;

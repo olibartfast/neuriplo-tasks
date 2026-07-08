@@ -50,7 +50,7 @@ OpenVocabDetectionTask::OpenVocabDetectionTask(const ModelInfo& model_info, cons
         throw std::invalid_argument("Unsupported open-vocabulary model: " + model_name);
     }
 
-    const Size input_size = extractInputSize(model_info_);
+    const vision::Size input_size = extractInputSize(model_info_);
     input_width_ = input_size.width;
     input_height_ = input_size.height;
     image_preprocessor_ = std::make_unique<RtDetrPreprocessor>(input_size);
@@ -136,7 +136,7 @@ std::vector<std::string> OpenVocabDetectionTask::extractPrompts(const TaskConfig
     return prompts;
 }
 
-Size OpenVocabDetectionTask::extractInputSize(const ModelInfo& model_info) {
+vision::Size OpenVocabDetectionTask::extractInputSize(const ModelInfo& model_info) {
     for (size_t index = 0; index < model_info.input_shapes.size(); ++index) {
         const auto& shape = model_info.input_shapes[index];
         const std::string format =
@@ -148,15 +148,15 @@ Size OpenVocabDetectionTask::extractInputSize(const ModelInfo& model_info) {
 
         if (shape.size() == 4) {
             if (format == "FORMAT_NHWC") {
-                return Size(static_cast<int>(shape[2]), static_cast<int>(shape[1]));
+                return vision::Size(static_cast<int>(shape[2]), static_cast<int>(shape[1]));
             }
-            return Size(static_cast<int>(shape[3]), static_cast<int>(shape[2]));
+            return vision::Size(static_cast<int>(shape[3]), static_cast<int>(shape[2]));
         }
         if (shape.size() == 3) {
             if (format == "FORMAT_NHWC") {
-                return Size(static_cast<int>(shape[1]), static_cast<int>(shape[0]));
+                return vision::Size(static_cast<int>(shape[1]), static_cast<int>(shape[0]));
             }
-            return Size(static_cast<int>(shape[2]), static_cast<int>(shape[1]));
+            return vision::Size(static_cast<int>(shape[2]), static_cast<int>(shape[1]));
         }
     }
 
@@ -174,7 +174,7 @@ std::pair<std::vector<int32_t>, std::vector<int32_t>> OpenVocabDetectionTask::en
     return tokenizer_->batchEncode(prompts, context_length);
 }
 
-std::vector<std::vector<uint8_t>> OpenVocabDetectionTask::preprocess(const std::vector<Image>& imgs) {
+std::vector<std::vector<uint8_t>> OpenVocabDetectionTask::preprocess(const std::vector<vision::Image>& imgs) {
     for (const auto& img : imgs) {
         if (img.empty()) {
             throw std::invalid_argument("Empty input image provided");
@@ -262,7 +262,8 @@ std::vector<std::vector<uint8_t>> OpenVocabDetectionTask::preprocess(const std::
     return results;
 }
 
-std::vector<Result> OpenVocabDetectionTask::postprocess(const Size& frame_size, const std::vector<Tensor>& tensors) {
+std::vector<Result> OpenVocabDetectionTask::postprocess(const vision::Size& frame_size,
+                                                        const std::vector<Tensor>& tensors) {
     std::vector<Result> results;
     if (!postprocessor_) {
         return results;

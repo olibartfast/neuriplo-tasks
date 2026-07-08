@@ -9,8 +9,8 @@ namespace neuriplo_tasks {
 
 Preprocessor::Preprocessor(const PreprocessConfig& config) : config_(config) {}
 
-void Preprocessor::apply_imagenet_normalization(Image& image) const {
-    if (image.channels() != 3 || image.pixelType() != PixelType::Float32) {
+void Preprocessor::apply_imagenet_normalization(vision::Image& image) const {
+    if (image.channels() != 3 || image.pixelType() != vision::PixelType::Float32) {
         throw std::invalid_argument("Image must be Float32 with 3 channels for ImageNet normalization");
     }
     const int channels = image.channels();
@@ -26,13 +26,13 @@ void Preprocessor::apply_imagenet_normalization(Image& image) const {
     }
 }
 
-std::vector<uint8_t> Preprocessor::preprocess_image(const ImageView& image, const Size& target_size, ImageFormat format,
-                                                    DataType data_type) const {
+std::vector<uint8_t> Preprocessor::preprocess_image(const vision::ImageView& image, const vision::Size& target_size,
+                                                    ImageFormat format, DataType data_type) const {
     if (image.empty()) {
         throw std::invalid_argument("Input image is empty");
     }
 
-    Image processed = Image::uninit(image.width(), image.height(), image.channels(), image.pixelType());
+    vision::Image processed = vision::Image::uninit(image.width(), image.height(), image.channels(), image.pixelType());
     std::memcpy(processed.raw(), image.raw(), image.sizeBytes());
 
     // Convert BGR to RGB if needed
@@ -47,13 +47,14 @@ std::vector<uint8_t> Preprocessor::preprocess_image(const ImageView& image, cons
 
     // Normalize to [0, 1] if needed
     if (config_.normalize) {
-        processed.convertTo(PixelType::Float32, 1.0 / 255.0);
+        processed.convertTo(vision::PixelType::Float32, 1.0 / 255.0);
     } else if (data_type == DataType::FLOAT32) {
-        processed.convertTo(PixelType::Float32);
+        processed.convertTo(vision::PixelType::Float32);
     }
 
     // Apply ImageNet normalization if requested
-    if (config_.apply_imagenet_norm && processed.pixelType() == PixelType::Float32 && processed.channels() == 3) {
+    if (config_.apply_imagenet_norm && processed.pixelType() == vision::PixelType::Float32 &&
+        processed.channels() == 3) {
         apply_imagenet_normalization(processed);
     }
 
@@ -63,7 +64,7 @@ std::vector<uint8_t> Preprocessor::preprocess_image(const ImageView& image, cons
 
     if (format == ImageFormat::NCHW && processed.channels() > 1) {
         // Channel-first: split channels and concatenate
-        std::vector<Image> planes = image_ops::splitChannels(processed.view());
+        std::vector<vision::Image> planes = image_ops::splitChannels(processed.view());
         for (const auto& plane : planes) {
             const std::uint8_t* data = plane.raw();
             const std::size_t plane_size = plane.totalPixels() * elem_size;
@@ -79,11 +80,11 @@ std::vector<uint8_t> Preprocessor::preprocess_image(const ImageView& image, cons
     return output;
 }
 
-std::vector<uint8_t> Preprocessor::preprocess(const ImageView& image) const {
+std::vector<uint8_t> Preprocessor::preprocess(const vision::ImageView& image) const {
     return preprocess_image(image, config_.input_size, config_.format, config_.data_type);
 }
 
-std::vector<std::vector<uint8_t>> Preprocessor::preprocess(const std::vector<Image>& images) const {
+std::vector<std::vector<uint8_t>> Preprocessor::preprocess(const std::vector<vision::Image>& images) const {
     std::vector<std::vector<uint8_t>> results;
     results.reserve(images.size());
 

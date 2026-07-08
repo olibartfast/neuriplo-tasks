@@ -45,20 +45,20 @@ const Tensor* findTensorByNames(const std::vector<Tensor>& tensors, const std::v
     return nullptr;
 }
 
-BoundingBox makeRectFromCenterBox(float cx, float cy, float w, float h, const Size& frame_size) {
+vision::Rect makeRectFromCenterBox(float cx, float cy, float w, float h, const vision::Size& frame_size) {
     const float x1 = std::max(0.0F, cx - w * 0.5F);
     const float y1 = std::max(0.0F, cy - h * 0.5F);
     const float x2 = std::min(static_cast<float>(frame_size.width), cx + w * 0.5F);
     const float y2 = std::min(static_cast<float>(frame_size.height), cy + h * 0.5F);
-    return BoundingBox(static_cast<int>(std::round(x1)), static_cast<int>(std::round(y1)),
-                       static_cast<int>(std::round(x2 - x1)), static_cast<int>(std::round(y2 - y1)));
+    return vision::Rect(static_cast<int>(std::round(x1)), static_cast<int>(std::round(y1)),
+                        static_cast<int>(std::round(x2 - x1)), static_cast<int>(std::round(y2 - y1)));
 }
 
 } // namespace
 
 // ─── Construction ────────────────────────────────────────────────────────────
 
-GroundingDinoPostprocessor::GroundingDinoPostprocessor(const Size& input_size, float confidence_threshold,
+GroundingDinoPostprocessor::GroundingDinoPostprocessor(const vision::Size& input_size, float confidence_threshold,
                                                        float text_threshold, std::vector<std::string> prompt_labels,
                                                        std::vector<std::string> output_names,
                                                        std::vector<std::pair<int, int>> phrase_token_ranges)
@@ -69,7 +69,7 @@ GroundingDinoPostprocessor::GroundingDinoPostprocessor(const Size& input_size, f
 // ─── Postprocessing ──────────────────────────────────────────────────────────
 
 std::vector<OpenVocabDetection> GroundingDinoPostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                                        const Size& frame_size) {
+                                                                        const vision::Size& frame_size) {
     std::vector<OpenVocabDetection> results;
     if (tensors.size() < 2) {
         return results;

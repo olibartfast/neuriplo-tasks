@@ -16,7 +16,8 @@ class PosePreprocessStrategy {
   public:
     virtual ~PosePreprocessStrategy() = default;
 
-    [[nodiscard]] virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) const = 0;
+    [[nodiscard]] virtual std::vector<std::vector<uint8_t>>
+    preprocess(const std::vector<vision::Image>& imgs) const = 0;
 };
 
 namespace {
@@ -29,7 +30,7 @@ class SingleInputPosePreprocessStrategy final : public PosePreprocessStrategy {
     explicit SingleInputPosePreprocessStrategy(std::unique_ptr<Preprocessor> preprocessor)
         : preprocessor_(std::move(preprocessor)) {}
 
-    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) const override {
+    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<vision::Image>& imgs) const override {
         return preprocessor_->preprocess(imgs);
     }
 
@@ -42,7 +43,7 @@ class ModelInputPosePreprocessStrategy final : public PosePreprocessStrategy {
     ModelInputPosePreprocessStrategy(std::unique_ptr<Preprocessor> preprocessor, const ModelInfo& model_info)
         : preprocessor_(std::move(preprocessor)), model_info_(model_info) {}
 
-    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) const override {
+    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<vision::Image>& imgs) const override {
         std::vector<std::vector<uint8_t>> results;
         results.reserve(model_info_.input_shapes.size());
 
@@ -92,7 +93,7 @@ PoseEstimationTask::PoseEstimationTask(const ModelInfo& model_info, const std::s
                                        float confidence_threshold, float nms_threshold)
     : TaskInterface(model_info), model_type_(detectModelType(model_type)), model_name_(model_type) {
 
-    Size input_size(input_width_, input_height_);
+    vision::Size input_size(input_width_, input_height_);
 
     preprocess_strategy_ = createPreprocessStrategy(model_type_, input_size);
     if (!preprocess_strategy_) {
@@ -107,13 +108,14 @@ PoseEstimationTask::PoseEstimationTask(const ModelInfo& model_info, const std::s
 
 PoseEstimationTask::~PoseEstimationTask() = default;
 
-std::vector<std::vector<uint8_t>> PoseEstimationTask::preprocess(const std::vector<Image>& imgs) {
+std::vector<std::vector<uint8_t>> PoseEstimationTask::preprocess(const std::vector<vision::Image>& imgs) {
     return preprocess_strategy_->preprocess(imgs);
 }
 
-std::vector<Result> PoseEstimationTask::postprocess(const Size& frame_size, const std::vector<Tensor>& tensors) {
+std::vector<Result> PoseEstimationTask::postprocess(const vision::Size& frame_size,
+                                                    const std::vector<Tensor>& tensors) {
 
-    Size input_size(input_width_, input_height_);
+    vision::Size input_size(input_width_, input_height_);
 
     auto poses = postprocessor_->postprocess(tensors, frame_size, input_size);
 
@@ -148,7 +150,7 @@ PoseEstimationTask::ModelType PoseEstimationTask::detectModelType(const std::str
     return ModelType::UNKNOWN;
 }
 
-std::unique_ptr<Preprocessor> PoseEstimationTask::createPreprocessor(ModelType type, const Size& input_size) {
+std::unique_ptr<Preprocessor> PoseEstimationTask::createPreprocessor(ModelType type, const vision::Size& input_size) {
     switch (type) {
     case ModelType::RFDETRPOSE:
         return std::make_unique<RfDetrPreprocessor>(input_size);
@@ -174,7 +176,7 @@ std::unique_ptr<Preprocessor> PoseEstimationTask::createPreprocessor(ModelType t
 }
 
 std::unique_ptr<PosePreprocessStrategy> PoseEstimationTask::createPreprocessStrategy(ModelType type,
-                                                                                     const Size& input_size) {
+                                                                                     const vision::Size& input_size) {
     auto preprocessor = createPreprocessor(type, input_size);
     if (!preprocessor) {
         return nullptr;
@@ -187,7 +189,8 @@ std::unique_ptr<PosePreprocessStrategy> PoseEstimationTask::createPreprocessStra
     return std::make_unique<SingleInputPosePreprocessStrategy>(std::move(preprocessor));
 }
 
-std::unique_ptr<PosePostprocessor> PoseEstimationTask::createPostprocessor(ModelType type, const Size& input_size,
+std::unique_ptr<PosePostprocessor> PoseEstimationTask::createPostprocessor(ModelType type,
+                                                                           const vision::Size& input_size,
                                                                            float confidence_threshold,
                                                                            float nms_threshold) {
     switch (type) {

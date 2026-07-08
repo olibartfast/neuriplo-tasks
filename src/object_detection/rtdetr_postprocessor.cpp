@@ -7,7 +7,7 @@
 
 namespace neuriplo_tasks {
 
-RtDetrPostprocessor::RtDetrPostprocessor(ObjectDetectionTask::ModelType model_type, const Size& input_size,
+RtDetrPostprocessor::RtDetrPostprocessor(ObjectDetectionTask::ModelType model_type, const vision::Size& input_size,
                                          float confidence_threshold, const std::vector<std::string>& output_names)
     : model_type_(model_type), input_size_(input_size), confidence_threshold_(confidence_threshold) {
     findOutputIndices(output_names);
@@ -33,7 +33,8 @@ void RtDetrPostprocessor::findOutputIndices(const std::vector<std::string>& outp
     }
 }
 
-std::vector<Detection> RtDetrPostprocessor::postprocess(const std::vector<Tensor>& tensors, const Size& frame_size) {
+std::vector<Detection> RtDetrPostprocessor::postprocess(const std::vector<Tensor>& tensors,
+                                                        const vision::Size& frame_size) {
 
     std::vector<Detection> detections;
 
@@ -64,7 +65,7 @@ std::vector<Detection> RtDetrPostprocessor::postprocess(const std::vector<Tensor
 }
 
 std::vector<Detection> RtDetrPostprocessor::postprocessRTDETR(const Tensor& scores, const Tensor& boxes,
-                                                              const Tensor& labels, const Size& frame_size) {
+                                                              const Tensor& labels, const vision::Size& frame_size) {
 
     std::vector<Detection> detections;
 
@@ -104,8 +105,8 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETR(const Tensor& scor
             Detection det;
             det.class_id = static_cast<float>(class_id);
             det.class_confidence = score;
-            det.bbox = BoundingBox(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1),
-                                   static_cast<int>(y2 - y1));
+            det.bbox = vision::Rect(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1),
+                                    static_cast<int>(y2 - y1));
             detections.push_back(det);
         }
     }
@@ -113,7 +114,7 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETR(const Tensor& scor
     return detections;
 }
 
-std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(const Tensor& output, const Size& frame_size) {
+std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(const Tensor& output, const vision::Size& frame_size) {
 
     std::vector<Detection> detections;
 
@@ -160,8 +161,8 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(const Tensor& ou
             Detection det;
             det.class_id = static_cast<float>(class_id);
             det.class_confidence = max_score;
-            det.bbox = BoundingBox(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1),
-                                   static_cast<int>(y2 - y1));
+            det.bbox = vision::Rect(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1),
+                                    static_cast<int>(y2 - y1));
             detections.push_back(det);
         }
     }

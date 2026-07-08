@@ -15,7 +15,8 @@ class InstanceSegmentationPreprocessStrategy {
   public:
     virtual ~InstanceSegmentationPreprocessStrategy() = default;
 
-    [[nodiscard]] virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) const = 0;
+    [[nodiscard]] virtual std::vector<std::vector<uint8_t>>
+    preprocess(const std::vector<vision::Image>& imgs) const = 0;
 };
 
 namespace {
@@ -25,7 +26,7 @@ class SingleInputSegmentationPreprocessStrategy final : public InstanceSegmentat
     explicit SingleInputSegmentationPreprocessStrategy(std::unique_ptr<Preprocessor> preprocessor)
         : preprocessor_(std::move(preprocessor)) {}
 
-    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) const override {
+    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<vision::Image>& imgs) const override {
         std::vector<std::vector<uint8_t>> results;
         results.reserve(imgs.size());
 
@@ -48,7 +49,7 @@ class ModelInputSegmentationPreprocessStrategy final : public InstanceSegmentati
     ModelInputSegmentationPreprocessStrategy(std::unique_ptr<Preprocessor> preprocessor, const ModelInfo& model_info)
         : preprocessor_(std::move(preprocessor)), model_info_(model_info) {}
 
-    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) const override {
+    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess(const std::vector<vision::Image>& imgs) const override {
         std::vector<std::vector<uint8_t>> results;
         results.reserve(model_info_.input_shapes.size());
 
@@ -99,7 +100,7 @@ InstanceSegmentationTask::InstanceSegmentationTask(const ModelInfo& model_info, 
                                                    float mask_threshold)
     : TaskInterface(model_info), model_type_(detectModelType(model_name)), model_name_(model_name),
       confidence_threshold_(confidence_threshold), nms_threshold_(nms_threshold), mask_threshold_(mask_threshold) {
-    Size input_size = extractInputSize(model_info);
+    vision::Size input_size = extractInputSize(model_info);
     input_width_ = input_size.width;
     input_height_ = input_size.height;
 
@@ -116,11 +117,12 @@ InstanceSegmentationTask::InstanceSegmentationTask(const ModelInfo& model_info, 
 
 InstanceSegmentationTask::~InstanceSegmentationTask() = default;
 
-std::vector<std::vector<uint8_t>> InstanceSegmentationTask::preprocess(const std::vector<Image>& imgs) {
+std::vector<std::vector<uint8_t>> InstanceSegmentationTask::preprocess(const std::vector<vision::Image>& imgs) {
     return preprocess_strategy_->preprocess(imgs);
 }
 
-std::vector<Result> InstanceSegmentationTask::postprocess(const Size& frame_size, const std::vector<Tensor>& tensors) {
+std::vector<Result> InstanceSegmentationTask::postprocess(const vision::Size& frame_size,
+                                                          const std::vector<Tensor>& tensors) {
 
     if (!validateTensorInputs(tensors)) {
         return {};
@@ -162,7 +164,8 @@ InstanceSegmentationTask::ModelType InstanceSegmentationTask::detectModelType(co
     return ModelType::YOLO_SEG;
 }
 
-std::unique_ptr<Preprocessor> InstanceSegmentationTask::createPreprocessor(ModelType type, const Size& input_size) {
+std::unique_ptr<Preprocessor> InstanceSegmentationTask::createPreprocessor(ModelType type,
+                                                                           const vision::Size& input_size) {
     switch (type) {
     case ModelType::YOLO_SEG:
     case ModelType::YOLO_V10_SEG:
@@ -179,7 +182,7 @@ std::unique_ptr<Preprocessor> InstanceSegmentationTask::createPreprocessor(Model
 }
 
 std::unique_ptr<InstanceSegmentationPreprocessStrategy>
-InstanceSegmentationTask::createPreprocessStrategy(ModelType type, const Size& input_size) {
+InstanceSegmentationTask::createPreprocessStrategy(ModelType type, const vision::Size& input_size) {
     auto preprocessor = createPreprocessor(type, input_size);
     if (!preprocessor) {
         return nullptr;
@@ -193,7 +196,7 @@ InstanceSegmentationTask::createPreprocessStrategy(ModelType type, const Size& i
 }
 
 std::unique_ptr<SegmentationPostprocessor> InstanceSegmentationTask::createPostprocessor(ModelType type) {
-    Size input_size(input_width_, input_height_);
+    vision::Size input_size(input_width_, input_height_);
 
     switch (type) {
     case ModelType::YOLO_SEG:
@@ -215,7 +218,7 @@ std::unique_ptr<SegmentationPostprocessor> InstanceSegmentationTask::createPostp
     }
 }
 
-Size InstanceSegmentationTask::extractInputSize(const ModelInfo& model_info) {
+vision::Size InstanceSegmentationTask::extractInputSize(const ModelInfo& model_info) {
     int width = 640;
     int height = 640;
 
@@ -240,7 +243,7 @@ Size InstanceSegmentationTask::extractInputSize(const ModelInfo& model_info) {
         }
     }
 
-    return Size(width, height);
+    return vision::Size(width, height);
 }
 
 bool InstanceSegmentationTask::validateTensorInputs(const std::vector<Tensor>& tensors) const {

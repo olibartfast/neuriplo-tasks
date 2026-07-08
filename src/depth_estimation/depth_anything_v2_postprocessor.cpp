@@ -44,7 +44,7 @@ DepthLayout parseDepthLayout(const std::vector<int64_t>& shape) {
 
 std::vector<DepthEstimation> DepthAnythingV2Postprocessor::postprocess(const std::vector<TensorElement>& depth_output,
                                                                        const std::vector<int64_t>& shape,
-                                                                       const Size& frame_size) {
+                                                                       const vision::Size& frame_size) {
     if (depth_output.empty() || shape.empty()) {
         return {};
     }
@@ -67,7 +67,7 @@ std::vector<DepthEstimation> DepthAnythingV2Postprocessor::postprocess(const std
     for (int batch_index = 0; batch_index < layout.batch; ++batch_index) {
         const size_t start_offset = static_cast<size_t>(batch_index) * map_size;
 
-        Image depth = Image::uninit(layout.width, layout.height, 1, PixelType::Float32);
+        vision::Image depth = vision::Image::uninit(layout.width, layout.height, 1, vision::PixelType::Float32);
         float* depth_ptr = depth.data<float>();
 
         for (size_t idx = 0; idx < map_size; ++idx) {
@@ -83,12 +83,12 @@ std::vector<DepthEstimation> DepthAnythingV2Postprocessor::postprocess(const std
         double max_value = 0.0;
         image_ops::minMax(depth.view(), min_value, max_value);
 
-        Image normalized_depth;
+        vision::Image normalized_depth;
         if (max_value > min_value) {
             const double scale = 1.0 / (max_value - min_value);
-            normalized_depth = depth.convertedTo(PixelType::Float32, scale, -min_value * scale);
+            normalized_depth = depth.convertedTo(vision::PixelType::Float32, scale, -min_value * scale);
         } else {
-            normalized_depth = Image::zeros(depth.width(), depth.height(), 1, PixelType::Float32);
+            normalized_depth = vision::Image::zeros(depth.width(), depth.height(), 1, vision::PixelType::Float32);
         }
 
         DepthEstimation estimation;

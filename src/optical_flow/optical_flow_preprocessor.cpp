@@ -4,7 +4,7 @@
 
 namespace neuriplo_tasks {
 
-RaftPreprocessor::RaftPreprocessor(const Size& input_size)
+RaftPreprocessor::RaftPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
           false, // NO base normalization (RAFT does custom [-1,1] normalization)
@@ -12,15 +12,16 @@ RaftPreprocessor::RaftPreprocessor(const Size& input_size)
           true   // BGR to RGB
       }) {}
 
-std::vector<std::vector<uint8_t>> RaftPreprocessor::preprocess_pair(const ImageView& frame1,
-                                                                    const ImageView& frame2) const {
-    std::vector<ImageView> frames = {frame1, frame2};
+std::vector<std::vector<uint8_t>> RaftPreprocessor::preprocess_pair(const vision::ImageView& frame1,
+                                                                    const vision::ImageView& frame2) const {
+    std::vector<vision::ImageView> frames = {frame1, frame2};
 
     std::vector<std::vector<uint8_t>> preprocessed_frames;
     preprocessed_frames.reserve(2);
 
     for (const auto& frame : frames) {
-        Image processed = Image::uninit(frame.width(), frame.height(), frame.channels(), frame.pixelType());
+        vision::Image processed =
+            vision::Image::uninit(frame.width(), frame.height(), frame.channels(), frame.pixelType());
         std::memcpy(processed.raw(), frame.raw(), frame.sizeBytes());
 
         if (config_.bgr_to_rgb && processed.channels() == 3) {
@@ -33,11 +34,11 @@ std::vector<std::vector<uint8_t>> RaftPreprocessor::preprocess_pair(const ImageV
         }
         processed = image_ops::resize(processed, config_.input_size, interp);
 
-        processed.convertTo(PixelType::Float32, 2.0 / 255.0, -1.0);
+        processed.convertTo(vision::PixelType::Float32, 2.0 / 255.0, -1.0);
 
         std::vector<uint8_t> output;
         if (config_.format == ImageFormat::NCHW) {
-            std::vector<Image> channels = image_ops::splitChannels(processed.view());
+            std::vector<vision::Image> channels = image_ops::splitChannels(processed.view());
 
             for (const auto& channel : channels) {
                 const float* data = channel.data<float>();
