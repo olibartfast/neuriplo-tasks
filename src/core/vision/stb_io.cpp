@@ -49,7 +49,7 @@ namespace {
 
 } // namespace
 
-Image loadImage(const std::string& path, int desired_channels) {
+vision::Image loadImage(const std::string& path, int desired_channels) {
     int width = 0;
     int height = 0;
     int channels = 0;
@@ -60,15 +60,15 @@ Image loadImage(const std::string& path, int desired_channels) {
     }
     const int out_channels = (req != STBI_default) ? req : channels;
 
-    Image image(width, height, out_channels, PixelType::UInt8);
+    vision::Image image(width, height, out_channels, vision::PixelType::UInt8);
     const std::size_t bytes = image.sizeBytes();
     std::memcpy(image.data<std::uint8_t>(), pixels, bytes);
     stbi_image_free(pixels);
     return image;
 }
 
-bool saveImage(const std::string& path, const Image& image) {
-    if (image.empty() || image.pixelType() != PixelType::UInt8) {
+bool saveImage(const std::string& path, const vision::Image& image) {
+    if (image.empty() || image.pixelType() != vision::PixelType::UInt8) {
         return false;
     }
     const int w = image.width();

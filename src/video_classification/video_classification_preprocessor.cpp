@@ -9,8 +9,8 @@ namespace neuriplo_tasks {
 
 namespace {
 
-void applyChannelNormalization(Image& processed, const float mean[3], const float std_dev[3]) {
-    std::vector<Image> channels = image_ops::splitChannels(processed.view());
+void applyChannelNormalization(vision::Image& processed, const float mean[3], const float std_dev[3]) {
+    std::vector<vision::Image> channels = image_ops::splitChannels(processed.view());
     for (size_t ci = 0; ci < channels.size() && ci < 3; ++ci) {
         float* p = channels[ci].data<float>();
         const size_t count = channels[ci].totalPixels();
@@ -21,9 +21,9 @@ void applyChannelNormalization(Image& processed, const float mean[3], const floa
     processed = image_ops::mergeChannels(channels);
 }
 
-std::vector<uint8_t> splitToNCHW(const Image& processed) {
+std::vector<uint8_t> splitToNCHW(const vision::Image& processed) {
     std::vector<uint8_t> output;
-    std::vector<Image> channels = image_ops::splitChannels(processed.view());
+    std::vector<vision::Image> channels = image_ops::splitChannels(processed.view());
     for (const auto& channel : channels) {
         const auto* data = reinterpret_cast<const uint8_t*>(channel.data<float>());
         size_t channel_size = channel.totalPixels() * sizeof(float);
@@ -36,7 +36,7 @@ std::vector<uint8_t> splitToNCHW(const Image& processed) {
 
 // ============ VideoMAEPreprocessor ============
 
-VideoMAEPreprocessor::VideoMAEPreprocessor(const Size& input_size)
+VideoMAEPreprocessor::VideoMAEPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
           false, // We handle normalization manually
@@ -44,8 +44,8 @@ VideoMAEPreprocessor::VideoMAEPreprocessor(const Size& input_size)
           true // BGR to RGB
       }) {}
 
-std::vector<uint8_t> VideoMAEPreprocessor::preprocess(const ImageView& image) const {
-    Image processed = Image(image.width(), image.height(), image.channels(), image.pixelType());
+std::vector<uint8_t> VideoMAEPreprocessor::preprocess(const vision::ImageView& image) const {
+    vision::Image processed = vision::Image(image.width(), image.height(), image.channels(), image.pixelType());
     std::memcpy(processed.raw(), image.raw(), image.sizeBytes());
 
     if (config_.bgr_to_rgb && processed.channels() == 3) {
@@ -54,7 +54,7 @@ std::vector<uint8_t> VideoMAEPreprocessor::preprocess(const ImageView& image) co
 
     processed = image_ops::resize(processed, config_.input_size, image_ops::Interpolation::Linear);
 
-    processed.convertTo(PixelType::Float32, 1.0 / 255.0);
+    processed.convertTo(vision::PixelType::Float32, 1.0 / 255.0);
 
     applyChannelNormalization(processed, kMean.data(), kStd.data());
 
@@ -63,11 +63,11 @@ std::vector<uint8_t> VideoMAEPreprocessor::preprocess(const ImageView& image) co
 
 // ============ VivitPreprocessor ============
 
-VivitPreprocessor::VivitPreprocessor(const Size& input_size)
+VivitPreprocessor::VivitPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{input_size, ImageFormat::NCHW, DataType::FLOAT32, false, false, true}) {}
 
-std::vector<uint8_t> VivitPreprocessor::preprocess(const ImageView& image) const {
-    Image processed = Image(image.width(), image.height(), image.channels(), image.pixelType());
+std::vector<uint8_t> VivitPreprocessor::preprocess(const vision::ImageView& image) const {
+    vision::Image processed = vision::Image(image.width(), image.height(), image.channels(), image.pixelType());
     std::memcpy(processed.raw(), image.raw(), image.sizeBytes());
 
     if (config_.bgr_to_rgb && processed.channels() == 3) {
@@ -84,14 +84,14 @@ std::vector<uint8_t> VivitPreprocessor::preprocess(const ImageView& image) const
     int crop_x = (processed.width() - config_.input_size.width) / 2;
     int crop_y = (processed.height() - config_.input_size.height) / 2;
 
-    Image cropped =
-        Image::uninit(config_.input_size.width, config_.input_size.height, processed.channels(), processed.pixelType());
+    vision::Image cropped = vision::Image::uninit(config_.input_size.width, config_.input_size.height,
+                                                  processed.channels(), processed.pixelType());
     image_ops::copyRegion(processed.view(),
-                          BoundingBox(crop_x, crop_y, config_.input_size.width, config_.input_size.height), cropped,
-                          BoundingBox(0, 0, config_.input_size.width, config_.input_size.height));
+                          vision::Rect(crop_x, crop_y, config_.input_size.width, config_.input_size.height), cropped,
+                          vision::Rect(0, 0, config_.input_size.width, config_.input_size.height));
     processed = std::move(cropped);
 
-    processed.convertTo(PixelType::Float32, 1.0 / 127.5, -1.0);
+    processed.convertTo(vision::PixelType::Float32, 1.0 / 127.5, -1.0);
 
     applyChannelNormalization(processed, kMean.data(), kStd.data());
 
@@ -100,11 +100,11 @@ std::vector<uint8_t> VivitPreprocessor::preprocess(const ImageView& image) const
 
 // ============ TimeSformerPreprocessor ============
 
-TimeSformerPreprocessor::TimeSformerPreprocessor(const Size& input_size)
+TimeSformerPreprocessor::TimeSformerPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{input_size, ImageFormat::NCHW, DataType::FLOAT32, false, false, true}) {}
 
-std::vector<uint8_t> TimeSformerPreprocessor::preprocess(const ImageView& image) const {
-    Image processed = Image(image.width(), image.height(), image.channels(), image.pixelType());
+std::vector<uint8_t> TimeSformerPreprocessor::preprocess(const vision::ImageView& image) const {
+    vision::Image processed = vision::Image(image.width(), image.height(), image.channels(), image.pixelType());
     std::memcpy(processed.raw(), image.raw(), image.sizeBytes());
 
     if (config_.bgr_to_rgb && processed.channels() == 3) {
@@ -121,14 +121,14 @@ std::vector<uint8_t> TimeSformerPreprocessor::preprocess(const ImageView& image)
     int crop_x = (processed.width() - config_.input_size.width) / 2;
     int crop_y = (processed.height() - config_.input_size.height) / 2;
 
-    Image cropped =
-        Image::uninit(config_.input_size.width, config_.input_size.height, processed.channels(), processed.pixelType());
+    vision::Image cropped = vision::Image::uninit(config_.input_size.width, config_.input_size.height,
+                                                  processed.channels(), processed.pixelType());
     image_ops::copyRegion(processed.view(),
-                          BoundingBox(crop_x, crop_y, config_.input_size.width, config_.input_size.height), cropped,
-                          BoundingBox(0, 0, config_.input_size.width, config_.input_size.height));
+                          vision::Rect(crop_x, crop_y, config_.input_size.width, config_.input_size.height), cropped,
+                          vision::Rect(0, 0, config_.input_size.width, config_.input_size.height));
     processed = std::move(cropped);
 
-    processed.convertTo(PixelType::Float32, 1.0 / 255.0);
+    processed.convertTo(vision::PixelType::Float32, 1.0 / 255.0);
 
     applyChannelNormalization(processed, kMean.data(), kStd.data());
 

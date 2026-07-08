@@ -8,7 +8,7 @@
 
 namespace neuriplo_tasks {
 
-RfDetrPostprocessor::RfDetrPostprocessor(const Size& input_size, float confidence_threshold,
+RfDetrPostprocessor::RfDetrPostprocessor(const vision::Size& input_size, float confidence_threshold,
                                          const std::vector<std::string>& output_names)
     : input_size_(input_size), confidence_threshold_(confidence_threshold) {
     findOutputIndices(output_names);
@@ -33,7 +33,8 @@ void RfDetrPostprocessor::findOutputIndices(const std::vector<std::string>& outp
     }
 }
 
-std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor>& tensors, const Size& frame_size) {
+std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor>& tensors,
+                                                        const vision::Size& frame_size) {
 
     if (tensors.size() < 2) {
         throw std::runtime_error("RF-DETR requires 2 output tensors (dets, labels)");
@@ -103,8 +104,8 @@ std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor
             Detection det;
             det.class_id = static_cast<float>(max_class_idx);
             det.class_confidence = max_score;
-            det.bbox = BoundingBox(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width),
-                                   static_cast<int>(height));
+            det.bbox = vision::Rect(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width),
+                                    static_cast<int>(height));
             detections.push_back(det);
         }
     }

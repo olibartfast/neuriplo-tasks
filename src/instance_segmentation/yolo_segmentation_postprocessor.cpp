@@ -10,13 +10,13 @@
 namespace neuriplo_tasks {
 
 YoloSegmentationPostprocessor::YoloSegmentationPostprocessor(InstanceSegmentationTask::ModelType model_type,
-                                                             const Size& input_size, float confidence_threshold,
+                                                             const vision::Size& input_size, float confidence_threshold,
                                                              float nms_threshold, float mask_threshold)
     : model_type_(model_type), input_size_(input_size), confidence_threshold_(confidence_threshold),
       nms_threshold_(nms_threshold), mask_threshold_(mask_threshold) {}
 
 std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                                             const Size& frame_size) {
+                                                                             const vision::Size& frame_size) {
     switch (model_type_) {
     case InstanceSegmentationTask::ModelType::YOLO_V10_SEG:
     case InstanceSegmentationTask::ModelType::YOLO_26_SEG:
@@ -29,7 +29,7 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocess(con
 }
 
 std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYoloSeg(const std::vector<Tensor>& tensors,
-                                                                                    const Size& frame_size) {
+                                                                                    const vision::Size& frame_size) {
 
     if (tensors.size() < 2) {
         throw std::runtime_error("YOLO segmentation requires at least 2 output tensors");
@@ -128,11 +128,11 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
         std::vector<Detection> nms_detections = applyNMS(detections);
 
         for (const auto& det : nms_detections) {
-            Image mask = generateMask(det.mask_coeffs, protos_data.data() + proto_offset, proto_h, proto_w);
+            vision::Image mask = generateMask(det.mask_coeffs, protos_data.data() + proto_offset, proto_h, proto_w);
 
-            BoundingBox bbox = scaleToOriginal(det.x1, det.y1, det.x2, det.y2, frame_size);
+            vision::Rect bbox = scaleToOriginal(det.x1, det.y1, det.x2, det.y2, frame_size);
 
-            Image final_mask = cropAndResizeMask(mask.view(), det.x1, det.y1, det.x2, det.y2, bbox, frame_size);
+            vision::Image final_mask = cropAndResizeMask(mask.view(), det.x1, det.y1, det.x2, det.y2, bbox, frame_size);
 
             double max_val = 0.0;
             double dummy_min = 0.0;
@@ -157,7 +157,8 @@ std::vector<InstanceSegmentation> YoloSegmentationPostprocessor::postprocessYolo
 }
 
 std::vector<InstanceSegmentation>
-YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tensor>& tensors, const Size& frame_size) {
+YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tensor>& tensors,
+                                                         const vision::Size& frame_size) {
 
     if (tensors.size() < 2) {
         throw std::runtime_error("YOLO NMS-free segmentation requires 2 output tensors");
@@ -221,7 +222,7 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tenso
                 mask_coeffs.push_back(tensorElementToFloat(dets_tensor.data[base + 6 + static_cast<size_t>(c)]));
             }
 
-            Image mask_proto = Image::zeros(proto_w, proto_h, 1, PixelType::Float32);
+            vision::Image mask_proto = vision::Image::zeros(proto_w, proto_h, 1, vision::PixelType::Float32);
 
             for (int h = 0; h < proto_h; ++h) {
                 for (int w = 0; w < proto_w; ++w) {
@@ -248,15 +249,16 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tenso
             proto_x2 = std::max(proto_x1 + 1, std::min(proto_x2, proto_w));
             proto_y2 = std::max(proto_y1 + 1, std::min(proto_y2, proto_h));
 
-            BoundingBox proto_bbox(proto_x1, proto_y1, proto_x2 - proto_x1, proto_y2 - proto_y1);
+            vision::Rect proto_bbox(proto_x1, proto_y1, proto_x2 - proto_x1, proto_y2 - proto_y1);
 
             if (proto_bbox.width <= 0 || proto_bbox.height <= 0) {
                 continue;
             }
 
-            Image mask_cropped = Image::uninit(proto_bbox.width, proto_bbox.height, 1, PixelType::Float32);
+            vision::Image mask_cropped =
+                vision::Image::uninit(proto_bbox.width, proto_bbox.height, 1, vision::PixelType::Float32);
             image_ops::copyRegion(mask_proto.view(), proto_bbox, mask_cropped,
-                                  BoundingBox(0, 0, proto_bbox.width, proto_bbox.height));
+                                  vision::Rect(0, 0, proto_bbox.width, proto_bbox.height));
 
             double max_val = 0.0;
             double dummy_min = 0.0;
@@ -265,21 +267,22 @@ YoloSegmentationPostprocessor::postprocessYoloNmsFreeSeg(const std::vector<Tenso
                 continue;
             }
 
-            BoundingBox bbox = scaleToOriginal(x1, y1, x2, y2, frame_size);
+            vision::Rect bbox = scaleToOriginal(x1, y1, x2, y2, frame_size);
 
             bbox.x = std::max(0, std::min(bbox.x, frame_size.width - 1));
             bbox.y = std::max(0, std::min(bbox.y, frame_size.height - 1));
             bbox.width = std::max(1, std::min(bbox.width, frame_size.width - bbox.x));
             bbox.height = std::max(1, std::min(bbox.height, frame_size.height - bbox.y));
 
-            Image mask_resized =
+            vision::Image mask_resized =
                 image_ops::resize(mask_cropped, bbox.width, bbox.height, image_ops::Interpolation::Linear);
 
-            Image mask_binary = image_ops::thresholdBinary(mask_resized.view(), mask_threshold_, 255.0);
-            mask_binary.convertTo(PixelType::UInt8);
+            vision::Image mask_binary = image_ops::thresholdBinary(mask_resized.view(), mask_threshold_, 255.0);
+            mask_binary.convertTo(vision::PixelType::UInt8);
 
-            Image mask_full = Image::zeros(frame_size.width, frame_size.height, 1, PixelType::UInt8);
-            image_ops::copyRegion(mask_binary.view(), BoundingBox(0, 0, bbox.width, bbox.height), mask_full, bbox);
+            vision::Image mask_full =
+                vision::Image::zeros(frame_size.width, frame_size.height, 1, vision::PixelType::UInt8);
+            image_ops::copyRegion(mask_binary.view(), vision::Rect(0, 0, bbox.width, bbox.height), mask_full, bbox);
 
             InstanceSegmentation seg;
             seg.class_id = static_cast<float>(class_id);
@@ -318,8 +321,8 @@ std::pair<int, int> YoloSegmentationPostprocessor::findOutputIndices(const std::
     return {det_idx, proto_idx};
 }
 
-BoundingBox YoloSegmentationPostprocessor::scaleToOriginal(float x1, float y1, float x2, float y2,
-                                                           const Size& frame_size) const {
+vision::Rect YoloSegmentationPostprocessor::scaleToOriginal(float x1, float y1, float x2, float y2,
+                                                            const vision::Size& frame_size) const {
 
     float r_w = static_cast<float>(input_size_.width) / static_cast<float>(frame_size.width);
     float r_h = static_cast<float>(input_size_.height) / static_cast<float>(frame_size.height);
@@ -338,14 +341,14 @@ BoundingBox YoloSegmentationPostprocessor::scaleToOriginal(float x1, float y1, f
     orig_x2 = std::max(0.0f, std::min(orig_x2, static_cast<float>(frame_size.width)));
     orig_y2 = std::max(0.0f, std::min(orig_y2, static_cast<float>(frame_size.height)));
 
-    return BoundingBox(static_cast<int>(orig_x1), static_cast<int>(orig_y1), static_cast<int>(orig_x2 - orig_x1),
-                       static_cast<int>(orig_y2 - orig_y1));
+    return vision::Rect(static_cast<int>(orig_x1), static_cast<int>(orig_y1), static_cast<int>(orig_x2 - orig_x1),
+                        static_cast<int>(orig_y2 - orig_y1));
 }
 
-Image YoloSegmentationPostprocessor::generateMask(const std::vector<float>& coeffs, const float* protos_data,
-                                                  int proto_h, int proto_w) {
+vision::Image YoloSegmentationPostprocessor::generateMask(const std::vector<float>& coeffs, const float* protos_data,
+                                                          int proto_h, int proto_w) {
 
-    Image mask = Image::zeros(proto_w, proto_h, 1, PixelType::Float32);
+    vision::Image mask = vision::Image::zeros(proto_w, proto_h, 1, vision::PixelType::Float32);
 
     for (int h = 0; h < proto_h; ++h) {
         for (int w = 0; w < proto_w; ++w) {
@@ -361,8 +364,9 @@ Image YoloSegmentationPostprocessor::generateMask(const std::vector<float>& coef
     return mask;
 }
 
-Image YoloSegmentationPostprocessor::cropAndResizeMask(const ImageView& mask, float x1, float y1, float x2, float y2,
-                                                       const BoundingBox& bbox, const Size& frame_size) {
+vision::Image YoloSegmentationPostprocessor::cropAndResizeMask(const vision::ImageView& mask, float x1, float y1,
+                                                               float x2, float y2, const vision::Rect& bbox,
+                                                               const vision::Size& frame_size) {
 
     int proto_h = mask.height();
     int proto_w = mask.width();
@@ -380,28 +384,30 @@ Image YoloSegmentationPostprocessor::cropAndResizeMask(const ImageView& mask, fl
     proto_x2 = std::max(proto_x1 + 1, std::min(proto_x2, proto_w));
     proto_y2 = std::max(proto_y1 + 1, std::min(proto_y2, proto_h));
 
-    BoundingBox proto_bbox(proto_x1, proto_y1, proto_x2 - proto_x1, proto_y2 - proto_y1);
+    vision::Rect proto_bbox(proto_x1, proto_y1, proto_x2 - proto_x1, proto_y2 - proto_y1);
 
     if (proto_bbox.width <= 0 || proto_bbox.height <= 0) {
-        return Image::zeros(frame_size.width, frame_size.height, 1, PixelType::UInt8);
+        return vision::Image::zeros(frame_size.width, frame_size.height, 1, vision::PixelType::UInt8);
     }
 
-    Image mask_cropped = Image::uninit(proto_bbox.width, proto_bbox.height, 1, PixelType::Float32);
-    image_ops::copyRegion(mask, proto_bbox, mask_cropped, BoundingBox(0, 0, proto_bbox.width, proto_bbox.height));
+    vision::Image mask_cropped =
+        vision::Image::uninit(proto_bbox.width, proto_bbox.height, 1, vision::PixelType::Float32);
+    image_ops::copyRegion(mask, proto_bbox, mask_cropped, vision::Rect(0, 0, proto_bbox.width, proto_bbox.height));
 
     if (bbox.width <= 0 || bbox.height <= 0) {
-        return Image::zeros(frame_size.width, frame_size.height, 1, PixelType::UInt8);
+        return vision::Image::zeros(frame_size.width, frame_size.height, 1, vision::PixelType::UInt8);
     }
 
-    Image mask_resized = image_ops::resize(mask_cropped, bbox.width, bbox.height, image_ops::Interpolation::Linear);
+    vision::Image mask_resized =
+        image_ops::resize(mask_cropped, bbox.width, bbox.height, image_ops::Interpolation::Linear);
 
-    Image mask_binary = image_ops::thresholdBinary(mask_resized.view(), mask_threshold_, 255.0);
-    mask_binary.convertTo(PixelType::UInt8);
+    vision::Image mask_binary = image_ops::thresholdBinary(mask_resized.view(), mask_threshold_, 255.0);
+    mask_binary.convertTo(vision::PixelType::UInt8);
 
-    Image mask_full = Image::zeros(frame_size.width, frame_size.height, 1, PixelType::UInt8);
+    vision::Image mask_full = vision::Image::zeros(frame_size.width, frame_size.height, 1, vision::PixelType::UInt8);
     if (bbox.x >= 0 && bbox.y >= 0 && bbox.x + bbox.width <= frame_size.width &&
         bbox.y + bbox.height <= frame_size.height) {
-        image_ops::copyRegion(mask_binary.view(), BoundingBox(0, 0, bbox.width, bbox.height), mask_full, bbox);
+        image_ops::copyRegion(mask_binary.view(), vision::Rect(0, 0, bbox.width, bbox.height), mask_full, bbox);
     }
 
     return mask_full;

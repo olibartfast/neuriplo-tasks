@@ -9,12 +9,13 @@
 
 namespace neuriplo_tasks {
 
-YoloPostprocessor::YoloPostprocessor(ObjectDetectionTask::ModelType model_type, const Size& input_size,
+YoloPostprocessor::YoloPostprocessor(ObjectDetectionTask::ModelType model_type, const vision::Size& input_size,
                                      float confidence_threshold, float nms_threshold)
     : model_type_(model_type), input_size_(input_size), confidence_threshold_(confidence_threshold),
       nms_threshold_(nms_threshold) {}
 
-BoundingBox YoloPostprocessor::scaleToOriginal(float cx, float cy, float w, float h, const Size& frame_size) const {
+vision::Rect YoloPostprocessor::scaleToOriginal(float cx, float cy, float w, float h,
+                                                const vision::Size& frame_size) const {
     // Apply letterbox inverse transformation
     // This converts coordinates from letterboxed model space to original frame space
     float r_w = static_cast<float>(input_size_.width) / static_cast<float>(frame_size.width);
@@ -48,11 +49,11 @@ BoundingBox YoloPostprocessor::scaleToOriginal(float cx, float cy, float w, floa
         height = static_cast<int>((y_max - y_min) / r_h);
     }
 
-    return BoundingBox(x, y, width, height);
+    return vision::Rect(x, y, width, height);
 }
 
-BoundingBox YoloPostprocessor::scaleXyxyToOriginal(float x1, float y1, float x2, float y2,
-                                                   const Size& frame_size) const {
+vision::Rect YoloPostprocessor::scaleXyxyToOriginal(float x1, float y1, float x2, float y2,
+                                                    const vision::Size& frame_size) const {
     const float r_w = static_cast<float>(input_size_.width) / static_cast<float>(frame_size.width);
     const float r_h = static_cast<float>(input_size_.height) / static_cast<float>(frame_size.height);
 
@@ -71,11 +72,12 @@ BoundingBox YoloPostprocessor::scaleXyxyToOriginal(float x1, float y1, float x2,
         y2 = y2 / r_h;
     }
 
-    return BoundingBox(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1),
-                       static_cast<int>(y2 - y1));
+    return vision::Rect(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1),
+                        static_cast<int>(y2 - y1));
 }
 
-std::vector<Detection> YoloPostprocessor::postprocess(const std::vector<Tensor>& tensors, const Size& frame_size) {
+std::vector<Detection> YoloPostprocessor::postprocess(const std::vector<Tensor>& tensors,
+                                                      const vision::Size& frame_size) {
 
     std::vector<Detection> detections;
 
@@ -128,9 +130,9 @@ std::vector<Detection> YoloPostprocessor::postprocess(const std::vector<Tensor>&
 namespace {
 
 std::vector<Detection> decodeYoloStandardBatchSlice(
-    const std::vector<TensorElement>& output, const Size& frame_size, int batch_index, float confidence_threshold,
-    bool has_objectness, int channels, int anchors, int num_classes, int class_offset,
-    const std::function<BoundingBox(float, float, float, float, const Size&)>& scale_to_original) {
+    const std::vector<TensorElement>& output, const vision::Size& frame_size, int batch_index,
+    float confidence_threshold, bool has_objectness, int channels, int anchors, int num_classes, int class_offset,
+    const std::function<vision::Rect(float, float, float, float, const vision::Size&)>& scale_to_original) {
     std::vector<Detection> detections;
 
     const size_t slice_stride = static_cast<size_t>(channels) * static_cast<size_t>(anchors);
@@ -199,7 +201,7 @@ std::vector<Detection> decodeYoloStandardBatchSlice(
 
 std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(const std::vector<TensorElement>& output,
                                                                   const std::vector<int64_t>& shape,
-                                                                  const Size& frame_size) {
+                                                                  const vision::Size& frame_size) {
 
     std::vector<Detection> detections;
 
@@ -235,7 +237,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(const std::vec
         return {};
     }
 
-    const auto scale_fn = [this](float cx, float cy, float w, float h, const Size& fs) {
+    const auto scale_fn = [this](float cx, float cy, float w, float h, const vision::Size& fs) {
         return scaleToOriginal(cx, cy, w, h, fs);
     };
 
@@ -251,7 +253,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(const std::vec
 }
 
 std::vector<Detection> YoloPostprocessor::postprocessYoloV4(const std::vector<Tensor>& tensors,
-                                                            const Size& frame_size) {
+                                                            const vision::Size& frame_size) {
     std::vector<Detection> detections;
 
     // Iterate over the output tensors
@@ -303,7 +305,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV4(const std::vector<Te
     return detections;
 }
 
-std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(const Tensor& output, const Size& frame_size) {
+std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(const Tensor& output, const vision::Size& frame_size) {
 
     std::vector<Detection> detections;
 
@@ -343,7 +345,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(const Tensor& o
 }
 
 std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(const Tensor& boxes, const Tensor& scores,
-                                                             const Size& frame_size) {
+                                                             const vision::Size& frame_size) {
 
     std::vector<Detection> detections;
 
@@ -402,7 +404,7 @@ void YoloPostprocessor::applyNMS(std::vector<Detection>& detections) {
             if (static_cast<int>(detections[i].class_id) != static_cast<int>(detections[j].class_id))
                 continue;
 
-            const BoundingBox intersection = detections[i].bbox.intersect(detections[j].bbox);
+            const vision::Rect intersection = detections[i].bbox.intersect(detections[j].bbox);
             float intersection_area = static_cast<float>(intersection.area());
             float union_area = static_cast<float>(detections[i].bbox.area()) +
                                static_cast<float>(detections[j].bbox.area()) - intersection_area;
@@ -431,7 +433,7 @@ void YoloPostprocessor::applyNMS(std::vector<Detection>& detections) {
 
 std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(const Tensor& num_dets_tensor, const Tensor& boxes,
                                                                const Tensor& scores, const Tensor& classes,
-                                                               const Size& frame_size) {
+                                                               const vision::Size& frame_size) {
 
     std::vector<Detection> detections;
 

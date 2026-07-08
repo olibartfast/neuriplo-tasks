@@ -2,7 +2,7 @@
 
 namespace neuriplo_tasks {
 
-GaussianSplattingPreprocessor::GaussianSplattingPreprocessor(const Size& input_size)
+GaussianSplattingPreprocessor::GaussianSplattingPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
           true, // normalise to [0, 1]

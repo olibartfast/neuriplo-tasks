@@ -10,7 +10,7 @@ namespace neuriplo_tasks {
 
 GaussianSplattingTask::GaussianSplattingTask(const ModelInfo& model_info, const std::string& model_name)
     : TaskInterface(model_info), model_type_(detectModelType(model_name)), model_name_(model_name) {
-    Size input_size = extractInputSize(model_info);
+    vision::Size input_size = extractInputSize(model_info);
     input_width_ = input_size.width;
     input_height_ = input_size.height;
 
@@ -40,7 +40,7 @@ int GaussianSplattingTask::getRequiredFrames() const {
     }
 }
 
-std::vector<std::vector<uint8_t>> GaussianSplattingTask::preprocess(const std::vector<Image>& imgs) {
+std::vector<std::vector<uint8_t>> GaussianSplattingTask::preprocess(const std::vector<vision::Image>& imgs) {
     std::vector<std::vector<uint8_t>> results;
     results.reserve(imgs.size());
 
@@ -54,7 +54,8 @@ std::vector<std::vector<uint8_t>> GaussianSplattingTask::preprocess(const std::v
     return results;
 }
 
-std::vector<Result> GaussianSplattingTask::postprocess(const Size& /*frame_size*/, const std::vector<Tensor>& tensors) {
+std::vector<Result> GaussianSplattingTask::postprocess(const vision::Size& /*frame_size*/,
+                                                       const std::vector<Tensor>& tensors) {
     if (tensors.empty()) {
         return {};
     }
@@ -76,7 +77,8 @@ GaussianSplattingTask::ModelType GaussianSplattingTask::detectModelType(const st
     return ModelType::LGM;
 }
 
-std::unique_ptr<Preprocessor> GaussianSplattingTask::createPreprocessor(ModelType /*type*/, const Size& input_size) {
+std::unique_ptr<Preprocessor> GaussianSplattingTask::createPreprocessor(ModelType /*type*/,
+                                                                        const vision::Size& input_size) {
     return std::make_unique<GaussianSplattingPreprocessor>(input_size);
 }
 
@@ -90,7 +92,7 @@ std::unique_ptr<GaussianSplattingPostprocessor> GaussianSplattingTask::createPos
     }
 }
 
-Size GaussianSplattingTask::extractInputSize(const ModelInfo& model_info) {
+vision::Size GaussianSplattingTask::extractInputSize(const ModelInfo& model_info) {
     // Default input size used by LGM / GRM
     int width = 256;
     int height = 256;

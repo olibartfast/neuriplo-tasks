@@ -5,7 +5,7 @@
 namespace neuriplo_tasks {
 
 struct ImageMatrix::Impl {
-    Image data;
+    vision::Image data;
 };
 
 ImageMatrix::ImageMatrix() : impl_(std::make_shared<Impl>()) {}
@@ -46,7 +46,9 @@ int ImageMatrix::cols() const noexcept { return impl_ ? impl_->data.width() : 0;
 
 int ImageMatrix::channels() const noexcept { return impl_ ? impl_->data.channels() : 0; }
 
-PixelType ImageMatrix::pixelType() const noexcept { return impl_ ? impl_->data.pixelType() : PixelType::UInt8; }
+vision::PixelType ImageMatrix::pixelType() const noexcept {
+    return impl_ ? impl_->data.pixelType() : vision::PixelType::UInt8;
+}
 
 ImageMatrix ImageMatrix::clone() const {
     ImageMatrix copy;
@@ -64,14 +66,14 @@ std::size_t ImageMatrix::sizeBytes() const noexcept {
     return (impl_ && !impl_->data.empty()) ? impl_->data.sizeBytes() : 0;
 }
 
-ImageMatrix fromImage(Image image) {
+ImageMatrix fromImage(vision::Image image) {
     ImageMatrix matrix;
     matrix.impl_->data = std::move(image);
     return matrix;
 }
 
-const Image& toImage(const ImageMatrix& matrix) {
-    static const Image kEmpty;
+const vision::Image& toImage(const ImageMatrix& matrix) {
+    static const vision::Image kEmpty;
     if (!matrix.impl_ || matrix.impl_->data.empty()) {
         return kEmpty;
     }

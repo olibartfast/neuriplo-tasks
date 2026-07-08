@@ -17,7 +17,7 @@ VideoClassificationTask::VideoClassificationTask(const ModelInfo& model_info, co
     input_height_ = 224;
     extractVideoInputSize(model_info);
 
-    Size input_size(input_width_, input_height_);
+    vision::Size input_size(input_width_, input_height_);
     preprocessor_ = createPreprocessor(model_type_, input_size);
 
     if (!preprocessor_) {
@@ -33,7 +33,7 @@ VideoClassificationTask::VideoClassificationTask(const ModelInfo& model_info, co
 
 VideoClassificationTask::~VideoClassificationTask() = default;
 
-std::vector<std::vector<uint8_t>> VideoClassificationTask::preprocess(const std::vector<Image>& imgs) {
+std::vector<std::vector<uint8_t>> VideoClassificationTask::preprocess(const std::vector<vision::Image>& imgs) {
     if (imgs.empty()) {
         throw std::invalid_argument("Empty input frame set provided");
     }
@@ -46,7 +46,7 @@ std::vector<std::vector<uint8_t>> VideoClassificationTask::preprocess(const std:
 
     for (int i = 0; i < num_frames_; ++i) {
         // If fewer frames provided than needed, repeat the last frame
-        const Image& frame = (i < static_cast<int>(imgs.size())) ? imgs[static_cast<size_t>(i)] : imgs.back();
+        const vision::Image& frame = (i < static_cast<int>(imgs.size())) ? imgs[static_cast<size_t>(i)] : imgs.back();
 
         if (frame.empty()) {
             throw std::invalid_argument("Empty frame provided at index " + std::to_string(i));
@@ -59,7 +59,7 @@ std::vector<std::vector<uint8_t>> VideoClassificationTask::preprocess(const std:
     return {concatenated};
 }
 
-std::vector<Result> VideoClassificationTask::postprocess(const Size&, const std::vector<Tensor>& tensors) {
+std::vector<Result> VideoClassificationTask::postprocess(const vision::Size&, const std::vector<Tensor>& tensors) {
 
     if (tensors.empty()) {
         return {};
@@ -90,7 +90,8 @@ VideoClassificationTask::ModelType VideoClassificationTask::detectModelType(cons
     return ModelType::VIDEOMAE;
 }
 
-std::unique_ptr<Preprocessor> VideoClassificationTask::createPreprocessor(ModelType type, const Size& input_size) {
+std::unique_ptr<Preprocessor> VideoClassificationTask::createPreprocessor(ModelType type,
+                                                                          const vision::Size& input_size) {
     switch (type) {
     case ModelType::VIDEOMAE:
         return std::make_unique<VideoMAEPreprocessor>(input_size);

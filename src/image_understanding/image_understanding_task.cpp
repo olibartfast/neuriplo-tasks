@@ -11,7 +11,7 @@ ImageUnderstandingTask::ImageUnderstandingTask(const ModelInfo& model_info, cons
     prompt_ = (it != config.extra_params.end() && !it->second.empty()) ? it->second : "Describe what you see.";
 }
 
-std::vector<std::vector<uint8_t>> ImageUnderstandingTask::preprocess(const std::vector<Image>& imgs) {
+std::vector<std::vector<uint8_t>> ImageUnderstandingTask::preprocess(const std::vector<vision::Image>& imgs) {
     std::vector<uint8_t> prompt_bytes(prompt_.begin(), prompt_.end());
 
     if (imgs.empty() || imgs[0].empty()) {
@@ -19,7 +19,7 @@ std::vector<std::vector<uint8_t>> ImageUnderstandingTask::preprocess(const std::
     }
 
     // Encode image as: [nx(4B LE)][ny(4B LE)][RGB pixels]
-    Image rgb = imgs[0].clone();
+    vision::Image rgb = imgs[0].clone();
     if (rgb.channels() == 3) {
         image_ops::swapBgrRgb(rgb);
     }
@@ -36,13 +36,13 @@ std::vector<std::vector<uint8_t>> ImageUnderstandingTask::preprocess(const std::
     for (int i = 0; i < 4; ++i)
         image_bytes.push_back(static_cast<uint8_t>((ny >> (i * 8)) & 0xFF));
 
-    // Append pixel data (Image is always contiguous)
+    // Append pixel data (vision::Image is always contiguous)
     image_bytes.insert(image_bytes.end(), rgb.raw(), rgb.raw() + pixel_bytes);
 
     return {std::move(prompt_bytes), std::move(image_bytes)};
 }
 
-std::vector<Result> ImageUnderstandingTask::postprocess(const Size& /*frame_size*/,
+std::vector<Result> ImageUnderstandingTask::postprocess(const vision::Size& /*frame_size*/,
                                                         const std::vector<Tensor>& tensors) {
     if (tensors.empty() || tensors[0].data.empty()) {
         return {ImageUnderstanding{"(no response)"}};

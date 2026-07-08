@@ -20,7 +20,7 @@ void EdgeCrafterPostprocessor::findOutputIndices(const std::vector<std::string>&
 }
 
 std::vector<Detection> EdgeCrafterPostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                             const Size& /*frame_size*/) {
+                                                             const vision::Size& /*frame_size*/) {
 
     if (tensors.size() < 3) {
         throw std::runtime_error("EdgeCrafter detection requires 3 output tensors (labels, boxes, scores)");
@@ -69,8 +69,8 @@ std::vector<Detection> EdgeCrafterPostprocessor::postprocess(const std::vector<T
             Detection det;
             det.class_id = static_cast<float>(class_id);
             det.class_confidence = score;
-            det.bbox = BoundingBox(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1),
-                                   static_cast<int>(y2 - y1));
+            det.bbox = vision::Rect(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1),
+                                    static_cast<int>(y2 - y1));
             detections.push_back(det);
         }
     }
