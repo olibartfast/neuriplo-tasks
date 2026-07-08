@@ -28,7 +28,7 @@ file.
 - **Artifact**: `libneuriplo-tasks.a` — C++17 static library
 - **Source roots**: `src/`, `include/neuriplo/tasks/`
 - **Tests**: `tests/` (GoogleTest, fetched via CMake `FetchContent`)
-- **Only runtime dependency**: OpenCV
+- **Core runtime dependencies**: none; optional adapters provide stb image I/O and OpenCV interop
 - **Consumers**: [tritonic](https://github.com/olibartfast/tritonic),
   [neuriplo-infer](https://github.com/olibartfast/neuriplo-infer)
 - **GitHub repo**: `https://github.com/olibartfast/neuriplo-tasks`
@@ -168,12 +168,13 @@ refactor history is summarized in [`docs/ROADMAP.md`](./docs/ROADMAP.md).
 
 | File                  | Purpose |
 |-----------------------|---------|
-| `task_interface.hpp`  | Abstract base: `preprocess(vector<cv::Mat>) → vector<vector<uint8_t>>`, `postprocess(cv::Size, vector<Tensor>) → vector<Result>` |
+| `task_interface.hpp`  | Abstract base: `preprocess(vector<Image>) -> vector<vector<uint8_t>>`, `postprocess(vision::Size, vector<Tensor>) -> vector<Result>` |
 | `task_factory.hpp`    | `TaskFactory::createTaskInstance(string, ModelInfo)` — normalises the model-type string (strip `-`, `_`, whitespace; lowercase) and dispatches |
 | `result_types.hpp`    | `Result` variant plus optional `visitResult()` helper (forwards to `std::visit`); OpenCV-free (`BoundingBox`, `ImageMatrix`) |
 | `bounding_box.hpp`    | Pixel-space `BoundingBox` replacing `cv::Rect` in public result types |
 | `image_matrix.hpp`    | Opaque `ImageMatrix` replacing `cv::Mat` in public result types |
-| `opencv_interop.hpp`  | `toCvRect` / `fromCvRect` / `toCvMat` / `fromCvMat` conversion at OpenCV boundaries |
+| `vision/opencv_adapter.hpp` | Optional OpenCV conversions; available only through `vision-opencv` |
+| `vision/stb_io.hpp` | Optional file load/save helpers; available only through `vision-stb` |
 | `model_info.hpp`      | `ModelInfo`: `input_shapes`, `input_formats` (`FORMAT_NCHW` / `FORMAT_NHWC`), `input_names`, `output_names` |
 | `batch_types.hpp`     | `BatchRequest`, `BatchPreprocessOutput`, `BatchPostprocessOutput`, invariant helpers |
 | `batch_preprocess.hpp`| `batchPreprocess(task, BatchRequest)` — per-image preprocess + `batch_size` metadata |

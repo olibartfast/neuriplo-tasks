@@ -42,7 +42,7 @@ Set these when you build `ModelInfo` from your model config (ONNX shapes, Triton
 | `input_batch_sizes` / `output_batch_sizes` | Optional per-I/O batch dims (from tooling); not enforced inside tasks today |
 
 `batch_size_` does not change preprocess output layout: you still get **one buffer
-per `cv::Mat`**. The engine must concatenate or bind those buffers into a single
+per `vision::Image`**. The engine must concatenate or bind those buffers into a single
 batched input tensor.
 
 ---
@@ -66,7 +66,7 @@ model_info.input_shapes = {{2, 3, 224, 224}};   // NCHW, N = 2
 model_info.input_formats = {"FORMAT_NCHW"};
 model_info.input_names = {"input"};
 model_info.output_names = {"output"};
-model_info.input_types = {CV_32F};
+model_info.input_types = {vision::PixelType::Float32};
 model_info.batch_size_ = 2;
 model_info.max_batch_size_ = 2;
 
@@ -80,7 +80,7 @@ auto task = TaskFactory::createTaskInstance("resnet50", model_info, config);
 
 ```cpp
 BatchRequest request;
-request.images = {image_a, image_b};   // two independent cv::Mat frames
+request.images = {image_a, image_b};   // two independent vision::Image frames
 
 BatchPreprocessOutput pre = batchPreprocess(*task, request);
 // pre.batch_size == 2
@@ -99,7 +99,7 @@ postprocess, e.g. logits shape `[2, num_classes]`.
 ### 4. Postprocess (library)
 
 ```cpp
-cv::Size frame_size = request.images[0].size();   // original frame for letterbox undo
+vision::Size frame_size = request.images[0].size();   // original frame for letterbox undo
 std::vector<Tensor> output_tensors = { /* engine output */ };
 
 BatchPostprocessOutput post =
@@ -138,7 +138,7 @@ request.images = {frame_a, frame_b};
 auto pre = batchPreprocess(*task, request);
 // Engine: batched input [2,3,640,640], output e.g. [2, 4+num_classes, anchors]
 
-auto post = batchPostprocess(*task, cv::Size(640, 640), output_tensors, pre.batch_size);
+auto post = batchPostprocess(*task, vision::Size(640, 640), output_tensors, pre.batch_size);
 ```
 
 **Detection result shape**
@@ -174,7 +174,7 @@ Export batched YOLO ONNX with a dynamic batch axis; see
 
 **Do not** treat these as image batches without reading the matrix:
 
-- Video classification (`vector<Mat>` = frame list for one clip)
+- Video classification (`vector<Image>` = frame list for one clip)
 - Optical flow (pairs of frames)
 - Gaussian splatting (multi-view set)
 - RT-DETR / EdgeCrafter / open-vocab (multi-input, often `imgs[0]` only today)

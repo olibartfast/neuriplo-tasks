@@ -98,7 +98,7 @@ template <typename View> [[nodiscard]] Image resizeBilinear(const View& src, int
 }
 
 template <typename View> [[nodiscard]] Image resizeBicubic(const View& src, int dw, int dh) {
-    // Catmull-Rom bicubic (a = -0.5), matching OpenCV INTER_CUBIC.
+    // Bicubic kernel (a = -0.75), matching OpenCV INTER_CUBIC.
     const int sw = src.width();
     const int sh = src.height();
     const int c = src.channels();
@@ -113,7 +113,7 @@ template <typename View> [[nodiscard]] Image resizeBicubic(const View& src, int 
     std::uint8_t* dptr = out.raw();
 
     auto cubic_weight = [](double t) {
-        const double a = -0.5;
+        const double a = -0.75;
         const double at = std::fabs(t);
         if (at < 1.0) {
             return (a + 2.0) * at * at * at - (a + 3.0) * at * at + 1.0;
