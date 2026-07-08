@@ -1,21 +1,14 @@
 #pragma once
 
-#include "neuriplo/tasks/core/bounding_box.hpp"
-#include "neuriplo/tasks/core/image_matrix.hpp"
-
-#include <opencv2/core/mat.hpp>
-#include <opencv2/core/types.hpp>
+#include "neuriplo/tasks/core/vision/opencv_adapter.hpp"
 
 namespace neuriplo_tasks {
 
-[[nodiscard]] inline cv::Rect toCvRect(const BoundingBox& box) { return cv::Rect(box.x, box.y, box.width, box.height); }
-
-[[nodiscard]] inline BoundingBox fromCvRect(const cv::Rect& rect) {
-    return BoundingBox(rect.x, rect.y, rect.width, rect.height);
-}
-
-[[nodiscard]] const cv::Mat& toCvMat(const ImageMatrix& matrix);
-[[nodiscard]] cv::Mat& mutableCvMat(ImageMatrix& matrix);
-[[nodiscard]] ImageMatrix fromCvMat(const cv::Mat& mat);
+[[nodiscard]] inline ImageMatrix fromCvMat(const cv::Mat& mat) { return fromImage(vision::opencv::copyFromCvMat(mat)); }
+using vision::opencv::fromCvRect;
+using vision::opencv::fromCvSize;
+using vision::opencv::toCvMat;
+using vision::opencv::toCvRect;
+using vision::opencv::toCvSize;
 
 } // namespace neuriplo_tasks

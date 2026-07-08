@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Backend-neutral `core/vision` image, geometry, and operation APIs.
+- Optional `vision-stb` image I/O and `vision-opencv` interoperability targets.
+
+### Changed
+- Core task APIs now use native `vision::Image`, `vision::Size`, and `vision::PixelType` contracts.
+- OpenCV is no longer a required or transitive dependency of `neuriplo-tasks`.
+
+
 ## [0.5.0] - 2026-06-24
 
 ### Added

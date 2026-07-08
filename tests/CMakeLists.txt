@@ -49,6 +49,9 @@ set(TEST_LIBS
 add_executable(test_result_types test_result_types.cpp)
 target_link_libraries(test_result_types ${TEST_LIBS})
 
+add_executable(test_image_ops test_image_ops.cpp)
+target_link_libraries(test_image_ops ${TEST_LIBS})
+
 add_executable(test_batch_types test_batch_types.cpp)
 target_link_libraries(test_batch_types ${TEST_LIBS})
 
@@ -204,8 +207,20 @@ target_compile_definitions(test_readme_model_types
         NEURIPLO_TASKS_TASK_FACTORY_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../src/core/task_factory.cpp"
 )
 
+if(NEURIPLO_TASKS_WITH_STB)
+    add_executable(test_stb_io test_stb_io.cpp)
+    target_link_libraries(test_stb_io neuriplo-tasks::vision-stb GTest::GTest GTest::Main)
+endif()
+
+if(NEURIPLO_TASKS_WITH_OPENCV)
+    find_package(OpenCV REQUIRED COMPONENTS core imgproc)
+    add_executable(test_opencv_adapter test_opencv_adapter.cpp)
+    target_link_libraries(test_opencv_adapter neuriplo-tasks::vision-opencv opencv_imgproc GTest::GTest GTest::Main)
+endif()
+
 # Add tests manually for better compatibility
 add_test(NAME test_result_types COMMAND test_result_types)
+add_test(NAME test_image_ops COMMAND test_image_ops)
 add_test(NAME test_batch_types COMMAND test_batch_types)
 add_test(NAME test_batch_preprocess COMMAND test_batch_preprocess)
 add_test(NAME test_batch_postprocess COMMAND test_batch_postprocess)
@@ -230,3 +245,9 @@ add_test(NAME test_open_vocab_detection COMMAND test_open_vocab_detection)
 add_test(NAME test_gaussian_splatting COMMAND test_gaussian_splatting)
 add_test(NAME test_edgecrafter COMMAND test_edgecrafter)
 add_test(NAME test_readme_model_types COMMAND test_readme_model_types)
+if(NEURIPLO_TASKS_WITH_STB)
+    add_test(NAME test_stb_io COMMAND test_stb_io)
+endif()
+if(NEURIPLO_TASKS_WITH_OPENCV)
+    add_test(NAME test_opencv_adapter COMMAND test_opencv_adapter)
+endif()

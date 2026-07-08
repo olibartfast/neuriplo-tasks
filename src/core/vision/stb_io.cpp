@@ -1,4 +1,4 @@
-#include "neuriplo/tasks/core/image_io.hpp"
+#include "neuriplo/tasks/core/vision/stb_io.hpp"
 
 #include <cstring>
 #include <stdexcept>
@@ -41,7 +41,7 @@
 #pragma GCC diagnostic pop
 #endif
 
-namespace neuriplo_tasks {
+namespace neuriplo_tasks::vision {
 
 namespace {
 
@@ -96,4 +96,4 @@ bool saveImage(const std::string& path, const Image& image) {
     return success != 0;
 }
 
-} // namespace neuriplo_tasks
+} // namespace neuriplo_tasks::vision

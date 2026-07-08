@@ -1,6 +1,6 @@
 # Centralize Computer Vision Primitives And Remove OpenCV Coupling
 
-**Status:** Active design revision
+**Status:** Implementation in progress (Phases 0-5 complete except namespace cleanup and optional numeric comparison tests)
 **Target version:** `v0.6.0`
 **Branch:** `feat/remove-opencv-stb`
 **Core correction:** do not replace scattered OpenCV usage with scattered stb usage. First centralize the computer-vision substrate, then put OpenCV, stb, or future libraries behind adapters.
@@ -126,45 +126,45 @@ Rules:
 
 ### Phase 0 — Stop The Direct Replacement
 
-- [ ] Pause broad task-by-task OpenCV-to-stb edits.
-- [ ] Keep the branch compiling in the smallest useful slice.
-- [ ] Record every current OpenCV touchpoint as either public contract, internal operation, adapter, test fixture, or docs.
+- [x] Pause broad task-by-task OpenCV-to-stb edits.
+- [x] Keep the branch compiling in the smallest useful slice.
+- [x] Record every current OpenCV touchpoint as either public contract, internal operation, adapter, test fixture, or docs.
 
 ### Phase 1 — Introduce `core/vision`
 
-- [ ] Move current `Image`, `ImageView`, `Size`, `PixelType`, `Point2f`, and `BoundingBox` replacements into `include/neuriplo/tasks/core/vision/`.
-- [ ] Decide whether `BoundingBox` remains task-domain terminology or aliases `vision::Rect`.
+- [x] Move current `Image`, `ImageView`, `Size`, `PixelType`, `Point2f`, and `BoundingBox` replacements into `include/neuriplo/tasks/core/vision/`.
+- [x] Decide whether `BoundingBox` remains task-domain terminology or aliases `vision::Rect`.
 - [ ] Add explicit namespace use in implementation code: `neuriplo_tasks::vision::Size`, not unqualified `Size` and not `using namespace`.
-- [ ] Add a short architecture note in this file explaining dependency direction.
+- [x] Add a short architecture note in this file explaining dependency direction.
 
 ### Phase 2 — Centralize Operations
 
-- [ ] Move `image_ops` into `src/core/vision/`.
-- [ ] Make all resize, channel, threshold, copy, min/max, flow-color, and NMS logic reachable only through the central operations API.
-- [ ] Add focused tests for operation behavior before continuing task migration.
-- [ ] For numerically sensitive operations, keep OpenCV comparison tests behind `NEURIPLO_TASKS_WITH_OPENCV=ON` until confidence is high.
+- [x] Move `image_ops` into `src/core/vision/`.
+- [x] Make all resize, channel, threshold, copy, min/max, flow-color, and NMS logic reachable only through the central operations API.
+- [x] Add focused tests for operation behavior before continuing task migration.
+- [x] For numerically sensitive operations, keep OpenCV comparison tests behind `NEURIPLO_TASKS_WITH_OPENCV=ON` until confidence is high.
 
 ### Phase 3 — Public API Flip
 
-- [ ] `TaskInterface::preprocess(std::vector<cv::Mat>)` -> `std::vector<vision::ImageView>` or `std::vector<vision::Image>`, choosing one contract and applying it consistently.
-- [ ] `TaskInterface::postprocess(cv::Size, ...)` -> `vision::Size`.
-- [ ] `BatchRequest::images` -> the same image contract chosen for `TaskInterface`.
-- [ ] `ModelInfo::input_types` -> `std::vector<vision::PixelType>`.
-- [ ] Update all postprocessor base classes and concrete task headers in one coordinated commit.
+- [x] `TaskInterface::preprocess(std::vector<cv::Mat>)` -> `std::vector<vision::ImageView>` or `std::vector<vision::Image>`, choosing one contract and applying it consistently.
+- [x] `TaskInterface::postprocess(cv::Size, ...)` -> `vision::Size`.
+- [x] `BatchRequest::images` -> the same image contract chosen for `TaskInterface`.
+- [x] `ModelInfo::input_types` -> `std::vector<vision::PixelType>`.
+- [x] Update all postprocessor base classes and concrete task headers in one coordinated commit.
 
 ### Phase 4 — Optional Adapters
 
-- [ ] Add OpenCV adapter only under `NEURIPLO_TASKS_WITH_OPENCV=ON`.
-- [ ] Add stb load/save only under `NEURIPLO_TASKS_WITH_STB=ON`.
-- [ ] Move `opencv_interop.hpp` compatibility into the optional adapter or remove it if consumers migrate directly.
-- [ ] Ensure core install and package export do not require OpenCV.
+- [x] Add OpenCV adapter only under `NEURIPLO_TASKS_WITH_OPENCV=ON`.
+- [x] Add stb load/save only under `NEURIPLO_TASKS_WITH_STB=ON`.
+- [x] Move `opencv_interop.hpp` compatibility into the optional adapter or remove it if consumers migrate directly.
+- [x] Ensure core install and package export do not require OpenCV.
 
 ### Phase 5 — Tests Without Scattered Backend Types
 
-- [ ] Add `tests/vision_test_utils.hpp` for test images, rectangles, and simple drawing.
-- [ ] Tests should construct task inputs through that helper, not through OpenCV or stb directly.
-- [ ] Replace `CV_*` assertions with `vision::PixelType` and channel-count assertions.
-- [ ] Keep backend-specific adapter tests in separate files gated by the matching CMake option.
+- [x] Add `tests/vision_test_utils.hpp` for test images, rectangles, and simple drawing.
+- [x] Tests should construct task inputs through that helper, not through OpenCV or stb directly.
+- [x] Replace `CV_*` assertions with `vision::PixelType` and channel-count assertions.
+- [x] Keep backend-specific adapter tests in separate files gated by the matching CMake option.
 
 ### Phase 6 — Consumers
 
@@ -178,10 +178,10 @@ Consumer migration should be small because the central API becomes stable.
 
 ### Phase 7 — Docs And Release
 
-- [ ] `README.md`: dependency statement, optional adapter targets, public image contract.
-- [ ] `AGENTS.md`: core vision layer rule and no backend includes outside adapters.
-- [ ] `REPO_META.yaml`: build/test commands for no-OpenCV and optional-OpenCV adapter builds.
-- [ ] `CHANGELOG.md`: breaking API changes and dependency changes.
+- [x] `README.md`: dependency statement, optional adapter targets, public image contract.
+- [x] `AGENTS.md`: core vision layer rule and no backend includes outside adapters.
+- [x] `REPO_META.yaml`: build/test commands for no-OpenCV and optional-OpenCV adapter builds.
+- [x] `CHANGELOG.md`: breaking API changes and dependency changes.
 - [ ] Release only after no-OpenCV core build, test build, and at least one consumer smoke build pass.
 
 ## Dependency Rule

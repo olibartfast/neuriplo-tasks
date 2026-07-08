@@ -33,6 +33,9 @@ shipping inference on documented model types.
 | Refactor | Phase 6 — result visitor helpers | **Done** |
 | Refactor | Phase 7 — composite `TaskPipeline` API | **Done** |
 | Refactor | Phase 8 — docs/sync cleanup | **Planned** (ongoing per release) |
+| Vision | Core API and operation centralization | **Done** |
+| Vision | Optional STB and OpenCV adapters | **Done** |
+| Vision | Consumer migrations and release validation | **In progress** |
 | Factory | Track D — descriptor registry auditability | **Done** |
 | **Batch** | [B0](#b0) — capability audit (`batch_support_matrix.md`) | **Done** |
 | **Batch** | [B1](#b1) — batch contract types (`batch_types.hpp`) | **Done** |
@@ -108,7 +111,7 @@ the same task contract without reimplementing pack/split logic per domain.
 
 - `ModelInfo` already exposes `batch_size_`, `max_batch_size_`, and per-I/O
   `input_batch_sizes` / `output_batch_sizes`.
-- `preprocess(vector<cv::Mat>)` returns one buffer per `Mat` (multi-input /
+- `preprocess(vector<vision::Image>)` returns one buffer per image (multi-input /
   multi-view, not a unified batched tensor).
 - Some postprocessors already iterate the leading batch dimension when tensors
   are batched (e.g. depth, ViT pose, LGM `[N,G,14]`).
@@ -167,7 +170,7 @@ per-index ordering.
 **Steps**
 
 1. Add `include/neuriplo/tasks/core/batch_postprocess.hpp`:
-   - `BatchPostprocessOutput batchPostprocess(TaskInterface& task, const cv::Size& frame_size, const std::vector<Tensor>& tensors, int batch_size);`
+   - `BatchPostprocessOutput batchPostprocess(TaskInterface& task, const vision::Size& frame_size, const std::vector<Tensor>& tensors, int batch_size);`
 2. Default implementation: call `task.postprocess` once; if result count equals
    `batch_size`, return as-is; if result count is 1 and `batch_size > 1`,
    document duplication policy or delegate to domain override hook.

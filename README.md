@@ -34,12 +34,13 @@ Use individual preprocessors and postprocessors for maximum flexibility:
 #include <neuriplo/tasks/object_detection/yolo_postprocessor.hpp>
 #include <neuriplo/tasks/object_detection/detection_preprocessor.hpp>
 #include <neuriplo/tasks/object_detection/object_detection_task.hpp>
+#include <neuriplo/tasks/core/vision/stb_io.hpp>
 
 using namespace neuriplo_tasks;
 
 // Object Detection with Preprocessing Example
-DetectionPreprocessor yolo_prep(cv::Size(640, 640));
-cv::Mat image = cv::imread("image.jpg");
+DetectionPreprocessor yolo_prep(vision::Size(640, 640));
+vision::Image image = vision::loadImage("image.jpg");
 
 // Preprocess
 auto preprocessed = yolo_prep.preprocess({image});
@@ -73,6 +74,7 @@ Use the unified task interface for integrated preprocessing and postprocessing:
 #include <neuriplo/tasks/core/task_factory.hpp>
 #include <neuriplo/tasks/core/task_interface.hpp>
 #include <neuriplo/tasks/core/model_info.hpp>
+#include <neuriplo/tasks/core/vision/stb_io.hpp>
 
 using namespace neuriplo_tasks;
 
@@ -87,7 +89,7 @@ model_info.output_names = {"output0"};
 auto task = TaskFactory::createTaskInstance("yolov8", model_info);
 
 // Preprocess
-std::vector<cv::Mat> images = {cv::imread("image.jpg")};
+std::vector<vision::Image> images = {vision::loadImage("image.jpg")};
 auto preprocessed = task->preprocess(images);
 
 // ... run inference ...
@@ -140,7 +142,7 @@ model_info.batch_size_ = 2;
 auto task = TaskFactory::createTaskInstance("resnet50", model_info);
 
 BatchRequest request;
-request.images = {cv::imread("a.jpg"), cv::imread("b.jpg")};
+request.images = {vision::loadImage("a.jpg"), vision::loadImage("b.jpg")};
 
 // 1. Preprocess — one buffer per image; batch_size = N
 BatchPreprocessOutput pre = batchPreprocess(*task, request);
@@ -302,6 +304,8 @@ cmake -S . -B build -DBUILD_TESTS=ON
 cmake --build build --parallel
 ```
 
+The core `neuriplo-tasks` target has no image-library dependency. Link `neuriplo-tasks::vision-stb` for file loading and saving. Enable and link `neuriplo-tasks::vision-opencv` only at an OpenCV consumer boundary. Public task contracts use `vision::Image`, `vision::Size`, and `vision::PixelType`.
+
 ### Build Options
 
 | Option | Default | Description |
@@ -309,6 +313,8 @@ cmake --build build --parallel
 | `-DBUILD_TESTS=ON/OFF` | `OFF` | Build unit tests |
 | `-DWERROR=ON/OFF` | `OFF` | Treat compiler warnings as errors (used in CI) |
 | `-DSANITIZERS=ON/OFF` | `OFF` | Enable AddressSanitizer + UndefinedBehaviorSanitizer |
+| `-DNEURIPLO_TASKS_WITH_STB=ON/OFF` | `ON` | Build the optional `neuriplo-tasks::vision-stb` image I/O target |
+| `-DNEURIPLO_TASKS_WITH_OPENCV=ON/OFF` | `OFF` | Build the optional `neuriplo-tasks::vision-opencv` interop target |
 
 ### Format Code (Optional)
 
@@ -445,4 +451,4 @@ Atomic execution plan and status tracking in **[docs/ROADMAP.md](docs/ROADMAP.md
 — factory refactor (Done), Track B batch utilities (Done), composite pipelines (Done).
 Batch consumer guide: **[docs/batch_processing.md](docs/batch_processing.md)**.
 Per-task-family batch readiness: **[docs/batch_support_matrix.md](docs/batch_support_matrix.md)**.
-OpenCV dependency removal plan: **[docs/plans/remove-opencv-stb-plan.md](docs/plans/remove-opencv-stb-plan.md)**.
+Vision backend architecture and migration plan: **[docs/plans/remove-opencv-stb-plan.md](docs/plans/remove-opencv-stb-plan.md)**.
