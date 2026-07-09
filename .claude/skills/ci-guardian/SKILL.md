@@ -421,3 +421,21 @@ If you fix a CI failure whose cause doesn't appear in any section above,
 4. The local-reproduce command.
 
 A playbook that isn't maintained is worse than no playbook.
+
+### Optional adapter source missing from compile database
+
+**Symptom.** `clang-tidy` reports an adapter dependency header as missing even though the package is installed.
+
+**Cause.** The adapter `.cpp` is passed to clang-tidy while its CMake option is off, so no compile command supplies backend include paths.
+
+**Fix.** Configure the tidy build with the matching adapter option enabled. Keep a separate core-only build job to preserve dependency-free coverage.
+
+### MSVC C4244 from `std::tolower` transforms
+
+**Symptom.** MSVC `/WX` rejects `std::transform(..., ::tolower)` because the callable returns `int` into a `char` output iterator.
+
+**Fix.** Use an unsigned-char lambda and cast the result explicitly:
+
+```cpp
+[](unsigned char character) { return static_cast<char>(std::tolower(character)); }
+```

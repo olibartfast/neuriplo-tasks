@@ -9,11 +9,10 @@ namespace neuriplo_tasks {
 
 class YoloSegmentationPostprocessor : public SegmentationPostprocessor {
   public:
-    YoloSegmentationPostprocessor(InstanceSegmentationTask::ModelType model_type, const cv::Size& input_size,
+    YoloSegmentationPostprocessor(InstanceSegmentationTask::ModelType model_type, const Size& input_size,
                                   float confidence_threshold, float nms_threshold, float mask_threshold);
 
-    std::vector<InstanceSegmentation> postprocess(const std::vector<Tensor>& tensors,
-                                                  const cv::Size& frame_size) override;
+    std::vector<InstanceSegmentation> postprocess(const std::vector<Tensor>& tensors, const Size& frame_size) override;
 
   private:
     // Internal detection structure for NMS processing
@@ -29,7 +28,7 @@ class YoloSegmentationPostprocessor : public SegmentationPostprocessor {
 
     // Member variables
     InstanceSegmentationTask::ModelType model_type_;
-    cv::Size input_size_;
+    Size input_size_;
     float confidence_threshold_;
     float nms_threshold_;
     float mask_threshold_;
@@ -40,21 +39,20 @@ class YoloSegmentationPostprocessor : public SegmentationPostprocessor {
     /// Input tensors:
     ///   [0]: Detections [1, 4+cls+32, 8400] - boxes, class scores, mask coefficients
     ///   [1]: Mask Prototypes [1, 32, 160, 160]
-    std::vector<InstanceSegmentation> postprocessYoloSeg(const std::vector<Tensor>& tensors,
-                                                         const cv::Size& frame_size);
+    std::vector<InstanceSegmentation> postprocessYoloSeg(const std::vector<Tensor>& tensors, const Size& frame_size);
 
     /// NMS-free YOLO segmentation - YOLOv10-seg, YOLOv26-seg
     /// Input tensors:
     ///   [0]: Detections [1, 300, 38] - x1,y1,x2,y2, score, class, 32 coeffs
     ///   [1]: Mask Prototypes [1, 32, 160, 160]
     std::vector<InstanceSegmentation> postprocessYoloNmsFreeSeg(const std::vector<Tensor>& tensors,
-                                                                const cv::Size& frame_size);
+                                                                const Size& frame_size);
 
     // Helper methods
 
     /// Applies letterbox inverse transformation to convert coordinates
     /// from model input space to original image space
-    [[nodiscard]] cv::Rect scaleToOriginal(float x1, float y1, float x2, float y2, const cv::Size& frame_size) const;
+    [[nodiscard]] BoundingBox scaleToOriginal(float x1, float y1, float x2, float y2, const Size& frame_size) const;
 
     /// Identifies indices for detection and prototype tensors based on dimensions
     /// @param tensors Input tensors
@@ -69,7 +67,7 @@ class YoloSegmentationPostprocessor : public SegmentationPostprocessor {
     /// @param proto_h Height of prototype masks
     /// @param proto_w Width of prototype masks
     /// @return Generated mask at prototype resolution with sigmoid applied
-    cv::Mat generateMask(const std::vector<float>& coeffs, const float* protos_data, int proto_h, int proto_w);
+    Image generateMask(const std::vector<float>& coeffs, const float* protos_data, int proto_h, int proto_w);
 
     /// Crops mask to bounding box region and resizes to bbox size
     /// @param mask Full prototype mask
@@ -77,8 +75,8 @@ class YoloSegmentationPostprocessor : public SegmentationPostprocessor {
     /// @param bbox Bounding box in original image space
     /// @param frame_size Original image size
     /// @return Full-frame binary mask with bbox region filled
-    cv::Mat cropAndResizeMask(const cv::Mat& mask, float x1, float y1, float x2, float y2, const cv::Rect& bbox,
-                              const cv::Size& frame_size);
+    Image cropAndResizeMask(const ImageView& mask, float x1, float y1, float x2, float y2, const BoundingBox& bbox,
+                            const Size& frame_size);
 
     /// Applies Non-Maximum Suppression to filter overlapping detections
     /// @param detections Input detections to filter

@@ -179,7 +179,7 @@ const std::vector<TaskDescriptor>& taskDescriptors() {
          []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
             const TaskConfig&) { return std::make_unique<OpticalFlowTask>(model_info, normalized); }},
 
-        // Image understanding aliases.
+        // vision::Image understanding aliases.
         {"ImageUnderstanding", TaskFamily::ImageUnderstanding,
          [](const std::string& normalized) {
              return normalized == "gemma4" || normalized == "gemma" || normalized == "llama" ||

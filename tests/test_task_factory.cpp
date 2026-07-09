@@ -16,9 +16,9 @@ class TestTask : public TaskInterface {
 
     TaskType getTaskType() override { return TaskType::Detection; }
 
-    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override { return {}; }
+    std::vector<std::vector<uint8_t>> preprocess(const std::vector<neuriplo_tasks::Image>& imgs) override { return {}; }
 
-    std::vector<Result> postprocess(const cv::Size&, const std::vector<Tensor>&) override { return {}; }
+    std::vector<Result> postprocess(const neuriplo_tasks::Size&, const std::vector<Tensor>&) override { return {}; }
 };
 
 class TaskFactoryTest : public ::testing::Test {
@@ -29,7 +29,7 @@ class TaskFactoryTest : public ::testing::Test {
         info.input_formats = {"FORMAT_NCHW"};
         info.input_names = {"images"};
         info.output_names = {"output0"};
-        info.input_types = {CV_32F};
+        info.input_types = {neuriplo_tasks::PixelType::Float32};
         info.max_batch_size_ = 1;
         info.batch_size_ = 1;
         return info;
@@ -111,7 +111,8 @@ TEST_F(TaskFactoryTest, CreateValidOwlv2Task) {
     info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW", "FORMAT_NCHW"};
     info.input_names = {"pixel_values", "input_ids", "attention_mask"};
     info.output_names = {"pred_boxes", "logits"};
-    info.input_types = {CV_32F, CV_32S, CV_32S};
+    info.input_types = {neuriplo_tasks::PixelType::Float32, neuriplo_tasks::PixelType::Int32,
+                        neuriplo_tasks::PixelType::Int32};
 
     TaskConfig cfg;
     cfg.text_prompts = {"cat", "dog"};
@@ -188,6 +189,34 @@ TEST_F(TaskFactoryTest, FactoryRoutesEveryTaskDomain) {
         auto video_task = TaskFactory::createTaskInstance(alias, createVideoModelInfo());
         ASSERT_NE(video_task, nullptr) << "null for alias: " << alias;
         EXPECT_EQ(video_task->getTaskType(), TaskType::VideoClassification) << "alias: " << alias;
+    }
+}
+
+TEST_F(TaskFactoryTest, PlatformStableModelTypeStringsRouteToExpectedTaskTypes) {
+    const std::vector<std::pair<const char*, TaskType>> aliases = {
+        {"yolo", TaskType::Detection},
+        {"yolonas", TaskType::Detection},
+        {"rtdetr", TaskType::Detection},
+        {"rtdetrul", TaskType::Detection},
+        {"rfdetr", TaskType::Detection},
+        {"yoloseg", TaskType::InstanceSegmentation},
+        {"raft", TaskType::OpticalFlow},
+        {"vitpose", TaskType::PoseEstimation},
+        {"depth_anything_v2", TaskType::DepthEstimation},
+        {"owlv2", TaskType::OpenVocabDetection},
+    };
+
+    auto info = createValidModelInfo();
+    for (const auto& alias : aliases) {
+        auto task = TaskFactory::createTaskInstance(alias.first, info);
+        ASSERT_NE(task, nullptr) << "null for platform stable alias: " << alias.first;
+        EXPECT_EQ(task->getTaskType(), alias.second) << "platform stable alias: " << alias.first;
+    }
+
+    for (const char* alias : {"videomae", "vivit", "timesformer"}) {
+        auto task = TaskFactory::createTaskInstance(alias, createVideoModelInfo());
+        ASSERT_NE(task, nullptr) << "null for platform stable alias: " << alias;
+        EXPECT_EQ(task->getTaskType(), TaskType::VideoClassification) << "platform stable alias: " << alias;
     }
 }
 

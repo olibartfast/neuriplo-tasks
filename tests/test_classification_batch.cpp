@@ -2,9 +2,9 @@
 #include "neuriplo/tasks/core/batch_postprocess.hpp"
 #include "neuriplo/tasks/core/batch_preprocess.hpp"
 #include "neuriplo/tasks/core/task_factory.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 #include <stdexcept>
 
 using namespace neuriplo_tasks;
@@ -17,7 +17,7 @@ ModelInfo classificationModelInfo() {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"input"};
     info.output_names = {"output"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
     info.batch_size_ = 2;
     info.max_batch_size_ = 2;
     return info;
@@ -55,7 +55,7 @@ TEST(ClassificationBatchTest, TaskPostprocessBatchSizeTwo) {
     ASSERT_NE(task, nullptr);
 
     const std::vector<Tensor> tensors = {makeBatchedLogitsTensor()};
-    const auto results = task->postprocess(cv::Size(100, 80), tensors);
+    const auto results = task->postprocess(neuriplo_tasks::Size(100, 80), tensors);
 
     ASSERT_EQ(results.size(), 2u);
     ASSERT_TRUE(std::holds_alternative<Classification>(results[0]));
@@ -67,7 +67,7 @@ TEST(ClassificationBatchTest, PreprocessRejectsEmptyImage) {
     auto task = TaskFactory::createTaskInstance("resnet50", classificationModelInfo());
     ASSERT_NE(task, nullptr);
 
-    EXPECT_THROW(task->preprocess({cv::Mat()}), std::invalid_argument);
+    EXPECT_THROW(task->preprocess({neuriplo_tasks::Image()}), std::invalid_argument);
 }
 
 TEST(ClassificationBatchTest, BatchPreprocessPostprocessRoundTrip) {
@@ -78,12 +78,14 @@ TEST(ClassificationBatchTest, BatchPreprocessPostprocessRoundTrip) {
     ASSERT_NE(task, nullptr);
 
     BatchRequest request;
-    request.images = {cv::Mat::zeros(90, 110, CV_8UC3), cv::Mat::ones(64, 64, CV_8UC3)};
+    request.images = {neuriplo_tasks::vision_test::makeImage(110, 90, 3, 0),
+                      neuriplo_tasks::vision_test::makeImage(64, 64, 3, 1)};
 
     const auto pre = batchPreprocess(*task, request);
     EXPECT_EQ(pre.batch_size, 2);
 
-    const auto post = batchPostprocess(*task, cv::Size(90, 110), {makeBatchedLogitsTensor()}, pre.batch_size);
+    const auto post =
+        batchPostprocess(*task, neuriplo_tasks::Size(90, 110), {makeBatchedLogitsTensor()}, pre.batch_size);
 
     EXPECT_EQ(post.batch_size, 2);
     EXPECT_TRUE(postprocessResultsMatchBatchSize(post));

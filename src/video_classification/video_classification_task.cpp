@@ -17,7 +17,7 @@ VideoClassificationTask::VideoClassificationTask(const ModelInfo& model_info, co
     input_height_ = 224;
     extractVideoInputSize(model_info);
 
-    cv::Size input_size(input_width_, input_height_);
+    vision::Size input_size(input_width_, input_height_);
     preprocessor_ = createPreprocessor(model_type_, input_size);
 
     if (!preprocessor_) {
@@ -33,7 +33,7 @@ VideoClassificationTask::VideoClassificationTask(const ModelInfo& model_info, co
 
 VideoClassificationTask::~VideoClassificationTask() = default;
 
-std::vector<std::vector<uint8_t>> VideoClassificationTask::preprocess(const std::vector<cv::Mat>& imgs) {
+std::vector<std::vector<uint8_t>> VideoClassificationTask::preprocess(const std::vector<vision::Image>& imgs) {
     if (imgs.empty()) {
         throw std::invalid_argument("Empty input frame set provided");
     }
@@ -46,20 +46,20 @@ std::vector<std::vector<uint8_t>> VideoClassificationTask::preprocess(const std:
 
     for (int i = 0; i < num_frames_; ++i) {
         // If fewer frames provided than needed, repeat the last frame
-        const cv::Mat& frame = (i < static_cast<int>(imgs.size())) ? imgs[static_cast<size_t>(i)] : imgs.back();
+        const vision::Image& frame = (i < static_cast<int>(imgs.size())) ? imgs[static_cast<size_t>(i)] : imgs.back();
 
         if (frame.empty()) {
             throw std::invalid_argument("Empty frame provided at index " + std::to_string(i));
         }
 
-        auto frame_data = preprocessor_->preprocess(frame);
+        auto frame_data = preprocessor_->preprocess(frame.view());
         concatenated.insert(concatenated.end(), frame_data.begin(), frame_data.end());
     }
 
     return {concatenated};
 }
 
-std::vector<Result> VideoClassificationTask::postprocess(const cv::Size&, const std::vector<Tensor>& tensors) {
+std::vector<Result> VideoClassificationTask::postprocess(const vision::Size&, const std::vector<Tensor>& tensors) {
 
     if (tensors.empty()) {
         return {};
@@ -78,7 +78,8 @@ std::vector<Result> VideoClassificationTask::postprocess(const cv::Size&, const 
 
 VideoClassificationTask::ModelType VideoClassificationTask::detectModelType(const std::string& model_name) {
     std::string lower_name = model_name;
-    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
 
     if (lower_name.find("vivit") != std::string::npos) {
         return ModelType::VIVIT;
@@ -90,7 +91,8 @@ VideoClassificationTask::ModelType VideoClassificationTask::detectModelType(cons
     return ModelType::VIDEOMAE;
 }
 
-std::unique_ptr<Preprocessor> VideoClassificationTask::createPreprocessor(ModelType type, const cv::Size& input_size) {
+std::unique_ptr<Preprocessor> VideoClassificationTask::createPreprocessor(ModelType type,
+                                                                          const vision::Size& input_size) {
     switch (type) {
     case ModelType::VIDEOMAE:
         return std::make_unique<VideoMAEPreprocessor>(input_size);

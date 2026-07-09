@@ -2,11 +2,11 @@
 #include "neuriplo/tasks/core/batch_preprocess.hpp"
 #include "neuriplo/tasks/core/task_factory.hpp"
 #include "neuriplo/tasks/object_detection/yolo_postprocessor.hpp"
+#include "vision_test_utils.hpp"
 
 #include <array>
 #include <cstring>
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 
 using namespace neuriplo_tasks;
 
@@ -18,7 +18,7 @@ ModelInfo detectionModelInfo() {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"images"};
     info.output_names = {"output0"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
     info.batch_size_ = 2;
     info.max_batch_size_ = 2;
     return info;
@@ -30,7 +30,7 @@ ModelInfo multiInputDetectionModelInfo() {
     info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW"};
     info.input_names = {"images", "orig_target_sizes"};
     info.output_names = {"scores", "boxes"};
-    info.input_types = {CV_32F, CV_32S};
+    info.input_types = {neuriplo_tasks::PixelType::Float32, neuriplo_tasks::PixelType::Int32};
     info.batch_size_ = 1;
     info.max_batch_size_ = 1;
     return info;
@@ -71,13 +71,14 @@ Tensor makeBatchedYoloTensor(int batch, int anchors, int num_classes) {
 } // namespace
 
 TEST(ObjectDetectionBatchTest, YoloStandardDecodesEachBatchSlice) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, cv::Size(640, 640), 0.25f, 0.45f);
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, neuriplo_tasks::Size(640, 640), 0.25f,
+                                0.45f);
 
     const int anchors = 8;
     const int num_classes = 4;
     const Tensor tensor = makeBatchedYoloTensor(2, anchors, num_classes);
 
-    const auto detections = processor.postprocess({tensor}, cv::Size(640, 640));
+    const auto detections = processor.postprocess({tensor}, neuriplo_tasks::Size(640, 640));
 
     ASSERT_GE(detections.size(), 2u);
 
@@ -100,15 +101,16 @@ TEST(ObjectDetectionBatchTest, TaskFactoryBatchPreprocessPostprocess) {
     ASSERT_NE(task, nullptr);
 
     BatchRequest request;
-    request.images = {cv::Mat::zeros(100, 100, CV_8UC3), cv::Mat::zeros(200, 150, CV_8UC3)};
+    request.images = {neuriplo_tasks::vision_test::makeImage(100, 100, 3, 0),
+                      neuriplo_tasks::vision_test::makeImage(150, 200, 3, 0)};
 
     const auto pre = batchPreprocess(*task, request);
     EXPECT_EQ(pre.batch_size, 2);
     EXPECT_EQ(pre.buffers.size(), 2u);
 
     const Tensor tensor = makeBatchedYoloTensor(2, 8, 4);
-    const auto direct = task->postprocess(cv::Size(640, 640), {tensor});
-    const auto post = batchPostprocess(*task, cv::Size(640, 640), {tensor}, pre.batch_size);
+    const auto direct = task->postprocess(neuriplo_tasks::Size(640, 640), {tensor});
+    const auto post = batchPostprocess(*task, neuriplo_tasks::Size(640, 640), {tensor}, pre.batch_size);
 
     EXPECT_EQ(post.batch_size, 2);
     EXPECT_FALSE(direct.empty());
@@ -119,7 +121,7 @@ TEST(ObjectDetectionBatchTest, RtDetrPreprocessUsesModelInputSizeMetadata) {
     auto task = TaskFactory::createTaskInstance("rtdetr", multiInputDetectionModelInfo());
     ASSERT_NE(task, nullptr);
 
-    const auto buffers = task->preprocess({cv::Mat::zeros(123, 456, CV_8UC3)});
+    const auto buffers = task->preprocess({neuriplo_tasks::vision_test::makeImage(456, 123, 3, 0)});
 
     ASSERT_EQ(buffers.size(), 2u);
     EXPECT_FALSE(buffers[0].empty());
@@ -134,7 +136,7 @@ TEST(ObjectDetectionBatchTest, EdgeCrafterPreprocessUsesOriginalImageSizeMetadat
     auto task = TaskFactory::createTaskInstance("edgecrafter", multiInputDetectionModelInfo());
     ASSERT_NE(task, nullptr);
 
-    const auto buffers = task->preprocess({cv::Mat::zeros(123, 456, CV_8UC3)});
+    const auto buffers = task->preprocess({neuriplo_tasks::vision_test::makeImage(456, 123, 3, 0)});
 
     ASSERT_EQ(buffers.size(), 2u);
     EXPECT_FALSE(buffers[0].empty());
@@ -149,7 +151,7 @@ TEST(ObjectDetectionBatchTest, EdgeCrafterPreprocessUsesShapeWhenSizeInputNameIs
     auto task = TaskFactory::createTaskInstance("edgecrafter", genericMultiInputDetectionModelInfo());
     ASSERT_NE(task, nullptr);
 
-    const auto buffers = task->preprocess({cv::Mat::zeros(123, 456, CV_8UC3)});
+    const auto buffers = task->preprocess({neuriplo_tasks::vision_test::makeImage(456, 123, 3, 0)});
 
     ASSERT_EQ(buffers.size(), 2u);
     EXPECT_FALSE(buffers[0].empty());

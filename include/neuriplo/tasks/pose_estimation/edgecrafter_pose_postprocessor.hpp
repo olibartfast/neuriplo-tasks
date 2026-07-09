@@ -12,8 +12,8 @@ class EdgeCrafterPosePostprocessor : public PosePostprocessor {
     EdgeCrafterPosePostprocessor(float confidence_threshold, float keypoint_threshold,
                                  const std::vector<std::string>& output_names = {});
 
-    std::vector<PoseEstimation> postprocess(const std::vector<Tensor>& tensors, const cv::Size& original_size,
-                                            const cv::Size& input_size) override;
+    std::vector<PoseEstimation> postprocess(const std::vector<Tensor>& tensors, const Size& original_size,
+                                            const Size& input_size) override;
 
   private:
     float confidence_threshold_;

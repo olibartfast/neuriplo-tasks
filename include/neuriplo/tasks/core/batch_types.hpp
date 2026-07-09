@@ -1,15 +1,15 @@
 #pragma once
 
+#include "neuriplo/tasks/core/image.hpp"
 #include "neuriplo/tasks/core/result_types.hpp"
 
 #include <cstddef>
-#include <opencv2/opencv.hpp>
 #include <vector>
 
 namespace neuriplo_tasks {
 
 /**
- * @brief Input to batch preprocess helpers (Track B).
+ * @brief Input to batch preprocess helpers.
  *
  * For standard image-batch tasks, `images.size()` is the batch dimension `N`
  * passed to inference after the consumer stacks per-image buffers.
@@ -18,11 +18,11 @@ namespace neuriplo_tasks {
  * docs/batch_support_matrix.md (video frames, flow pairs, multi-view splatting).
  */
 struct BatchRequest {
-    std::vector<cv::Mat> images;
+    std::vector<Image> images;
 };
 
 /**
- * @brief Output of batch preprocess helpers (Track B).
+ * @brief Output of batch preprocess helpers.
  *
  * Wraps existing `TaskInterface::preprocess` output plus explicit batch metadata.
  *
@@ -40,7 +40,7 @@ struct BatchPreprocessOutput {
 };
 
 /**
- * @brief Output of batch postprocess helpers (Track B).
+ * @brief Output of batch postprocess helpers.
  *
  * Invariants:
  * - `batch_size` is the number of batch indices the consumer requested.

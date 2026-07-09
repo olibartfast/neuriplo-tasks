@@ -1,9 +1,11 @@
 #include "neuriplo/tasks/object_detection/detection_preprocessor.hpp"
 
+#include "image_ops.hpp"
+
 namespace neuriplo_tasks {
 
 // Unified YOLO Preprocessor (handles ALL YOLO variants: v5-v12, v10, NAS)
-YoloPreprocessor::YoloPreprocessor(const cv::Size& input_size)
+YoloPreprocessor::YoloPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
           true,  // normalize to [0,1]
@@ -11,32 +13,29 @@ YoloPreprocessor::YoloPreprocessor(const cv::Size& input_size)
           true   // BGR to RGB
       }) {}
 
-std::vector<uint8_t> YoloPreprocessor::preprocess(const cv::Mat& image) const {
-    // YOLO uses letterbox resizing - pad to maintain aspect ratio
-    // This works for ALL YOLO variants (v5-v12, v10, NAS)
-    cv::Mat letterbox_image = cv::Mat::zeros(config_.input_size, CV_8UC3);
+std::vector<uint8_t> YoloPreprocessor::preprocess(const vision::ImageView& image) const {
+    vision::Image letterbox_image =
+        vision::Image::zeros(config_.input_size.width, config_.input_size.height, 3, vision::PixelType::UInt8);
 
-    // Calculate scale
-    float scale = std::min(static_cast<float>(config_.input_size.width) / static_cast<float>(image.cols),
-                           static_cast<float>(config_.input_size.height) / static_cast<float>(image.rows));
+    float scale = std::min(static_cast<float>(config_.input_size.width) / static_cast<float>(image.width()),
+                           static_cast<float>(config_.input_size.height) / static_cast<float>(image.height()));
 
-    int new_width = static_cast<int>(static_cast<float>(image.cols) * scale);
-    int new_height = static_cast<int>(static_cast<float>(image.rows) * scale);
+    int new_width = static_cast<int>(static_cast<float>(image.width()) * scale);
+    int new_height = static_cast<int>(static_cast<float>(image.height()) * scale);
 
-    cv::Mat resized;
-    cv::resize(image, resized, cv::Size(new_width, new_height), 0, 0, cv::INTER_LINEAR);
+    vision::Image resized = image_ops::resize(image, new_width, new_height, image_ops::Interpolation::Linear);
 
-    // Center the image
     int x_offset = (config_.input_size.width - new_width) / 2;
     int y_offset = (config_.input_size.height - new_height) / 2;
 
-    resized.copyTo(letterbox_image(cv::Rect(x_offset, y_offset, new_width, new_height)));
+    image_ops::copyRegion(resized.view(), vision::Rect(0, 0, new_width, new_height), letterbox_image,
+                          vision::Rect(x_offset, y_offset, new_width, new_height));
 
-    return preprocess_image(letterbox_image, config_.input_size, config_.format, config_.data_type);
+    return preprocess_image(letterbox_image.view(), config_.input_size, config_.format, config_.data_type);
 }
 
 // RT-DETR Preprocessor (transformer-based detector)
-RtDetrPreprocessor::RtDetrPreprocessor(const cv::Size& input_size)
+RtDetrPreprocessor::RtDetrPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
           true, // normalize
@@ -45,7 +44,7 @@ RtDetrPreprocessor::RtDetrPreprocessor(const cv::Size& input_size)
       }) {}
 
 // D-FINE Preprocessor (DETR-based detector)
-DFinePreprocessor::DFinePreprocessor(const cv::Size& input_size)
+DFinePreprocessor::DFinePreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
           true, // normalize
@@ -54,7 +53,7 @@ DFinePreprocessor::DFinePreprocessor(const cv::Size& input_size)
       }) {}
 
 // RF-DETR Preprocessor (receptive field DETR)
-RfDetrPreprocessor::RfDetrPreprocessor(const cv::Size& input_size)
+RfDetrPreprocessor::RfDetrPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
           true, // normalize

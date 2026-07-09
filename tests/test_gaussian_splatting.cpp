@@ -1,6 +1,7 @@
 #include "neuriplo/tasks/core/model_info.hpp"
 #include "neuriplo/tasks/core/task_factory.hpp"
 #include "neuriplo/tasks/gaussian_splatting/gaussian_splatting_task.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
 
@@ -14,7 +15,7 @@ class GaussianSplattingTest : public ::testing::Test {
         info.input_formats = {"FORMAT_NCHW"};
         info.input_names = {"image"};
         info.output_names = {"gaussians"};
-        info.input_types = {CV_32F};
+        info.input_types = {neuriplo_tasks::PixelType::Float32};
         return info;
     }
 
@@ -71,7 +72,7 @@ TEST_F(GaussianSplattingTest, PreprocessReturnsTensorData) {
     auto info = createModelInfo();
     GaussianSplattingTask task(info, "lgm");
 
-    cv::Mat img = cv::Mat::zeros(300, 400, CV_8UC3);
+    neuriplo_tasks::Image img = neuriplo_tasks::vision_test::makeImage(400, 300, 3, 0);
     auto outputs = task.preprocess({img});
 
     ASSERT_EQ(outputs.size(), 1u);
@@ -92,7 +93,7 @@ TEST_F(GaussianSplattingTest, PostprocessFlat2DLayout) {
 
     const int G = 8;
     Tensor t(makeTensorData(G), {G, 14});
-    auto results = task.postprocess(cv::Size(256, 256), {t});
+    auto results = task.postprocess(neuriplo_tasks::Size(256, 256), {t});
 
     ASSERT_EQ(results.size(), 1u);
     ASSERT_TRUE(std::holds_alternative<GaussianSplatting>(results[0]));
@@ -113,7 +114,7 @@ TEST_F(GaussianSplattingTest, PostprocessBatched3DLayout) {
     const int N = 1;
     const int G = 16;
     Tensor t(makeTensorData(N * G), {N, G, 14});
-    auto results = task.postprocess(cv::Size(256, 256), {t});
+    auto results = task.postprocess(neuriplo_tasks::Size(256, 256), {t});
 
     ASSERT_EQ(results.size(), 1u);
     ASSERT_TRUE(std::holds_alternative<GaussianSplatting>(results[0]));
@@ -136,7 +137,7 @@ TEST_F(GaussianSplattingTest, PostprocessFieldValuesCorrect) {
         data[static_cast<size_t>(i)] = static_cast<float>(i);
     }
     Tensor t(data, {1, 14});
-    auto results = task.postprocess(cv::Size(256, 256), {t});
+    auto results = task.postprocess(neuriplo_tasks::Size(256, 256), {t});
 
     ASSERT_EQ(results.size(), 1u);
     const auto& splat = std::get<GaussianSplatting>(results[0]);
@@ -167,7 +168,7 @@ TEST_F(GaussianSplattingTest, PostprocessEmptyTensorReturnsEmpty) {
     auto info = createModelInfo();
     GaussianSplattingTask task(info, "lgm");
 
-    auto results = task.postprocess(cv::Size(256, 256), {});
+    auto results = task.postprocess(neuriplo_tasks::Size(256, 256), {});
     EXPECT_TRUE(results.empty());
 }
 
@@ -178,7 +179,7 @@ TEST_F(GaussianSplattingTest, PostprocessTruncatedDataReturnsEmpty) {
     // Tensor claims [10, 14] but data only has 5 elements
     Tensor t({TensorElement{0.f}, TensorElement{1.f}, TensorElement{2.f}, TensorElement{3.f}, TensorElement{4.f}},
              {10, 14});
-    auto results = task.postprocess(cv::Size(256, 256), {t});
+    auto results = task.postprocess(neuriplo_tasks::Size(256, 256), {t});
     ASSERT_EQ(results.size(), 1u);
     EXPECT_EQ(std::get<GaussianSplatting>(results[0]).num_gaussians, 0);
 }

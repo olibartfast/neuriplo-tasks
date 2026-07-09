@@ -2,7 +2,7 @@
 
 namespace neuriplo_tasks {
 
-ClassifierPreprocessor::ClassifierPreprocessor(const cv::Size& input_size, bool use_imagenet_norm)
+ClassifierPreprocessor::ClassifierPreprocessor(const vision::Size& input_size, bool use_imagenet_norm)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
           true,              // normalize to [0,1]
@@ -10,7 +10,7 @@ ClassifierPreprocessor::ClassifierPreprocessor(const cv::Size& input_size, bool 
           true               // BGR to RGB
       }) {}
 
-TorchvisionPreprocessor::TorchvisionPreprocessor(const cv::Size& input_size)
+TorchvisionPreprocessor::TorchvisionPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
           true, // normalize to [0,1]
@@ -18,7 +18,7 @@ TorchvisionPreprocessor::TorchvisionPreprocessor(const cv::Size& input_size)
           true  // BGR to RGB
       }) {}
 
-TensorflowPreprocessor::TensorflowPreprocessor(const cv::Size& input_size)
+TensorflowPreprocessor::TensorflowPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size,
           ImageFormat::NHWC, // TensorFlow uses channel-last
@@ -28,7 +28,7 @@ TensorflowPreprocessor::TensorflowPreprocessor(const cv::Size& input_size)
           false              // TensorFlow models expect BGR
       }) {}
 
-ViTPreprocessor::ViTPreprocessor(const cv::Size& input_size)
+ViTPreprocessor::ViTPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
           true, // normalize to [0,1]

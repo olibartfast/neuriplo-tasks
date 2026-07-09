@@ -59,12 +59,12 @@ class YoloSegmentationPostprocessorTest : public ::testing::Test {
 };
 
 TEST_F(YoloSegmentationPostprocessorTest, StandardOrder) {
-    YoloSegmentationPostprocessor processor(InstanceSegmentationTask::ModelType::YOLO_SEG, cv::Size(640, 640), 0.25f,
-                                            0.45f, 0.45f);
+    YoloSegmentationPostprocessor processor(InstanceSegmentationTask::ModelType::YOLO_SEG,
+                                            neuriplo_tasks::Size(640, 640), 0.25f, 0.45f, 0.45f);
 
     auto [det_tensor, proto_tensor] = createMockYoloSegOutput();
     std::vector<Tensor> tensors = {det_tensor, proto_tensor};
-    cv::Size frame_size(640, 480);
+    neuriplo_tasks::Size frame_size(640, 480);
 
     auto results = processor.postprocess(tensors, frame_size);
 
@@ -74,13 +74,13 @@ TEST_F(YoloSegmentationPostprocessorTest, StandardOrder) {
 }
 
 TEST_F(YoloSegmentationPostprocessorTest, SwappedOrder) {
-    YoloSegmentationPostprocessor processor(InstanceSegmentationTask::ModelType::YOLO_SEG, cv::Size(640, 640), 0.25f,
-                                            0.45f, 0.45f);
+    YoloSegmentationPostprocessor processor(InstanceSegmentationTask::ModelType::YOLO_SEG,
+                                            neuriplo_tasks::Size(640, 640), 0.25f, 0.45f, 0.45f);
 
     auto [det_tensor, proto_tensor] = createMockYoloSegOutput();
     // Swap order: Proto first, then Detection
     std::vector<Tensor> tensors = {proto_tensor, det_tensor};
-    cv::Size frame_size(640, 480);
+    neuriplo_tasks::Size frame_size(640, 480);
 
     auto results = processor.postprocess(tensors, frame_size);
 
@@ -90,8 +90,8 @@ TEST_F(YoloSegmentationPostprocessorTest, SwappedOrder) {
 }
 
 TEST_F(YoloSegmentationPostprocessorTest, NmsFreeSwappedOrder) {
-    YoloSegmentationPostprocessor processor(InstanceSegmentationTask::ModelType::YOLO_V10_SEG, cv::Size(640, 640),
-                                            0.25f, 0.45f, 0.5f);
+    YoloSegmentationPostprocessor processor(InstanceSegmentationTask::ModelType::YOLO_V10_SEG,
+                                            neuriplo_tasks::Size(640, 640), 0.25f, 0.45f, 0.5f);
 
     // Mock NMS-free output
     // Output 0: Detections [1, 300, 38]
@@ -121,7 +121,7 @@ TEST_F(YoloSegmentationPostprocessorTest, NmsFreeSwappedOrder) {
 
     // Swap order
     std::vector<Tensor> tensors = {proto_tensor, det_tensor};
-    cv::Size frame_size(640, 480);
+    neuriplo_tasks::Size frame_size(640, 480);
 
     auto results = processor.postprocess(tensors, frame_size);
 

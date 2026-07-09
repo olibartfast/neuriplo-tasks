@@ -1,18 +1,18 @@
-# Batch support matrix ([B6](./ROADMAP.md#b6) audit)
+# Batch support matrix
 
-Hand-maintained audit of built-in `TaskFactory` families as of **Track [B6](./ROADMAP.md#b6)**
-(all batch utilities landed; domain adoption complete for classification,
-detection, depth, and pose). Consumer adoption flow: [batch_processing.md](./batch_processing.md).
+Hand-maintained audit of built-in `TaskFactory` families. Batch utilities are implemented,
+with domain adoption complete for classification, detection, depth, and pose. Consumer
+adoption flow: [batch_processing.md](./batch_processing.md).
 
 ## How to read this table
 
 | Column | Meaning |
 |--------|---------|
-| **Preprocess packs batch?** | Does `preprocess(vector<cv::Mat>)` produce a **single** inference-ready tensor with leading batch `N`? |
+| **Preprocess packs batch?** | Does `preprocess(vector<vision::Image>)` produce a **single** inference-ready tensor with leading batch `N`? |
 | **Postprocess splits batch?** | Does `postprocess` return **one `Result` per batch index** when output tensors carry `N > 1`? |
 | **Status** | **Ready** — both sides workable today; **Partial** — one side or tensor-only; **N/A** — not image-batch semantics. |
 
-**Important distinction:** `vector<cv::Mat>` often means **multi-input** (views, frame pairs, clip frames), not **batch N**.
+**Important distinction:** `vector<vision::Image>` often means **multi-input** (views, frame pairs, clip frames), not **batch N**.
 `ModelInfo.batch_size_` / `max_batch_size_` are consumer hints; tasks do not enforce them today.
 
 ---
@@ -21,21 +21,21 @@ detection, depth, and pose). Consumer adoption flow: [batch_processing.md](./bat
 
 | Task family | Example `model_type` strings | Input layout (`N` axis) | Preprocess packs batch? | Postprocess splits batch? | Status | Notes |
 |-------------|------------------------------|-------------------------|----------------------|---------------------------|--------|-------|
-| Classification | `torchvisionclassifier`, `vitclassifier`, `tensorflowclassifier`, `resnet*` | `[N,C,H,W]` NCHW or `[N,H,W,C]` NHWC | No — one buffer per `Mat` | **Yes** — one top-1 per `shape[0]` when `N>1` | **Ready** | Full `top_k` when `N=1`; batched `[N,C]` via `postprocessClassificationLogits`. Covered by `tests/test_classification_batch.cpp`. |
-| Object detection — YOLO | `yolo*`, `yolov10`, `yolo26`, `yolonas`, `yolov7e2e` | `[N,anchors,C]` or `[N,C,anchors]` | No — one buffer per `Mat` | **Yes** — `YoloPostprocessor` iterates `shape[0]`; per-slice NMS | **Ready** | Batch loop in `postprocessYoloStandard`. Covered by `tests/test_object_detection_batch.cpp`. |
+| Classification | `torchvisionclassifier`, `vitclassifier`, `tensorflowclassifier`, `resnet*` | `[N,C,H,W]` NCHW or `[N,H,W,C]` NHWC | No — one buffer per image | **Yes** — one top-1 per `shape[0]` when `N>1` | **Ready** | Full `top_k` when `N=1`; batched `[N,C]` via `postprocessClassificationLogits`. Covered by `tests/test_classification_batch.cpp`. |
+| Object detection — YOLO | `yolo*`, `yolov10`, `yolo26`, `yolonas`, `yolov7e2e` | `[N,anchors,C]` or `[N,C,anchors]` | No — one buffer per image | **Yes** — `YoloPostprocessor` iterates `shape[0]`; per-slice NMS | **Ready** | Batch loop in `postprocessYoloStandard`. Covered by `tests/test_object_detection_batch.cpp`. |
 | Object detection — RT-DETR / DEIM / DFINE | `rtdetr`, `rtdetrv2`, `dfine`, `deim` | `[N,Q,*]` typical | **Yes** — stacked image buffers + batched `orig_target_sizes` | **Yes** — `postprocessRTDETR` iterates `shape[0]` | **Ready** | |
-| Object detection — RT-DETR Ultralytics | `rtdetrul`, `rtdetrultralytics` | `[N,C,H,W]` | No — one buffer per `Mat` | **Yes** — `postprocessRTDETRUL` iterates `shape[0]` | **Ready** | |
-| Object detection — RF-DETR | `rfdetr` | `[N,C,H,W]` | No — one buffer per `Mat` | **Yes** — batch loop over `shape[0]` for boxes + labels | **Ready** | |
+| Object detection — RT-DETR Ultralytics | `rtdetrul`, `rtdetrultralytics` | `[N,C,H,W]` | No — one buffer per image | **Yes** — `postprocessRTDETRUL` iterates `shape[0]` | **Ready** | |
+| Object detection — RF-DETR | `rfdetr` | `[N,C,H,W]` | No — one buffer per image | **Yes** — batch loop over `shape[0]` for boxes + labels | **Ready** | |
 | Object detection — EdgeCrafter | `ecdet*`, `edgecrafter` (det) | `[N,C,H,W]` + `orig_size` | **Yes** — stacked image buffers + batched `orig_size` | **Yes** — batch loop over `shape[0]` for scores, boxes, labels | **Ready** | |
-| Instance segmentation — YOLO | `yoloseg`, `yolo*seg*` | `[N,…]` det + proto heads | No — one buffer per `Mat` | **Yes** — per-batch NMS + mask gen via batch proto offset | **Ready** | |
-| Instance segmentation — RF-DETR | `rfdetrseg` | `[N,C,H,W]` | No — one buffer per `Mat` | **Yes** — batch loop over `shape[0]` for boxes, labels, masks | **Ready** | |
+| Instance segmentation — YOLO | `yoloseg`, `yolo*seg*` | `[N,…]` det + proto heads | No — one buffer per image | **Yes** — per-batch NMS + mask gen via batch proto offset | **Ready** | |
+| Instance segmentation — RF-DETR | `rfdetrseg` | `[N,C,H,W]` | No — one buffer per image | **Yes** — batch loop over `shape[0]` for boxes, labels, masks | **Ready** | |
 | Instance segmentation — EdgeCrafter | `ecseg*`, `edgecrafter*seg*` | Multi-input | **Yes** — stacked image buffers + batched `orig_size` | **Yes** — batch loop over `shape[0]` for scores, boxes, labels, masks | **Ready** | |
-| Pose — YOLO | `yolo*pose*` | `[N,anchors,C]` or `[N,C,anchors]` | No — one buffer per `Mat` | **Yes** — batch loop over `shape[0]`; per-batch body NMS | **Ready** | |
-| Pose — ViTPose | `vitpose` | `[N,J,H,W]` heatmaps | No — one buffer per `Mat` | **Yes** — one `PoseEstimation` per `shape[0]` | **Ready** | Covered by `tests/test_pose_estimation_batch.cpp`. |
+| Pose — YOLO | `yolo*pose*` | `[N,anchors,C]` or `[N,C,anchors]` | No — one buffer per image | **Yes** — batch loop over `shape[0]`; per-batch body NMS | **Ready** | |
+| Pose — ViTPose | `vitpose` | `[N,J,H,W]` heatmaps | No — one buffer per image | **Yes** — one `PoseEstimation` per `shape[0]` | **Ready** | Covered by `tests/test_pose_estimation_batch.cpp`. |
 | Pose — EdgeCrafter | `ecpose*`, `edgecrafter*pose*` | Multi-input | **Yes** — stacked image buffers + batched `orig_size` | **Yes** — batch loop over `shape[0]` for scores, keypoints, labels | **Ready** | |
-| Depth estimation | `*depthanythingv2*` | `[N,H,W]` or `[N,1,H,W]` / NCHW | No — one buffer per `Mat` | **Yes** — one `DepthEstimation` per batch index | **Ready** | Covered by `tests/test_depth_estimation_batch.cpp`. |
+| Depth estimation | `*depthanythingv2*` | `[N,H,W]` or `[N,1,H,W]` / NCHW | No — one buffer per image | **Yes** — one `DepthEstimation` per batch index | **Ready** | Covered by `tests/test_depth_estimation_batch.cpp`. |
 | Gaussian splatting | `lgm`, `grm`, `*splat*` | `[N,C,H,W]` views; output `[N,G,14]` | No — **one buffer per view** (`getRequiredFrames()=4`) | Partial — reads `[N,G,14]` but **one** `Result` | N/A | Multi-view ≠ image batch; merged gaussian list. |
-| Video classification | `videomae`, `vivit`, `timesformer` | `[N,T,C,H,W]` clip | Temporal — **one** concatenated buffer | No — single clip `top_k` | N/A | `vector<Mat>` = frame list; batch axis is clip, not images. |
+| Video classification | `videomae`, `vivit`, `timesformer` | `[N,T,C,H,W]` clip | Temporal — **one** concatenated buffer | No — single clip `top_k` | N/A | `vector<Image>` = frame list; batch axis is clip, not images. |
 | Optical flow | `raft` | `[N,2,H,W]` flow field | Pair — even `Mat` count, one buffer per pair | No — assumes `[1,2,H,W]` | N/A | `getRequiredFrames()=2`; not `N` independent images. |
 | Open-vocab detection | `owlv2`, `owlvit`, `groundingdino` | `[N,C,H,W]` + text | **Yes** — stacked image buffers; text tokens shared across batch | **Yes** — batch loop over `shape[0]` for boxes + logits | **Ready** | |
 | Image understanding | `gemma4`, `imageunderstanding`, `llama*` | Text + raw RGB payload | No — prompt + **one** image | No — single `ImageUnderstanding` string | N/A | Generative; single request semantics. |
@@ -46,7 +46,7 @@ detection, depth, and pose). Consumer adoption flow: [batch_processing.md](./bat
 
 ## Preprocess behaviour (by pattern)
 
-### A — Per-image loop (one `vector<uint8_t>` per `Mat`)
+### A — Per-image loop (one `vector<uint8_t>` per image)
 
 **Families:** classification, depth, YOLO detection/seg (standard), RF-DETR det/seg, YOLO pose (via `Preprocessor::preprocess(imgs)`), RT-DETR UL.
 
@@ -154,22 +154,22 @@ Tests default `batch_size_ = 1` (`tests/test_task_factory.cpp`, `tests/test_read
 
 ---
 
-## Domain adoption summary ([B4](./ROADMAP.md#b4)/[B5](./ROADMAP.md#b5))
+## Domain adoption summary
 
 | Domain | Batch preprocess | Batch postprocess | Integration test | Status |
 |--------|-----------------|-------------------|-----------------|--------|
 | Classification | `batchPreprocess` → stacked `[N,C,H,W]` | `batchPostprocess` → N `Classification` results | `test_classification_batch.cpp` | **Done** |
-| Object detection (YOLO) | `batchPreprocess` → one buffer per `Mat` | `YoloPostprocessor` batch loop → N `Detection` lists | `test_object_detection_batch.cpp` | **Done** |
-| Object detection (RF-DETR) | `batchPreprocess` → one buffer per `Mat` | `RfDetrPostprocessor` batch loop → N `Detection` lists | — | **Done** |
-| Object detection (RT-DETR UL) | `batchPreprocess` → one buffer per `Mat` | `RtDetrPostprocessor::postprocessRTDETRUL` batch loop → N `Detection` lists | — | **Done** |
+| Object detection (YOLO) | `batchPreprocess` → one buffer per image | `YoloPostprocessor` batch loop → N `Detection` lists | `test_object_detection_batch.cpp` | **Done** |
+| Object detection (RF-DETR) | `batchPreprocess` → one buffer per image | `RfDetrPostprocessor` batch loop → N `Detection` lists | — | **Done** |
+| Object detection (RT-DETR UL) | `batchPreprocess` → one buffer per image | `RtDetrPostprocessor::postprocessRTDETRUL` batch loop → N `Detection` lists | — | **Done** |
 | Object detection (RT-DETR standard) | Stacked image buffers + batched `orig_target_sizes` | `RtDetrPostprocessor::postprocessRTDETR` batch loop → N `Detection` lists | — | **Done** |
 | Object detection (EdgeCrafter) | Stacked image buffers + batched `orig_size` | `EdgeCrafterPostprocessor` batch loop → N `Detection` lists | — | **Done** |
-| Depth estimation | `batchPreprocess` → one buffer per `Mat` | `batchPostprocess` → N `DepthEstimation` results | `test_depth_estimation_batch.cpp` | **Done** |
+| Depth estimation | `batchPreprocess` → one buffer per image | `batchPostprocess` → N `DepthEstimation` results | `test_depth_estimation_batch.cpp` | **Done** |
 | Pose (ViTPose) | `batchPreprocess` → per-`Mat` buffers | `batchPostprocess` → N `PoseEstimation` results | `test_pose_estimation_batch.cpp` | **Done** |
-| Pose (YOLO) | `batchPreprocess` → one buffer per `Mat` | `YoloPosePostprocessor` batch loop → N `PoseEstimation` lists | — | **Done** |
+| Pose (YOLO) | `batchPreprocess` → one buffer per image | `YoloPosePostprocessor` batch loop → N `PoseEstimation` lists | — | **Done** |
 | Pose (EdgeCrafter) | Stacked image buffers + batched `orig_size` | `EdgeCrafterPosePostprocessor` batch loop → N `PoseEstimation` lists | — | **Done** |
-| Instance segmentation (YOLO) | `batchPreprocess` → one buffer per `Mat` | `YoloSegmentationPostprocessor` per-batch NMS + mask gen → N `InstanceSegmentation` lists | — | **Done** |
-| Instance segmentation (RF-DETR) | `batchPreprocess` → one buffer per `Mat` | `RfDetrSegmentationPostprocessor` batch loop → N `InstanceSegmentation` lists | — | **Done** |
+| Instance segmentation (YOLO) | `batchPreprocess` → one buffer per image | `YoloSegmentationPostprocessor` per-batch NMS + mask gen → N `InstanceSegmentation` lists | — | **Done** |
+| Instance segmentation (RF-DETR) | `batchPreprocess` → one buffer per image | `RfDetrSegmentationPostprocessor` batch loop → N `InstanceSegmentation` lists | — | **Done** |
 | Instance segmentation (EdgeCrafter) | Stacked image buffers + batched `orig_size` | `EdgeCrafterSegmentationPostprocessor` batch loop → N `InstanceSegmentation` lists | — | **Done** |
 | Open-vocab detection | Stacked image buffers; shared text tokens | `GroundingDinoPostprocessor` / `OWLv2Postprocessor` batch loop → N `OpenVocabDetection` lists | — | **Done** |
 
@@ -183,4 +183,4 @@ Update this file when:
 - A new `TaskFactory` family is registered.
 - A domain moves from **Partial** to **Ready** (both preprocess and postprocess columns become Yes).
 
-**[B6](./ROADMAP.md#b6) stop criteria:** met — [B0](./ROADMAP.md#b0) audit complete, [B1](./ROADMAP.md#b1)–[B3](./ROADMAP.md#b3) utilities landed, [B4](./ROADMAP.md#b4) domain adoption complete, [B5](./ROADMAP.md#b5) integration tests pass, [B6](./ROADMAP.md#b6) consumer guide published.
+All planned batch utilities, their integration coverage, and the consumer guide are complete. Keep this matrix current as task families evolve.

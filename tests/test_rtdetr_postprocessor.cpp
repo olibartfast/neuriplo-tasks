@@ -1,8 +1,8 @@
 #include "neuriplo/tasks/object_detection/object_detection_task.hpp"
 #include "neuriplo/tasks/object_detection/rtdetr_postprocessor.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 #include <variant>
 #include <vector>
 
@@ -55,7 +55,7 @@ class RtDetrPostprocessorTest : public ::testing::Test {
 };
 
 TEST_F(RtDetrPostprocessorTest, StandardRtDetr) {
-    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_STYLE, cv::Size(640, 640), 0.5f);
+    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_STYLE, neuriplo_tasks::Size(640, 640), 0.5f);
 
     int num_queries = 300;
     std::vector<TensorElement> scores, boxes, labels;
@@ -63,7 +63,7 @@ TEST_F(RtDetrPostprocessorTest, StandardRtDetr) {
 
     std::vector<Tensor> tensors = {Tensor(scores, {1, num_queries}), Tensor(boxes, {1, num_queries, 4}),
                                    Tensor(labels, {1, num_queries})};
-    cv::Size frame_size(640, 640);
+    neuriplo_tasks::Size frame_size(640, 640);
 
     auto detections = processor.postprocess(tensors, frame_size);
 
@@ -79,7 +79,7 @@ TEST_F(RtDetrPostprocessorTest, StandardRtDetr) {
 }
 
 TEST_F(RtDetrPostprocessorTest, UltralyticsRtDetr) {
-    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_UL, cv::Size(640, 640), 0.5f);
+    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_UL, neuriplo_tasks::Size(640, 640), 0.5f);
 
     // Ultralytics RT-DETR output: [1, 4+num_classes, num_queries]
     int num_queries = 300;
@@ -88,7 +88,7 @@ TEST_F(RtDetrPostprocessorTest, UltralyticsRtDetr) {
     createMockUltralyticsOutput(output, num_queries, num_classes);
 
     std::vector<Tensor> tensors = {Tensor(output, {1, num_queries, 4 + num_classes})};
-    cv::Size frame_size(640, 640);
+    neuriplo_tasks::Size frame_size(640, 640);
 
     auto detections = processor.postprocess(tensors, frame_size);
 
@@ -98,8 +98,8 @@ TEST_F(RtDetrPostprocessorTest, UltralyticsRtDetr) {
 }
 
 TEST_F(RtDetrPostprocessorTest, EmptyInput) {
-    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_STYLE, cv::Size(640, 640), 0.5f);
+    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_STYLE, neuriplo_tasks::Size(640, 640), 0.5f);
 
     // Should throw because RT-DETR style requires 3 tensors
-    EXPECT_THROW({ processor.postprocess({}, cv::Size(640, 640)); }, std::runtime_error);
+    EXPECT_THROW({ processor.postprocess({}, neuriplo_tasks::Size(640, 640)); }, std::runtime_error);
 }
