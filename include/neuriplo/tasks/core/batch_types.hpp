@@ -9,7 +9,7 @@
 namespace neuriplo_tasks {
 
 /**
- * @brief Input to batch preprocess helpers (Track B).
+ * @brief Input to batch preprocess helpers.
  *
  * For standard image-batch tasks, `images.size()` is the batch dimension `N`
  * passed to inference after the consumer stacks per-image buffers.
@@ -22,7 +22,7 @@ struct BatchRequest {
 };
 
 /**
- * @brief Output of batch preprocess helpers (Track B).
+ * @brief Output of batch preprocess helpers.
  *
  * Wraps existing `TaskInterface::preprocess` output plus explicit batch metadata.
  *
@@ -40,7 +40,7 @@ struct BatchPreprocessOutput {
 };
 
 /**
- * @brief Output of batch postprocess helpers (Track B).
+ * @brief Output of batch postprocess helpers.
  *
  * Invariants:
  * - `batch_size` is the number of batch indices the consumer requested.
