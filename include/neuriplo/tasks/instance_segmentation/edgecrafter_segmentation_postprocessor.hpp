@@ -12,8 +12,7 @@ class EdgeCrafterSegmentationPostprocessor : public SegmentationPostprocessor {
     EdgeCrafterSegmentationPostprocessor(float confidence_threshold, float mask_threshold,
                                          const std::vector<std::string>& output_names = {});
 
-    std::vector<InstanceSegmentation> postprocess(const std::vector<Tensor>& tensors,
-                                                  const cv::Size& frame_size) override;
+    std::vector<InstanceSegmentation> postprocess(const std::vector<Tensor>& tensors, const Size& frame_size) override;
 
   private:
     float confidence_threshold_;

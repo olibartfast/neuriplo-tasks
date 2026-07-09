@@ -60,9 +60,9 @@ class ObjectDetectionTask : public TaskInterface {
     // TaskInterface implementation
     TaskType getTaskType() override { return TaskType::Detection; }
 
-    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override;
+    std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) override;
 
-    std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
+    std::vector<Result> postprocess(const Size& frame_size, const std::vector<Tensor>& tensors) override;
 
   private:
     ModelType model_type_;
@@ -80,19 +80,19 @@ class ObjectDetectionTask : public TaskInterface {
     /**
      * @brief Create appropriate preprocessor for model type
      */
-    std::unique_ptr<Preprocessor> createPreprocessor(ModelType type, const cv::Size& input_size);
+    std::unique_ptr<Preprocessor> createPreprocessor(ModelType type, const Size& input_size);
 
-    std::unique_ptr<DetectionPreprocessStrategy> createPreprocessStrategy(ModelType type, const cv::Size& input_size);
+    std::unique_ptr<DetectionPreprocessStrategy> createPreprocessStrategy(ModelType type, const Size& input_size);
 
     /**
      * @brief Create appropriate postprocessor for model type
      */
-    std::unique_ptr<Postprocessor> createPostprocessor(ModelType type, const cv::Size& input_size);
+    std::unique_ptr<Postprocessor> createPostprocessor(ModelType type, const Size& input_size);
 
     /**
      * @brief Extract input dimensions from model info
      */
-    cv::Size extractInputSize(const ModelInfo& model_info);
+    Size extractInputSize(const ModelInfo& model_info);
 
     /**
      * @brief Validate model-specific tensor requirements

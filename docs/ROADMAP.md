@@ -9,7 +9,6 @@ single PR or commit series: build alone, tests green, no unrelated churn.
 |----------|--------|
 | [batch_support_matrix.md](./batch_support_matrix.md) | Per-family batch readiness ([B0](#b0) audit) |
 | [batch_processing.md](./batch_processing.md) | Consumer migration guide ([B6](#b6)) |
-| [task_refactor_atomic_plan.md](./plans/task_refactor_atomic_plan.md) | Factory registry, strategies, `visitResult`, composite pipelines |
 | [Versioning.md](./Versioning.md) | Release and changelog workflow |
 | [AGENTS.md](../AGENTS.md) | CI gate, contracts, coding rules |
 
@@ -32,7 +31,10 @@ shipping inference on documented model types.
 | Refactor | Phases 3–5 — per-domain strategies / `BaseTask` | **Done** (detection, pose, segmentation strategies; depth + classification `BaseTask` pilots) |
 | Refactor | Phase 6 — result visitor helpers | **Done** |
 | Refactor | Phase 7 — composite `TaskPipeline` API | **Done** |
-| Refactor | Phase 8 — docs/sync cleanup | **Planned** (ongoing per release) |
+| Refactor | Phase 8 — docs/sync cleanup | **Done** (maintained per release) |
+| Vision | Core API and operation centralization | **Done** |
+| Vision | Optional STB and OpenCV adapters | **Done** |
+| Vision | Consumer migrations and release validation | **Done** |
 | Factory | Track D — descriptor registry auditability | **Done** |
 | **Batch** | [B0](#b0) — capability audit (`batch_support_matrix.md`) | **Done** |
 | **Batch** | [B1](#b1) — batch contract types (`batch_types.hpp`) | **Done** |
@@ -55,9 +57,9 @@ against this file on each merge.
   minor/major policy in `docs/Versioning.md`).
 - Do not change tensor dtype, channel order, or bbox math without tests and
   consumer migration notes.
-- No runtime dependencies beyond OpenCV.
+- Do not add new runtime dependencies to task code directly; route vision dependencies through the central vision layer and optional adapters.
 - Third-party / runtime task plugins remain **out of scope** unless product
-  requests Phase 2 in [task_refactor_atomic_plan.md](./task_refactor_atomic_plan.md).
+  explicitly reopens runtime plugin support.
 
 **Local gate** (run before every PR):
 
@@ -75,16 +77,38 @@ ctest --test-dir build --output-on-failure
 
 ---
 
+## Vision backend architecture
+
+The OpenCV decoupling track is complete. Public task contracts and all task implementations use `neuriplo_tasks::vision` types. Image operations are centralized under `core/vision`; task modules cannot include OpenCV or stb directly.
+
+Build targets:
+
+- `neuriplo-tasks::neuriplo-tasks` and `neuriplo-tasks::vision-core`: dependency-free task core;
+- `neuriplo-tasks::vision-stb`: optional file I/O, enabled by `NEURIPLO_TASKS_WITH_STB`;
+- `neuriplo-tasks::vision-opencv`: optional consumer interop, enabled by `NEURIPLO_TASKS_WITH_OPENCV`.
+
+Package discovery loads OpenCV only when the `vision-opencv` component is requested. Direct operation tests lock resize, channel, threshold, min/max, region-copy, and NMS behavior; OpenCV-gated tests compare interpolation behavior and exercise adapter round trips.
+
+Consumer boundaries were migrated and smoke-built on `feat/remove-opencv-stb`:
+
+- `neuriplo-infer` (`e8e39be`): capture/rendering stays OpenCV; task calls use native images and pixel types;
+- `neuriplo-track` (`77820a3`): detector input uses the adapter; tracker-internal OpenCV remains independent;
+- `tritonic` (`e6e1352`): image and Triton dtype conversion is centralized at `App`.
+
+Release validation requires the no-OpenCV core suite, optional OpenCV suite, package consumer smokes, and these downstream builds to remain green. The release itself follows [Versioning.md](./Versioning.md) after feature integration.
+
+---
+
 ## Track A — Task architecture refactor
 
-Full step-by-step phases 0–8 live in
-[task_refactor_atomic_plan.md](./task_refactor_atomic_plan.md).
+The detailed atomic plan has been retired after implementation. This roadmap is
+now the source of truth for remaining architecture work.
 
 **Next recommended phases** (only when duplication or audit pain is real):
 
-1. Maintain **Phase 4/5** only where future domains show real duplicate lifecycle or model-specific branching.
-2. Use **Phase 7** `TaskPipeline` for detection+pose / detection+seg workflows; pipelines compose *task results*, batch utilities compose *images* within one task.
-3. Keep **Phase 8** docs/sync cleanup current when public headers or task contracts change.
+1. Maintain shared lifecycle helpers only where future domains show real duplicate lifecycle or model-specific branching.
+2. Use `TaskPipeline` for detection+pose / detection+seg workflows; pipelines compose *task results*, batch utilities compose *images* within one task.
+3. Keep docs/sync cleanup current when public headers or task contracts change.
 
 Do **not** start Phase 2 (runtime plugin registry) without an explicit product
 requirement.
@@ -108,7 +132,7 @@ the same task contract without reimplementing pack/split logic per domain.
 
 - `ModelInfo` already exposes `batch_size_`, `max_batch_size_`, and per-I/O
   `input_batch_sizes` / `output_batch_sizes`.
-- `preprocess(vector<cv::Mat>)` returns one buffer per `Mat` (multi-input /
+- `preprocess(vector<vision::Image>)` returns one buffer per image (multi-input /
   multi-view, not a unified batched tensor).
 - Some postprocessors already iterate the leading batch dimension when tensors
   are batched (e.g. depth, ViT pose, LGM `[N,G,14]`).
@@ -167,7 +191,7 @@ per-index ordering.
 **Steps**
 
 1. Add `include/neuriplo/tasks/core/batch_postprocess.hpp`:
-   - `BatchPostprocessOutput batchPostprocess(TaskInterface& task, const cv::Size& frame_size, const std::vector<Tensor>& tensors, int batch_size);`
+   - `BatchPostprocessOutput batchPostprocess(TaskInterface& task, const vision::Size& frame_size, const std::vector<Tensor>& tensors, int batch_size);`
 2. Default implementation: call `task.postprocess` once; if result count equals
    `batch_size`, return as-is; if result count is 1 and `batch_size > 1`,
    document duplication policy or delegate to domain override hook.
@@ -298,8 +322,6 @@ Each commit must pass the local gate for touched targets.
 
 **Goal:** detection + pose, detection + segmentation, without overloading
 `TaskInterface`.
-
-Follow **Phase 7** in [task_refactor_atomic_plan.md](./task_refactor_atomic_plan.md).
 
 **Atomic summary**
 

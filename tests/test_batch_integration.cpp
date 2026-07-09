@@ -2,9 +2,9 @@
 #include "neuriplo/tasks/core/batch_preprocess.hpp"
 #include "neuriplo/tasks/core/task_config.hpp"
 #include "neuriplo/tasks/core/task_factory.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 
 using namespace neuriplo_tasks;
 
@@ -16,7 +16,7 @@ ModelInfo classificationModelInfo() {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"input"};
     info.output_names = {"output"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
     info.batch_size_ = 2;
     info.max_batch_size_ = 2;
     return info;
@@ -28,7 +28,7 @@ ModelInfo detectionModelInfo() {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"images"};
     info.output_names = {"output0"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
     info.batch_size_ = 2;
     info.max_batch_size_ = 2;
     return info;
@@ -74,14 +74,15 @@ TEST(BatchIntegrationTest, ClassificationPreprocessPostprocessPipeline) {
     ASSERT_NE(task, nullptr);
 
     BatchRequest request;
-    request.images = {cv::Mat::zeros(90, 110, CV_8UC3), cv::Mat::ones(64, 64, CV_8UC3)};
+    request.images = {neuriplo_tasks::vision_test::makeImage(110, 90, 3, 0),
+                      neuriplo_tasks::vision_test::makeImage(64, 64, 3, 1)};
 
     const auto pre = batchPreprocess(*task, request);
     ASSERT_EQ(pre.batch_size, 2);
     ASSERT_EQ(pre.buffers.size(), 2u);
     EXPECT_TRUE(imageBatchSizeMatches(request, pre.batch_size));
 
-    const cv::Size frame_size(90, 110);
+    const neuriplo_tasks::Size frame_size(90, 110);
     const auto post = batchPostprocess(*task, frame_size, {makeClassificationTensor()}, pre.batch_size);
 
     EXPECT_EQ(post.batch_size, 2);
@@ -97,13 +98,14 @@ TEST(BatchIntegrationTest, ObjectDetectionPreprocessPostprocessPipeline) {
     ASSERT_NE(task, nullptr);
 
     BatchRequest request;
-    request.images = {cv::Mat::zeros(100, 100, CV_8UC3), cv::Mat::zeros(200, 150, CV_8UC3)};
+    request.images = {neuriplo_tasks::vision_test::makeImage(100, 100, 3, 0),
+                      neuriplo_tasks::vision_test::makeImage(150, 200, 3, 0)};
 
     const auto pre = batchPreprocess(*task, request);
     ASSERT_EQ(pre.batch_size, 2);
     ASSERT_EQ(pre.buffers.size(), 2u);
 
-    const cv::Size frame_size(640, 640);
+    const neuriplo_tasks::Size frame_size(640, 640);
     const Tensor tensor = makeYoloTensor(2, 8, 4);
     const auto post = batchPostprocess(*task, frame_size, {tensor}, pre.batch_size);
 

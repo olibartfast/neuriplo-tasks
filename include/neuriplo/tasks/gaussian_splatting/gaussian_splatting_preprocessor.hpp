@@ -18,7 +18,7 @@ namespace neuriplo_tasks {
  */
 class GaussianSplattingPreprocessor : public Preprocessor {
   public:
-    explicit GaussianSplattingPreprocessor(const cv::Size& input_size = cv::Size(256, 256));
+    explicit GaussianSplattingPreprocessor(const Size& input_size = Size(256, 256));
 };
 
 } // namespace neuriplo_tasks

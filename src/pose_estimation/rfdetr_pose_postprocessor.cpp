@@ -7,15 +7,15 @@
 
 namespace neuriplo_tasks {
 
-RfDetrPosePostprocessor::RfDetrPosePostprocessor(const cv::Size& input_size, float confidence_threshold,
+RfDetrPosePostprocessor::RfDetrPosePostprocessor(const vision::Size& input_size, float confidence_threshold,
                                                  float keypoint_uncertainty_alpha,
                                                  const std::vector<int>& keypoint_counts)
     : input_size_(input_size), confidence_threshold_(confidence_threshold),
       keypoint_uncertainty_alpha_(keypoint_uncertainty_alpha), keypoint_counts_(keypoint_counts) {}
 
 std::vector<PoseEstimation> RfDetrPosePostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                                 const cv::Size& original_size,
-                                                                 const cv::Size& /*input_size*/) {
+                                                                 const vision::Size& original_size,
+                                                                 const vision::Size& /*input_size*/) {
     if (tensors.size() < 3) {
         throw std::runtime_error("RF-DETR pose requires 3 output tensors (dets, labels, keypoints)");
     }
@@ -151,7 +151,7 @@ std::vector<PoseEstimation> RfDetrPosePostprocessor::postprocess(const std::vect
 
         PoseEstimation pose;
         pose.bbox =
-            BoundingBox(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width), static_cast<int>(height));
+            vision::Rect(static_cast<int>(x), static_cast<int>(y), static_cast<int>(width), static_cast<int>(height));
         pose.keypoints = std::move(keypoints);
         pose.score = final_score;
         results.push_back(std::move(pose));

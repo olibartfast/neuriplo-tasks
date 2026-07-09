@@ -28,7 +28,7 @@ file.
 - **Artifact**: `libneuriplo-tasks.a` — C++17 static library
 - **Source roots**: `src/`, `include/neuriplo/tasks/`
 - **Tests**: `tests/` (GoogleTest, fetched via CMake `FetchContent`)
-- **Only runtime dependency**: OpenCV
+- **Core runtime dependencies**: none; optional adapters provide stb image I/O and OpenCV interop
 - **Consumers**: [tritonic](https://github.com/olibartfast/tritonic),
   [neuriplo-infer](https://github.com/olibartfast/neuriplo-infer)
 - **GitHub repo**: `https://github.com/olibartfast/neuriplo-tasks`
@@ -121,6 +121,7 @@ find src -name '*.cpp' | xargs clang-tidy-18 -p build
 cppcheck --enable=warning --std=c++17 \
   --suppress=missingIncludeSystem \
   --suppress=unmatchedSuppression \
+  --suppress=*:3rdparty/stb/* \
   --error-exitcode=1 \
   -I include src/
 ```
@@ -158,21 +159,22 @@ cppcheck --enable=warning --std=c++17 \
 
 ### Planned work
 
-Atomic roadmap (batch utilities, refactor phases, composite pipelines):
+Atomic roadmap (batch utilities, completed refactor work, composite pipelines):
 [`docs/ROADMAP.md`](./docs/ROADMAP.md). Batch readiness audit (B0):
 [`docs/batch_support_matrix.md`](./docs/batch_support_matrix.md). Factory/strategy
-refactor detail: [`docs/plans/task_refactor_atomic_plan.md`](./docs/plans/task_refactor_atomic_plan.md).
+refactor history is summarized in [`docs/ROADMAP.md`](./docs/ROADMAP.md).
 
 ### Core abstractions (`include/neuriplo/tasks/core/`)
 
 | File                  | Purpose |
 |-----------------------|---------|
-| `task_interface.hpp`  | Abstract base: `preprocess(vector<cv::Mat>) → vector<vector<uint8_t>>`, `postprocess(cv::Size, vector<Tensor>) → vector<Result>` |
+| `task_interface.hpp`  | Abstract base: `preprocess(vector<Image>) -> vector<vector<uint8_t>>`, `postprocess(vision::Size, vector<Tensor>) -> vector<Result>` |
 | `task_factory.hpp`    | `TaskFactory::createTaskInstance(string, ModelInfo)` — normalises the model-type string (strip `-`, `_`, whitespace; lowercase) and dispatches |
 | `result_types.hpp`    | `Result` variant plus optional `visitResult()` helper (forwards to `std::visit`); OpenCV-free (`BoundingBox`, `ImageMatrix`) |
 | `bounding_box.hpp`    | Pixel-space `BoundingBox` replacing `cv::Rect` in public result types |
 | `image_matrix.hpp`    | Opaque `ImageMatrix` replacing `cv::Mat` in public result types |
-| `opencv_interop.hpp`  | `toCvRect` / `fromCvRect` / `toCvMat` / `fromCvMat` conversion at OpenCV boundaries |
+| `vision/opencv_adapter.hpp` | Optional OpenCV conversions; available only through `vision-opencv` |
+| `vision/stb_io.hpp` | Optional file load/save helpers; available only through `vision-stb` |
 | `model_info.hpp`      | `ModelInfo`: `input_shapes`, `input_formats` (`FORMAT_NCHW` / `FORMAT_NHWC`), `input_names`, `output_names` |
 | `batch_types.hpp`     | `BatchRequest`, `BatchPreprocessOutput`, `BatchPostprocessOutput`, invariant helpers |
 | `batch_preprocess.hpp`| `batchPreprocess(task, BatchRequest)` — per-image preprocess + `batch_size` metadata |
@@ -373,6 +375,7 @@ find src include tests -name '*.cpp' -o -name '*.hpp' | \
 cppcheck --enable=warning --std=c++17 \
   --suppress=missingIncludeSystem \
   --suppress=unmatchedSuppression \
+  --suppress=*:3rdparty/stb/* \
   --error-exitcode=1 -I include src/ && \
 cmake -S . -B build -DBUILD_TESTS=ON -DWERROR=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON && \
 cmake --build build --parallel && \

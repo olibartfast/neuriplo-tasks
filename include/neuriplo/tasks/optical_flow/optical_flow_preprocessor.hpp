@@ -11,7 +11,7 @@ namespace neuriplo_tasks {
  */
 class RaftPreprocessor : public Preprocessor {
   public:
-    explicit RaftPreprocessor(const cv::Size& input_size = cv::Size(960, 520));
+    explicit RaftPreprocessor(const Size& input_size = Size(960, 520));
 
     /**
      * @brief Preprocess a pair of frames for optical flow
@@ -20,7 +20,8 @@ class RaftPreprocessor : public Preprocessor {
      * @param frame2 Second frame
      * @return Vector containing preprocessed data for both frames
      */
-    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess_pair(const cv::Mat& frame1, const cv::Mat& frame2) const;
+    [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess_pair(const ImageView& frame1,
+                                                                    const ImageView& frame2) const;
 };
 
 } // namespace neuriplo_tasks

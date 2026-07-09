@@ -9,7 +9,7 @@ namespace neuriplo_tasks {
  */
 class ClassifierPreprocessor : public Preprocessor {
   public:
-    explicit ClassifierPreprocessor(const cv::Size& input_size, bool use_imagenet_norm = false);
+    explicit ClassifierPreprocessor(const Size& input_size, bool use_imagenet_norm = false);
 };
 
 /**
@@ -18,7 +18,7 @@ class ClassifierPreprocessor : public Preprocessor {
  */
 class TorchvisionPreprocessor : public Preprocessor {
   public:
-    explicit TorchvisionPreprocessor(const cv::Size& input_size = cv::Size(224, 224));
+    explicit TorchvisionPreprocessor(const Size& input_size = Size(224, 224));
 };
 
 /**
@@ -27,7 +27,7 @@ class TorchvisionPreprocessor : public Preprocessor {
  */
 class TensorflowPreprocessor : public Preprocessor {
   public:
-    explicit TensorflowPreprocessor(const cv::Size& input_size = cv::Size(224, 224));
+    explicit TensorflowPreprocessor(const Size& input_size = Size(224, 224));
 };
 
 /**
@@ -36,7 +36,7 @@ class TensorflowPreprocessor : public Preprocessor {
  */
 class ViTPreprocessor : public Preprocessor {
   public:
-    explicit ViTPreprocessor(const cv::Size& input_size = cv::Size(224, 224));
+    explicit ViTPreprocessor(const Size& input_size = Size(224, 224));
 };
 
 } // namespace neuriplo_tasks

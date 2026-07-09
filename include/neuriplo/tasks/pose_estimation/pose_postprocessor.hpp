@@ -3,7 +3,6 @@
 #include "neuriplo/tasks/core/result_types.hpp"
 #include "neuriplo/tasks/core/task_interface.hpp"
 
-#include <opencv2/core.hpp>
 #include <vector>
 
 namespace neuriplo_tasks {
@@ -22,8 +21,8 @@ class PosePostprocessor {
      * @param input_size Network input size
      * @return Vector of PoseEstimation results
      */
-    virtual std::vector<PoseEstimation> postprocess(const std::vector<Tensor>& tensors, const cv::Size& original_size,
-                                                    const cv::Size& input_size) = 0;
+    virtual std::vector<PoseEstimation> postprocess(const std::vector<Tensor>& tensors, const Size& original_size,
+                                                    const Size& input_size) = 0;
 };
 
 } // namespace neuriplo_tasks

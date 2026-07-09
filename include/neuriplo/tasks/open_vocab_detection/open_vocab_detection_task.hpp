@@ -22,9 +22,9 @@ class OpenVocabDetectionTask : public TaskInterface {
 
     TaskType getTaskType() override { return TaskType::OpenVocabDetection; }
 
-    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override;
+    std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) override;
 
-    std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
+    std::vector<Result> postprocess(const Size& frame_size, const std::vector<Tensor>& tensors) override;
 
   private:
     ModelType model_type_;
@@ -40,7 +40,7 @@ class OpenVocabDetectionTask : public TaskInterface {
 
     static ModelType detectModelType(const std::string& model_name);
     static std::vector<std::string> extractPrompts(const TaskConfig& config);
-    static cv::Size extractInputSize(const ModelInfo& model_info);
+    static Size extractInputSize(const ModelInfo& model_info);
 
     [[nodiscard]] std::pair<std::vector<int32_t>, std::vector<int32_t>> encodePrompts(int context_length) const;
 };

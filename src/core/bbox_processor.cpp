@@ -5,8 +5,8 @@
 
 namespace neuriplo_tasks {
 
-cv::Rect BBoxProcessor::calculate_bounding_box(const cv::Size& image_size, const std::vector<float>& bbox,
-                                               int network_width, int network_height) {
+vision::Rect BBoxProcessor::calculate_bounding_box(const vision::Size& image_size, const std::vector<float>& bbox,
+                                                   int network_width, int network_height) {
     if (bbox.size() < 4) {
         throw std::invalid_argument("Bbox must have at least 4 elements");
     }
@@ -39,13 +39,14 @@ cv::Rect BBoxProcessor::calculate_bounding_box(const cv::Size& image_size, const
         bottom = static_cast<int>((bbox[1] + bbox[3] / 2.0f) / ratio_height);
     }
 
-    cv::Rect result(left, top, right - left, bottom - top);
+    vision::Rect result(left, top, right - left, bottom - top);
     clamp_to_bounds(result, image_size);
     return result;
 }
 
-cv::Rect BBoxProcessor::calculate_bounding_box_from_xyxy(const cv::Size& image_size, const std::vector<float>& bbox,
-                                                         int network_width, int network_height) {
+vision::Rect BBoxProcessor::calculate_bounding_box_from_xyxy(const vision::Size& image_size,
+                                                             const std::vector<float>& bbox, int network_width,
+                                                             int network_height) {
     if (bbox.size() < 4) {
         throw std::invalid_argument("Bbox must have at least 4 elements");
     }
@@ -78,23 +79,23 @@ cv::Rect BBoxProcessor::calculate_bounding_box_from_xyxy(const cv::Size& image_s
         bottom = static_cast<int>(bbox[3] / ratio_height);
     }
 
-    cv::Rect result(left, top, right - left, bottom - top);
+    vision::Rect result(left, top, right - left, bottom - top);
     clamp_to_bounds(result, image_size);
     return result;
 }
 
-cv::Rect BBoxProcessor::scale_to_original(const cv::Rect& bbox, const cv::Size& original_size,
-                                          const cv::Size& network_size) noexcept {
+vision::Rect BBoxProcessor::scale_to_original(const vision::Rect& bbox, const vision::Size& original_size,
+                                              const vision::Size& network_size) noexcept {
     const float scale_width = static_cast<float>(original_size.width) / static_cast<float>(network_size.width);
     const float scale_height = static_cast<float>(original_size.height) / static_cast<float>(network_size.height);
 
-    return cv::Rect(static_cast<int>(static_cast<float>(bbox.x) * scale_width),
-                    static_cast<int>(static_cast<float>(bbox.y) * scale_height),
-                    static_cast<int>(static_cast<float>(bbox.width) * scale_width),
-                    static_cast<int>(static_cast<float>(bbox.height) * scale_height));
+    return vision::Rect(static_cast<int>(static_cast<float>(bbox.x) * scale_width),
+                        static_cast<int>(static_cast<float>(bbox.y) * scale_height),
+                        static_cast<int>(static_cast<float>(bbox.width) * scale_width),
+                        static_cast<int>(static_cast<float>(bbox.height) * scale_height));
 }
 
-void BBoxProcessor::clamp_to_bounds(cv::Rect& box, const cv::Size& image_size) noexcept {
+void BBoxProcessor::clamp_to_bounds(vision::Rect& box, const vision::Size& image_size) noexcept {
     box.x = std::clamp(box.x, 0, image_size.width - 1);
     box.y = std::clamp(box.y, 0, image_size.height - 1);
     box.width = std::clamp(box.width, 0, image_size.width - box.x);

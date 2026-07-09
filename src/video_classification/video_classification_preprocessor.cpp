@@ -1,12 +1,42 @@
 #include "neuriplo/tasks/video_classification/video_classification_preprocessor.hpp"
 
+#include "image_ops.hpp"
+
+#include <algorithm>
 #include <cstring>
 
 namespace neuriplo_tasks {
 
+namespace {
+
+void applyChannelNormalization(vision::Image& processed, const float mean[3], const float std_dev[3]) {
+    std::vector<vision::Image> channels = image_ops::splitChannels(processed.view());
+    for (size_t ci = 0; ci < channels.size() && ci < 3; ++ci) {
+        float* p = channels[ci].data<float>();
+        const size_t count = channels[ci].totalPixels();
+        for (size_t px = 0; px < count; ++px) {
+            p[px] = (p[px] - mean[ci]) / std_dev[ci];
+        }
+    }
+    processed = image_ops::mergeChannels(channels);
+}
+
+std::vector<uint8_t> splitToNCHW(const vision::Image& processed) {
+    std::vector<uint8_t> output;
+    std::vector<vision::Image> channels = image_ops::splitChannels(processed.view());
+    for (const auto& channel : channels) {
+        const auto* data = reinterpret_cast<const uint8_t*>(channel.data<float>());
+        size_t channel_size = channel.totalPixels() * sizeof(float);
+        output.insert(output.end(), data, data + channel_size);
+    }
+    return output;
+}
+
+} // namespace
+
 // ============ VideoMAEPreprocessor ============
 
-VideoMAEPreprocessor::VideoMAEPreprocessor(const cv::Size& input_size)
+VideoMAEPreprocessor::VideoMAEPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
           false, // We handle normalization manually
@@ -14,130 +44,95 @@ VideoMAEPreprocessor::VideoMAEPreprocessor(const cv::Size& input_size)
           true // BGR to RGB
       }) {}
 
-std::vector<uint8_t> VideoMAEPreprocessor::preprocess(const cv::Mat& image) const {
-    cv::Mat processed;
+std::vector<uint8_t> VideoMAEPreprocessor::preprocess(const vision::ImageView& image) const {
+    vision::Image processed = vision::Image(image.width(), image.height(), image.channels(), image.pixelType());
+    std::memcpy(processed.raw(), image.raw(), image.sizeBytes());
 
-    // BGR to RGB
-    cv::cvtColor(image, processed, cv::COLOR_BGR2RGB);
-
-    // Direct resize to target size
-    cv::resize(processed, processed, config_.input_size, 0, 0, cv::INTER_LINEAR);
-
-    // Convert to float and rescale /255
-    processed.convertTo(processed, CV_32FC3, 1.0 / 255.0);
-
-    // Apply normalization: (pixel - mean) / std
-    std::vector<cv::Mat> channels;
-    cv::split(processed, channels);
-    for (size_t i = 0; i < 3; ++i) {
-        channels[i] = (channels[i] - kMean[i]) / kStd[i];
-    }
-    cv::merge(channels, processed);
-
-    // Convert to NCHW format
-    std::vector<uint8_t> output;
-    cv::split(processed, channels);
-    for (const auto& channel : channels) {
-        const auto* data = reinterpret_cast<const uint8_t*>(channel.data);
-        size_t channel_size = channel.total() * sizeof(float);
-        output.insert(output.end(), data, data + channel_size);
+    if (config_.bgr_to_rgb && processed.channels() == 3) {
+        image_ops::swapBgrRgb(processed);
     }
 
-    return output;
+    processed = image_ops::resize(processed, config_.input_size, image_ops::Interpolation::Linear);
+
+    processed.convertTo(vision::PixelType::Float32, 1.0 / 255.0);
+
+    applyChannelNormalization(processed, kMean.data(), kStd.data());
+
+    return splitToNCHW(processed);
 }
 
 // ============ VivitPreprocessor ============
 
-VivitPreprocessor::VivitPreprocessor(const cv::Size& input_size)
+VivitPreprocessor::VivitPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{input_size, ImageFormat::NCHW, DataType::FLOAT32, false, false, true}) {}
 
-std::vector<uint8_t> VivitPreprocessor::preprocess(const cv::Mat& image) const {
-    cv::Mat processed;
+std::vector<uint8_t> VivitPreprocessor::preprocess(const vision::ImageView& image) const {
+    vision::Image processed = vision::Image(image.width(), image.height(), image.channels(), image.pixelType());
+    std::memcpy(processed.raw(), image.raw(), image.sizeBytes());
 
-    // BGR to RGB
-    cv::cvtColor(image, processed, cv::COLOR_BGR2RGB);
+    if (config_.bgr_to_rgb && processed.channels() == 3) {
+        image_ops::swapBgrRgb(processed);
+    }
 
-    // Aspect-preserving resize: shortest edge to 256
-    int h = processed.rows;
-    int w = processed.cols;
+    int h = processed.height();
+    int w = processed.width();
     float scale = static_cast<float>(kShortestEdge) / static_cast<float>(std::min(h, w));
     int new_h = static_cast<int>(static_cast<float>(h) * scale);
     int new_w = static_cast<int>(static_cast<float>(w) * scale);
-    cv::resize(processed, processed, cv::Size(new_w, new_h), 0, 0, cv::INTER_LINEAR);
+    processed = image_ops::resize(processed, new_w, new_h, image_ops::Interpolation::Linear);
 
-    // Center crop to target size
-    int crop_x = (processed.cols - config_.input_size.width) / 2;
-    int crop_y = (processed.rows - config_.input_size.height) / 2;
-    processed = processed(cv::Rect(crop_x, crop_y, config_.input_size.width, config_.input_size.height)).clone();
+    int crop_x = (processed.width() - config_.input_size.width) / 2;
+    int crop_y = (processed.height() - config_.input_size.height) / 2;
 
-    // Convert to float and rescale: pixel * (1/127.5) - 1
-    processed.convertTo(processed, CV_32FC3, 1.0 / 127.5, -1.0);
+    vision::Image cropped = vision::Image::uninit(config_.input_size.width, config_.input_size.height,
+                                                  processed.channels(), processed.pixelType());
+    image_ops::copyRegion(processed.view(),
+                          vision::Rect(crop_x, crop_y, config_.input_size.width, config_.input_size.height), cropped,
+                          vision::Rect(0, 0, config_.input_size.width, config_.input_size.height));
+    processed = std::move(cropped);
 
-    // Apply ImageNet normalization: (pixel - mean) / std
-    std::vector<cv::Mat> channels;
-    cv::split(processed, channels);
-    for (size_t i = 0; i < 3; ++i) {
-        channels[i] = (channels[i] - kMean[i]) / kStd[i];
-    }
-    cv::merge(channels, processed);
+    processed.convertTo(vision::PixelType::Float32, 1.0 / 127.5, -1.0);
 
-    // Convert to NCHW format
-    std::vector<uint8_t> output;
-    cv::split(processed, channels);
-    for (const auto& channel : channels) {
-        const auto* data = reinterpret_cast<const uint8_t*>(channel.data);
-        size_t channel_size = channel.total() * sizeof(float);
-        output.insert(output.end(), data, data + channel_size);
-    }
+    applyChannelNormalization(processed, kMean.data(), kStd.data());
 
-    return output;
+    return splitToNCHW(processed);
 }
 
 // ============ TimeSformerPreprocessor ============
 
-TimeSformerPreprocessor::TimeSformerPreprocessor(const cv::Size& input_size)
+TimeSformerPreprocessor::TimeSformerPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{input_size, ImageFormat::NCHW, DataType::FLOAT32, false, false, true}) {}
 
-std::vector<uint8_t> TimeSformerPreprocessor::preprocess(const cv::Mat& image) const {
-    cv::Mat processed;
+std::vector<uint8_t> TimeSformerPreprocessor::preprocess(const vision::ImageView& image) const {
+    vision::Image processed = vision::Image(image.width(), image.height(), image.channels(), image.pixelType());
+    std::memcpy(processed.raw(), image.raw(), image.sizeBytes());
 
-    // BGR to RGB
-    cv::cvtColor(image, processed, cv::COLOR_BGR2RGB);
+    if (config_.bgr_to_rgb && processed.channels() == 3) {
+        image_ops::swapBgrRgb(processed);
+    }
 
-    // Aspect-preserving resize: shortest edge to 224
-    int h = processed.rows;
-    int w = processed.cols;
+    int h = processed.height();
+    int w = processed.width();
     float scale = static_cast<float>(kShortestEdge) / static_cast<float>(std::min(h, w));
     int new_h = static_cast<int>(static_cast<float>(h) * scale);
     int new_w = static_cast<int>(static_cast<float>(w) * scale);
-    cv::resize(processed, processed, cv::Size(new_w, new_h), 0, 0, cv::INTER_LINEAR);
+    processed = image_ops::resize(processed, new_w, new_h, image_ops::Interpolation::Linear);
 
-    // Center crop to target size
-    int crop_x = (processed.cols - config_.input_size.width) / 2;
-    int crop_y = (processed.rows - config_.input_size.height) / 2;
-    processed = processed(cv::Rect(crop_x, crop_y, config_.input_size.width, config_.input_size.height)).clone();
+    int crop_x = (processed.width() - config_.input_size.width) / 2;
+    int crop_y = (processed.height() - config_.input_size.height) / 2;
 
-    // Convert to float and rescale /255
-    processed.convertTo(processed, CV_32FC3, 1.0 / 255.0);
+    vision::Image cropped = vision::Image::uninit(config_.input_size.width, config_.input_size.height,
+                                                  processed.channels(), processed.pixelType());
+    image_ops::copyRegion(processed.view(),
+                          vision::Rect(crop_x, crop_y, config_.input_size.width, config_.input_size.height), cropped,
+                          vision::Rect(0, 0, config_.input_size.width, config_.input_size.height));
+    processed = std::move(cropped);
 
-    // Apply custom normalization: (pixel - mean) / std
-    std::vector<cv::Mat> channels;
-    cv::split(processed, channels);
-    for (size_t i = 0; i < 3; ++i) {
-        channels[i] = (channels[i] - kMean[i]) / kStd[i];
-    }
-    cv::merge(channels, processed);
+    processed.convertTo(vision::PixelType::Float32, 1.0 / 255.0);
 
-    // Convert to NCHW format
-    std::vector<uint8_t> output;
-    cv::split(processed, channels);
-    for (const auto& channel : channels) {
-        const auto* data = reinterpret_cast<const uint8_t*>(channel.data);
-        size_t channel_size = channel.total() * sizeof(float);
-        output.insert(output.end(), data, data + channel_size);
-    }
+    applyChannelNormalization(processed, kMean.data(), kStd.data());
 
-    return output;
+    return splitToNCHW(processed);
 }
 
 } // namespace neuriplo_tasks

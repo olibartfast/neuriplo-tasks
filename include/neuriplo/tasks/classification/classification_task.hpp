@@ -53,7 +53,7 @@ class ClassificationTask : public BaseTask {
     bool apply_softmax_;
 
     [[nodiscard]] const Preprocessor& getPreprocessor() const override;
-    std::vector<Result> decode(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
+    std::vector<Result> decode(const Size& frame_size, const std::vector<Tensor>& tensors) override;
 
     /**
      * @brief Detect model type from model name string
@@ -63,7 +63,7 @@ class ClassificationTask : public BaseTask {
     /**
      * @brief Create appropriate preprocessor for model type
      */
-    std::unique_ptr<Preprocessor> createPreprocessor(ModelType type, const cv::Size& input_size);
+    std::unique_ptr<Preprocessor> createPreprocessor(ModelType type, const Size& input_size);
 
     /**
      * @brief Create appropriate postprocessor for model type
@@ -73,7 +73,7 @@ class ClassificationTask : public BaseTask {
     /**
      * @brief Extract input dimensions from model info
      */
-    cv::Size extractInputSize(const ModelInfo& model_info);
+    Size extractInputSize(const ModelInfo& model_info);
 };
 
 } // namespace neuriplo_tasks

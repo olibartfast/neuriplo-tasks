@@ -1,6 +1,5 @@
 #include "neuriplo/tasks/open_vocab_detection/owlv2_postprocessor.hpp"
 
-#include "neuriplo/tasks/core/opencv_interop.hpp"
 #include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
@@ -47,25 +46,26 @@ const Tensor* findTensorByNames(const std::vector<Tensor>& tensors, const std::v
     return nullptr;
 }
 
-cv::Rect makeRectFromCenterBox(float center_x, float center_y, float width, float height, const cv::Size& frame_size) {
+vision::Rect makeRectFromCenterBox(float center_x, float center_y, float width, float height,
+                                   const vision::Size& frame_size) {
     const float x1 = std::max(0.0F, center_x - (width * 0.5F));
     const float y1 = std::max(0.0F, center_y - (height * 0.5F));
     const float x2 = std::min(static_cast<float>(frame_size.width), center_x + (width * 0.5F));
     const float y2 = std::min(static_cast<float>(frame_size.height), center_y + (height * 0.5F));
 
-    return cv::Rect(cv::Point(static_cast<int>(std::round(x1)), static_cast<int>(std::round(y1))),
-                    cv::Point(static_cast<int>(std::round(x2)), static_cast<int>(std::round(y2))));
+    return vision::Rect(static_cast<int>(std::round(x1)), static_cast<int>(std::round(y1)),
+                        static_cast<int>(std::round(x2 - x1)), static_cast<int>(std::round(y2 - y1)));
 }
 
 } // namespace
 
-OWLv2Postprocessor::OWLv2Postprocessor(const cv::Size& input_size, float confidence_threshold, float text_threshold,
+OWLv2Postprocessor::OWLv2Postprocessor(const vision::Size& input_size, float confidence_threshold, float text_threshold,
                                        std::vector<std::string> prompt_labels, std::vector<std::string> output_names)
     : input_size_(input_size), confidence_threshold_(confidence_threshold), text_threshold_(text_threshold),
       prompt_labels_(std::move(prompt_labels)), output_names_(std::move(output_names)) {}
 
 std::vector<OpenVocabDetection> OWLv2Postprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                                const cv::Size& frame_size) {
+                                                                const vision::Size& frame_size) {
     std::vector<OpenVocabDetection> results;
     if (tensors.size() < 2) {
         return results;
@@ -153,8 +153,8 @@ std::vector<OpenVocabDetection> OWLv2Postprocessor::postprocess(const std::vecto
                 label = prompt_labels_[static_cast<size_t>(best_prompt_index)];
             }
 
-            results.emplace_back(fromCvRect(makeRectFromCenterBox(center_x, center_y, width, height, frame_size)),
-                                 best_score, best_prompt_index, std::move(label));
+            results.emplace_back(makeRectFromCenterBox(center_x, center_y, width, height, frame_size), best_score,
+                                 best_prompt_index, std::move(label));
         }
     }
 

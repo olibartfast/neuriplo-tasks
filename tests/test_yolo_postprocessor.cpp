@@ -1,8 +1,8 @@
 #include "neuriplo/tasks/object_detection/object_detection_task.hpp"
 #include "neuriplo/tasks/object_detection/yolo_postprocessor.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 #include <variant>
 #include <vector>
 
@@ -48,10 +48,11 @@ class YoloPostprocessorTest : public ::testing::Test {
 };
 
 TEST_F(YoloPostprocessorTest, EmptyOutputReturnsNoDetections) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, cv::Size(640, 640), 0.25f, 0.45f);
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, neuriplo_tasks::Size(640, 640), 0.25f,
+                                0.45f);
 
     std::vector<Tensor> tensors = {};
-    cv::Size frame_size(640, 480);
+    neuriplo_tasks::Size frame_size(640, 480);
 
     auto detections = processor.postprocess(tensors, frame_size);
 
@@ -59,14 +60,15 @@ TEST_F(YoloPostprocessorTest, EmptyOutputReturnsNoDetections) {
 }
 
 TEST_F(YoloPostprocessorTest, HighConfidenceDetected) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, cv::Size(640, 640), 0.25f, 0.45f);
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, neuriplo_tasks::Size(640, 640), 0.25f,
+                                0.45f);
 
     int num_boxes = 8400;
     int num_classes = 80;
     auto output = createMockYoloOutput(num_boxes, num_classes);
 
     std::vector<Tensor> tensors = {Tensor(output, {1, 4 + num_classes, num_boxes})};
-    cv::Size frame_size(640, 480);
+    neuriplo_tasks::Size frame_size(640, 480);
 
     auto detections = processor.postprocess(tensors, frame_size);
 
@@ -78,7 +80,7 @@ TEST_F(YoloPostprocessorTest, HighConfidenceDetected) {
 }
 
 TEST_F(YoloPostprocessorTest, LowConfidenceFiltered) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, cv::Size(640, 640), 0.99f,
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_STANDARD, neuriplo_tasks::Size(640, 640), 0.99f,
                                 0.45f); // Very high threshold
 
     int num_boxes = 8400;
@@ -86,7 +88,7 @@ TEST_F(YoloPostprocessorTest, LowConfidenceFiltered) {
     auto output = createMockYoloOutput(num_boxes, num_classes);
 
     std::vector<Tensor> tensors = {Tensor(output, {1, 4 + num_classes, num_boxes})};
-    cv::Size frame_size(640, 480);
+    neuriplo_tasks::Size frame_size(640, 480);
 
     auto detections = processor.postprocess(tensors, frame_size);
 
@@ -94,7 +96,8 @@ TEST_F(YoloPostprocessorTest, LowConfidenceFiltered) {
 }
 
 TEST_F(YoloPostprocessorTest, YoloNmsFreeFormat) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NMS_FREE, cv::Size(640, 640), 0.25f, 0.45f);
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NMS_FREE, neuriplo_tasks::Size(640, 640), 0.25f,
+                                0.45f);
 
     // YOLOv10/YOLO26 output: [1, 300, 6] (x1, y1, x2, y2, score, class)
     int num_dets = 300;
@@ -110,7 +113,7 @@ TEST_F(YoloPostprocessorTest, YoloNmsFreeFormat) {
     output[5] = 1.0f;  // class 1
 
     std::vector<Tensor> tensors = {Tensor(output, {1, num_dets, dims})};
-    cv::Size frame_size(640, 480);
+    neuriplo_tasks::Size frame_size(640, 480);
 
     auto detections = processor.postprocess(tensors, frame_size);
 
@@ -121,7 +124,8 @@ TEST_F(YoloPostprocessorTest, YoloNmsFreeFormat) {
 }
 
 TEST_F(YoloPostprocessorTest, YoloNmsFreeAppliesNmsPerClass) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NMS_FREE, cv::Size(640, 640), 0.25f, 0.45f);
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NMS_FREE, neuriplo_tasks::Size(640, 640), 0.25f,
+                                0.45f);
 
     const int num_dets = 300;
     const int dims = 6;
@@ -150,7 +154,7 @@ TEST_F(YoloPostprocessorTest, YoloNmsFreeAppliesNmsPerClass) {
     output[16] = 0.70f;
     output[17] = 2.0f;
 
-    auto detections = processor.postprocess({Tensor(output, {1, num_dets, dims})}, cv::Size(640, 480));
+    auto detections = processor.postprocess({Tensor(output, {1, num_dets, dims})}, neuriplo_tasks::Size(640, 480));
 
     ASSERT_EQ(detections.size(), 2);
     EXPECT_EQ(detections[0].class_id, 1);
@@ -160,13 +164,13 @@ TEST_F(YoloPostprocessorTest, YoloNmsFreeAppliesNmsPerClass) {
 }
 
 TEST_F(YoloPostprocessorTest, YoloNasFormatScalesXyxyFromModelSpace) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NAS, cv::Size(640, 640), 0.25f, 0.45f);
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NAS, neuriplo_tasks::Size(640, 640), 0.25f, 0.45f);
 
     std::vector<TensorElement> boxes = {160.0f, 160.0f, 320.0f, 320.0f, 10.0f, 10.0f, 20.0f, 20.0f};
     std::vector<TensorElement> scores = {0.1f, 0.8f, 0.2f, 0.1f, 0.1f, 0.1f};
 
     std::vector<Tensor> tensors = {Tensor(boxes, {1, 2, 4}), Tensor(scores, {1, 2, 3})};
-    cv::Size frame_size(640, 480);
+    neuriplo_tasks::Size frame_size(640, 480);
 
     auto detections = processor.postprocess(tensors, frame_size);
 
@@ -177,26 +181,28 @@ TEST_F(YoloPostprocessorTest, YoloNasFormatScalesXyxyFromModelSpace) {
 }
 
 TEST_F(YoloPostprocessorTest, YoloNasKeepsUnclampedBoxCrossingLetterboxPadding) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NAS, cv::Size(640, 640), 0.25f, 0.45f);
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NAS, neuriplo_tasks::Size(640, 640), 0.25f, 0.45f);
 
     std::vector<TensorElement> boxes = {0.0f, 0.0f, 100.0f, 100.0f};
     std::vector<TensorElement> scores = {0.9f};
 
-    auto detections = processor.postprocess({Tensor(boxes, {1, 1, 4}), Tensor(scores, {1, 1, 1})}, cv::Size(640, 480));
+    auto detections =
+        processor.postprocess({Tensor(boxes, {1, 1, 4}), Tensor(scores, {1, 1, 1})}, neuriplo_tasks::Size(640, 480));
 
     ASSERT_EQ(detections.size(), 1);
     EXPECT_EQ(detections[0].bbox, BoundingBox(0, -80, 100, 100));
 }
 
 TEST_F(YoloPostprocessorTest, YoloV7E2EFormatScalesXyxyFromModelSpace) {
-    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_V7_E2E, cv::Size(640, 640), 0.25f, 0.45f);
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_V7_E2E, neuriplo_tasks::Size(640, 640), 0.25f,
+                                0.45f);
 
     Tensor num_dets({1.0f}, {1, 1});
     Tensor boxes({160.0f, 160.0f, 320.0f, 320.0f}, {1, 1, 4});
     Tensor scores({0.85f}, {1, 1});
     Tensor classes({2.0f}, {1, 1});
 
-    auto detections = processor.postprocess({num_dets, boxes, scores, classes}, cv::Size(640, 480));
+    auto detections = processor.postprocess({num_dets, boxes, scores, classes}, neuriplo_tasks::Size(640, 480));
 
     ASSERT_EQ(detections.size(), 1);
     EXPECT_EQ(detections[0].class_id, 2);
