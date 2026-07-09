@@ -141,7 +141,8 @@ std::vector<Result> InstanceSegmentationTask::postprocess(const vision::Size& fr
 
 InstanceSegmentationTask::ModelType InstanceSegmentationTask::detectModelType(const std::string& model_name) {
     std::string lower_name = model_name;
-    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
 
     if (lower_name.find("yolov10") != std::string::npos && lower_name.find("seg") != std::string::npos) {
         return ModelType::YOLO_V10_SEG;

@@ -37,7 +37,8 @@ std::vector<Result> DepthEstimationTask::decode(const vision::Size& frame_size, 
 
 DepthEstimationTask::ModelType DepthEstimationTask::detectModelType(const std::string& model_name) {
     std::string lower_name = model_name;
-    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
 
     if (lower_name.find("depthanythingv2") != std::string::npos ||
         lower_name.find("depth-anything-v2") != std::string::npos ||

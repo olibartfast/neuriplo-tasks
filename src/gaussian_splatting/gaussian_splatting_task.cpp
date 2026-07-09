@@ -67,7 +67,8 @@ std::vector<Result> GaussianSplattingTask::postprocess(const vision::Size& /*fra
 
 GaussianSplattingTask::ModelType GaussianSplattingTask::detectModelType(const std::string& model_name) {
     std::string lower = model_name;
-    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+    std::transform(lower.begin(), lower.end(), lower.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
 
     if (lower.find("grm") != std::string::npos) {
         return ModelType::GRM;

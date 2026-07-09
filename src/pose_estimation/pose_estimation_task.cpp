@@ -129,7 +129,8 @@ std::vector<Result> PoseEstimationTask::postprocess(const vision::Size& frame_si
 
 PoseEstimationTask::ModelType PoseEstimationTask::detectModelType(const std::string& model_type) {
     std::string lower_name = model_type;
-    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
 
     if (lower_name.find("rfdetr") == 0 &&
         (lower_name.find("pose") != std::string::npos || lower_name.find("keypoint") != std::string::npos ||
