@@ -1,6 +1,7 @@
 #include "neuriplo/tasks/core/task_factory.hpp"
 #include "neuriplo/tasks/open_vocab_detection/bert_tokenizer.hpp"
 #include "neuriplo/tasks/open_vocab_detection/grounding_dino_postprocessor.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
 
@@ -14,7 +15,8 @@ ModelInfo makeOwlv2Info() {
     info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW", "FORMAT_NCHW"};
     info.input_names = {"pixel_values", "input_ids", "attention_mask"};
     info.output_names = {"pred_boxes", "logits"};
-    info.input_types = {CV_32F, CV_32S, CV_32S};
+    info.input_types = {neuriplo_tasks::PixelType::Float32, neuriplo_tasks::PixelType::Int32,
+                        neuriplo_tasks::PixelType::Int32};
     return info;
 }
 
@@ -49,7 +51,8 @@ ModelInfo makeGroundingDinoInfo() {
     info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW", "FORMAT_NCHW"};
     info.input_names = {"pixel_values", "input_ids", "attention_mask"};
     info.output_names = {"pred_boxes", "pred_logits"};
-    info.input_types = {CV_32F, CV_32S, CV_32S};
+    info.input_types = {neuriplo_tasks::PixelType::Float32, neuriplo_tasks::PixelType::Int32,
+                        neuriplo_tasks::PixelType::Int32};
     return info;
 }
 
@@ -64,7 +67,7 @@ TEST(OpenVocabDetectionTest, PreprocessProducesImageAndTextInputs) {
     cfg.tokenizer_merges_text = "#version: 0.2\nc a\n";
 
     auto task = TaskFactory::createTaskInstance("owlv2", makeOwlv2Info(), cfg);
-    cv::Mat image = cv::Mat::zeros(32, 32, CV_8UC3);
+    neuriplo_tasks::Image image = neuriplo_tasks::vision_test::makeImage(32, 32, 3, 0);
     const auto buffers = task->preprocess({image});
 
     ASSERT_EQ(buffers.size(), 3U);
@@ -82,7 +85,7 @@ TEST(OpenVocabDetectionTest, PostprocessReturnsOpenVocabDetectionResults) {
     Tensor boxes(std::vector<TensorElement>{0.5f, 0.5f, 0.25f, 0.25f}, {1, 1, 4});
     Tensor logits(std::vector<TensorElement>{-3.0f, 4.0f}, {1, 1, 2});
 
-    const auto results = task->postprocess(cv::Size(640, 480), {boxes, logits});
+    const auto results = task->postprocess(neuriplo_tasks::Size(640, 480), {boxes, logits});
     ASSERT_EQ(results.size(), 1U);
     ASSERT_TRUE(std::holds_alternative<OpenVocabDetection>(results[0]));
     const auto& det = std::get<OpenVocabDetection>(results[0]);
@@ -104,7 +107,7 @@ TEST(OpenVocabDetectionTest, PostprocessUsesOutputNamesAndObjectness) {
     Tensor boxes(std::vector<TensorElement>{0.5f, 0.5f, 0.25f, 0.25f}, {1, 1, 4});
     Tensor logits(std::vector<TensorElement>{-3.0f, 4.0f}, {1, 1, 2});
 
-    const auto filtered = task->postprocess(cv::Size(640, 480), {objectness, boxes, logits});
+    const auto filtered = task->postprocess(neuriplo_tasks::Size(640, 480), {objectness, boxes, logits});
     EXPECT_TRUE(filtered.empty());
 }
 
@@ -186,7 +189,7 @@ TEST(GroundingDinoTest, PreprocessProducesCorrectBufferSizes) {
     cfg.bert_tokenizer_vocab_text = makeMinimalBertVocab();
 
     auto task = TaskFactory::createTaskInstance("groundingdino", info, cfg);
-    cv::Mat image = cv::Mat::zeros(32, 32, CV_8UC3);
+    neuriplo_tasks::Image image = neuriplo_tasks::vision_test::makeImage(32, 32, 3, 0);
     const auto buffers = task->preprocess({image});
 
     // 3 inputs: pixel_values, input_ids, attention_mask
@@ -203,14 +206,14 @@ TEST(GroundingDinoTest, PreprocessWithTokenTypeIds) {
     info.input_shapes.push_back({1, 16});
     info.input_formats.push_back("FORMAT_NCHW");
     info.input_names.push_back("token_type_ids");
-    info.input_types.push_back(CV_32S);
+    info.input_types.push_back(neuriplo_tasks::PixelType::Int32);
 
     TaskConfig cfg;
     cfg.text_prompts = {"cat"};
     cfg.bert_tokenizer_vocab_text = makeMinimalBertVocab();
 
     auto task = TaskFactory::createTaskInstance("groundingdino", info, cfg);
-    cv::Mat image = cv::Mat::zeros(32, 32, CV_8UC3);
+    neuriplo_tasks::Image image = neuriplo_tasks::vision_test::makeImage(32, 32, 3, 0);
     const auto buffers = task->preprocess({image});
 
     ASSERT_EQ(buffers.size(), 4U);
@@ -228,8 +231,8 @@ TEST(GroundingDinoTest, PostprocessReturnsDetectionForHighScoreToken) {
     // Two phrases: cat (token range [1,2)), dog (token range [3,4))
     // seq_len = 8. For query 0: logit[3] is high → dog wins.
     std::vector<std::pair<int, int>> phrase_ranges = {{1, 2}, {3, 4}};
-    GroundingDinoPostprocessor pp(cv::Size(800, 800), 0.1f, 0.1f, {"cat", "dog"}, {"pred_boxes", "pred_logits"},
-                                  phrase_ranges);
+    GroundingDinoPostprocessor pp(neuriplo_tasks::Size(800, 800), 0.1f, 0.1f, {"cat", "dog"},
+                                  {"pred_boxes", "pred_logits"}, phrase_ranges);
 
     // pred_boxes: [1, 1, 4] → one query, normalised cx cy w h
     Tensor boxes(std::vector<TensorElement>{0.5f, 0.5f, 0.25f, 0.25f}, {1, 1, 4});
@@ -240,7 +243,7 @@ TEST(GroundingDinoTest, PostprocessReturnsDetectionForHighScoreToken) {
     logit_data[3] = TensorElement{5.0f}; // dog token gets high score
     Tensor logits(logit_data, {1, 1, 8});
 
-    const auto results = pp.postprocess({boxes, logits}, cv::Size(640, 480));
+    const auto results = pp.postprocess({boxes, logits}, neuriplo_tasks::Size(640, 480));
     ASSERT_EQ(results.size(), 1U);
     EXPECT_EQ(results[0].prompt_index, 1); // dog
     EXPECT_EQ(results[0].label, "dog");
@@ -249,27 +252,27 @@ TEST(GroundingDinoTest, PostprocessReturnsDetectionForHighScoreToken) {
 
 TEST(GroundingDinoTest, PostprocessFiltersLowScoreQueries) {
     std::vector<std::pair<int, int>> phrase_ranges = {{1, 2}};
-    GroundingDinoPostprocessor pp(cv::Size(800, 800), 0.9f, 0.9f, {"cat"}, {"pred_boxes", "pred_logits"},
+    GroundingDinoPostprocessor pp(neuriplo_tasks::Size(800, 800), 0.9f, 0.9f, {"cat"}, {"pred_boxes", "pred_logits"},
                                   phrase_ranges);
 
     Tensor boxes(std::vector<TensorElement>{0.5f, 0.5f, 0.25f, 0.25f}, {1, 1, 4});
     // All logits negative → sigmoid < 0.5 → below threshold
     Tensor logits(std::vector<TensorElement>(4, TensorElement{-5.0f}), {1, 1, 4});
 
-    const auto results = pp.postprocess({boxes, logits}, cv::Size(640, 480));
+    const auto results = pp.postprocess({boxes, logits}, neuriplo_tasks::Size(640, 480));
     EXPECT_TRUE(results.empty());
 }
 
 TEST(GroundingDinoTest, PostprocessNoPhraseRangesFallsBackToMaxToken) {
     // When phrase_token_ranges is empty, the postprocessor takes the max over all tokens
-    GroundingDinoPostprocessor pp(cv::Size(800, 800), 0.5f, 0.5f, {}, {"pred_boxes", "pred_logits"}, {});
+    GroundingDinoPostprocessor pp(neuriplo_tasks::Size(800, 800), 0.5f, 0.5f, {}, {"pred_boxes", "pred_logits"}, {});
 
     Tensor boxes(std::vector<TensorElement>{0.5f, 0.5f, 0.25f, 0.25f}, {1, 1, 4});
     std::vector<TensorElement> logit_data(4, TensorElement{-5.0f});
     logit_data[2] = TensorElement{5.0f};
     Tensor logits(logit_data, {1, 1, 4});
 
-    const auto results = pp.postprocess({boxes, logits}, cv::Size(640, 480));
+    const auto results = pp.postprocess({boxes, logits}, neuriplo_tasks::Size(640, 480));
     ASSERT_EQ(results.size(), 1U);
     EXPECT_GT(results[0].score, 0.9f);
 }

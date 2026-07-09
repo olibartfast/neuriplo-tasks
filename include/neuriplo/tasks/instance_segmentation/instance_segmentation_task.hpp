@@ -28,9 +28,9 @@ class InstanceSegmentationTask : public TaskInterface {
     // TaskInterface implementation
     TaskType getTaskType() override { return TaskType::InstanceSegmentation; }
 
-    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override;
+    std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) override;
 
-    std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
+    std::vector<Result> postprocess(const Size& frame_size, const std::vector<Tensor>& tensors) override;
 
   private:
     ModelType model_type_;
@@ -43,12 +43,12 @@ class InstanceSegmentationTask : public TaskInterface {
 
     static ModelType detectModelType(const std::string& model_name);
 
-    std::unique_ptr<Preprocessor> createPreprocessor(ModelType type, const cv::Size& input_size);
+    std::unique_ptr<Preprocessor> createPreprocessor(ModelType type, const Size& input_size);
     std::unique_ptr<InstanceSegmentationPreprocessStrategy> createPreprocessStrategy(ModelType type,
-                                                                                     const cv::Size& input_size);
+                                                                                     const Size& input_size);
     std::unique_ptr<SegmentationPostprocessor> createPostprocessor(ModelType type);
 
-    cv::Size extractInputSize(const ModelInfo& model_info);
+    Size extractInputSize(const ModelInfo& model_info);
 
     [[nodiscard]] bool validateTensorInputs(const std::vector<Tensor>& tensors) const;
 };

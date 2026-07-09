@@ -2,4 +2,25 @@
 
 include("${CMAKE_CURRENT_LIST_DIR}/neuriplo-tasks-targets.cmake")
 
+set(neuriplo-tasks_vision-core_FOUND TRUE)
+
+if("vision-stb" IN_LIST neuriplo-tasks_FIND_COMPONENTS)
+    if(@NEURIPLO_TASKS_WITH_STB@)
+        set(neuriplo-tasks_vision-stb_FOUND TRUE)
+    else()
+        set(neuriplo-tasks_vision-stb_FOUND FALSE)
+    endif()
+endif()
+
+if("vision-opencv" IN_LIST neuriplo-tasks_FIND_COMPONENTS)
+    if(@NEURIPLO_TASKS_WITH_OPENCV@)
+        include(CMakeFindDependencyMacro)
+        find_dependency(OpenCV COMPONENTS core)
+        include("${CMAKE_CURRENT_LIST_DIR}/neuriplo-tasks-opencv-targets.cmake")
+        set(neuriplo-tasks_vision-opencv_FOUND TRUE)
+    else()
+        set(neuriplo-tasks_vision-opencv_FOUND FALSE)
+    endif()
+endif()
+
 check_required_components(neuriplo-tasks)

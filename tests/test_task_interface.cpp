@@ -1,10 +1,10 @@
 #include "neuriplo/tasks/core/model_info.hpp"
 #include "neuriplo/tasks/core/task_interface.hpp"
+#include "vision_test_utils.hpp"
 
 #include <filesystem>
 #include <fstream>
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 
 using namespace neuriplo_tasks;
 
@@ -15,16 +15,17 @@ class TestTask : public TaskInterface {
 
     TaskType getTaskType() override { return TaskType::Detection; }
 
-    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override {
+    std::vector<std::vector<uint8_t>> preprocess(const std::vector<neuriplo_tasks::Image>& imgs) override {
         // Simple test implementation
         std::vector<std::vector<uint8_t>> result;
         for (const auto& img : imgs) {
-            result.push_back(std::vector<uint8_t>(img.total() * img.channels()));
+            result.push_back(std::vector<uint8_t>(img.totalPixels() * img.channels()));
         }
         return result;
     }
 
-    std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override {
+    std::vector<Result> postprocess(const neuriplo_tasks::Size& frame_size,
+                                    const std::vector<Tensor>& tensors) override {
 
         // Simple test implementation - return one detection
         Detection det(BoundingBox(10, 10, 50, 50), 0.9f, 0);
@@ -45,7 +46,7 @@ class TaskInterfaceTest : public ::testing::Test {
         info.input_formats = {"FORMAT_NCHW"};
         info.input_names = {"images"};
         info.output_names = {"output0"};
-        info.input_types = {CV_32F};
+        info.input_types = {neuriplo_tasks::PixelType::Float32};
         return info;
     }
 
@@ -111,8 +112,8 @@ TEST_F(TaskInterfaceTest, PreprocessReturnsData) {
     auto model_info = createValidModelInfo();
     TestTask task(model_info);
 
-    cv::Mat image = cv::Mat::zeros(480, 640, CV_8UC3);
-    std::vector<cv::Mat> images = {image};
+    neuriplo_tasks::Image image = neuriplo_tasks::vision_test::makeImage(640, 480, 3, 0);
+    std::vector<neuriplo_tasks::Image> images = {image};
 
     auto result = task.preprocess(images);
 
@@ -124,7 +125,7 @@ TEST_F(TaskInterfaceTest, PostprocessReturnsResults) {
     auto model_info = createValidModelInfo();
     TestTask task(model_info);
 
-    cv::Size frame_size(640, 480);
+    neuriplo_tasks::Size frame_size(640, 480);
     std::vector<Tensor> tensors;
 
     auto results = task.postprocess(frame_size, tensors);
@@ -179,10 +180,10 @@ TEST_F(TaskInterfaceTest, MultipleImagesPreprocess) {
     auto model_info = createValidModelInfo();
     TestTask task(model_info);
 
-    std::vector<cv::Mat> images;
-    images.push_back(cv::Mat::zeros(480, 640, CV_8UC3));
-    images.push_back(cv::Mat::zeros(480, 640, CV_8UC3));
-    images.push_back(cv::Mat::zeros(480, 640, CV_8UC3));
+    std::vector<neuriplo_tasks::Image> images;
+    images.push_back(neuriplo_tasks::vision_test::makeImage(640, 480, 3, 0));
+    images.push_back(neuriplo_tasks::vision_test::makeImage(640, 480, 3, 0));
+    images.push_back(neuriplo_tasks::vision_test::makeImage(640, 480, 3, 0));
 
     auto result = task.preprocess(images);
 

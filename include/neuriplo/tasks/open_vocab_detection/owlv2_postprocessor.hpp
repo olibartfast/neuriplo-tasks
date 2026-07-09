@@ -9,14 +9,13 @@ namespace neuriplo_tasks {
 
 class OWLv2Postprocessor : public OpenVocabPostprocessor {
   public:
-    OWLv2Postprocessor(const cv::Size& input_size, float confidence_threshold, float text_threshold,
+    OWLv2Postprocessor(const Size& input_size, float confidence_threshold, float text_threshold,
                        std::vector<std::string> prompt_labels, std::vector<std::string> output_names);
 
-    std::vector<OpenVocabDetection> postprocess(const std::vector<Tensor>& tensors,
-                                                const cv::Size& frame_size) override;
+    std::vector<OpenVocabDetection> postprocess(const std::vector<Tensor>& tensors, const Size& frame_size) override;
 
   private:
-    cv::Size input_size_;
+    Size input_size_;
     float confidence_threshold_;
     float text_threshold_;
     std::vector<std::string> prompt_labels_;

@@ -3,7 +3,6 @@
 #include "neuriplo/tasks/core/result_types.hpp"
 #include "neuriplo/tasks/core/task_interface.hpp"
 
-#include <opencv2/core/types.hpp>
 #include <vector>
 
 namespace neuriplo_tasks {
@@ -23,7 +22,7 @@ class OpticalFlowPostprocessor {
      * @return Vector of OpticalFlow results
      */
     virtual std::vector<OpticalFlow> postprocess(const std::vector<TensorElement>& flow_output,
-                                                 const std::vector<int64_t>& shape, const cv::Size& frame_size) = 0;
+                                                 const std::vector<int64_t>& shape, const Size& frame_size) = 0;
 };
 
 } // namespace neuriplo_tasks

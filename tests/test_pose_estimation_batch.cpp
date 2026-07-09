@@ -1,9 +1,9 @@
 #include "neuriplo/tasks/core/batch_postprocess.hpp"
 #include "neuriplo/tasks/core/task_factory.hpp"
 #include "neuriplo/tasks/pose_estimation/vit_pose_postprocessor.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 
 using namespace neuriplo_tasks;
 
@@ -39,8 +39,8 @@ TEST(PoseEstimationBatchTest, ViTPosePostprocessorSplitsBatch) {
     const int heatmap_w = 24;
     const std::vector<Tensor> tensors = {makeHeatmapTensor(2, joints, heatmap_h, heatmap_w, 1)};
 
-    const cv::Size frame_size(192, 256);
-    const cv::Size input_size(192, 256);
+    const neuriplo_tasks::Size frame_size(192, 256);
+    const neuriplo_tasks::Size input_size(192, 256);
     const auto poses = processor.postprocess(tensors, frame_size, input_size);
 
     ASSERT_EQ(poses.size(), 2u);
@@ -55,7 +55,7 @@ TEST(PoseEstimationBatchTest, TaskPostprocessBatchSizeTwo) {
     const int joints = 17;
     const std::vector<Tensor> tensors = {makeHeatmapTensor(2, joints, 32, 24, 0)};
 
-    const auto results = task->postprocess(cv::Size(192, 256), tensors);
+    const auto results = task->postprocess(neuriplo_tasks::Size(192, 256), tensors);
 
     ASSERT_EQ(results.size(), 2u);
     ASSERT_TRUE(std::holds_alternative<PoseEstimation>(results[0]));
@@ -66,7 +66,7 @@ TEST(PoseEstimationBatchTest, BatchPostprocessMatchesBatchSize) {
     ASSERT_NE(task, nullptr);
 
     const std::vector<Tensor> tensors = {makeHeatmapTensor(2, 17, 32, 24, 0)};
-    const auto post = batchPostprocess(*task, cv::Size(192, 256), tensors, 2);
+    const auto post = batchPostprocess(*task, neuriplo_tasks::Size(192, 256), tensors, 2);
 
     EXPECT_EQ(post.batch_size, 2);
     EXPECT_TRUE(postprocessResultsMatchBatchSize(post));

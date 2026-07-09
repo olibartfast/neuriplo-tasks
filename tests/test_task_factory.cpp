@@ -16,9 +16,9 @@ class TestTask : public TaskInterface {
 
     TaskType getTaskType() override { return TaskType::Detection; }
 
-    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override { return {}; }
+    std::vector<std::vector<uint8_t>> preprocess(const std::vector<neuriplo_tasks::Image>& imgs) override { return {}; }
 
-    std::vector<Result> postprocess(const cv::Size&, const std::vector<Tensor>&) override { return {}; }
+    std::vector<Result> postprocess(const neuriplo_tasks::Size&, const std::vector<Tensor>&) override { return {}; }
 };
 
 class TaskFactoryTest : public ::testing::Test {
@@ -29,7 +29,7 @@ class TaskFactoryTest : public ::testing::Test {
         info.input_formats = {"FORMAT_NCHW"};
         info.input_names = {"images"};
         info.output_names = {"output0"};
-        info.input_types = {CV_32F};
+        info.input_types = {neuriplo_tasks::PixelType::Float32};
         info.max_batch_size_ = 1;
         info.batch_size_ = 1;
         return info;
@@ -111,7 +111,8 @@ TEST_F(TaskFactoryTest, CreateValidOwlv2Task) {
     info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW", "FORMAT_NCHW"};
     info.input_names = {"pixel_values", "input_ids", "attention_mask"};
     info.output_names = {"pred_boxes", "logits"};
-    info.input_types = {CV_32F, CV_32S, CV_32S};
+    info.input_types = {neuriplo_tasks::PixelType::Float32, neuriplo_tasks::PixelType::Int32,
+                        neuriplo_tasks::PixelType::Int32};
 
     TaskConfig cfg;
     cfg.text_prompts = {"cat", "dog"};

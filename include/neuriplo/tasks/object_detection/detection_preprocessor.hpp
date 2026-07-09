@@ -17,10 +17,10 @@ namespace neuriplo_tasks {
  */
 class YoloPreprocessor : public Preprocessor {
   public:
-    explicit YoloPreprocessor(const cv::Size& input_size);
+    explicit YoloPreprocessor(const Size& input_size);
 
     using Preprocessor::preprocess;
-    [[nodiscard]] std::vector<uint8_t> preprocess(const cv::Mat& image) const override;
+    [[nodiscard]] std::vector<uint8_t> preprocess(const ImageView& image) const override;
 };
 
 /**
@@ -28,7 +28,7 @@ class YoloPreprocessor : public Preprocessor {
  */
 class RtDetrPreprocessor : public Preprocessor {
   public:
-    explicit RtDetrPreprocessor(const cv::Size& input_size);
+    explicit RtDetrPreprocessor(const Size& input_size);
 };
 
 /**
@@ -36,7 +36,7 @@ class RtDetrPreprocessor : public Preprocessor {
  */
 class DFinePreprocessor : public Preprocessor {
   public:
-    explicit DFinePreprocessor(const cv::Size& input_size);
+    explicit DFinePreprocessor(const Size& input_size);
 };
 
 /**
@@ -44,7 +44,7 @@ class DFinePreprocessor : public Preprocessor {
  */
 class RfDetrPreprocessor : public Preprocessor {
   public:
-    explicit RfDetrPreprocessor(const cv::Size& input_size);
+    explicit RfDetrPreprocessor(const Size& input_size);
 };
 
 } // namespace neuriplo_tasks

@@ -2,9 +2,10 @@
 #include "neuriplo/tasks/pose_estimation/rfdetr_pose_postprocessor.hpp"
 #include "neuriplo/tasks/pose_estimation/vit_pose_postprocessor.hpp"
 #include "neuriplo/tasks/pose_estimation/yolo_pose_postprocessor.hpp"
+#include "vision_test_utils.hpp"
 
+#include <cmath>
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 #include <vector>
 
 using namespace neuriplo_tasks;
@@ -29,8 +30,8 @@ TEST(ViTPosePostprocessorTest, BasicPostprocess) {
 
     std::vector<Tensor> tensors = {Tensor(heatmap_data, {1, num_joints, heatmap_h, heatmap_w})};
 
-    cv::Size original_size(1920, 1080);
-    cv::Size input_size(192, 256);
+    neuriplo_tasks::Size original_size(1920, 1080);
+    neuriplo_tasks::Size input_size(192, 256);
 
     auto results = processor.postprocess(tensors, original_size, input_size);
 
@@ -81,8 +82,8 @@ static std::vector<Tensor> makeYolov8PoseTensor(int anchors, int num_kpts, float
 
 TEST(YoloPosePostprocessorTest, DetectsPersonYolov8Format) {
     // Input 640x640, frame 1280x720
-    cv::Size input_size(640, 640);
-    cv::Size frame_size(1280, 720);
+    neuriplo_tasks::Size input_size(640, 640);
+    neuriplo_tasks::Size frame_size(1280, 720);
 
     YoloPosePostprocessor pp(input_size, 0.25f, 0.45f);
 
@@ -96,8 +97,8 @@ TEST(YoloPosePostprocessorTest, DetectsPersonYolov8Format) {
 }
 
 TEST(YoloPosePostprocessorTest, FiltersLowConfidence) {
-    cv::Size input_size(640, 640);
-    cv::Size frame_size(640, 640);
+    neuriplo_tasks::Size input_size(640, 640);
+    neuriplo_tasks::Size frame_size(640, 640);
 
     YoloPosePostprocessor pp(input_size, 0.25f, 0.45f);
 
@@ -109,8 +110,8 @@ TEST(YoloPosePostprocessorTest, FiltersLowConfidence) {
 }
 
 TEST(YoloPosePostprocessorTest, EmptyTensorReturnsEmpty) {
-    cv::Size input_size(640, 640);
-    cv::Size frame_size(640, 640);
+    neuriplo_tasks::Size input_size(640, 640);
+    neuriplo_tasks::Size frame_size(640, 640);
 
     YoloPosePostprocessor pp(input_size, 0.25f, 0.45f);
     auto results = pp.postprocess({}, frame_size, input_size);
@@ -118,8 +119,8 @@ TEST(YoloPosePostprocessorTest, EmptyTensorReturnsEmpty) {
 }
 
 TEST(YoloPosePostprocessorTest, BboxPopulated) {
-    cv::Size input_size(640, 640);
-    cv::Size frame_size(640, 640); // square, no letterbox padding
+    neuriplo_tasks::Size input_size(640, 640);
+    neuriplo_tasks::Size frame_size(640, 640); // square, no letterbox padding
 
     YoloPosePostprocessor pp(input_size, 0.25f, 0.45f);
 
@@ -180,8 +181,8 @@ static std::vector<Tensor> makeRfDetrPoseTensors(float det_cx, float det_cy, flo
 }
 
 TEST(RfDetrPosePostprocessorTest, DetectsSinglePerson) {
-    cv::Size input_size(640, 640);
-    cv::Size frame_size(640, 640);
+    neuriplo_tasks::Size input_size(640, 640);
+    neuriplo_tasks::Size frame_size(640, 640);
 
     RfDetrPosePostprocessor pp(input_size, 0.25f, 0.5f, {0, 17});
 
@@ -223,8 +224,8 @@ TEST(RfDetrPosePostprocessorTest, DetectsSinglePerson) {
 }
 
 TEST(RfDetrPosePostprocessorTest, CovarianceRoundTrips) {
-    cv::Size input_size(640, 640);
-    cv::Size frame_size(640, 640);
+    neuriplo_tasks::Size input_size(640, 640);
+    neuriplo_tasks::Size frame_size(640, 640);
 
     int num_kpts = 1;
     RfDetrPosePostprocessor pp(input_size, 0.25f, 0.5f, {0, num_kpts});
@@ -267,8 +268,8 @@ TEST(RfDetrPosePostprocessorTest, CovarianceRoundTrips) {
 }
 
 TEST(RfDetrPosePostprocessorTest, FiltersBelowThreshold) {
-    cv::Size input_size(640, 640);
-    cv::Size frame_size(640, 640);
+    neuriplo_tasks::Size input_size(640, 640);
+    neuriplo_tasks::Size frame_size(640, 640);
 
     RfDetrPosePostprocessor pp(input_size, 0.9f, 0.5f, {0, 17});
 
@@ -284,8 +285,8 @@ TEST(RfDetrPosePostprocessorTest, FiltersBelowThreshold) {
 }
 
 TEST(RfDetrPosePostprocessorTest, EmptyTensorReturnsEmpty) {
-    cv::Size input_size(640, 640);
-    cv::Size frame_size(640, 640);
+    neuriplo_tasks::Size input_size(640, 640);
+    neuriplo_tasks::Size frame_size(640, 640);
 
     RfDetrPosePostprocessor pp(input_size, 0.25f, 0.5f, {0, 17});
     EXPECT_THROW(pp.postprocess({}, frame_size, input_size), std::runtime_error);

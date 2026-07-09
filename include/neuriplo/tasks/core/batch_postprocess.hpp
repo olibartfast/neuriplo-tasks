@@ -3,7 +3,6 @@
 #include "neuriplo/tasks/core/batch_types.hpp"
 #include "neuriplo/tasks/core/task_interface.hpp"
 
-#include <opencv2/opencv.hpp>
 #include <vector>
 
 namespace neuriplo_tasks {
@@ -33,7 +32,7 @@ namespace neuriplo_tasks {
  * @throws std::invalid_argument if `batch_size <= 0` or exceeds
  *         `task.getModelInfo().max_batch_size_` when that value is positive.
  */
-[[nodiscard]] BatchPostprocessOutput batchPostprocess(TaskInterface& task, const cv::Size& frame_size,
+[[nodiscard]] BatchPostprocessOutput batchPostprocess(TaskInterface& task, const Size& frame_size,
                                                       const std::vector<Tensor>& tensors, int batch_size);
 
 } // namespace neuriplo_tasks

@@ -22,8 +22,8 @@ void EdgeCrafterPosePostprocessor::findOutputIndices(const std::vector<std::stri
 }
 
 std::vector<PoseEstimation> EdgeCrafterPosePostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                                      const cv::Size& /*original_size*/,
-                                                                      const cv::Size& /*input_size*/) {
+                                                                      const vision::Size& /*original_size*/,
+                                                                      const vision::Size& /*input_size*/) {
 
     if (tensors.size() < 3) {
         throw std::runtime_error("EdgeCrafter pose requires 3 output tensors (labels, scores, keypoints)");
@@ -121,8 +121,8 @@ void EdgeCrafterPosePostprocessor::deriveBboxFromKeypoints(PoseEstimation& pose)
     }
 
     if (any) {
-        pose.bbox = BoundingBox(static_cast<int>(x_min), static_cast<int>(y_min), static_cast<int>(x_max - x_min),
-                                static_cast<int>(y_max - y_min));
+        pose.bbox = vision::Rect(static_cast<int>(x_min), static_cast<int>(y_min), static_cast<int>(x_max - x_min),
+                                 static_cast<int>(y_max - y_min));
     }
 }
 

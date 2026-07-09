@@ -20,7 +20,7 @@ static ModelInfo makeDetectionInfo() {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"images"};
     info.output_names = {"output0"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
     return info;
 }
 
@@ -30,7 +30,7 @@ static ModelInfo makeClassificationInfo() {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"input"};
     info.output_names = {"output"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
     return info;
 }
 
@@ -193,7 +193,7 @@ TEST(TaskConfigTest, FactoryDepthEstimationIgnoresUnusedFields) {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"input"};
     info.output_names = {"output"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
 
     TaskConfig cfg;
     cfg.confidence_threshold = 0.99f; // irrelevant to depth estimation — must not crash
@@ -209,7 +209,7 @@ TEST(TaskConfigTest, FactoryOpticalFlowIgnoresUnusedFields) {
     info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW"};
     info.input_names = {"image1", "image2"};
     info.output_names = {"flow"};
-    info.input_types = {CV_32F, CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32, neuriplo_tasks::PixelType::Float32};
 
     TaskConfig cfg;
     cfg.confidence_threshold = 0.5f; // irrelevant to optical flow — must not crash
@@ -226,7 +226,7 @@ TEST(TaskConfigTest, FactoryOpticalFlowIgnoresUnusedFields) {
 TEST(TaskConfigTest, ClassificationTopKAffectsResultCount) {
     const int num_classes = 10;
     auto tensor = makeClassificationTensor(num_classes, 3, 10.0f);
-    cv::Size frame(224, 224);
+    neuriplo_tasks::Size frame(224, 224);
 
     {
         TaskConfig cfg;
@@ -252,7 +252,7 @@ TEST(TaskConfigTest, DetectionConfidenceThresholdFiltersResults) {
     // num_boxes must be > (4 + num_classes) so shape[2] > shape[1] and the
     // postprocessor correctly identifies YOLOv8+ format (no objectness score).
     const int num_boxes = 8400;
-    cv::Size frame(640, 640);
+    neuriplo_tasks::Size frame(640, 640);
 
     // Score below threshold → no detections
     {

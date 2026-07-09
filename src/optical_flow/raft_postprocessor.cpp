@@ -1,10 +1,10 @@
 #include "neuriplo/tasks/optical_flow/raft_postprocessor.hpp"
 
-#include "neuriplo/tasks/core/opencv_interop.hpp"
+#include "image_ops.hpp"
 #include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
-#include <iostream>
+#include <cmath>
 #include <stdexcept>
 
 namespace neuriplo_tasks {
@@ -12,13 +12,13 @@ namespace neuriplo_tasks {
 RaftPostprocessor::RaftPostprocessor() {}
 
 std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<TensorElement>& flow_output,
-                                                        const std::vector<int64_t>& shape, const cv::Size& frame_size) {
+                                                        const std::vector<int64_t>& shape,
+                                                        const vision::Size& frame_size) {
 
     if (flow_output.empty() || shape.empty()) {
         return {};
     }
 
-    // RAFT output: [1, 2, H, W] (dx, dy)
     if (shape.size() < 4)
         return {};
 
@@ -29,165 +29,183 @@ std::vector<OpticalFlow> RaftPostprocessor::postprocess(const std::vector<Tensor
     if (channels != 2)
         return {};
 
-    // Robust tensor data access - handle float tensors
-    const float* data = std::get_if<float>(&flow_output[0]);
-    if (!data) {
-        // Fallback: convert other types to float
-        static std::vector<float> temp_buffer;
-        temp_buffer.resize(flow_output.size());
-        for (size_t i = 0; i < flow_output.size(); ++i) {
-            temp_buffer[i] = tensorElementToFloat(flow_output[i]);
-        }
-        data = temp_buffer.data();
-    }
-
-    // Create flow matrix [H, W, 2] like master branch
-    cv::Mat flow(height, width, CV_32FC2);
-    float* flow_ptr = reinterpret_cast<float*>(flow.data);
-
-    // Channel offset logic matching master branch
     const int u_channel_offset = 0;
     const int v_channel_offset = height * width;
 
-    // Reconstruct flow matrix using direct TensorElement access (like master branch)
+    vision::Image flow_u = vision::Image::uninit(width, height, 1, vision::PixelType::Float32);
+    vision::Image flow_v = vision::Image::uninit(width, height, 1, vision::PixelType::Float32);
+
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            flow_ptr[y * width * 2 + x * 2] =
+            flow_u.ptr<float>(y)[x] =
                 tensorElementToFloat(flow_output[static_cast<size_t>(u_channel_offset + y * width + x)]);
-            flow_ptr[y * width * 2 + x * 2 + 1] =
+            flow_v.ptr<float>(y)[x] =
                 tensorElementToFloat(flow_output[static_cast<size_t>(v_channel_offset + y * width + x)]);
         }
     }
 
-    // Resize to original frame size if needed (with proper flow scaling)
     if (frame_size.width != width || frame_size.height != height) {
-        cv::Mat resized_flow;
-        cv::resize(flow, resized_flow, frame_size);
+        flow_u = image_ops::resize(flow_u, frame_size.width, frame_size.height, image_ops::Interpolation::Linear);
+        flow_v = image_ops::resize(flow_v, frame_size.width, frame_size.height, image_ops::Interpolation::Linear);
 
-        // Scale flow values proportionally
-        std::vector<cv::Mat> flow_channels;
-        cv::split(resized_flow, flow_channels);
-        flow_channels[0] *= static_cast<float>(frame_size.width) / static_cast<float>(width);   // Scale U
-        flow_channels[1] *= static_cast<float>(frame_size.height) / static_cast<float>(height); // Scale V
-        cv::merge(flow_channels, flow);
+        float scale_u = static_cast<float>(frame_size.width) / static_cast<float>(width);
+        float scale_v = static_cast<float>(frame_size.height) / static_cast<float>(height);
+
+        float* pu = flow_u.data<float>();
+        float* pv = flow_v.data<float>();
+        const size_t total = flow_u.totalPixels();
+        for (size_t i = 0; i < total; ++i) {
+            pu[i] *= scale_u;
+            pv[i] *= scale_v;
+        }
     }
 
-    // Split flow into separate U and V components for visualization
-    std::vector<cv::Mat> flow_channels;
-    cv::split(flow, flow_channels);
-    cv::Mat flow_u = flow_channels[0];
-    cv::Mat flow_v = flow_channels[1];
+    const int fw = frame_size.width;
+    const int fh = frame_size.height;
+
+    vision::Image raw_flow = vision::Image::uninit(fw, fh, 2, vision::PixelType::Float32);
+    for (int y = 0; y < fh; ++y) {
+        float* dst = raw_flow.ptr<float>(y);
+        const float* su = flow_u.ptr<float>(y);
+        const float* sv = flow_v.ptr<float>(y);
+        for (int x = 0; x < fw; ++x) {
+            dst[x * 2] = su[x];
+            dst[x * 2 + 1] = sv[x];
+        }
+    }
 
     OpticalFlow result;
-    result.raw_flow = fromCvMat(flow.clone());
+    result.raw_flow = fromImage(raw_flow.clone());
 
-    // Calculate magnitude and max displacement
-    cv::Mat magnitude, angle;
-    cv::cartToPolar(flow_u, flow_v, magnitude, angle);
-    double max_disp;
-    cv::minMaxLoc(magnitude, nullptr, &max_disp);
+    vision::Image magnitude = vision::Image::uninit(fw, fh, 1, vision::PixelType::Float32);
+    for (int y = 0; y < fh; ++y) {
+        const float* pu = flow_u.ptr<float>(y);
+        const float* pv = flow_v.ptr<float>(y);
+        float* pm = magnitude.ptr<float>(y);
+        for (int x = 0; x < fw; ++x) {
+            pm[x] = std::sqrt(pu[x] * pu[x] + pv[x] * pv[x]);
+        }
+    }
+
+    double dummy_min = 0.0;
+    double max_disp = 0.0;
+    image_ops::minMax(magnitude.view(), dummy_min, max_disp);
     result.max_displacement = static_cast<float>(max_disp);
 
-    // Create color visualization using master branch approach
-    result.flow = fromCvMat(visualizeFlow(flow_u, flow_v));
+    result.flow = fromImage(visualizeFlow(flow_u.view(), flow_v.view()));
 
     return {result};
 }
 
-cv::Mat RaftPostprocessor::makeColorwheel() {
-    // Constants for color wheel (matching master branch exactly)
+vision::Image RaftPostprocessor::makeColorwheel() {
     const int RY = 15, YG = 6, GC = 4, CB = 11, BM = 13, MR = 6;
     const int ncols = RY + YG + GC + CB + BM + MR;
-    cv::Mat colorwheel(ncols, 1, CV_8UC3);
+    vision::Image colorwheel(ncols, 1, 3, vision::PixelType::UInt8);
 
     int col = 0;
-    // RY - Red to Yellow (BGR format: Blue=255, Green=increasing, Red=0)
+    auto setPixel = [&colorwheel](int c, int b, int g, int r) {
+        uint8_t* p = colorwheel.ptr<uint8_t>(0) + c * 3;
+        p[0] = static_cast<uint8_t>(b);
+        p[1] = static_cast<uint8_t>(g);
+        p[2] = static_cast<uint8_t>(r);
+    };
+
     for (int i = 0; i < RY; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(255, static_cast<uchar>(255 * i / RY), 0);
+        setPixel(col, 255, 255 * i / RY, 0);
     }
-    // YG - Yellow to Green (BGR format: Blue=255-decreasing, Green=255, Red=0)
     for (int i = 0; i < YG; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(static_cast<uchar>(255 - 255 * i / YG), 255, 0);
+        setPixel(col, 255 - 255 * i / YG, 255, 0);
     }
-    // GC - Green to Cyan (BGR format: Blue=0, Green=255, Red=increasing)
     for (int i = 0; i < GC; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(0, 255, static_cast<uchar>(255 * i / GC));
+        setPixel(col, 0, 255, 255 * i / GC);
     }
-    // CB - Cyan to Blue (BGR format: Blue=0, Green=255-decreasing, Red=255)
     for (int i = 0; i < CB; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(0, static_cast<uchar>(255 - 255 * i / CB), 255);
+        setPixel(col, 0, 255 - 255 * i / CB, 255);
     }
-    // BM - Blue to Magenta (BGR format: Blue=increasing, Green=0, Red=255)
     for (int i = 0; i < BM; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(static_cast<uchar>(255 * i / BM), 0, 255);
+        setPixel(col, 255 * i / BM, 0, 255);
     }
-    // MR - Magenta to Red (BGR format: Blue=255-decreasing, Green=0, Red=255)
     for (int i = 0; i < MR; ++i, ++col) {
-        colorwheel.at<cv::Vec3b>(col) = cv::Vec3b(static_cast<uchar>(255 - 255 * i / MR), 0, 255);
+        setPixel(col, 255 - 255 * i / MR, 0, 255);
     }
 
     return colorwheel;
 }
 
-cv::Mat RaftPostprocessor::visualizeFlow(const cv::Mat& flow_x, const cv::Mat& flow_y) {
-    if (flow_x.empty() || flow_y.empty() || flow_x.size() != flow_y.size()) {
-        return cv::Mat();
+vision::Image RaftPostprocessor::visualizeFlow(const vision::ImageView& flow_x, const vision::ImageView& flow_y) {
+    const int rows = flow_x.height();
+    const int cols = flow_x.width();
+
+    if (flow_x.empty() || flow_y.empty() || rows != flow_y.height() || cols != flow_y.width()) {
+        return vision::Image();
     }
 
-    // Compute magnitude and angle
-    cv::Mat magnitude, angle;
-    cv::cartToPolar(flow_x, flow_y, magnitude, angle);
+    vision::Image magnitude = vision::Image::uninit(cols, rows, 1, vision::PixelType::Float32);
+    vision::Image angle = vision::Image::uninit(cols, rows, 1, vision::PixelType::Float32);
 
-    // Normalize magnitude
-    double mag_max;
-    cv::minMaxLoc(magnitude, nullptr, &mag_max);
+    for (int i = 0; i < rows; ++i) {
+        const float* fx = flow_x.ptr<float>(i);
+        const float* fy = flow_y.ptr<float>(i);
+        float* mag = magnitude.ptr<float>(i);
+        float* ang = angle.ptr<float>(i);
+        for (int j = 0; j < cols; ++j) {
+            mag[j] = std::sqrt(fx[j] * fx[j] + fy[j] * fy[j]);
+            ang[j] = std::atan2(fy[j], fx[j]);
+        }
+    }
+
+    double dummy_min = 0.0;
+    double mag_max = 0.0;
+    image_ops::minMax(magnitude.view(), dummy_min, mag_max);
+
+    constexpr double kPi = 3.14159265358979323846;
+    const float inv_two_pi = 1.0f / static_cast<float>(2.0 * kPi);
+
     if (mag_max > 0) {
-        magnitude /= mag_max;
+        const float inv_mag_max = 1.0f / static_cast<float>(mag_max);
+        for (int i = 0; i < rows; ++i) {
+            float* mag = magnitude.ptr<float>(i);
+            float* ang = angle.ptr<float>(i);
+            for (int j = 0; j < cols; ++j) {
+                mag[j] *= inv_mag_max;
+                ang[j] = ang[j] * inv_two_pi + 0.5f;
+            }
+        }
     }
 
-    // Convert angle to [0, 1] range (matching master branch)
-    angle *= (1.0 / (2.0 * CV_PI));
-    angle += 0.5; // Shift angle for proper color wheel mapping
+    vision::Image colorwheel = makeColorwheel();
+    const int ncols = colorwheel.width();
+    vision::Image flow_color(cols, rows, 3, vision::PixelType::UInt8);
 
-    // Apply color wheel
-    cv::Mat colorwheel = makeColorwheel();
-    const int ncols = colorwheel.rows;
-    cv::Mat flow_color(flow_x.size(), CV_8UC3);
+    for (int i = 0; i < rows; ++i) {
+        const float* mag = magnitude.ptr<float>(i);
+        const float* ang = angle.ptr<float>(i);
+        uint8_t* out = flow_color.ptr<uint8_t>(i);
+        for (int j = 0; j < cols; ++j) {
+            float m = mag[j];
+            float a = ang[j];
 
-    for (int i = 0; i < flow_x.rows; ++i) {
-        for (int j = 0; j < flow_x.cols; ++j) {
-            float mag = magnitude.at<float>(i, j);
-            float ang = angle.at<float>(i, j);
+            while (a < 0.0f)
+                a += 1.0f;
+            while (a >= 1.0f)
+                a -= 1.0f;
 
-            // Handle angles outside [0,1] range after shift
-            while (ang < 0)
-                ang += 1.0f;
-            while (ang >= 1.0f)
-                ang -= 1.0f;
-
-            // Find nearest colors in the wheel
-            int k0 = static_cast<int>(ang * static_cast<float>(ncols - 1));
+            int k0 = static_cast<int>(a * static_cast<float>(ncols - 1));
             int k1 = (k0 + 1) % ncols;
-            float f = (ang * static_cast<float>(ncols - 1)) - static_cast<float>(k0);
+            float f = (a * static_cast<float>(ncols - 1)) - static_cast<float>(k0);
 
-            // Get colors from the wheel
-            cv::Vec3b col0 = colorwheel.at<cv::Vec3b>(k0);
-            cv::Vec3b col1 = colorwheel.at<cv::Vec3b>(k1);
+            const uint8_t* col0 = colorwheel.ptr<uint8_t>(0) + k0 * 3;
+            const uint8_t* col1 = colorwheel.ptr<uint8_t>(0) + k1 * 3;
 
-            // Interpolate colors
-            cv::Vec3b color;
             for (int ch = 0; ch < 3; ++ch) {
-                float channel_value = (1.0f - f) * col0[ch] + f * col1[ch];
-                // Apply magnitude modulation
-                if (mag <= 1.0f) {
-                    channel_value = 255.0f - mag * (255.0f - channel_value);
+                float channel_value = (1.0f - f) * static_cast<float>(col0[ch]) + f * static_cast<float>(col1[ch]);
+                if (m <= 1.0f) {
+                    channel_value = 255.0f - m * (255.0f - channel_value);
                 } else {
                     channel_value *= 0.75f;
                 }
-                color[ch] = static_cast<uchar>(std::min(255.0f, std::max(0.0f, channel_value)));
+                out[j * 3 + ch] = static_cast<uint8_t>(std::min(255.0f, std::max(0.0f, channel_value)));
             }
-
-            flow_color.at<cv::Vec3b>(i, j) = color;
         }
     }
 

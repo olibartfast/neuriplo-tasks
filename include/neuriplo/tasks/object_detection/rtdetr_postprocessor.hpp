@@ -15,14 +15,14 @@ namespace neuriplo_tasks {
  */
 class RtDetrPostprocessor : public Postprocessor {
   public:
-    RtDetrPostprocessor(ObjectDetectionTask::ModelType model_type, const cv::Size& input_size,
-                        float confidence_threshold, const std::vector<std::string>& output_names = {});
+    RtDetrPostprocessor(ObjectDetectionTask::ModelType model_type, const Size& input_size, float confidence_threshold,
+                        const std::vector<std::string>& output_names = {});
 
-    std::vector<Detection> postprocess(const std::vector<Tensor>& tensors, const cv::Size& frame_size) override;
+    std::vector<Detection> postprocess(const std::vector<Tensor>& tensors, const Size& frame_size) override;
 
   private:
     ObjectDetectionTask::ModelType model_type_;
-    cv::Size input_size_;
+    Size input_size_;
     float confidence_threshold_;
     int scores_idx_{0};
     int boxes_idx_{1};
@@ -32,10 +32,10 @@ class RtDetrPostprocessor : public Postprocessor {
 
     // RT-DETR/DEIM/DFINE: 3 separate outputs
     std::vector<Detection> postprocessRTDETR(const Tensor& scores, const Tensor& boxes, const Tensor& labels,
-                                             const cv::Size& frame_size);
+                                             const Size& frame_size);
 
     // RT-DETR Ultralytics: single combined output
-    std::vector<Detection> postprocessRTDETRUL(const Tensor& output, const cv::Size& frame_size);
+    std::vector<Detection> postprocessRTDETRUL(const Tensor& output, const Size& frame_size);
 };
 
 } // namespace neuriplo_tasks

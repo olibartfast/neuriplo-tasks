@@ -1,9 +1,9 @@
 #pragma once
 
+#include "neuriplo/tasks/core/image.hpp"
 #include "neuriplo/tasks/core/result_types.hpp"
 
 #include <cstddef>
-#include <opencv2/opencv.hpp>
 #include <vector>
 
 namespace neuriplo_tasks {
@@ -18,7 +18,7 @@ namespace neuriplo_tasks {
  * docs/batch_support_matrix.md (video frames, flow pairs, multi-view splatting).
  */
 struct BatchRequest {
-    std::vector<cv::Mat> images;
+    std::vector<Image> images;
 };
 
 /**

@@ -10,7 +10,7 @@ namespace neuriplo_tasks {
 
 DepthEstimationTask::DepthEstimationTask(const ModelInfo& model_info, const std::string& model_name)
     : BaseTask(model_info), model_type_(detectModelType(model_name)), model_name_(model_name) {
-    cv::Size input_size = extractInputSize(model_info);
+    vision::Size input_size = extractInputSize(model_info);
     input_width_ = input_size.width;
     input_height_ = input_size.height;
 
@@ -29,7 +29,7 @@ DepthEstimationTask::~DepthEstimationTask() = default;
 
 const Preprocessor& DepthEstimationTask::getPreprocessor() const { return *preprocessor_; }
 
-std::vector<Result> DepthEstimationTask::decode(const cv::Size& frame_size, const std::vector<Tensor>& tensors) {
+std::vector<Result> DepthEstimationTask::decode(const vision::Size& frame_size, const std::vector<Tensor>& tensors) {
     auto depths = postprocessor_->postprocess(tensors[0].data, tensors[0].shape, frame_size);
 
     return toResults(depths);
@@ -37,7 +37,8 @@ std::vector<Result> DepthEstimationTask::decode(const cv::Size& frame_size, cons
 
 DepthEstimationTask::ModelType DepthEstimationTask::detectModelType(const std::string& model_name) {
     std::string lower_name = model_name;
-    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
 
     if (lower_name.find("depthanythingv2") != std::string::npos ||
         lower_name.find("depth-anything-v2") != std::string::npos ||
@@ -48,7 +49,7 @@ DepthEstimationTask::ModelType DepthEstimationTask::detectModelType(const std::s
     throw std::invalid_argument("Unsupported depth model type: " + model_name);
 }
 
-std::unique_ptr<Preprocessor> DepthEstimationTask::createPreprocessor(ModelType type, const cv::Size& input_size) {
+std::unique_ptr<Preprocessor> DepthEstimationTask::createPreprocessor(ModelType type, const vision::Size& input_size) {
     switch (type) {
     case ModelType::DEPTH_ANYTHING_V2:
         return std::make_unique<DepthAnythingV2Preprocessor>(input_size);
@@ -68,7 +69,7 @@ std::unique_ptr<DepthEstimationPostprocessor> DepthEstimationTask::createPostpro
     }
 }
 
-cv::Size DepthEstimationTask::extractInputSize(const ModelInfo& model_info) {
+vision::Size DepthEstimationTask::extractInputSize(const ModelInfo& model_info) {
     int width = 518;
     int height = 518;
 
@@ -94,7 +95,7 @@ cv::Size DepthEstimationTask::extractInputSize(const ModelInfo& model_info) {
         }
     }
 
-    return cv::Size(width, height);
+    return vision::Size(width, height);
 }
 
 } // namespace neuriplo_tasks
