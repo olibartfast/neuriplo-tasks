@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-10
+
 ### Added
 - Backend-neutral `core/vision` image, geometry, and operation APIs.
 - Optional `vision-stb` image I/O and `vision-opencv` interoperability targets.
@@ -13,6 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 - Core task APIs now use native `vision::Image`, `vision::Size`, and `vision::PixelType` contracts.
 - OpenCV is no longer a required or transitive dependency of `neuriplo-tasks`.
+
+### Removed
+- Completed implementation roadmaps and retired planning documents; batch documentation now stands on its own as current consumer guidance.
 
 
 ## [0.5.0] - 2026-06-24
@@ -135,7 +140,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - clang-format and clang-tidy configuration
 - CI workflow with lint, static analysis, build, and test jobs
 
-[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.3.2...v0.4.0
 [0.3.2]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.3.1...v0.3.2
