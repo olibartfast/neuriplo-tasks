@@ -7,11 +7,14 @@ default_branches:
 
 entrypoints:
   configure:
-    - cmake -S . -B build -DBUILD_TESTS=ON
+    - cmake -S . -B build -DBUILD_TESTS=ON -DNEURIPLO_TASKS_WITH_OPENCV=OFF
+    - cmake -S . -B build-opencv -DBUILD_TESTS=ON -DNEURIPLO_TASKS_WITH_OPENCV=ON
   build:
     - cmake --build build --parallel
+    - cmake --build build-opencv --parallel
   test:
     - ctest --test-dir build --output-on-failure
+    - ctest --test-dir build-opencv --output-on-failure
 
 owned_paths:
   - include/

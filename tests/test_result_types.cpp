@@ -1,9 +1,8 @@
-#include "neuriplo/tasks/core/opencv_interop.hpp"
 #include "neuriplo/tasks/core/result_types.hpp"
 #include "neuriplo/tasks/core/tensor_utils.hpp"
+#include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
-#include <opencv2/opencv.hpp>
 #include <string>
 #include <type_traits>
 
@@ -156,13 +155,13 @@ TEST_F(ResultTypesTest, OpticalFlowDefaultConstruction) {
 
 TEST_F(ResultTypesTest, OpticalFlowWithData) {
     OpticalFlow flow;
-    flow.flow = fromCvMat(cv::Mat(100, 100, CV_8UC3, cv::Scalar(0, 0, 255)));
-    flow.raw_flow = fromCvMat(cv::Mat(100, 100, CV_32FC2));
+    flow.flow = fromImage(neuriplo_tasks::vision_test::makeImage(100, 100, 3, 0));
+    flow.raw_flow = fromImage(neuriplo_tasks::vision_test::makeFloatImage(100, 100, 2, 0.0F));
     flow.max_displacement = 15.5f;
 
     EXPECT_EQ(flow.flow.rows(), 100);
     EXPECT_EQ(flow.flow.cols(), 100);
-    EXPECT_EQ(flow.raw_flow.type(), CV_32FC2);
+    EXPECT_EQ(flow.raw_flow.pixelType(), neuriplo_tasks::PixelType::Float32);
     EXPECT_FLOAT_EQ(flow.max_displacement, 15.5f);
 }
 
@@ -268,7 +267,7 @@ TEST_F(ResultTypesTest, DepthEstimationDefaultConstruction) {
 
 TEST_F(ResultTypesTest, ResultVariantHoldsDepthEstimation) {
     DepthEstimation depth;
-    depth.depth = fromCvMat(cv::Mat::ones(10, 10, CV_32FC1));
+    depth.depth = fromImage(neuriplo_tasks::vision_test::makeFloatImage(10, 10, 1, 1.0F));
     Result result = depth;
 
     EXPECT_TRUE(std::holds_alternative<DepthEstimation>(result));

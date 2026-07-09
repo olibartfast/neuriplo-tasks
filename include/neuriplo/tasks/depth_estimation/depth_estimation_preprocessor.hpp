@@ -11,7 +11,7 @@ namespace neuriplo_tasks {
  */
 class DepthAnythingV2Preprocessor : public Preprocessor {
   public:
-    explicit DepthAnythingV2Preprocessor(const cv::Size& input_size = cv::Size(518, 518));
+    explicit DepthAnythingV2Preprocessor(const Size& input_size = Size(518, 518));
 };
 
 } // namespace neuriplo_tasks

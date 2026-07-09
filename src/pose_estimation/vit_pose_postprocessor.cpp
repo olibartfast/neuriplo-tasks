@@ -11,8 +11,8 @@ namespace neuriplo_tasks {
 ViTPosePostprocessor::ViTPosePostprocessor() {}
 
 std::vector<PoseEstimation> ViTPosePostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                              const cv::Size& original_size,
-                                                              const cv::Size& /*input_size*/) {
+                                                              const vision::Size& original_size,
+                                                              const vision::Size& /*input_size*/) {
 
     if (tensors.empty()) {
         return {};

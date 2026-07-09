@@ -77,7 +77,7 @@ ModelInfo makeValidModelInfo() {
     info.input_formats = {"FORMAT_NCHW"};
     info.input_names = {"images"};
     info.output_names = {"output0"};
-    info.input_types = {CV_32F};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
     info.max_batch_size_ = 1;
     info.batch_size_ = 1;
     return info;

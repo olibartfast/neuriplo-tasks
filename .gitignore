@@ -4,7 +4,9 @@ build*/*
 **/__pycache__/
 .claude/settings.local.json
 # Cloned third-party repositories
-3rdparty/
+3rdparty/*
+# ...but vendored single-header libraries are tracked
+!3rdparty/stb/
 **/*.onnx
 **/*.pt
 

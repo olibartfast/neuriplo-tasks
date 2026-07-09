@@ -31,12 +31,12 @@ class ImageUnderstandingTask : public TaskInterface {
      *   [0] = UTF-8 prompt bytes
      *   [1] = 4-byte little-endian width | 4-byte little-endian height | RGB pixels
      */
-    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override;
+    std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) override;
 
     /**
      * @brief Decode float-encoded response bytes into an ImageUnderstanding result.
      */
-    std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) override;
+    std::vector<Result> postprocess(const Size& frame_size, const std::vector<Tensor>& tensors) override;
 
   private:
     std::string prompt_;

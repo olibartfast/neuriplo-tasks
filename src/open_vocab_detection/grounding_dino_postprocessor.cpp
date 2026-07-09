@@ -1,6 +1,5 @@
 #include "neuriplo/tasks/open_vocab_detection/grounding_dino_postprocessor.hpp"
 
-#include "neuriplo/tasks/core/opencv_interop.hpp"
 #include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
@@ -46,20 +45,20 @@ const Tensor* findTensorByNames(const std::vector<Tensor>& tensors, const std::v
     return nullptr;
 }
 
-cv::Rect makeRectFromCenterBox(float cx, float cy, float w, float h, const cv::Size& frame_size) {
+vision::Rect makeRectFromCenterBox(float cx, float cy, float w, float h, const vision::Size& frame_size) {
     const float x1 = std::max(0.0F, cx - w * 0.5F);
     const float y1 = std::max(0.0F, cy - h * 0.5F);
     const float x2 = std::min(static_cast<float>(frame_size.width), cx + w * 0.5F);
     const float y2 = std::min(static_cast<float>(frame_size.height), cy + h * 0.5F);
-    return cv::Rect(cv::Point(static_cast<int>(std::round(x1)), static_cast<int>(std::round(y1))),
-                    cv::Point(static_cast<int>(std::round(x2)), static_cast<int>(std::round(y2))));
+    return vision::Rect(static_cast<int>(std::round(x1)), static_cast<int>(std::round(y1)),
+                        static_cast<int>(std::round(x2 - x1)), static_cast<int>(std::round(y2 - y1)));
 }
 
 } // namespace
 
 // ─── Construction ────────────────────────────────────────────────────────────
 
-GroundingDinoPostprocessor::GroundingDinoPostprocessor(const cv::Size& input_size, float confidence_threshold,
+GroundingDinoPostprocessor::GroundingDinoPostprocessor(const vision::Size& input_size, float confidence_threshold,
                                                        float text_threshold, std::vector<std::string> prompt_labels,
                                                        std::vector<std::string> output_names,
                                                        std::vector<std::pair<int, int>> phrase_token_ranges)
@@ -70,7 +69,7 @@ GroundingDinoPostprocessor::GroundingDinoPostprocessor(const cv::Size& input_siz
 // ─── Postprocessing ──────────────────────────────────────────────────────────
 
 std::vector<OpenVocabDetection> GroundingDinoPostprocessor::postprocess(const std::vector<Tensor>& tensors,
-                                                                        const cv::Size& frame_size) {
+                                                                        const vision::Size& frame_size) {
     std::vector<OpenVocabDetection> results;
     if (tensors.size() < 2) {
         return results;
@@ -178,8 +177,8 @@ std::vector<OpenVocabDetection> GroundingDinoPostprocessor::postprocess(const st
                 label = prompt_labels_[static_cast<size_t>(best_phrase_idx)];
             }
 
-            results.emplace_back(fromCvRect(makeRectFromCenterBox(cx, cy, bw, bh, frame_size)), best_score,
-                                 best_phrase_idx, std::move(label));
+            results.emplace_back(makeRectFromCenterBox(cx, cy, bw, bh, frame_size), best_score, best_phrase_idx,
+                                 std::move(label));
         }
     }
 

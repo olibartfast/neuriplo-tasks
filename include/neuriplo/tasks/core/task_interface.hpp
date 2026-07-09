@@ -1,11 +1,11 @@
 #pragma once
 
+#include "neuriplo/tasks/core/image.hpp"
 #include "neuriplo/tasks/core/model_info.hpp"
 #include "neuriplo/tasks/core/result_types.hpp"
 
 #include <fstream>
 #include <memory>
-#include <opencv2/opencv.hpp>
 #include <stdexcept>
 #include <tuple>
 #include <variant>
@@ -71,7 +71,7 @@ class TaskInterface {
      * @param imgs Input images
      * @return Preprocessed data as uint8_t vectors
      */
-    virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) = 0;
+    virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) = 0;
 
     /**
      * @brief Postprocess inference results
@@ -79,7 +79,7 @@ class TaskInterface {
      * @param tensors Inference output tensors with shape information
      * @return Vector of Result variants
      */
-    virtual std::vector<Result> postprocess(const cv::Size& frame_size, const std::vector<Tensor>& tensors) = 0;
+    virtual std::vector<Result> postprocess(const Size& frame_size, const std::vector<Tensor>& tensors) = 0;
 
     /**
      * @brief Read label names from file

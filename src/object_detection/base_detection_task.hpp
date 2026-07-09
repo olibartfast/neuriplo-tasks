@@ -20,7 +20,7 @@ class BaseDetectionTask : public TaskInterface {
 
     TaskType getTaskType() override { return TaskType::Detection; }
 
-    std::vector<std::vector<uint8_t>> preprocess(const std::vector<cv::Mat>& imgs) override {
+    std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& imgs) override {
         if (!preprocessor_) {
             throw std::runtime_error("Preprocessor not initialized");
         }

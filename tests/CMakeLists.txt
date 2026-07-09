@@ -43,12 +43,14 @@ set(TEST_LIBS
     neuriplo-tasks::neuriplo-tasks
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 # Core tests
 add_executable(test_result_types test_result_types.cpp)
 target_link_libraries(test_result_types ${TEST_LIBS})
+
+add_executable(test_image_ops test_image_ops.cpp)
+target_link_libraries(test_image_ops ${TEST_LIBS})
 
 add_executable(test_batch_types test_batch_types.cpp)
 target_link_libraries(test_batch_types ${TEST_LIBS})
@@ -58,7 +60,6 @@ target_link_libraries(test_batch_preprocess
     -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 add_executable(test_batch_postprocess test_batch_postprocess.cpp)
@@ -66,7 +67,6 @@ target_link_libraries(test_batch_postprocess
     -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 add_executable(test_classification_batch test_classification_batch.cpp)
@@ -74,7 +74,6 @@ target_link_libraries(test_classification_batch
     -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 add_executable(test_object_detection_batch test_object_detection_batch.cpp)
@@ -82,7 +81,6 @@ target_link_libraries(test_object_detection_batch
     -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 add_executable(test_depth_estimation_batch test_depth_estimation_batch.cpp)
@@ -90,7 +88,6 @@ target_link_libraries(test_depth_estimation_batch
     -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 add_executable(test_pose_estimation_batch test_pose_estimation_batch.cpp)
@@ -98,7 +95,6 @@ target_link_libraries(test_pose_estimation_batch
     -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 add_executable(test_batch_integration test_batch_integration.cpp)
@@ -106,7 +102,6 @@ target_link_libraries(test_batch_integration
     -Wl,--whole-archive neuriplo-tasks -Wl,--no-whole-archive
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 add_executable(test_task_interface test_task_interface.cpp)
@@ -137,7 +132,6 @@ target_link_whole_archive(test_task_config neuriplo-tasks)
 target_link_libraries(test_task_config
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 # Concrete task implementation tests
@@ -146,7 +140,6 @@ target_link_whole_archive(test_concrete_tasks neuriplo-tasks)
 target_link_libraries(test_concrete_tasks
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 # Optical flow tests
@@ -155,7 +148,6 @@ target_link_whole_archive(test_optical_flow neuriplo-tasks)
 target_link_libraries(test_optical_flow
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 # Pose estimation tests
@@ -164,7 +156,6 @@ target_link_whole_archive(test_pose_estimation neuriplo-tasks)
 target_link_libraries(test_pose_estimation
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 # Depth estimation tests
@@ -173,7 +164,6 @@ target_link_whole_archive(test_depth_estimation neuriplo-tasks)
 target_link_libraries(test_depth_estimation
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 # Open-vocabulary detection tests
@@ -182,7 +172,6 @@ target_link_whole_archive(test_open_vocab_detection neuriplo-tasks)
 target_link_libraries(test_open_vocab_detection
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 # Gaussian splatting tests
@@ -191,7 +180,6 @@ target_link_whole_archive(test_gaussian_splatting neuriplo-tasks)
 target_link_libraries(test_gaussian_splatting
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 # EdgeCrafter postprocessor and task tests
@@ -200,7 +188,6 @@ target_link_whole_archive(test_edgecrafter neuriplo-tasks)
 target_link_libraries(test_edgecrafter
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 
 # Docs/code contract: every quoted alias in README Supported Model Types block
@@ -210,7 +197,6 @@ target_link_whole_archive(test_readme_model_types neuriplo-tasks)
 target_link_libraries(test_readme_model_types
     GTest::GTest
     GTest::Main
-    ${OpenCV_LIBS}
 )
 # Paths are relative to this tests/ directory so they resolve correctly whether
 # neuriplo-tasks is the top-level project or a FetchContent sub-project of another
@@ -221,8 +207,20 @@ target_compile_definitions(test_readme_model_types
         NEURIPLO_TASKS_TASK_FACTORY_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../src/core/task_factory.cpp"
 )
 
+if(NEURIPLO_TASKS_WITH_STB)
+    add_executable(test_stb_io test_stb_io.cpp)
+    target_link_libraries(test_stb_io neuriplo-tasks::vision-stb GTest::GTest GTest::Main)
+endif()
+
+if(NEURIPLO_TASKS_WITH_OPENCV)
+    find_package(OpenCV REQUIRED COMPONENTS core imgproc)
+    add_executable(test_opencv_adapter test_opencv_adapter.cpp)
+    target_link_libraries(test_opencv_adapter neuriplo-tasks::vision-opencv opencv_imgproc GTest::GTest GTest::Main)
+endif()
+
 # Add tests manually for better compatibility
 add_test(NAME test_result_types COMMAND test_result_types)
+add_test(NAME test_image_ops COMMAND test_image_ops)
 add_test(NAME test_batch_types COMMAND test_batch_types)
 add_test(NAME test_batch_preprocess COMMAND test_batch_preprocess)
 add_test(NAME test_batch_postprocess COMMAND test_batch_postprocess)
@@ -247,3 +245,9 @@ add_test(NAME test_open_vocab_detection COMMAND test_open_vocab_detection)
 add_test(NAME test_gaussian_splatting COMMAND test_gaussian_splatting)
 add_test(NAME test_edgecrafter COMMAND test_edgecrafter)
 add_test(NAME test_readme_model_types COMMAND test_readme_model_types)
+if(NEURIPLO_TASKS_WITH_STB)
+    add_test(NAME test_stb_io COMMAND test_stb_io)
+endif()
+if(NEURIPLO_TASKS_WITH_OPENCV)
+    add_test(NAME test_opencv_adapter COMMAND test_opencv_adapter)
+endif()

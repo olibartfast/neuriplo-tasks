@@ -1,6 +1,5 @@
 #include "neuriplo/tasks/object_detection/yolo_postprocessor.hpp"
 
-#include "neuriplo/tasks/core/opencv_interop.hpp"
 #include "neuriplo/tasks/core/tensor_utils.hpp"
 
 #include <algorithm>
@@ -10,12 +9,13 @@
 
 namespace neuriplo_tasks {
 
-YoloPostprocessor::YoloPostprocessor(ObjectDetectionTask::ModelType model_type, const cv::Size& input_size,
+YoloPostprocessor::YoloPostprocessor(ObjectDetectionTask::ModelType model_type, const vision::Size& input_size,
                                      float confidence_threshold, float nms_threshold)
     : model_type_(model_type), input_size_(input_size), confidence_threshold_(confidence_threshold),
       nms_threshold_(nms_threshold) {}
 
-cv::Rect YoloPostprocessor::scaleToOriginal(float cx, float cy, float w, float h, const cv::Size& frame_size) const {
+vision::Rect YoloPostprocessor::scaleToOriginal(float cx, float cy, float w, float h,
+                                                const vision::Size& frame_size) const {
     // Apply letterbox inverse transformation
     // This converts coordinates from letterboxed model space to original frame space
     float r_w = static_cast<float>(input_size_.width) / static_cast<float>(frame_size.width);
@@ -49,11 +49,11 @@ cv::Rect YoloPostprocessor::scaleToOriginal(float cx, float cy, float w, float h
         height = static_cast<int>((y_max - y_min) / r_h);
     }
 
-    return cv::Rect(x, y, width, height);
+    return vision::Rect(x, y, width, height);
 }
 
-cv::Rect YoloPostprocessor::scaleXyxyToOriginal(float x1, float y1, float x2, float y2,
-                                                const cv::Size& frame_size) const {
+vision::Rect YoloPostprocessor::scaleXyxyToOriginal(float x1, float y1, float x2, float y2,
+                                                    const vision::Size& frame_size) const {
     const float r_w = static_cast<float>(input_size_.width) / static_cast<float>(frame_size.width);
     const float r_h = static_cast<float>(input_size_.height) / static_cast<float>(frame_size.height);
 
@@ -72,10 +72,12 @@ cv::Rect YoloPostprocessor::scaleXyxyToOriginal(float x1, float y1, float x2, fl
         y2 = y2 / r_h;
     }
 
-    return cv::Rect(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1), static_cast<int>(y2 - y1));
+    return vision::Rect(static_cast<int>(x1), static_cast<int>(y1), static_cast<int>(x2 - x1),
+                        static_cast<int>(y2 - y1));
 }
 
-std::vector<Detection> YoloPostprocessor::postprocess(const std::vector<Tensor>& tensors, const cv::Size& frame_size) {
+std::vector<Detection> YoloPostprocessor::postprocess(const std::vector<Tensor>& tensors,
+                                                      const vision::Size& frame_size) {
 
     std::vector<Detection> detections;
 
@@ -128,9 +130,9 @@ std::vector<Detection> YoloPostprocessor::postprocess(const std::vector<Tensor>&
 namespace {
 
 std::vector<Detection> decodeYoloStandardBatchSlice(
-    const std::vector<TensorElement>& output, const cv::Size& frame_size, int batch_index, float confidence_threshold,
-    bool has_objectness, int channels, int anchors, int num_classes, int class_offset,
-    const std::function<cv::Rect(float, float, float, float, const cv::Size&)>& scale_to_original) {
+    const std::vector<TensorElement>& output, const vision::Size& frame_size, int batch_index,
+    float confidence_threshold, bool has_objectness, int channels, int anchors, int num_classes, int class_offset,
+    const std::function<vision::Rect(float, float, float, float, const vision::Size&)>& scale_to_original) {
     std::vector<Detection> detections;
 
     const size_t slice_stride = static_cast<size_t>(channels) * static_cast<size_t>(anchors);
@@ -188,7 +190,7 @@ std::vector<Detection> decodeYoloStandardBatchSlice(
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = final_score;
-        det.bbox = fromCvRect(scale_to_original(cx, cy, w, h, frame_size));
+        det.bbox = scale_to_original(cx, cy, w, h, frame_size);
         detections.push_back(det);
     }
 
@@ -199,7 +201,7 @@ std::vector<Detection> decodeYoloStandardBatchSlice(
 
 std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(const std::vector<TensorElement>& output,
                                                                   const std::vector<int64_t>& shape,
-                                                                  const cv::Size& frame_size) {
+                                                                  const vision::Size& frame_size) {
 
     std::vector<Detection> detections;
 
@@ -235,7 +237,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(const std::vec
         return {};
     }
 
-    const auto scale_fn = [this](float cx, float cy, float w, float h, const cv::Size& fs) {
+    const auto scale_fn = [this](float cx, float cy, float w, float h, const vision::Size& fs) {
         return scaleToOriginal(cx, cy, w, h, fs);
     };
 
@@ -251,7 +253,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloStandard(const std::vec
 }
 
 std::vector<Detection> YoloPostprocessor::postprocessYoloV4(const std::vector<Tensor>& tensors,
-                                                            const cv::Size& frame_size) {
+                                                            const vision::Size& frame_size) {
     std::vector<Detection> detections;
 
     // Iterate over the output tensors
@@ -285,12 +287,9 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV4(const std::vector<Te
                 float w_model = w * static_cast<float>(input_size_.width);
                 float h_model = h * static_cast<float>(input_size_.height);
 
-                // Apply letterbox inverse transformation using model-space coordinates
-                cv::Rect bbox = scaleToOriginal(cx_model, cy_model, w_model, h_model, frame_size);
-
                 // Create a detection object
                 Detection detection;
-                detection.bbox = fromCvRect(bbox);
+                detection.bbox = scaleToOriginal(cx_model, cy_model, w_model, h_model, frame_size);
                 detection.class_confidence = score;
                 detection.class_id = static_cast<float>(label);
 
@@ -301,33 +300,12 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV4(const std::vector<Te
     }
 
     // Apply non-maximum suppression to the detections
-    std::vector<Detection> filtered_detections;
-    std::map<int, std::vector<size_t>> class2indices;
-    for (size_t i = 0; i < detections.size(); i++) {
-        if (detections[i].class_confidence >= confidence_threshold_) {
-            class2indices[static_cast<int>(detections[i].class_id)].push_back(i);
-        }
-    }
+    applyNMS(detections);
 
-    for (std::map<int, std::vector<size_t>>::iterator it = class2indices.begin(); it != class2indices.end(); ++it) {
-        std::vector<cv::Rect> localBoxes;
-        std::vector<float> localConfidences;
-        std::vector<size_t> classIndices = it->second;
-        for (size_t i = 0; i < classIndices.size(); i++) {
-            localBoxes.push_back(toCvRect(detections[classIndices[i]].bbox));
-            localConfidences.push_back(detections[classIndices[i]].class_confidence);
-        }
-        std::vector<int> nmsIndices;
-        cv::dnn::NMSBoxes(localBoxes, localConfidences, confidence_threshold_, nms_threshold_, nmsIndices);
-        for (size_t i = 0; i < nmsIndices.size(); i++) {
-            filtered_detections.push_back(detections[classIndices[static_cast<size_t>(nmsIndices[i])]]);
-        }
-    }
-
-    return filtered_detections;
+    return detections;
 }
 
-std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(const Tensor& output, const cv::Size& frame_size) {
+std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(const Tensor& output, const vision::Size& frame_size) {
 
     std::vector<Detection> detections;
 
@@ -357,7 +335,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(const Tensor& o
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = score;
-        det.bbox = fromCvRect(scaleXyxyToOriginal(x1, y1, x2, y2, frame_size));
+        det.bbox = scaleXyxyToOriginal(x1, y1, x2, y2, frame_size);
         detections.push_back(det);
     }
 
@@ -367,7 +345,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(const Tensor& o
 }
 
 std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(const Tensor& boxes, const Tensor& scores,
-                                                             const cv::Size& frame_size) {
+                                                             const vision::Size& frame_size) {
 
     std::vector<Detection> detections;
 
@@ -402,7 +380,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNAS(const Tensor& boxes
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = max_score;
-        det.bbox = fromCvRect(scaleXyxyToOriginal(x1, y1, x2, y2, frame_size));
+        det.bbox = scaleXyxyToOriginal(x1, y1, x2, y2, frame_size);
         detections.push_back(det);
     }
 
@@ -426,7 +404,7 @@ void YoloPostprocessor::applyNMS(std::vector<Detection>& detections) {
             if (static_cast<int>(detections[i].class_id) != static_cast<int>(detections[j].class_id))
                 continue;
 
-            const BoundingBox intersection = detections[i].bbox.intersect(detections[j].bbox);
+            const vision::Rect intersection = detections[i].bbox.intersect(detections[j].bbox);
             float intersection_area = static_cast<float>(intersection.area());
             float union_area = static_cast<float>(detections[i].bbox.area()) +
                                static_cast<float>(detections[j].bbox.area()) - intersection_area;
@@ -455,7 +433,7 @@ void YoloPostprocessor::applyNMS(std::vector<Detection>& detections) {
 
 std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(const Tensor& num_dets_tensor, const Tensor& boxes,
                                                                const Tensor& scores, const Tensor& classes,
-                                                               const cv::Size& frame_size) {
+                                                               const vision::Size& frame_size) {
 
     std::vector<Detection> detections;
 
@@ -492,7 +470,7 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloV7E2E(const Tensor& num
         Detection det;
         det.class_id = static_cast<float>(class_id);
         det.class_confidence = score;
-        det.bbox = fromCvRect(scaleXyxyToOriginal(x1, y1, x2, y2, frame_size));
+        det.bbox = scaleXyxyToOriginal(x1, y1, x2, y2, frame_size);
         detections.push_back(det);
     }
 

@@ -35,15 +35,14 @@ class GroundingDinoPostprocessor : public OpenVocabPostprocessor {
      * @param phrase_token_ranges  [start, end) indices in the tokenised sequence
      *                             for each prompt phrase (end is exclusive)
      */
-    GroundingDinoPostprocessor(const cv::Size& input_size, float confidence_threshold, float text_threshold,
+    GroundingDinoPostprocessor(const Size& input_size, float confidence_threshold, float text_threshold,
                                std::vector<std::string> prompt_labels, std::vector<std::string> output_names,
                                std::vector<std::pair<int, int>> phrase_token_ranges);
 
-    std::vector<OpenVocabDetection> postprocess(const std::vector<Tensor>& tensors,
-                                                const cv::Size& frame_size) override;
+    std::vector<OpenVocabDetection> postprocess(const std::vector<Tensor>& tensors, const Size& frame_size) override;
 
   private:
-    cv::Size input_size_;
+    Size input_size_;
     float confidence_threshold_;
     float text_threshold_;
     std::vector<std::string> prompt_labels_;
