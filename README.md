@@ -451,4 +451,3 @@ Atomic execution plan and status tracking in **[docs/ROADMAP.md](docs/ROADMAP.md
 — factory refactor (Done), Track B batch utilities (Done), composite pipelines (Done).
 Batch consumer guide: **[docs/batch_processing.md](docs/batch_processing.md)**.
 Per-task-family batch readiness: **[docs/batch_support_matrix.md](docs/batch_support_matrix.md)**.
-Vision backend architecture and migration plan: **[docs/plans/remove-opencv-stb-plan.md](docs/plans/remove-opencv-stb-plan.md)**.

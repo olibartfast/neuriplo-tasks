@@ -9,7 +9,6 @@ single PR or commit series: build alone, tests green, no unrelated churn.
 |----------|--------|
 | [batch_support_matrix.md](./batch_support_matrix.md) | Per-family batch readiness ([B0](#b0) audit) |
 | [batch_processing.md](./batch_processing.md) | Consumer migration guide ([B6](#b6)) |
-| [remove-opencv-stb-plan.md](./plans/remove-opencv-stb-plan.md) | Central vision layer and OpenCV dependency removal |
 | [Versioning.md](./Versioning.md) | Release and changelog workflow |
 | [AGENTS.md](../AGENTS.md) | CI gate, contracts, coding rules |
 
@@ -32,10 +31,10 @@ shipping inference on documented model types.
 | Refactor | Phases 3–5 — per-domain strategies / `BaseTask` | **Done** (detection, pose, segmentation strategies; depth + classification `BaseTask` pilots) |
 | Refactor | Phase 6 — result visitor helpers | **Done** |
 | Refactor | Phase 7 — composite `TaskPipeline` API | **Done** |
-| Refactor | Phase 8 — docs/sync cleanup | **Planned** (ongoing per release) |
+| Refactor | Phase 8 — docs/sync cleanup | **Done** (maintained per release) |
 | Vision | Core API and operation centralization | **Done** |
 | Vision | Optional STB and OpenCV adapters | **Done** |
-| Vision | Consumer migrations and release validation | **In progress** |
+| Vision | Consumer migrations and release validation | **Done** |
 | Factory | Track D — descriptor registry auditability | **Done** |
 | **Batch** | [B0](#b0) — capability audit (`batch_support_matrix.md`) | **Done** |
 | **Batch** | [B1](#b1) — batch contract types (`batch_types.hpp`) | **Done** |
@@ -75,6 +74,28 @@ cmake -S . -B build -DBUILD_TESTS=ON -DWERROR=ON -DCMAKE_EXPORT_COMPILE_COMMANDS
 cmake --build build --parallel && \
 ctest --test-dir build --output-on-failure
 ```
+
+---
+
+## Vision backend architecture
+
+The OpenCV decoupling track is complete. Public task contracts and all task implementations use `neuriplo_tasks::vision` types. Image operations are centralized under `core/vision`; task modules cannot include OpenCV or stb directly.
+
+Build targets:
+
+- `neuriplo-tasks::neuriplo-tasks` and `neuriplo-tasks::vision-core`: dependency-free task core;
+- `neuriplo-tasks::vision-stb`: optional file I/O, enabled by `NEURIPLO_TASKS_WITH_STB`;
+- `neuriplo-tasks::vision-opencv`: optional consumer interop, enabled by `NEURIPLO_TASKS_WITH_OPENCV`.
+
+Package discovery loads OpenCV only when the `vision-opencv` component is requested. Direct operation tests lock resize, channel, threshold, min/max, region-copy, and NMS behavior; OpenCV-gated tests compare interpolation behavior and exercise adapter round trips.
+
+Consumer boundaries were migrated and smoke-built on `feat/remove-opencv-stb`:
+
+- `neuriplo-infer` (`e8e39be`): capture/rendering stays OpenCV; task calls use native images and pixel types;
+- `neuriplo-track` (`77820a3`): detector input uses the adapter; tracker-internal OpenCV remains independent;
+- `tritonic` (`e6e1352`): image and Triton dtype conversion is centralized at `App`.
+
+Release validation requires the no-OpenCV core suite, optional OpenCV suite, package consumer smokes, and these downstream builds to remain green. The release itself follows [Versioning.md](./Versioning.md) after feature integration.
 
 ---
 
