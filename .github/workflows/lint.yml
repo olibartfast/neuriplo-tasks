@@ -43,7 +43,7 @@ jobs:
           key: ${{ github.job }}-${{ runner.os }}
 
       - name: Generate compile_commands.json
-        run: cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        run: cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DNEURIPLO_TASKS_WITH_OPENCV=ON
 
       - name: Run clang-tidy
         run: |
@@ -86,7 +86,7 @@ jobs:
           key: ${{ github.job }}-${{ runner.os }}
 
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DBUILD_TESTS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        run: cmake -S . -B build -G Ninja -DBUILD_TESTS=ON -DNEURIPLO_TASKS_WITH_OPENCV=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Build
         run: cmake --build build --parallel
@@ -185,6 +185,7 @@ jobs:
           cmake -S . -B build `
             -DBUILD_TESTS=ON `
             -DWERROR=ON `
+            -DNEURIPLO_TASKS_WITH_OPENCV=ON `
             -DOpenCV_DIR="C:\opencv\opencv\build"
 
       - name: Add OpenCV DLLs to PATH

@@ -48,7 +48,8 @@ std::vector<Result> ClassificationTask::decode(const vision::Size& /*frame_size*
 
 ClassificationTask::ModelType ClassificationTask::detectModelType(const std::string& model_name) {
     std::string lower_name = model_name;
-    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
 
     // ViT models
     if (lower_name.find("vit") != std::string::npos || lower_name == "vit-classifier") {

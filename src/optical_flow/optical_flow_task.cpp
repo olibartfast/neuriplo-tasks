@@ -82,7 +82,8 @@ std::vector<Result> OpticalFlowTask::postprocess(const vision::Size& frame_size,
 
 OpticalFlowTask::ModelType OpticalFlowTask::detectModelType(const std::string& model_name) {
     std::string lower_name = model_name;
-    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
 
     // All current models are RAFT-based
     return ModelType::RAFT;

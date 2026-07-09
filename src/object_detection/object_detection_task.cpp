@@ -176,7 +176,8 @@ std::vector<Result> ObjectDetectionTask::postprocess(const vision::Size& frame_s
 
 ObjectDetectionTask::ModelType ObjectDetectionTask::detectModelType(const std::string& model_name) {
     std::string lower_name = model_name;
-    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(), ::tolower);
+    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
 
     // YOLO variants
     if (lower_name == "yolov4") {
