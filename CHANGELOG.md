@@ -16,6 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Core task APIs now use native `vision::Image`, `vision::Size`, and `vision::PixelType` contracts.
 - OpenCV is no longer a required or transitive dependency of `neuriplo-tasks`.
 
+### Removed
+- Completed implementation roadmaps and retired planning documents; batch documentation now stands on its own as current consumer guidance.
+
 
 ## [0.5.0] - 2026-06-24
 

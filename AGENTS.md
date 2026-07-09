@@ -157,13 +157,6 @@ cppcheck --enable=warning --std=c++17 \
    added as a product requirement (use a separate extension registry, not an
    ever-growing internal table).
 
-### Planned work
-
-Atomic roadmap (batch utilities, completed refactor work, composite pipelines):
-[`docs/ROADMAP.md`](./docs/ROADMAP.md). Batch readiness audit (B0):
-[`docs/batch_support_matrix.md`](./docs/batch_support_matrix.md). Factory/strategy
-refactor history is summarized in [`docs/ROADMAP.md`](./docs/ROADMAP.md).
-
 ### Core abstractions (`include/neuriplo/tasks/core/`)
 
 | File                  | Purpose |

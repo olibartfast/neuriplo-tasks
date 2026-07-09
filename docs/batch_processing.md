@@ -1,7 +1,7 @@
 # Batch processing — consumer guide
 
 How to run **N independent images** through a single `TaskInterface` using the
-Track B helpers (`batchPreprocess`, `batchPostprocess`). Intended for downstream
+batch helpers (`batchPreprocess`, `batchPostprocess`). Intended for downstream
 repos such as [tritonic](https://github.com/olibartfast/tritonic) and
 [neuriplo-infer](https://github.com/olibartfast/neuriplo-infer).
 
@@ -10,7 +10,6 @@ repos such as [tritonic](https://github.com/olibartfast/tritonic) and
 | Document | Use when |
 |----------|----------|
 | [batch_support_matrix.md](./batch_support_matrix.md) | Per-task-family readiness (Ready / Partial / N/A) |
-| [ROADMAP.md](./ROADMAP.md) | Track B step history and guardrails |
 | [README.md](../README.md) § Batch Processing Utilities | Short API snippet |
 
 ---
