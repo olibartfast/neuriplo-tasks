@@ -41,8 +41,8 @@ Each `SegmentationPolygon` contains:
 - three or more points per ring, without repeating the first point at the end.
 
 Coordinates use `vision::Point2f` so the public API remains framework-neutral.
-Exact mask conversion currently produces integer-valued pixel-boundary
-coordinates. In image coordinates, where Y increases downward, exterior rings
+Mask conversion produces integer-valued pixel-boundary coordinates and applies a
+convex hull to every exterior and hole ring. In image coordinates, where Y increases downward, exterior rings
 have positive signed area and hole rings have negative signed area. A single
 instance may contain multiple polygons when its mask has disconnected regions.
 
@@ -58,9 +58,10 @@ std::vector<neuriplo_tasks::SegmentationPolygon> polygons =
     neuriplo_tasks::maskToPolygons(mask);
 ```
 
-The converter traces exact foreground pixel boundaries, removes collinear
-points, preserves disconnected regions and holes, and rejects non-`UINT8` or
-multi-channel inputs. It does not perform lossy polygon simplification.
+The converter traces foreground pixel boundaries, computes a convex hull for each
+ring, preserves disconnected regions and holes, and rejects non-`UINT8` or
+multi-channel inputs. Convexification intentionally removes concave boundary
+detail to provide a compact polygon contract.
 
 ## Engine and transport boundary
 

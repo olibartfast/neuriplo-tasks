@@ -45,6 +45,29 @@ TEST(PolygonConversionTest, PreservesDisconnectedRegionsAndHoles) {
     EXPECT_EQ(with_hole->holes[0].size(), 4U);
 }
 
+TEST(PolygonConversionTest, ConvexifiesConcaveExterior) {
+    vision::Image mask = vision::Image::zeros(6, 6, 1, PixelType::UInt8);
+    for (int y = 1; y < 5; ++y) {
+        mask.ptr<uint8_t>(y)[1] = 255;
+    }
+    for (int x = 1; x < 5; ++x) {
+        mask.ptr<uint8_t>(4)[x] = 255;
+    }
+
+    const auto polygons = maskToPolygons(fromImage(std::move(mask)));
+
+    ASSERT_EQ(polygons.size(), 1U);
+    ASSERT_GE(polygons[0].exterior.size(), 3U);
+    const auto& ring = polygons[0].exterior;
+    for (size_t index = 0; index < ring.size(); ++index) {
+        const auto& origin = ring[index];
+        const auto& a = ring[(index + 1) % ring.size()];
+        const auto& b = ring[(index + 2) % ring.size()];
+        const float turn = (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
+        EXPECT_GE(turn, 0.0F);
+    }
+}
+
 TEST(PolygonConversionTest, RejectsNonUint8Masks) {
     vision::Image mask = vision::Image::zeros(2, 2, 1, PixelType::Float32);
     EXPECT_THROW(maskToPolygons(fromImage(std::move(mask))), std::invalid_argument);
