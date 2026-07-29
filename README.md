@@ -10,7 +10,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 ## Features
 
 - **Object Detection**: YOLO (v4-v12, yolo26), RT-DETR family (RT-DETR v1/v2/v4, D-FINE, DEIM v1/v2), YOLO-NAS, RF-DETR, EdgeCrafter
-- **Instance Segmentation**: YOLOv5/v8/v11-seg, YOLOv10-seg, YOLO26-seg, RF-DETR-Seg, EdgeCrafter
+- **Instance Segmentation**: YOLOv5/v8/v11-seg, YOLOv10-seg, YOLO26-seg, RF-DETR-Seg, EdgeCrafter; mask output by default or framework-neutral polygons on request
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: VideoMAE, ViViT, TimeSformer
 - **Optical Flow**: RAFT
@@ -240,6 +240,8 @@ For EdgeCrafter detection export details, see [export/detection/edgecrafter/READ
 - `"rfdetrseg"` - RF-DETR
 
 For EdgeCrafter segmentation export details, see [export/segmentation/edgecrafter/README.md](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/segmentation/edgecrafter/README.md).
+
+Instance-segmentation tasks return masks by default. Set `TaskConfig::segmentation_output` to `SegmentationOutput::Polygon` to return full-image exterior rings and holes instead; see [instance-segmentation output representations](docs/segmentation_outputs.md).
 
 **Classification:**
 - `"torchvision-classifier"` - Torchvision models (ResNet, EfficientNet, etc.)
