@@ -109,6 +109,7 @@ TEST_F(ResultTypesTest, InstanceSegmentationDefaultConstruction) {
     EXPECT_TRUE(seg.mask_data.empty());
     EXPECT_EQ(seg.mask_height, 0);
     EXPECT_EQ(seg.mask_width, 0);
+    EXPECT_TRUE(seg.polygons.empty());
 }
 
 TEST_F(ResultTypesTest, InstanceSegmentationParameterizedConstruction) {
@@ -144,6 +145,19 @@ TEST_F(ResultTypesTest, InstanceSegmentationMaskData) {
     EXPECT_EQ(seg.mask_data[2], 128);
     EXPECT_EQ(seg.mask_width, 2);
     EXPECT_EQ(seg.mask_height, 2);
+}
+
+TEST_F(ResultTypesTest, InstanceSegmentationPolygonData) {
+    InstanceSegmentation seg;
+    SegmentationPolygon polygon;
+    polygon.exterior = {{1.0f, 2.0f}, {4.0f, 2.0f}, {4.0f, 5.0f}};
+    polygon.holes.push_back({{2.0f, 3.0f}, {3.0f, 3.0f}, {3.0f, 4.0f}});
+    seg.polygons.push_back(std::move(polygon));
+
+    ASSERT_EQ(seg.polygons.size(), 1U);
+    EXPECT_EQ(seg.polygons[0].exterior.size(), 3U);
+    ASSERT_EQ(seg.polygons[0].holes.size(), 1U);
+    EXPECT_EQ(seg.polygons[0].holes[0].size(), 3U);
 }
 
 TEST_F(ResultTypesTest, OpticalFlowDefaultConstruction) {

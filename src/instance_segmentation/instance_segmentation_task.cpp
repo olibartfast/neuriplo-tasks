@@ -1,6 +1,7 @@
 #include "neuriplo/tasks/instance_segmentation/instance_segmentation_task.hpp"
 
 #include "neuriplo/tasks/instance_segmentation/edgecrafter_segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/instance_segmentation/polygon_conversion.hpp"
 #include "neuriplo/tasks/instance_segmentation/rfdetr_segmentation_postprocessor.hpp"
 #include "neuriplo/tasks/instance_segmentation/yolo_segmentation_postprocessor.hpp"
 #include "neuriplo/tasks/object_detection/detection_preprocessor.hpp"
@@ -97,9 +98,10 @@ class ModelInputSegmentationPreprocessStrategy final : public InstanceSegmentati
 
 InstanceSegmentationTask::InstanceSegmentationTask(const ModelInfo& model_info, const std::string& model_name,
                                                    float confidence_threshold, float nms_threshold,
-                                                   float mask_threshold)
+                                                   float mask_threshold, SegmentationOutput segmentation_output)
     : TaskInterface(model_info), model_type_(detectModelType(model_name)), model_name_(model_name),
-      confidence_threshold_(confidence_threshold), nms_threshold_(nms_threshold), mask_threshold_(mask_threshold) {
+      confidence_threshold_(confidence_threshold), nms_threshold_(nms_threshold), mask_threshold_(mask_threshold),
+      segmentation_output_(segmentation_output) {
     vision::Size input_size = extractInputSize(model_info);
     input_width_ = input_size.width;
     input_height_ = input_size.height;
@@ -132,8 +134,15 @@ std::vector<Result> InstanceSegmentationTask::postprocess(const vision::Size& fr
 
     std::vector<Result> results;
     results.reserve(segmentations.size());
-    for (const auto& segmentation : segmentations) {
-        results.emplace_back(segmentation);
+    for (auto& segmentation : segmentations) {
+        if (segmentation_output_ == SegmentationOutput::Polygon) {
+            segmentation.polygons = maskToPolygons(segmentation.mask);
+            segmentation.mask = {};
+            segmentation.mask_data.clear();
+            segmentation.mask_height = 0;
+            segmentation.mask_width = 0;
+        }
+        results.emplace_back(std::move(segmentation));
     }
 
     return results;

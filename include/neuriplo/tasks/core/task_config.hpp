@@ -1,4 +1,6 @@
 #pragma once
+#include "neuriplo/tasks/core/segmentation_types.hpp"
+
 #include <map>
 #include <string>
 #include <vector>
@@ -9,6 +11,7 @@ struct TaskConfig {
     float confidence_threshold = 0.25f;
     float nms_threshold = 0.45f;
     float mask_threshold = 0.50f;
+    SegmentationOutput segmentation_output = SegmentationOutput::Mask;
     float text_threshold = 0.10f;
     int top_k = 5;
     int max_text_queries = 16;

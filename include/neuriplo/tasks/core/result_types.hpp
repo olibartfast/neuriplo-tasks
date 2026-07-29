@@ -2,6 +2,7 @@
 
 #include "neuriplo/tasks/core/bounding_box.hpp"
 #include "neuriplo/tasks/core/image_matrix.hpp"
+#include "neuriplo/tasks/core/segmentation_types.hpp"
 
 #include <array>
 #include <cstdint>
@@ -51,10 +52,11 @@ struct OpenVocabDetection {
  * @brief Instance segmentation result structure (extends Detection)
  */
 struct InstanceSegmentation : public Detection {
-    std::vector<uint8_t> mask_data; ///< Mask data as a vector
-    int mask_height{0};             ///< Mask height
-    int mask_width{0};              ///< Mask width
-    ImageMatrix mask;               ///< Binary or soft mask
+    std::vector<uint8_t> mask_data;            ///< Mask data as a vector
+    int mask_height{0};                        ///< Mask height
+    int mask_width{0};                         ///< Mask width
+    ImageMatrix mask;                          ///< Binary or soft mask
+    std::vector<SegmentationPolygon> polygons; ///< Polygon representation, populated when requested
 
     InstanceSegmentation() = default;
 

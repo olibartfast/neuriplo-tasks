@@ -49,6 +49,9 @@ set(TEST_LIBS
 add_executable(test_result_types test_result_types.cpp)
 target_link_libraries(test_result_types ${TEST_LIBS})
 
+add_executable(test_polygon_conversion test_polygon_conversion.cpp)
+target_link_libraries(test_polygon_conversion ${TEST_LIBS})
+
 add_executable(test_image_ops test_image_ops.cpp)
 target_link_libraries(test_image_ops ${TEST_LIBS})
 
@@ -220,6 +223,7 @@ endif()
 
 # Add tests manually for better compatibility
 add_test(NAME test_result_types COMMAND test_result_types)
+add_test(NAME test_polygon_conversion COMMAND test_polygon_conversion)
 add_test(NAME test_image_ops COMMAND test_image_ops)
 add_test(NAME test_batch_types COMMAND test_batch_types)
 add_test(NAME test_batch_preprocess COMMAND test_batch_preprocess)
