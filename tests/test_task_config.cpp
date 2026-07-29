@@ -65,6 +65,7 @@ TEST(TaskConfigTest, DefaultValues) {
     EXPECT_FLOAT_EQ(cfg.confidence_threshold, 0.25f);
     EXPECT_FLOAT_EQ(cfg.nms_threshold, 0.45f);
     EXPECT_FLOAT_EQ(cfg.mask_threshold, 0.50f);
+    EXPECT_EQ(cfg.segmentation_output, SegmentationOutput::Mask);
     EXPECT_FLOAT_EQ(cfg.text_threshold, 0.10f);
     EXPECT_EQ(cfg.top_k, 5);
     EXPECT_EQ(cfg.max_text_queries, 16);
@@ -83,6 +84,7 @@ TEST(TaskConfigTest, FieldAssignment) {
     cfg.confidence_threshold = 0.5f;
     cfg.nms_threshold = 0.3f;
     cfg.mask_threshold = 0.7f;
+    cfg.segmentation_output = SegmentationOutput::Polygon;
     cfg.text_threshold = 0.2f;
     cfg.top_k = 3;
     cfg.max_text_queries = 8;
@@ -97,6 +99,7 @@ TEST(TaskConfigTest, FieldAssignment) {
     EXPECT_FLOAT_EQ(cfg.confidence_threshold, 0.5f);
     EXPECT_FLOAT_EQ(cfg.nms_threshold, 0.3f);
     EXPECT_FLOAT_EQ(cfg.mask_threshold, 0.7f);
+    EXPECT_EQ(cfg.segmentation_output, SegmentationOutput::Polygon);
     EXPECT_FLOAT_EQ(cfg.text_threshold, 0.2f);
     EXPECT_EQ(cfg.top_k, 3);
     EXPECT_EQ(cfg.max_text_queries, 8);

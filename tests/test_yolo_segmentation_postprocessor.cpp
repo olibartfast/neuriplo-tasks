@@ -1,3 +1,4 @@
+#include "neuriplo/tasks/core/task_factory.hpp"
 #include "neuriplo/tasks/instance_segmentation/yolo_segmentation_postprocessor.hpp"
 
 #include <gtest/gtest.h>
@@ -57,6 +58,35 @@ class YoloSegmentationPostprocessorTest : public ::testing::Test {
         return {det_tensor, proto_tensor};
     }
 };
+
+TEST_F(YoloSegmentationPostprocessorTest, TaskConfigSelectsMaskOrPolygonOutput) {
+    auto [det_tensor, proto_tensor] = createMockYoloSegOutput();
+    const std::vector<Tensor> tensors = {det_tensor, proto_tensor};
+    ModelInfo info;
+    info.input_shapes = {{1, 3, 640, 640}};
+    info.input_formats = {"FORMAT_NCHW"};
+    info.input_names = {"images"};
+    info.output_names = {"output0", "output1"};
+
+    auto mask_task = TaskFactory::createTaskInstance("yoloseg", info);
+    const auto mask_results = mask_task->postprocess({640, 480}, tensors);
+    ASSERT_EQ(mask_results.size(), 1U);
+    const auto& mask_segmentation = std::get<InstanceSegmentation>(mask_results[0]);
+    EXPECT_FALSE(mask_segmentation.mask.empty());
+    EXPECT_TRUE(mask_segmentation.polygons.empty());
+
+    TaskConfig config;
+    config.segmentation_output = SegmentationOutput::Polygon;
+    auto polygon_task = TaskFactory::createTaskInstance("yoloseg", info, config);
+    const auto polygon_results = polygon_task->postprocess({640, 480}, tensors);
+    ASSERT_EQ(polygon_results.size(), 1U);
+    const auto& polygon_segmentation = std::get<InstanceSegmentation>(polygon_results[0]);
+    EXPECT_TRUE(polygon_segmentation.mask.empty());
+    EXPECT_TRUE(polygon_segmentation.mask_data.empty());
+    EXPECT_EQ(polygon_segmentation.mask_height, 0);
+    EXPECT_EQ(polygon_segmentation.mask_width, 0);
+    EXPECT_FALSE(polygon_segmentation.polygons.empty());
+}
 
 TEST_F(YoloSegmentationPostprocessorTest, StandardOrder) {
     YoloSegmentationPostprocessor processor(InstanceSegmentationTask::ModelType::YOLO_SEG,
