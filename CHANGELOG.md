@@ -9,8 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Instance-segmentation tasks can return framework-neutral polygon exteriors and
   holes through `TaskConfig::segmentation_output`; mask output remains the default.
-- `maskToPolygons` converts single-channel `UINT8` masks into exact pixel-boundary
-  polygons while preserving disconnected regions and holes.
+- `maskToPolygons` converts single-channel `UINT8` masks into convex-hull polygons
+  while preserving disconnected regions and holes.
 
 ## [0.6.1] - 2026-07-16
 

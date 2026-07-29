@@ -80,6 +80,43 @@ float signedArea(const Ring& ring) {
     return area * 0.5f;
 }
 
+float cross(const vision::Point2f& origin, const vision::Point2f& a, const vision::Point2f& b) {
+    return (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
+}
+
+Ring convexHull(Ring ring) {
+    const bool positive_winding = signedArea(ring) > 0.0f;
+    std::sort(ring.begin(), ring.end(),
+              [](const auto& a, const auto& b) { return a.x < b.x || (a.x == b.x && a.y < b.y); });
+    ring.erase(
+        std::unique(ring.begin(), ring.end(), [](const auto& a, const auto& b) { return a.x == b.x && a.y == b.y; }),
+        ring.end());
+    if (ring.size() < 3) {
+        return {};
+    }
+
+    Ring hull;
+    hull.reserve(ring.size() * 2);
+    for (const auto& point : ring) {
+        while (hull.size() >= 2 && cross(hull[hull.size() - 2], hull.back(), point) <= 0.0f) {
+            hull.pop_back();
+        }
+        hull.push_back(point);
+    }
+    const size_t lower_size = hull.size();
+    for (auto iterator = ring.rbegin() + 1; iterator != ring.rend(); ++iterator) {
+        while (hull.size() > lower_size && cross(hull[hull.size() - 2], hull.back(), *iterator) <= 0.0f) {
+            hull.pop_back();
+        }
+        hull.push_back(*iterator);
+    }
+    hull.pop_back();
+    if ((signedArea(hull) > 0.0f) != positive_winding) {
+        std::reverse(hull.begin(), hull.end());
+    }
+    return hull;
+}
+
 bool containsPoint(const Ring& ring, const vision::Point2f& point) {
     bool inside = false;
     for (size_t current = 0, previous = ring.size() - 1; current < ring.size(); previous = current++) {
@@ -185,6 +222,9 @@ std::vector<SegmentationPolygon> maskToPolygons(const ImageMatrix& mask) {
     }
 
     auto rings = traceRings(createBoundaryEdges(mask));
+    for (auto& ring : rings) {
+        ring = convexHull(std::move(ring));
+    }
     std::vector<SegmentationPolygon> polygons;
     std::vector<Ring> holes;
     for (auto& ring : rings) {
