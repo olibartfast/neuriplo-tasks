@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-01
+
+### Added
+- Instance-segmentation tasks can return framework-neutral polygon exteriors and
+  holes through `TaskConfig::segmentation_output`; mask output remains the default.
+- `maskToPolygons` converts single-channel `UINT8` masks into convex-hull polygons
+  while preserving disconnected regions and holes.
+
 ## [0.6.1] - 2026-07-16
 
 ### Fixed
@@ -146,7 +154,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - clang-format and clang-tidy configuration
 - CI workflow with lint, static analysis, build, and test jobs
 
-[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.4.1...v0.5.0
