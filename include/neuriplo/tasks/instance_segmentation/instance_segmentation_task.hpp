@@ -1,5 +1,6 @@
 #pragma once
 #include "neuriplo/tasks/core/preprocessor.hpp"
+#include "neuriplo/tasks/core/segmentation_types.hpp"
 #include "neuriplo/tasks/core/task_interface.hpp"
 
 #include <memory>
@@ -22,7 +23,8 @@ class InstanceSegmentationTask : public TaskInterface {
 
     explicit InstanceSegmentationTask(const ModelInfo& model_info, const std::string& model_name,
                                       float confidence_threshold = 0.25f, float nms_threshold = 0.45f,
-                                      float mask_threshold = 0.5f);
+                                      float mask_threshold = 0.5f,
+                                      SegmentationOutput segmentation_output = SegmentationOutput::Mask);
     ~InstanceSegmentationTask() override;
 
     // TaskInterface implementation
@@ -40,6 +42,7 @@ class InstanceSegmentationTask : public TaskInterface {
     float confidence_threshold_;
     float nms_threshold_;
     float mask_threshold_;
+    SegmentationOutput segmentation_output_;
 
     static ModelType detectModelType(const std::string& model_name);
 

@@ -58,7 +58,8 @@ std::unique_ptr<TaskInterface> createSegmentationTask([[maybe_unused]] const std
                                                       const std::string& normalized, const ModelInfo& model_info,
                                                       const TaskConfig& config) {
     return std::make_unique<InstanceSegmentationTask>(model_info, normalized, config.confidence_threshold,
-                                                      config.nms_threshold, config.mask_threshold);
+                                                      config.nms_threshold, config.mask_threshold,
+                                                      config.segmentation_output);
 }
 
 std::unique_ptr<TaskInterface> createPoseTask([[maybe_unused]] const std::string& model_type,

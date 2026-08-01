@@ -87,6 +87,7 @@ set(CORE_SOURCES
     src/classification/vit_postprocessor.cpp
     src/classification/tensorflow_postprocessor.cpp
     src/instance_segmentation/instance_segmentation_task.cpp
+    src/instance_segmentation/polygon_conversion.cpp
     src/instance_segmentation/yolo_segmentation_postprocessor.cpp
     src/instance_segmentation/rfdetr_segmentation_postprocessor.cpp
     src/instance_segmentation/edgecrafter_segmentation_postprocessor.cpp
@@ -129,6 +130,7 @@ set(CORE_HEADERS
     include/neuriplo/tasks/core/image_matrix.hpp
     include/neuriplo/tasks/core/vision/stb_io.hpp
     include/neuriplo/tasks/core/result_types.hpp
+    include/neuriplo/tasks/core/segmentation_types.hpp
     include/neuriplo/tasks/core/batch_types.hpp
     include/neuriplo/tasks/core/batch_preprocess.hpp
     include/neuriplo/tasks/core/batch_postprocess.hpp
@@ -154,6 +156,7 @@ set(CORE_HEADERS
     include/neuriplo/tasks/classification/vit_postprocessor.hpp
     include/neuriplo/tasks/classification/tensorflow_postprocessor.hpp
     include/neuriplo/tasks/instance_segmentation/instance_segmentation_task.hpp
+    include/neuriplo/tasks/instance_segmentation/polygon_conversion.hpp
     include/neuriplo/tasks/instance_segmentation/segmentation_postprocessor.hpp
     include/neuriplo/tasks/instance_segmentation/yolo_segmentation_postprocessor.hpp
     include/neuriplo/tasks/instance_segmentation/rfdetr_segmentation_postprocessor.hpp
