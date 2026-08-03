@@ -142,6 +142,15 @@ TEST_F(TaskFactoryTest, CreateValidDepthEstimationTask) {
     EXPECT_EQ(task->getTaskType(), TaskType::DepthEstimation);
 }
 
+TEST_F(TaskFactoryTest, CreateValidYoloDepthEstimationTask) {
+    auto info = createValidModelInfo();
+    info.input_shapes = {{1, 3, 768, 768}};
+
+    auto task = TaskFactory::createTaskInstance("yolo26n-depth", info);
+    ASSERT_NE(task, nullptr);
+    EXPECT_EQ(task->getTaskType(), TaskType::DepthEstimation);
+}
+
 // Regression guard: the unreachable `normalized == "lgm-mini"` branch was
 // removed from TaskFactory. normalizeModelType strips hyphens, so the
 // hyphenated form must still route through the "lgmmini" branch.
@@ -173,6 +182,7 @@ TEST_F(TaskFactoryTest, FactoryRoutesEveryTaskDomain) {
         {"raft", TaskType::OpticalFlow},
         {"yolov8pose", TaskType::PoseEstimation},
         {"depth-anything-v2", TaskType::DepthEstimation},
+        {"yolo26n-depth", TaskType::DepthEstimation},
         {"owlv2", TaskType::OpenVocabDetection},
         {"lgm", TaskType::GaussianSplatting},
         {"gemma4", TaskType::ImageUnderstanding},
@@ -225,6 +235,7 @@ TEST_F(TaskFactoryTest, NormalizedAliasesRouteToSameTaskType) {
     expectAliasesRouteTo({"RT-DETR", "rt_detr", " RT DETR "}, TaskType::Detection);
     expectAliasesRouteTo({"ViT-Classifier", "vit_classifier", " VIT CLASSIFIER "}, TaskType::Classification);
     expectAliasesRouteTo({"Depth-Anything-V2", "depth_anything_v2", " DEPTH ANYTHING V2 "}, TaskType::DepthEstimation);
+    expectAliasesRouteTo({"YOLO26N-Depth", "yolo26n_depth", " YOLO26N DEPTH "}, TaskType::DepthEstimation);
     expectAliasesRouteTo({"LGM-Mini", "lgm_mini", " LGM MINI "}, TaskType::GaussianSplatting);
     expectAliasesRouteTo({"Image-Understanding", "image_understanding", " IMAGE UNDERSTANDING "},
                          TaskType::ImageUnderstanding);
@@ -241,6 +252,7 @@ TEST_F(TaskFactoryTest, PrefixAndSubstringAliasesRouteToDocumentedTaskTypes) {
 TEST_F(TaskFactoryTest, SpecificYoloAliasesPrecedeGenericDetection) {
     expectAliasesRouteTo({"yolo-seg", "YOLO_SEG", " yolo seg ", "yolov8-seg"}, TaskType::InstanceSegmentation);
     expectAliasesRouteTo({"yolo-pose", "YOLO_POSE", " yolo pose ", "yolov8-pose"}, TaskType::PoseEstimation);
+    expectAliasesRouteTo({"yolo-depth", "YOLO_DEPTH", " yolo depth ", "yolo26n-depth"}, TaskType::DepthEstimation);
 }
 
 TEST_F(TaskFactoryTest, SpecificDetrSegmentationAliasPrecedesDetection) {

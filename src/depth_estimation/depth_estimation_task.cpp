@@ -2,6 +2,7 @@
 
 #include "neuriplo/tasks/depth_estimation/depth_anything_v2_postprocessor.hpp"
 #include "neuriplo/tasks/depth_estimation/depth_estimation_preprocessor.hpp"
+#include "neuriplo/tasks/depth_estimation/yolo_depth_postprocessor.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -46,6 +47,10 @@ DepthEstimationTask::ModelType DepthEstimationTask::detectModelType(const std::s
         return ModelType::DEPTH_ANYTHING_V2;
     }
 
+    if (lower_name.find("yolo") == 0 && lower_name.find("depth") != std::string::npos) {
+        return ModelType::YOLO_DEPTH;
+    }
+
     throw std::invalid_argument("Unsupported depth model type: " + model_name);
 }
 
@@ -53,6 +58,8 @@ std::unique_ptr<Preprocessor> DepthEstimationTask::createPreprocessor(ModelType 
     switch (type) {
     case ModelType::DEPTH_ANYTHING_V2:
         return std::make_unique<DepthAnythingV2Preprocessor>(input_size);
+    case ModelType::YOLO_DEPTH:
+        return std::make_unique<YoloDepthPreprocessor>(input_size);
 
     default:
         return nullptr;
@@ -63,6 +70,8 @@ std::unique_ptr<DepthEstimationPostprocessor> DepthEstimationTask::createPostpro
     switch (type) {
     case ModelType::DEPTH_ANYTHING_V2:
         return std::make_unique<DepthAnythingV2Postprocessor>();
+    case ModelType::YOLO_DEPTH:
+        return std::make_unique<YoloDepthPostprocessor>();
 
     default:
         return nullptr;

@@ -15,7 +15,7 @@ class DepthEstimationPostprocessor;
  */
 class DepthEstimationTask : public BaseTask {
   public:
-    enum class ModelType : uint8_t { DEPTH_ANYTHING_V2 };
+    enum class ModelType : uint8_t { DEPTH_ANYTHING_V2, YOLO_DEPTH };
 
     explicit DepthEstimationTask(const ModelInfo& model_info, const std::string& model_name);
     ~DepthEstimationTask() override;
