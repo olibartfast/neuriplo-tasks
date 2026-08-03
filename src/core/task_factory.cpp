@@ -103,6 +103,12 @@ const std::vector<TaskDescriptor>& taskDescriptors() {
         {"VitPose", TaskFamily::PoseEstimation, [](const std::string& normalized) { return normalized == "vitpose"; },
          createPoseTask},
 
+        // YOLO depth before generic YOLO detection.
+        {"YoloDepthEstimation", TaskFamily::DepthEstimation,
+         [](const std::string& normalized) { return startsWith(normalized, "yolo") && contains(normalized, "depth"); },
+         []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
+            const TaskConfig&) { return std::make_unique<DepthEstimationTask>(model_info, normalized); }},
+
         // Object detection aliases.
         {"YoloDetection", TaskFamily::Detection,
          [](const std::string& normalized) { return startsWith(normalized, "yolo"); }, createDetectionTask},

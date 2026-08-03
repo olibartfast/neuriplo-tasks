@@ -114,6 +114,7 @@ set(CORE_SOURCES
     src/depth_estimation/depth_estimation_task.cpp
     src/depth_estimation/depth_estimation_preprocessor.cpp
     src/depth_estimation/depth_anything_v2_postprocessor.cpp
+    src/depth_estimation/yolo_depth_postprocessor.cpp
     src/gaussian_splatting/gaussian_splatting_task.cpp
     src/gaussian_splatting/gaussian_splatting_preprocessor.cpp
     src/gaussian_splatting/lgm_postprocessor.cpp
@@ -188,6 +189,7 @@ set(CORE_HEADERS
     include/neuriplo/tasks/depth_estimation/depth_estimation_preprocessor.hpp
     include/neuriplo/tasks/depth_estimation/depth_estimation_postprocessor.hpp
     include/neuriplo/tasks/depth_estimation/depth_anything_v2_postprocessor.hpp
+    include/neuriplo/tasks/depth_estimation/yolo_depth_postprocessor.hpp
     include/neuriplo/tasks/gaussian_splatting/gaussian_splatting_task.hpp
     include/neuriplo/tasks/gaussian_splatting/gaussian_splatting_preprocessor.hpp
     include/neuriplo/tasks/gaussian_splatting/gaussian_splatting_postprocessor.hpp
