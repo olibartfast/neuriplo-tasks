@@ -181,9 +181,25 @@ class Image {
         }
         const std::size_t count = totalPixels() * static_cast<std::size_t>(channels_);
         std::vector<std::uint8_t> out(count * pixelTypeSize(target_type));
-        for (std::size_t i = 0; i < count; ++i) {
-            double v = readElementAsDouble(i) * alpha + beta;
-            writeElementAs(out.data(), i, target_type, v);
+
+        // Fast path: UInt8 -> Float32 covers the overwhelming majority of calls
+        // (every uint8 image normalized to a float tensor). Hoisting the type
+        // switch out of the loop, instead of re-dispatching it on every element
+        // via readElementAsDouble/writeElementAs, is the only change — same
+        // double-precision arithmetic and cast/round rules, so output is
+        // bit-for-bit identical to the generic path below.
+        if (pixel_type_ == PixelType::UInt8 && target_type == PixelType::Float32) {
+            const std::uint8_t* src = buffer_.data();
+            float* dst = reinterpret_cast<float*>(out.data());
+            for (std::size_t i = 0; i < count; ++i) {
+                const double v = static_cast<double>(src[i]) * alpha + beta;
+                dst[i] = static_cast<float>(v);
+            }
+        } else {
+            for (std::size_t i = 0; i < count; ++i) {
+                double v = readElementAsDouble(i) * alpha + beta;
+                writeElementAs(out.data(), i, target_type, v);
+            }
         }
         pixel_type_ = target_type;
         buffer_ = std::move(out);
