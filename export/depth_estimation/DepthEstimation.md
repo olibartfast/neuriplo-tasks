@@ -1,18 +1,21 @@
 # Depth Estimation Export
 
-Export tools for HuggingFace depth estimation models to ONNX format.
+Export tools for HuggingFace and Ultralytics depth estimation models to ONNX format.
 
 ## Supported Models
 
-| Model | HuggingFace Class | Default Model |
-|-------|-------------------|---------------|
+| Model | Export API | Default Model |
+|-------|------------|---------------|
 | Depth Anything V2 | `AutoModelForDepthEstimation` | `depth-anything/Depth-Anything-V2-Small-hf` |
+| YOLO26 Depth | Ultralytics `YOLO` | `yolo26n-depth.pt` |
 
-The exporter produces:
+The Depth Anything V2 exporter produces:
 - Input tensor: `pixel_values` with shape `[batch, 3, height, width]`
 - Output tensor: `predicted_depth` with shape `[batch, height, width]` (or model-equivalent depth output)
 
 ## Usage
+
+For YOLO26 depth setup, ONNX export, and tensor contracts, see the [YOLO depth guide](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/depth_estimation/yolo_depth/README.md).
 
 ```bash
 # Default export

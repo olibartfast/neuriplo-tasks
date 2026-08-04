@@ -28,7 +28,8 @@ export/
 │   ├── rfdetr/             # RF-DETR keypoint pose estimation export
 │   └── edgecrafter/        # EdgeCrafter pose estimation export
 ├── depth_estimation/
-│   └── depth_anything_v2/  # Depth Anything V2 depth export
+│   ├── depth_anything_v2/  # Depth Anything V2 depth export
+│   └── yolo_depth/         # Ultralytics YOLO26 depth export
 ├── gaussian_splatting/
 │   └── lgm/                # LGM / GRM Gaussian Splatting export
 ├── video_classification/
@@ -69,6 +70,9 @@ python export/pose_estimation/rfdetr/export_keypoint.py --model_type medium
 
 # Export Depth Anything V2
 python export/depth_estimation/depth_anything_v2/export_depth_anything_v2_to_onnx.py
+
+# Export YOLO26 depth
+yolo export model=yolo26n-depth.pt format=onnx imgsz=768
 
 # Export OWLv2
 python export/open_vocab_detection/owlv2/export_owlv2_to_onnx.py --test
