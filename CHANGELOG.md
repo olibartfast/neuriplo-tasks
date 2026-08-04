@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-04
+
+### Added
+- YOLO26 depth estimation task (`yolo-depth`, `yolo26n-depth`, or any YOLO-prefixed
+  model type containing `depth`): letterboxed metric depth-map inference with
+  normalized display output and observed min/max depth.
+
+### Changed
+- `Image::convertTo`, `resizeBilinear`, and `splitChannels` hoist their per-element
+  pixel-type dispatch out of the hot loop into a type-specialized fast path
+  (UInt8 source, UInt8->Float32 conversion, 1/4-byte element copies), cutting
+  preprocessing time without changing output — verified bit-identical against the
+  existing test suite and the `cpu_preprocess_sha256.json` fixture baseline.
+
 ## [0.7.0] - 2026-08-01
 
 ### Added
@@ -154,7 +168,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - clang-format and clang-tidy configuration
 - CI workflow with lint, static analysis, build, and test jobs
 
-[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.5.0...v0.6.0
