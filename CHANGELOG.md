@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-04
+
 ### Added
 - YOLO26 depth estimation task (`yolo-depth`, `yolo26n-depth`, or any YOLO-prefixed
   model type containing `depth`): letterboxed metric depth-map inference with
@@ -166,7 +168,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - clang-format and clang-tidy configuration
 - CI workflow with lint, static analysis, build, and test jobs
 
-[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.5.0...v0.6.0
