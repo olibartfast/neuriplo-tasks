@@ -1,6 +1,7 @@
 #include "neuriplo/tasks/core/vision/stb_io.hpp"
 
 #include <cstring>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -63,6 +64,30 @@ vision::Image loadImage(const std::string& path, int desired_channels) {
     vision::Image image(width, height, out_channels, vision::PixelType::UInt8);
     const std::size_t bytes = image.sizeBytes();
     std::memcpy(image.data<std::uint8_t>(), pixels, bytes);
+    stbi_image_free(pixels);
+    return image;
+}
+
+vision::Image decodeImage(const std::uint8_t* bytes, std::size_t size, int desired_channels) {
+    if (bytes == nullptr || size == 0) {
+        throw std::runtime_error("decodeImage failed: empty buffer");
+    }
+    if (size > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+        throw std::runtime_error("decodeImage failed: buffer exceeds stb_image's int length limit");
+    }
+
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+    const int req = (desired_channels > 0) ? desired_channels : STBI_default;
+    stbi_uc* pixels = stbi_load_from_memory(bytes, static_cast<int>(size), &width, &height, &channels, req);
+    if (pixels == nullptr) {
+        throw std::runtime_error(std::string("decodeImage failed: ") + stbFailure());
+    }
+    const int out_channels = (req != STBI_default) ? req : channels;
+
+    vision::Image image(width, height, out_channels, vision::PixelType::UInt8);
+    std::memcpy(image.data<std::uint8_t>(), pixels, image.sizeBytes());
     stbi_image_free(pixels);
     return image;
 }

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `vision::decodeImage(bytes, size, desired_channels)` decodes an encoded image
+  already held in memory, the same way `loadImage` decodes one from disk.
+  Serving runtimes receive encoded bytes on the wire and have no file to point
+  at; server-side ensembles need this to decode without a filesystem round trip.
+
 ## [0.8.0] - 2026-08-04
 
 ### Added

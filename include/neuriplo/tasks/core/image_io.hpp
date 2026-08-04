@@ -4,6 +4,7 @@
 
 namespace neuriplo_tasks {
 
+using vision::decodeImage;
 using vision::loadImage;
 using vision::saveImage;
 
