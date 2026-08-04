@@ -69,8 +69,7 @@ template <typename View> [[nodiscard]] vision::Image resizeBilinear(const View& 
             y1 = std::clamp(y1, 0, sh - 1);
             const std::uint8_t* row0 = sptr + static_cast<std::size_t>(y0) * s_width * s_channels;
             const std::uint8_t* row1 = sptr + static_cast<std::size_t>(y1) * s_width * s_channels;
-            std::uint8_t* dst_row =
-                dptr + static_cast<std::size_t>(dy) * static_cast<std::size_t>(dw) * s_channels;
+            std::uint8_t* dst_row = dptr + static_cast<std::size_t>(dy) * static_cast<std::size_t>(dw) * s_channels;
             for (int dx = 0; dx < dw; ++dx) {
                 const double fx = (static_cast<double>(dx) + 0.5) * sx - 0.5;
                 int x0 = static_cast<int>(std::floor(fx));
