@@ -53,6 +53,51 @@ template <typename View> [[nodiscard]] vision::Image resizeBilinear(const View& 
     const double sy = static_cast<double>(sh) / static_cast<double>(dh);
     const std::uint8_t* sptr = static_cast<const std::uint8_t*>(src.raw());
     std::uint8_t* dptr = out.raw();
+
+    // Fast path: UInt8 source (the overwhelming majority of real images) with the
+    // element-type switch hoisted out of the inner loop instead of re-dispatched via
+    // readScalar/writeScalar on every read/write. Same arithmetic, clamp, and cast
+    // rules as the generic path below, so output is bit-for-bit identical.
+    if (pt == vision::PixelType::UInt8) {
+        for (int dy = 0; dy < dh; ++dy) {
+            const double fy = (static_cast<double>(dy) + 0.5) * sy - 0.5;
+            int y0 = static_cast<int>(std::floor(fy));
+            int y1 = y0 + 1;
+            const double wy = fy - static_cast<double>(y0);
+            const double wy0 = 1.0 - wy;
+            y0 = std::clamp(y0, 0, sh - 1);
+            y1 = std::clamp(y1, 0, sh - 1);
+            const std::uint8_t* row0 = sptr + static_cast<std::size_t>(y0) * s_width * s_channels;
+            const std::uint8_t* row1 = sptr + static_cast<std::size_t>(y1) * s_width * s_channels;
+            std::uint8_t* dst_row =
+                dptr + static_cast<std::size_t>(dy) * static_cast<std::size_t>(dw) * s_channels;
+            for (int dx = 0; dx < dw; ++dx) {
+                const double fx = (static_cast<double>(dx) + 0.5) * sx - 0.5;
+                int x0 = static_cast<int>(std::floor(fx));
+                int x1 = x0 + 1;
+                const double wx = fx - static_cast<double>(x0);
+                const double wx0 = 1.0 - wx;
+                x0 = std::clamp(x0, 0, sw - 1);
+                x1 = std::clamp(x1, 0, sw - 1);
+                const std::size_t x0s = static_cast<std::size_t>(x0) * s_channels;
+                const std::size_t x1s = static_cast<std::size_t>(x1) * s_channels;
+                std::uint8_t* dst_pixel = dst_row + static_cast<std::size_t>(dx) * s_channels;
+                for (int ch = 0; ch < c; ++ch) {
+                    const std::size_t chs = static_cast<std::size_t>(ch);
+                    const double v00 = static_cast<double>(row0[x0s + chs]);
+                    const double v01 = static_cast<double>(row0[x1s + chs]);
+                    const double v10 = static_cast<double>(row1[x0s + chs]);
+                    const double v11 = static_cast<double>(row1[x1s + chs]);
+                    const double v0 = v00 * wx0 + v01 * wx;
+                    const double v1 = v10 * wx0 + v11 * wx;
+                    const double v = v0 * wy0 + v1 * wy;
+                    dst_pixel[chs] = static_cast<uint8_t>(std::clamp(v, 0.0, 255.0));
+                }
+            }
+        }
+        return out;
+    }
+
     for (int dy = 0; dy < dh; ++dy) {
         const double fy = (static_cast<double>(dy) + 0.5) * sy - 0.5;
         int y0 = static_cast<int>(std::floor(fy));
@@ -286,6 +331,41 @@ std::vector<vision::Image> splitChannels(const vision::ImageView& src) {
         out.push_back(vision::Image::uninit(w, h, 1, pt));
     }
     const std::uint8_t* sptr = static_cast<const std::uint8_t*>(src.raw());
+
+    // Fast path: direct typed element writes instead of a memcpy() call per
+    // pixel-channel (W*H*C tiny memcpy calls dominate splitChannels' cost).
+    // Same bytes end up in the same place either way — for a same-size type,
+    // a plain load/store is bit-for-bit equivalent to memcpy of that size.
+    if (es == sizeof(std::uint32_t)) {
+        std::vector<std::uint32_t*> planes(static_cast<std::size_t>(c));
+        for (int ch = 0; ch < c; ++ch) {
+            planes[static_cast<std::size_t>(ch)] = out[static_cast<std::size_t>(ch)].data<std::uint32_t>();
+        }
+        const auto* src32 = reinterpret_cast<const std::uint32_t*>(sptr);
+        const std::size_t total = static_cast<std::size_t>(w) * static_cast<std::size_t>(h);
+        for (std::size_t px = 0; px < total; ++px) {
+            const std::size_t base = px * s_channels;
+            for (int ch = 0; ch < c; ++ch) {
+                planes[static_cast<std::size_t>(ch)][px] = src32[base + static_cast<std::size_t>(ch)];
+            }
+        }
+        return out;
+    }
+    if (es == sizeof(std::uint8_t)) {
+        std::vector<std::uint8_t*> planes(static_cast<std::size_t>(c));
+        for (int ch = 0; ch < c; ++ch) {
+            planes[static_cast<std::size_t>(ch)] = out[static_cast<std::size_t>(ch)].data<std::uint8_t>();
+        }
+        const std::size_t total = static_cast<std::size_t>(w) * static_cast<std::size_t>(h);
+        for (std::size_t px = 0; px < total; ++px) {
+            const std::size_t base = px * s_channels;
+            for (int ch = 0; ch < c; ++ch) {
+                planes[static_cast<std::size_t>(ch)][px] = sptr[base + static_cast<std::size_t>(ch)];
+            }
+        }
+        return out;
+    }
+
     for (int y = 0; y < h; ++y) {
         const std::size_t ys = static_cast<std::size_t>(y);
         for (int x = 0; x < w; ++x) {
