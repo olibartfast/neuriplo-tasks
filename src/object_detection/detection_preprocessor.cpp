@@ -35,16 +35,29 @@ std::vector<uint8_t> YoloPreprocessor::preprocess(const vision::ImageView& image
 }
 
 // RT-DETR Preprocessor (transformer-based detector)
+// RT-DETR, RT-DETRv2, D-FINE and DEIM all scale to [0,1] and stop there; none of
+// them subtract ImageNet statistics. Applying them anyway leaves the detector
+// running on out-of-distribution input: it still fires, but on a crowded street
+// it drops from a full set of boxes to a handful of badly placed ones.
 RtDetrPreprocessor::RtDetrPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
-          true, // normalize
-          true, // ImageNet normalization (transformer models expect this)
-          true  // BGR to RGB
+          true,  // normalize to [0,1]
+          false, // no ImageNet normalization
+          true   // BGR to RGB
       }) {}
 
-// D-FINE Preprocessor (DETR-based detector)
+// D-FINE Preprocessor (DETR-based detector). Same convention as RT-DETR above.
 DFinePreprocessor::DFinePreprocessor(const vision::Size& input_size)
+    : Preprocessor(PreprocessConfig{
+          input_size, ImageFormat::NCHW, DataType::FLOAT32,
+          true,  // normalize to [0,1]
+          false, // no ImageNet normalization
+          true   // BGR to RGB
+      }) {}
+
+// EdgeCrafter Preprocessor — retains ImageNet normalization, see the header.
+EdgeCrafterPreprocessor::EdgeCrafterPreprocessor(const vision::Size& input_size)
     : Preprocessor(PreprocessConfig{
           input_size, ImageFormat::NCHW, DataType::FLOAT32,
           true, // normalize

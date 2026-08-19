@@ -20,6 +20,11 @@ file.
   for the full release workflow.
 - **Priorities when reviewing a change**: correctness → backward compatibility
   → task-contract stability → shape/dtype assumptions → performance regressions.
+- **Specifications**: [`specs/`](./specs/) holds the project constitution
+  (`mission.md`, `tech-stack.md`, `roadmap.md`) and one dated packet per
+  delivered slice. Read the constitution before planning a feature; it covers
+  *what the library is and must stay*, while this file covers *how to work on
+  it*. See [`specs/README.md`](./specs/README.md) for the workflow.
 
 ---
 

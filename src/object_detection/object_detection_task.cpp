@@ -210,7 +210,10 @@ ObjectDetectionTask::ModelType ObjectDetectionTask::detectModelType(const std::s
     if (lower_name == "rtdetrul" || lower_name == "rtdetrultralytics") {
         return ModelType::RT_DETR_UL;
     }
-    if (lower_name == "rtdetr" || lower_name == "rtdetrv2" || lower_name == "dfine" || lower_name == "deim") {
+    // Match the families by prefix: D-FINE and DEIM ship revisions (deimv2,
+    // dfine-l ...) that all export the same labels/boxes/scores signature.
+    if (lower_name == "rtdetr" || lower_name == "rtdetrv2" || lower_name.rfind("dfine", 0) == 0 ||
+        lower_name.rfind("deim", 0) == 0) {
         return ModelType::RT_DETR_STYLE;
     }
 
@@ -255,7 +258,7 @@ std::unique_ptr<Preprocessor> ObjectDetectionTask::createPreprocessor(ModelType 
         return std::make_unique<RfDetrPreprocessor>(input_size);
 
     case ModelType::EDGECRAFTER:
-        return std::make_unique<RtDetrPreprocessor>(input_size);
+        return std::make_unique<EdgeCrafterPreprocessor>(input_size);
 
     default:
         return nullptr;

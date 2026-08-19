@@ -32,6 +32,18 @@ class RtDetrPreprocessor : public Preprocessor {
 };
 
 /**
+ * @brief EdgeCrafter preprocessor
+ *
+ * EdgeCrafter previously shared the RT-DETR preprocessor. It keeps ImageNet
+ * normalization: no EdgeCrafter model was available to verify a change against,
+ * so its behaviour is preserved rather than assumed to match RT-DETR's.
+ */
+class EdgeCrafterPreprocessor : public Preprocessor {
+  public:
+    explicit EdgeCrafterPreprocessor(const Size& input_size);
+};
+
+/**
  * @brief D-FINE preprocessor (DETR-based fine-grained detector)
  */
 class DFinePreprocessor : public Preprocessor {

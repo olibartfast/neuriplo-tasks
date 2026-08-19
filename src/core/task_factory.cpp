@@ -128,8 +128,11 @@ const std::vector<TaskDescriptor>& taskDescriptors() {
          }},
         {"DetrDetection", TaskFamily::Detection,
          [](const std::string& normalized) {
-             return normalized == "rtdetr" || normalized == "rtdetrul" || normalized == "rtdetrultralytics" ||
-                    normalized == "rfdetr";
+             // ObjectDetectionTask already maps these to RT_DETR_STYLE; without
+             // them here the factory rejects the name before the task sees it.
+             return normalized == "rtdetr" || normalized == "rtdetrv2" || normalized == "rtdetrul" ||
+                    normalized == "rtdetrultralytics" || normalized == "rfdetr" || normalized == "dfine" ||
+                    startsWith(normalized, "deim");
          },
          createDetectionTask},
 
