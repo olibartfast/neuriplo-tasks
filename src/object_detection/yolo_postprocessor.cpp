@@ -14,7 +14,6 @@ namespace {
 constexpr float kNormalizedCoordinateLimit = 1.5f;
 } // namespace
 
-
 YoloPostprocessor::YoloPostprocessor(ObjectDetectionTask::ModelType model_type, const vision::Size& input_size,
                                      float confidence_threshold, float nms_threshold)
     : model_type_(model_type), input_size_(input_size), confidence_threshold_(confidence_threshold),

@@ -169,8 +169,7 @@ TEST_F(YoloPostprocessorTest, YoloNmsFreeKeepsConventionsSeparate) {
     pixels[3] = 640.0f;
     pixels[4] = 0.9f;
     pixels[5] = 0.0f;
-    auto from_pixels =
-        processor.postprocess({Tensor(pixels, {1, num_dets, dims})}, neuriplo_tasks::Size(640, 640));
+    auto from_pixels = processor.postprocess({Tensor(pixels, {1, num_dets, dims})}, neuriplo_tasks::Size(640, 640));
 
     std::vector<TensorElement> normalized(num_dets * dims, 0.0f);
     normalized[0] = 0.0f;
