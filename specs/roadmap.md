@@ -19,17 +19,11 @@ which stays the authority on the detail. This is the shape of the arc:
 | 0.6.0 – 0.6.1 | **OpenCV removed as a dependency** — native `vision::Image`, optional `vision-stb` and `vision-opencv` adapters |
 | 0.7.0 | Framework-neutral polygon output for instance segmentation |
 | 0.8.0 | YOLO26 depth estimation; vision hot-loop fast paths |
+| 0.8.1 | `vision::decodeImage` for in-memory encoded images; [detector gaps](2026-08-20-detector-gaps/requirements.md) — YOLO NMS-free coordinate convention, RT-DETR-family normalization, D-FINE/DEIM factory routing |
 
 ## In flight
 
-On `develop`, not yet released:
-
-- `vision::decodeImage(bytes, size, channels)` — decode an encoded image already
-  in memory, for serving runtimes that receive bytes on the wire and have no
-  file to point at.
-- [2026-08-20-detector-gaps](2026-08-20-detector-gaps/requirements.md) — YOLO
-  NMS-free coordinate convention, RT-DETR-family normalization, D-FINE/DEIM
-  factory routing.
+Nothing on `develop` beyond the last release.
 
 ## Proposed
 
