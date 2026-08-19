@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-08-20
+
+### Added
+- `vision::decodeImage(bytes, size, desired_channels)` decodes an encoded image
+  already held in memory, the same way `loadImage` decodes one from disk.
+  Serving runtimes receive encoded bytes on the wire and have no file to point
+  at; server-side ensembles need this to decode without a filesystem round trip.
+
+### Fixed
+- YOLO NMS-free detection (`yolov10`, `yolo26`) detects whether the `[1,300,6]`
+  output carries normalized or input-pixel coordinates instead of assuming
+  normalized. Exports of the same model type use both conventions, and assuming
+  normalized multiplied pixel coordinates by the input size, placing every box
+  off-frame.
+- RT-DETR, RT-DETRv2, D-FINE, and DEIM preprocessing no longer applies ImageNet
+  mean/std normalization — these models expect `images` scaled to `[0,1]` only.
+  The extra statistics shifted the input distribution and produced a handful of
+  misplaced boxes. RF-DETR and EdgeCrafter keep ImageNet statistics, the latter
+  through a dedicated `EdgeCrafterPreprocessor`.
+- `TaskFactory` routes `rtdetrv2`, `dfine`, `deim`, and later DEIM revisions.
+  `ObjectDetectionTask` already mapped these names, but the factory runs first
+  and rejected them with `Unrecognized model type: dfine`.
+
 ## [0.8.0] - 2026-08-04
 
 ### Added
@@ -168,7 +191,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - clang-format and clang-tidy configuration
 - CI workflow with lint, static analysis, build, and test jobs
 
-[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.6.0...v0.6.1
