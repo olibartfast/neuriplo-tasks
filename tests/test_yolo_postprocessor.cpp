@@ -123,6 +123,71 @@ TEST_F(YoloPostprocessorTest, YoloNmsFreeFormat) {
     EXPECT_EQ(detections[0].bbox, BoundingBox(160, 80, 160, 160));
 }
 
+// Ultralytics YOLOv10 / YOLO26 exports emit xyxy in input-image pixels, not in
+// normalized [0, 1]. Scaling those by the input size again put every box roughly
+// 640x off-frame, so the model appeared to detect nothing at all.
+TEST_F(YoloPostprocessorTest, YoloNmsFreeAcceptsPixelCoordinates) {
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NMS_FREE, neuriplo_tasks::Size(640, 640), 0.25f,
+                                0.45f);
+
+    const int num_dets = 300;
+    const int dims = 6;
+    std::vector<TensorElement> output(num_dets * dims, 0.0f);
+
+    // Same box as the normalized test, expressed in 640x640 input pixels.
+    output[0] = 160.0f; // x1
+    output[1] = 160.0f; // y1
+    output[2] = 320.0f; // x2
+    output[3] = 320.0f; // y2
+    output[4] = 0.9f;   // score
+    output[5] = 1.0f;   // class 1
+
+    std::vector<Tensor> tensors = {Tensor(output, {1, num_dets, dims})};
+    neuriplo_tasks::Size frame_size(640, 480);
+
+    auto detections = processor.postprocess(tensors, frame_size);
+
+    ASSERT_EQ(detections.size(), 1);
+    EXPECT_EQ(detections[0].class_id, 1);
+    // Identical geometry to YoloNmsFreeFormat, which feeds the normalized form.
+    EXPECT_EQ(detections[0].bbox, BoundingBox(160, 80, 160, 160));
+}
+
+// A pixel-coordinate box that fills the frame must not be mistaken for a
+// normalized one, and vice versa: the decision is made per tensor.
+TEST_F(YoloPostprocessorTest, YoloNmsFreeKeepsConventionsSeparate) {
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NMS_FREE, neuriplo_tasks::Size(640, 640), 0.25f,
+                                0.45f);
+
+    const int num_dets = 8;
+    const int dims = 6;
+
+    std::vector<TensorElement> pixels(num_dets * dims, 0.0f);
+    pixels[0] = 0.0f;
+    pixels[1] = 0.0f;
+    pixels[2] = 640.0f;
+    pixels[3] = 640.0f;
+    pixels[4] = 0.9f;
+    pixels[5] = 0.0f;
+    auto from_pixels =
+        processor.postprocess({Tensor(pixels, {1, num_dets, dims})}, neuriplo_tasks::Size(640, 640));
+
+    std::vector<TensorElement> normalized(num_dets * dims, 0.0f);
+    normalized[0] = 0.0f;
+    normalized[1] = 0.0f;
+    normalized[2] = 1.0f;
+    normalized[3] = 1.0f;
+    normalized[4] = 0.9f;
+    normalized[5] = 0.0f;
+    auto from_normalized =
+        processor.postprocess({Tensor(normalized, {1, num_dets, dims})}, neuriplo_tasks::Size(640, 640));
+
+    ASSERT_EQ(from_pixels.size(), 1);
+    ASSERT_EQ(from_normalized.size(), 1);
+    EXPECT_EQ(from_pixels[0].bbox, from_normalized[0].bbox);
+    EXPECT_EQ(from_pixels[0].bbox, BoundingBox(0, 0, 640, 640));
+}
+
 TEST_F(YoloPostprocessorTest, YoloNmsFreeAppliesNmsPerClass) {
     YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NMS_FREE, neuriplo_tasks::Size(640, 640), 0.25f,
                                 0.45f);

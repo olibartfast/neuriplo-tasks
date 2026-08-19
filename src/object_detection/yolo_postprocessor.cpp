@@ -8,6 +8,12 @@
 #include <stdexcept>
 
 namespace neuriplo_tasks {
+namespace {
+// Coordinates at or below this are treated as normalized. Real pixel boxes from
+// a 640x640 (or smaller) input never land this low for x2/y2.
+constexpr float kNormalizedCoordinateLimit = 1.5f;
+} // namespace
+
 
 YoloPostprocessor::YoloPostprocessor(ObjectDetectionTask::ModelType model_type, const vision::Size& input_size,
                                      float confidence_threshold, float nms_threshold)
@@ -316,6 +322,21 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(const Tensor& o
     int num_dets = static_cast<int>(output.shape[1]);
     int dims = static_cast<int>(output.shape[2]);
 
+    // Exports disagree on the coordinate convention: an Ultralytics YOLOv10 or
+    // YOLO26 export emits xyxy in input-image pixels (0..input_size), while some
+    // third-party exports emit normalized [0, 1]. Decide once per tensor from the
+    // largest coordinate rather than assuming: scaling pixel coordinates by the
+    // input size again pushes every box hundreds of times off-frame, which reads
+    // as "the model detects nothing".
+    float max_coordinate = 0.0f;
+    for (int i = 0; i < num_dets; ++i) {
+        for (int k = 0; k < 4; ++k) {
+            max_coordinate =
+                std::max(max_coordinate, tensorElementToFloat(output.data[static_cast<size_t>(i * dims + k)]));
+        }
+    }
+    const bool normalized_coordinates = max_coordinate <= kNormalizedCoordinateLimit;
+
     for (int i = 0; i < num_dets; ++i) {
         float score = tensorElementToFloat(output.data[static_cast<size_t>(i * dims + 4)]);
         if (score < confidence_threshold_)
@@ -327,10 +348,12 @@ std::vector<Detection> YoloPostprocessor::postprocessYoloNmsFree(const Tensor& o
         float y2 = tensorElementToFloat(output.data[static_cast<size_t>(i * dims + 3)]);
         int class_id = static_cast<int>(tensorElementToFloat(output.data[static_cast<size_t>(i * dims + 5)]));
 
-        x1 *= static_cast<float>(input_size_.width);
-        y1 *= static_cast<float>(input_size_.height);
-        x2 *= static_cast<float>(input_size_.width);
-        y2 *= static_cast<float>(input_size_.height);
+        if (normalized_coordinates) {
+            x1 *= static_cast<float>(input_size_.width);
+            y1 *= static_cast<float>(input_size_.height);
+            x2 *= static_cast<float>(input_size_.width);
+            y2 *= static_cast<float>(input_size_.height);
+        }
 
         Detection det;
         det.class_id = static_cast<float>(class_id);

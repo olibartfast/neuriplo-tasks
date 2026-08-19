@@ -209,6 +209,12 @@ TEST_F(TaskFactoryTest, PlatformStableModelTypeStringsRouteToExpectedTaskTypes) 
         {"rtdetr", TaskType::Detection},
         {"rtdetrul", TaskType::Detection},
         {"rfdetr", TaskType::Detection},
+        // ObjectDetectionTask maps these to RT_DETR_STYLE, but the factory used
+        // to reject the names before the task ever saw them.
+        {"rtdetrv2", TaskType::Detection},
+        {"dfine", TaskType::Detection},
+        {"deim", TaskType::Detection},
+        {"deimv2", TaskType::Detection},
         {"yoloseg", TaskType::InstanceSegmentation},
         {"raft", TaskType::OpticalFlow},
         {"vitpose", TaskType::PoseEstimation},
@@ -258,6 +264,8 @@ TEST_F(TaskFactoryTest, SpecificYoloAliasesPrecedeGenericDetection) {
 TEST_F(TaskFactoryTest, SpecificDetrSegmentationAliasPrecedesDetection) {
     expectAliasesRouteTo({"rfdetrseg", "RF-DETR-SEG", " rf detr seg "}, TaskType::InstanceSegmentation);
     expectAliasesRouteTo({"rfdetr", "RF-DETR", " rf detr "}, TaskType::Detection);
+    expectAliasesRouteTo({"dfine", "D-FINE", " d fine "}, TaskType::Detection);
+    expectAliasesRouteTo({"deim", "DEIM", "deimv2", "DEIMv2"}, TaskType::Detection);
 }
 
 TEST_F(TaskFactoryTest, SpecificEdgeCrafterAliasesPrecedeGenericDetection) {
