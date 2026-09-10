@@ -107,6 +107,21 @@ struct PoseEstimation {
 };
 
 /**
+ * @brief Gaze estimation result structure
+ *
+ * Gaze estimation predicts where a person is looking. It is distinct from
+ * PoseEstimation, which represents 2D human skeletal keypoints.
+ */
+struct GazeEstimation {
+    float pitch{0.0f};                    ///< Vertical gaze angle in radians when available
+    float yaw{0.0f};                      ///< Horizontal gaze angle in radians when available
+    std::array<float, 3> direction{};    ///< Normalized 3D gaze direction [x, y, z]
+    float confidence{0.0f};               ///< Optional model confidence [0.0, 1.0]
+
+    GazeEstimation() = default;
+};
+
+/**
  * @brief Depth estimation result structure
  */
 struct DepthEstimation {
@@ -181,9 +196,9 @@ struct ImageUnderstanding {
 /**
  * @brief Result variant type to hold any task result
  */
-using Result =
-    std::variant<Classification, Detection, OpenVocabDetection, InstanceSegmentation, OpticalFlow, VideoClassification,
-                 PoseEstimation, DepthEstimation, GaussianSplatting, ImageUnderstanding>;
+using Result = std::variant<Classification, Detection, OpenVocabDetection, InstanceSegmentation, OpticalFlow,
+                            VideoClassification, PoseEstimation, GazeEstimation, DepthEstimation, GaussianSplatting,
+                            ImageUnderstanding>;
 
 /**
  * @brief Optional visitor helper for Result (forwards to std::visit).
@@ -209,6 +224,7 @@ enum class TaskType : uint8_t {
     InstanceSegmentation,
     VideoClassification,
     PoseEstimation,
+    GazeEstimation,
     DepthEstimation,
     OpenVocabDetection,
     GaussianSplatting,
