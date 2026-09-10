@@ -14,7 +14,8 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: VideoMAE, ViViT, TimeSformer
 - **Optical Flow**: RAFT
-- **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose
+- **2D Human Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose. This task is specifically for image-space human skeletal keypoints, not 3D human pose or 6-DoF object pose.
+- **Monocular 3D Object Detection**: category-level 3D object/cuboid estimation from a single RGB image; UrbanOmniDetect is the first integration target.
 - **Depth Estimation**: Depth Anything V2, YOLO26 Depth
 - **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO
 - **Gaussian Splatting**: LGM, LGM-mini, GRM (feed-forward image → 3D Gaussians)
@@ -199,11 +200,10 @@ target_link_libraries(your_target neuriplo-tasks::neuriplo-tasks)
 mkdir build && cd build
 cmake -DCMAKE_INSTALL_PREFIX=/usr/local ..
 cmake --build .
-sudo cmake --install .
+sudo cmake --install
 ```
 
 ```cmake
-# In your CMakeLists.txt
 find_package(neuriplo-tasks REQUIRED)
 target_link_libraries(your_target neuriplo-tasks::neuriplo-tasks)
 ```
@@ -259,7 +259,10 @@ Any model type starting with `resnet` (e.g. `resnet50`) or containing `tensorflo
 **Optical Flow:**
 - `"raft"` - RAFT optical flow
 
-**Pose Estimation:**
+**2D Human Pose Estimation:**
+
+In `neuriplo-tasks`, `PoseEstimation` specifically means **2D human skeletal pose estimation in image coordinates**. It does not mean 3D human pose, 6-DoF rigid-object pose, or monocular 3D object detection. See [Pose Estimation scope](docs/pose_estimation_scope.md).
+
 - `"yolov8pose"`, `"yolov8-pose"` - YOLOv8 pose (single-stage, returns bbox + keypoints)
 - `"yolo11pose"`, `"yolo11-pose"` - YOLO11 pose
 - `"yolo26pose"`, `"yolo26-pose"` - YOLO26 pose
@@ -271,6 +274,10 @@ Any model type starting with `resnet` (e.g. `resnet50`) or containing `tensorflo
 For EdgeCrafter pose-estimation export details, see [export/pose_estimation/edgecrafter/README.md](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/edgecrafter/README.md).
 
 RF-DETR keypoint models output per-keypoint visibility and 2×2 pixel covariance (decoded from Cholesky L via the ONNX `log_l11`, `l21`, `log_l22` channels). Keypoints are filtered by an uncertainty-weighted score fusion that discounts high-covariance predictions.
+
+**Monocular 3D Object Detection (in development):**
+
+This is a separate task from 2D human pose estimation. It covers category-level 3D object detection from a single RGB image, including models that represent object geometry as projected 3D cuboid corners and optionally recover position, dimensions, orientation, or BEV geometry. **UrbanOmniDetect is the first integration target** for this task; the task abstraction is intentionally model-independent.
 
 **Depth Estimation:**
 - `"depth_anything_v2"`, `"depth-anything-v2"` - Depth Anything V2
