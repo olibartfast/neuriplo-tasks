@@ -14,7 +14,8 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: VideoMAE, ViViT, TimeSformer
 - **Optical Flow**: RAFT
-- **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose
+- **Pose Estimation (2D Human Pose)**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose; this task refers to 2D human skeletal keypoints
+- **Gaze Estimation**: task-level contract for visual gaze direction using pitch/yaw plus a normalized 3D gaze vector; see [docs/gaze_estimation.md](docs/gaze_estimation.md)
 - **Depth Estimation**: Depth Anything V2, YOLO26 Depth
 - **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO
 - **Gaussian Splatting**: LGM, LGM-mini, GRM (feed-forward image → 3D Gaussians)
@@ -22,6 +23,12 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
 - **Composite Task Pipelines**: Ordered `Result` stages for multi-task flows such as detection → pose or detection → segmentation
 - **Unified Tensor Interface**: Simplified API using `Tensor` struct that encapsulates data and shape information
+
+### Gaze Estimation vs Pose Estimation
+
+In `neuriplo-tasks`, **Pose Estimation means 2D human skeletal keypoint estimation**. **Gaze Estimation** is a separate task that estimates where a person's eyes are directed and exposes a task-level `GazeEstimation` result containing pitch, yaw, normalized 3D direction, and confidence.
+
+Gaze estimation should not be confused with human body pose, 3D object pose, 6-DoF pose, or head-pose estimation. The current branch introduces the common gaze result/task contract first; model-specific preprocessing/postprocessing and `TaskFactory` aliases will be added only when an implementation is present and tested. See [Gaze Estimation documentation](docs/gaze_estimation.md).
 
 
 ## Two Ways to Use neuriplo-tasks
@@ -259,7 +266,7 @@ Any model type starting with `resnet` (e.g. `resnet50`) or containing `tensorflo
 **Optical Flow:**
 - `"raft"` - RAFT optical flow
 
-**Pose Estimation:**
+**Pose Estimation (2D Human Pose):**
 - `"yolov8pose"`, `"yolov8-pose"` - YOLOv8 pose (single-stage, returns bbox + keypoints)
 - `"yolo11pose"`, `"yolo11-pose"` - YOLO11 pose
 - `"yolo26pose"`, `"yolo26-pose"` - YOLO26 pose
@@ -271,6 +278,12 @@ Any model type starting with `resnet` (e.g. `resnet50`) or containing `tensorflo
 For EdgeCrafter pose-estimation export details, see [export/pose_estimation/edgecrafter/README.md](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/edgecrafter/README.md).
 
 RF-DETR keypoint models output per-keypoint visibility and 2×2 pixel covariance (decoded from Cholesky L via the ONNX `log_l11`, `l21`, `log_l22` channels). Keypoints are filtered by an uncertainty-weighted score fusion that discounts high-covariance predictions.
+
+**Gaze Estimation:**
+
+The task-level `GazeEstimation` result and `TaskType::GazeEstimation` are available, but **no gaze model alias is registered in `TaskFactory` yet**. The planned first implementation is an ETH-XGaze-style appearance-based model, followed by GazeTR or another architecture once the preprocessing/postprocessing contract is stable.
+
+The canonical result contains pitch/yaw in radians plus a normalized 3D gaze direction. See [docs/gaze_estimation.md](docs/gaze_estimation.md) for the task definition, scope, relation to 2D human pose estimation, and implementation plan.
 
 **Depth Estimation:**
 - `"depth_anything_v2"`, `"depth-anything-v2"` - Depth Anything V2
