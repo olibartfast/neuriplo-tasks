@@ -23,6 +23,7 @@ VideoClassificationTask::VideoClassificationTask(const ModelInfo& model_info, co
     if (!preprocessor_) {
         throw std::runtime_error("Failed to create preprocessor for video classifier: " + model_name);
     }
+    preprocessor_->applyImageInputType(model_info);
 
     postprocessor_ = createPostprocessor();
 

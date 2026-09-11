@@ -1,6 +1,7 @@
 #pragma once
 
 #include "neuriplo/tasks/core/image.hpp"
+#include "neuriplo/tasks/core/model_info.hpp"
 
 #include <array>
 #include <cstdint>
@@ -59,6 +60,26 @@ class Preprocessor {
      * @return Vector of preprocessed data for each image
      */
     [[nodiscard]] virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& images) const;
+
+    /**
+     * @brief Match the output to the pixel type of a model's image inputs
+     *
+     * Image inputs are those isImageInputShape() accepts. Float32 keeps this
+     * preprocessor's configuration. UInt8 switches it to raw 0-255 pixels: same
+     * resize, color order, and layout, without [0, 1] scaling or ImageNet
+     * statistics. Throws std::invalid_argument naming the input for any other
+     * type, for image inputs that disagree, and for UInt8 when
+     * supportsRawPixelOutput() is false.
+     */
+    void applyImageInputType(const ModelInfo& model_info);
+
+    /**
+     * @brief Whether preprocess() can emit raw pixels (see applyImageInputType())
+     *
+     * False for preprocessors that apply their own float normalization outside
+     * the shared configuration.
+     */
+    [[nodiscard]] virtual bool supportsRawPixelOutput() const { return true; }
 
   protected:
     /**
