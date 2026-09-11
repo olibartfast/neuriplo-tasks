@@ -182,6 +182,7 @@ std::unique_ptr<PosePreprocessStrategy> PoseEstimationTask::createPreprocessStra
     if (!preprocessor) {
         return nullptr;
     }
+    preprocessor->applyImageInputType(model_info_);
 
     if (type == ModelType::EDGECRAFTER) {
         return std::make_unique<ModelInputPosePreprocessStrategy>(std::move(preprocessor), model_info_);

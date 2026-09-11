@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `Preprocessor::applyImageInputType(model_info)` and `isImageInputShape(shape)`:
+  image preprocessing now honors `ModelInfo::input_types` for image inputs (rank
+  3 or more). Every task that preprocesses images through `Preprocessor` applies
+  it when it is constructed. `supportsRawPixelOutput()` lets a preprocessor with
+  its own float normalization refuse raw output.
+
+### Changed
+- An image input typed `UInt8` now receives raw 0-255 pixels — same resize,
+  letterbox, color order, and layout, without `[0, 1]` scaling or ImageNet
+  statistics — instead of `Float32` bytes the model cannot read. Consumers that
+  fill `input_types` from server metadata (tritonic from Triton, neuriplo-infer
+  from its backends) get this for `UINT8` image models. `Float32`, the default,
+  leaves every task's preprocessing byte-identical, including the TensorFlow
+  classifier's existing `UINT8` output.
+- An image input typed anything other than `Float32` or `UInt8`, image inputs
+  that disagree, and `UInt8` on preprocessing with its own float normalization
+  (RAFT, VideoMAE, ViViT, TimeSformer) now throw `std::invalid_argument` naming the
+  input when the task is constructed, rather than sending mislabelled bytes.
+
+### Fixed
+- `UINT8` preprocessing output from a `Float32` or `Int32` source image packed
+  four-byte storage as one-byte elements: NCHW output was truncated and NHWC
+  output was four times too large. The source is now converted to `UInt8` first,
+  as `FLOAT32` output already converts it to `Float32`. This also covers the
+  TensorFlow classifier's existing `UINT8` path.
+
 ## [0.8.1] - 2026-08-20
 
 ### Added
