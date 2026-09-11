@@ -28,13 +28,7 @@ const char* pixelTypeName(vision::PixelType type) {
 
 Preprocessor::Preprocessor(const PreprocessConfig& config) : config_(config) {}
 
-void Preprocessor::useRawPixelOutput() {
-    config_.data_type = DataType::UINT8;
-    config_.normalize = false;
-    config_.apply_imagenet_norm = false;
-}
-
-void applyImageInputType(Preprocessor& preprocessor, const ModelInfo& model_info) {
+void Preprocessor::applyImageInputType(const ModelInfo& model_info) {
     std::optional<vision::PixelType> image_type;
     std::string image_input;
     const std::size_t count = std::min(model_info.input_shapes.size(), model_info.input_types.size());
@@ -67,12 +61,14 @@ void applyImageInputType(Preprocessor& preprocessor, const ModelInfo& model_info
     }
 
     if (image_type == vision::PixelType::UInt8) {
-        if (!preprocessor.supportsRawPixelOutput()) {
+        if (!supportsRawPixelOutput()) {
             throw std::invalid_argument("image input '" + image_input +
                                         "' is UInt8, but this model's preprocessing applies its own float "
                                         "normalization and cannot emit raw pixels");
         }
-        preprocessor.useRawPixelOutput();
+        config_.data_type = DataType::UINT8;
+        config_.normalize = false;
+        config_.apply_imagenet_norm = false;
     }
 }
 
@@ -117,6 +113,9 @@ std::vector<uint8_t> Preprocessor::preprocess_image(const vision::ImageView& ima
         processed.convertTo(vision::PixelType::Float32, 1.0 / 255.0);
     } else if (data_type == DataType::FLOAT32) {
         processed.convertTo(vision::PixelType::Float32);
+    } else if (data_type == DataType::UINT8 && processed.pixelType() != vision::PixelType::UInt8) {
+        // One byte per element is packed below, so the storage must be UInt8 too.
+        processed.convertTo(vision::PixelType::UInt8);
     }
 
     // Apply ImageNet normalization if requested

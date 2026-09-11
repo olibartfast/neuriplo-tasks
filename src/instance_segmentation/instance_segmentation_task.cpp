@@ -197,7 +197,7 @@ InstanceSegmentationTask::createPreprocessStrategy(ModelType type, const vision:
     if (!preprocessor) {
         return nullptr;
     }
-    applyImageInputType(*preprocessor, model_info_);
+    preprocessor->applyImageInputType(model_info_);
 
     if (type == ModelType::EDGECRAFTER_SEG) {
         return std::make_unique<ModelInputSegmentationPreprocessStrategy>(std::move(preprocessor), model_info_);

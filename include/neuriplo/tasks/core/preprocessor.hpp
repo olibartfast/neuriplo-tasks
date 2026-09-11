@@ -62,15 +62,19 @@ class Preprocessor {
     [[nodiscard]] virtual std::vector<std::vector<uint8_t>> preprocess(const std::vector<Image>& images) const;
 
     /**
-     * @brief Emit raw 0-255 UINT8 pixels instead of the configured float output
+     * @brief Match the output to the pixel type of a model's image inputs
      *
-     * Keeps resize, color order, and layout; drops [0, 1] scaling and ImageNet
-     * statistics. For models whose image input is UINT8 and normalize in-graph.
+     * Image inputs are those isImageInputShape() accepts. Float32 keeps this
+     * preprocessor's configuration. UInt8 switches it to raw 0-255 pixels: same
+     * resize, color order, and layout, without [0, 1] scaling or ImageNet
+     * statistics. Throws std::invalid_argument naming the input for any other
+     * type, for image inputs that disagree, and for UInt8 when
+     * supportsRawPixelOutput() is false.
      */
-    void useRawPixelOutput();
+    void applyImageInputType(const ModelInfo& model_info);
 
     /**
-     * @brief Whether preprocess() honors useRawPixelOutput()
+     * @brief Whether preprocess() can emit raw pixels (see applyImageInputType())
      *
      * False for preprocessors that apply their own float normalization outside
      * the shared configuration.
@@ -101,15 +105,5 @@ class Preprocessor {
     static constexpr std::array<float, 3> kImageNetMean = {0.485f, 0.456f, 0.406f};
     static constexpr std::array<float, 3> kImageNetStd = {0.229f, 0.224f, 0.225f};
 };
-
-/**
- * @brief Match a preprocessor's output to the pixel type of a model's image inputs
- *
- * Image inputs are those isImageInputShape() accepts. Float32 keeps the
- * preprocessor's configuration; UInt8 switches it to raw pixels. Throws
- * std::invalid_argument naming the input for any other type, for image inputs
- * that disagree, and for UInt8 on a preprocessor that cannot emit raw pixels.
- */
-void applyImageInputType(Preprocessor& preprocessor, const ModelInfo& model_info);
 
 } // namespace neuriplo_tasks
