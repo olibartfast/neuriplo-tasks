@@ -185,6 +185,14 @@ target_link_libraries(test_gaussian_splatting
     GTest::Main
 )
 
+# Model image-input pixel types reaching preprocessing
+add_executable(test_image_input_type test_image_input_type.cpp)
+target_link_whole_archive(test_image_input_type neuriplo-tasks)
+target_link_libraries(test_image_input_type
+    GTest::GTest
+    GTest::Main
+)
+
 # EdgeCrafter postprocessor and task tests
 add_executable(test_edgecrafter test_edgecrafter.cpp)
 target_link_whole_archive(test_edgecrafter neuriplo-tasks)
@@ -247,6 +255,7 @@ add_test(NAME test_pose_estimation COMMAND test_pose_estimation)
 add_test(NAME test_depth_estimation COMMAND test_depth_estimation)
 add_test(NAME test_open_vocab_detection COMMAND test_open_vocab_detection)
 add_test(NAME test_gaussian_splatting COMMAND test_gaussian_splatting)
+add_test(NAME test_image_input_type COMMAND test_image_input_type)
 add_test(NAME test_edgecrafter COMMAND test_edgecrafter)
 add_test(NAME test_readme_model_types COMMAND test_readme_model_types)
 if(NEURIPLO_TASKS_WITH_STB)

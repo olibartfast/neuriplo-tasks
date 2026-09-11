@@ -116,6 +116,14 @@ for (const auto& result : results) {
 }
 ```
 
+`ModelInfo::input_types` tells a task what its image inputs (shape rank 3 or
+more) accept. `Float32`, the default, keeps each task's preprocessing as it is.
+`UInt8` makes preprocessing emit raw 0–255 pixels — same resize, letterbox, color
+order, and layout, without `[0, 1]` scaling or ImageNet statistics — for models
+that normalize in-graph. Any other image-input type, image inputs that disagree,
+or `UInt8` on preprocessing with its own float normalization (RAFT, VideoMAE,
+ViViT, TimeSformer) throws `std::invalid_argument` when the task is created.
+
 ### 3. Batch Processing Utilities
 
 Helpers for running **N independent images** through the same task without reimplementing

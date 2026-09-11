@@ -27,6 +27,7 @@ ClassificationTask::ClassificationTask(const ModelInfo& model_info, const std::s
     if (!preprocessor_) {
         throw std::runtime_error("Failed to create preprocessor for classifier: " + model_name);
     }
+    applyImageInputType(*preprocessor_, model_info);
 
     // Create appropriate postprocessor
     postprocessor_ = createPostprocessor(model_type_);
