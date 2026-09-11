@@ -18,6 +18,7 @@ class VideoMAEPreprocessor : public Preprocessor {
 
     using Preprocessor::preprocess;
     [[nodiscard]] std::vector<uint8_t> preprocess(const ImageView& image) const override;
+    [[nodiscard]] bool supportsRawPixelOutput() const override { return false; }
 
   private:
     static constexpr std::array<float, 3> kMean = {0.485f, 0.456f, 0.406f};
@@ -37,6 +38,7 @@ class VivitPreprocessor : public Preprocessor {
 
     using Preprocessor::preprocess;
     [[nodiscard]] std::vector<uint8_t> preprocess(const ImageView& image) const override;
+    [[nodiscard]] bool supportsRawPixelOutput() const override { return false; }
 
   private:
     static constexpr int kShortestEdge = 256;
@@ -57,6 +59,7 @@ class TimeSformerPreprocessor : public Preprocessor {
 
     using Preprocessor::preprocess;
     [[nodiscard]] std::vector<uint8_t> preprocess(const ImageView& image) const override;
+    [[nodiscard]] bool supportsRawPixelOutput() const override { return false; }
 
   private:
     static constexpr int kShortestEdge = 224;
