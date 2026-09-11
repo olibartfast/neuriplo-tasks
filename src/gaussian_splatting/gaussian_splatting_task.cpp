@@ -18,7 +18,7 @@ GaussianSplattingTask::GaussianSplattingTask(const ModelInfo& model_info, const 
     if (!preprocessor_) {
         throw std::runtime_error("Failed to create preprocessor for Gaussian Splatting model: " + model_name);
     }
-    applyImageInputType(*preprocessor_, model_info);
+    preprocessor_->applyImageInputType(model_info);
 
     postprocessor_ = createPostprocessor(model_type_);
     if (!postprocessor_) {

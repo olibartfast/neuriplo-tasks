@@ -36,6 +36,18 @@ Image bgrImage(int width, int height) {
     return image;
 }
 
+// The same pixels as bgrImage(), stored as Float32.
+Image bgrFloatImage(int width, int height) {
+    Image image = vision_test::makeFloatImage(width, height, 3);
+    float* data = image.data<float>();
+    for (std::size_t i = 0; i < image.totalPixels(); ++i) {
+        data[i * 3] = 10.0F;
+        data[i * 3 + 1] = 20.0F;
+        data[i * 3 + 2] = 30.0F;
+    }
+    return image;
+}
+
 } // namespace
 
 TEST(ImageInputShape, RankThreeOrMoreCarriesAnImage) {
@@ -48,7 +60,7 @@ TEST(ImageInputShape, RankThreeOrMoreCarriesAnImage) {
 
 TEST(ApplyImageInputType, UInt8EmitsRawPixelsInPlanarOrder) {
     Preprocessor preprocessor(PreprocessConfig{Size(4, 2), ImageFormat::NCHW, DataType::FLOAT32, true, true, true});
-    applyImageInputType(preprocessor, imageModel({1, 3, 2, 4}, PixelType::UInt8));
+    preprocessor.applyImageInputType(imageModel({1, 3, 2, 4}, PixelType::UInt8));
 
     const auto bytes = preprocessor.preprocess(bgrImage(4, 2).view());
 
@@ -61,9 +73,33 @@ TEST(ApplyImageInputType, UInt8EmitsRawPixelsInPlanarOrder) {
 
 TEST(ApplyImageInputType, UInt8KeepsInterleavedLayout) {
     Preprocessor preprocessor(PreprocessConfig{Size(4, 2), ImageFormat::NHWC, DataType::FLOAT32, true, false, false});
-    applyImageInputType(preprocessor, imageModel({1, 2, 4, 3}, PixelType::UInt8));
+    preprocessor.applyImageInputType(imageModel({1, 2, 4, 3}, PixelType::UInt8));
 
     const auto bytes = preprocessor.preprocess(bgrImage(4, 2).view());
+
+    ASSERT_EQ(bytes.size(), 4U * 2U * 3U);
+    EXPECT_EQ(bytes[0], 10);
+    EXPECT_EQ(bytes[1], 20);
+    EXPECT_EQ(bytes[2], 30);
+}
+
+TEST(ApplyImageInputType, UInt8FromAFloat32SourcePacksOneBytePerElementPlanar) {
+    Preprocessor preprocessor(PreprocessConfig{Size(4, 2), ImageFormat::NCHW, DataType::FLOAT32, true, true, true});
+    preprocessor.applyImageInputType(imageModel({1, 3, 2, 4}, PixelType::UInt8));
+
+    const auto bytes = preprocessor.preprocess(bgrFloatImage(4, 2).view());
+
+    ASSERT_EQ(bytes.size(), 3U * 2U * 4U);
+    EXPECT_EQ(bytes[0], 30);
+    EXPECT_EQ(bytes[8], 20);
+    EXPECT_EQ(bytes[16], 10);
+}
+
+TEST(ApplyImageInputType, UInt8FromAFloat32SourcePacksOneBytePerElementInterleaved) {
+    Preprocessor preprocessor(PreprocessConfig{Size(4, 2), ImageFormat::NHWC, DataType::FLOAT32, true, false, false});
+    preprocessor.applyImageInputType(imageModel({1, 2, 4, 3}, PixelType::UInt8));
+
+    const auto bytes = preprocessor.preprocess(bgrFloatImage(4, 2).view());
 
     ASSERT_EQ(bytes.size(), 4U * 2U * 3U);
     EXPECT_EQ(bytes[0], 10);
@@ -75,7 +111,7 @@ TEST(ApplyImageInputType, Float32LeavesOutputByteIdentical) {
     const PreprocessConfig config{Size(4, 2), ImageFormat::NCHW, DataType::FLOAT32, true, true, true};
     const Preprocessor untouched(config);
     Preprocessor applied(config);
-    applyImageInputType(applied, imageModel({1, 3, 2, 4}, PixelType::Float32));
+    applied.applyImageInputType(imageModel({1, 3, 2, 4}, PixelType::Float32));
 
     const Image image = bgrImage(4, 2);
 
@@ -85,7 +121,7 @@ TEST(ApplyImageInputType, Float32LeavesOutputByteIdentical) {
 
 TEST(ApplyImageInputType, TensorflowClassifierKeepsUInt8UnderTheDefaultType) {
     TensorflowPreprocessor preprocessor(Size(4, 2));
-    applyImageInputType(preprocessor, imageModel({1, 2, 4, 3}, PixelType::Float32));
+    preprocessor.applyImageInputType(imageModel({1, 2, 4, 3}, PixelType::Float32));
 
     EXPECT_EQ(preprocessor.preprocess(bgrImage(4, 2).view()).size(), 4U * 2U * 3U);
 }
@@ -93,7 +129,7 @@ TEST(ApplyImageInputType, TensorflowClassifierKeepsUInt8UnderTheDefaultType) {
 TEST(ApplyImageInputType, RejectsOtherImagePixelTypesByName) {
     Preprocessor preprocessor(PreprocessConfig{Size(4, 2)});
     try {
-        applyImageInputType(preprocessor, imageModel({1, 3, 2, 4}, PixelType::Int32, "pixel_values"));
+        preprocessor.applyImageInputType(imageModel({1, 3, 2, 4}, PixelType::Int32, "pixel_values"));
         FAIL() << "an Int32 image input must be rejected";
     } catch (const std::invalid_argument& error) {
         const std::string message = error.what();
@@ -108,7 +144,7 @@ TEST(ApplyImageInputType, IgnoresNonImageInputs) {
     info.input_types.back() = PixelType::Int32;
     Preprocessor preprocessor(PreprocessConfig{Size(4, 2)});
 
-    EXPECT_NO_THROW(applyImageInputType(preprocessor, info));
+    EXPECT_NO_THROW(preprocessor.applyImageInputType(info));
 }
 
 TEST(ApplyImageInputType, RejectsImageInputsThatDisagree) {
@@ -116,7 +152,7 @@ TEST(ApplyImageInputType, RejectsImageInputsThatDisagree) {
     info.addInput("right", {1, 3, 2, 4});
     Preprocessor preprocessor(PreprocessConfig{Size(4, 2)});
 
-    EXPECT_THROW(applyImageInputType(preprocessor, info), std::invalid_argument);
+    EXPECT_THROW(preprocessor.applyImageInputType(info), std::invalid_argument);
 }
 
 TEST(ApplyImageInputType, LetterboxedYoloDetectionEmitsRawPixels) {
