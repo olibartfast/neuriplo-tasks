@@ -228,6 +228,7 @@ ObjectDetectionTask::createPreprocessStrategy(ModelType type, const vision::Size
     if (!preprocessor) {
         return nullptr;
     }
+    applyImageInputType(*preprocessor, model_info_);
 
     if (type == ModelType::RT_DETR_STYLE) {
         return std::make_unique<ModelInputDetectionPreprocessStrategy>(std::move(preprocessor), model_info_, input_size,

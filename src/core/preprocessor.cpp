@@ -2,12 +2,79 @@
 
 #include "image_ops.hpp"
 
+#include <algorithm>
 #include <cstring>
+#include <optional>
 #include <stdexcept>
+#include <string>
 
 namespace neuriplo_tasks {
 
+namespace {
+
+const char* pixelTypeName(vision::PixelType type) {
+    switch (type) {
+    case vision::PixelType::UInt8:
+        return "UInt8";
+    case vision::PixelType::Float32:
+        return "Float32";
+    case vision::PixelType::Int32:
+        return "Int32";
+    }
+    return "unknown";
+}
+
+} // namespace
+
 Preprocessor::Preprocessor(const PreprocessConfig& config) : config_(config) {}
+
+void Preprocessor::useRawPixelOutput() {
+    config_.data_type = DataType::UINT8;
+    config_.normalize = false;
+    config_.apply_imagenet_norm = false;
+}
+
+void applyImageInputType(Preprocessor& preprocessor, const ModelInfo& model_info) {
+    std::optional<vision::PixelType> image_type;
+    std::string image_input;
+    const std::size_t count = std::min(model_info.input_shapes.size(), model_info.input_types.size());
+    for (std::size_t i = 0; i < count; ++i) {
+        if (!isImageInputShape(model_info.input_shapes[i])) {
+            continue;
+        }
+        const vision::PixelType type = model_info.input_types[i];
+        const std::string name =
+            i < model_info.input_names.size() ? model_info.input_names[i] : "#" + std::to_string(i);
+        if (type != vision::PixelType::Float32 && type != vision::PixelType::UInt8) {
+            throw std::invalid_argument("image input '" + name + "' has pixel type " + pixelTypeName(type) +
+                                        "; image preprocessing emits Float32 or UInt8");
+        }
+        if (!image_type) {
+            image_type = type;
+            image_input = name;
+        } else if (*image_type != type) {
+            std::string message = "image inputs '";
+            message += image_input;
+            message += "' (";
+            message += pixelTypeName(*image_type);
+            message += ") and '";
+            message += name;
+            message += "' (";
+            message += pixelTypeName(type);
+            message += ") declare different pixel types";
+            throw std::invalid_argument(message);
+        }
+    }
+
+    if (image_type == vision::PixelType::UInt8) {
+        if (!preprocessor.supportsRawPixelOutput()) {
+            throw std::invalid_argument("image input '" + image_input +
+                                        "' is UInt8, but this model's preprocessing applies its own float "
+                                        "normalization and cannot emit raw pixels");
+        }
+        preprocessor.useRawPixelOutput();
+    }
+}
 
 void Preprocessor::apply_imagenet_normalization(vision::Image& image) const {
     if (image.channels() != 3 || image.pixelType() != vision::PixelType::Float32) {

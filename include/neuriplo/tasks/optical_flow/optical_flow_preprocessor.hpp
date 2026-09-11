@@ -22,6 +22,9 @@ class RaftPreprocessor : public Preprocessor {
      */
     [[nodiscard]] std::vector<std::vector<uint8_t>> preprocess_pair(const ImageView& frame1,
                                                                     const ImageView& frame2) const;
+
+    /// preprocess_pair() always emits [-1, 1] floats.
+    [[nodiscard]] bool supportsRawPixelOutput() const override { return false; }
 };
 
 } // namespace neuriplo_tasks

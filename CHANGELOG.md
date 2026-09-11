@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `applyImageInputType(preprocessor, model_info)` and `isImageInputShape(shape)`:
+  image preprocessing now honors `ModelInfo::input_types` for image inputs (rank
+  3 or more). Every task that preprocesses images through `Preprocessor` applies
+  it when it is constructed.
+- `Preprocessor::useRawPixelOutput()` and the `supportsRawPixelOutput()` hook.
+
+### Changed
+- An image input typed `UInt8` now receives raw 0-255 pixels — same resize,
+  letterbox, color order, and layout, without `[0, 1]` scaling or ImageNet
+  statistics — instead of `Float32` bytes the model cannot read. Consumers that
+  fill `input_types` from server metadata (tritonic from Triton, neuriplo-infer
+  from its backends) get this for `UINT8` image models. `Float32`, the default,
+  leaves every task's preprocessing byte-identical, including the TensorFlow
+  classifier's existing `UINT8` output.
+- An image input typed anything other than `Float32` or `UInt8`, image inputs
+  that disagree, and `UInt8` on preprocessing with its own float normalization
+  (RAFT, VideoMAE, ViViT, TimeSformer) now throw `std::invalid_argument` naming the
+  input when the task is constructed, rather than sending mislabelled bytes.
+
 ## [0.8.1] - 2026-08-20
 
 ### Added
