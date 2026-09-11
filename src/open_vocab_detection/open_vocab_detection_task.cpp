@@ -54,6 +54,7 @@ OpenVocabDetectionTask::OpenVocabDetectionTask(const ModelInfo& model_info, cons
     input_width_ = input_size.width;
     input_height_ = input_size.height;
     image_preprocessor_ = std::make_unique<RtDetrPreprocessor>(input_size);
+    image_preprocessor_->applyImageInputType(model_info_);
 
     switch (model_type_) {
     case ModelType::OWLV2:

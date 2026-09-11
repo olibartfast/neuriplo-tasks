@@ -9,6 +9,14 @@
 namespace neuriplo_tasks {
 
 /**
+ * @brief Whether an input with this shape carries an image
+ *
+ * Image tensors have rank 3 or more ([C,H,W], [N,C,H,W], [N,T,C,H,W]); size
+ * tensors and token ids do not.
+ */
+[[nodiscard]] inline bool isImageInputShape(const std::vector<int64_t>& shape) noexcept { return shape.size() >= 3; }
+
+/**
  * @brief Model information structure
  *
  * Contains metadata about a model's inputs and outputs.
