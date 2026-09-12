@@ -81,15 +81,49 @@ When merging a PR into `develop`, add a line under `[Unreleased]` in the appropr
    `## [X.Y.Z]` down to the next `## [` header) and pass it via `--notes`:
    ```
    gh release create v0.2.0 --repo olibartfast/neuriplo-tasks --title "v0.2.0" \
+     --latest \
      --notes "$(sed -n '/^## \[0\.2\.0\]/,/^## \[/{ /^## \[/!p}' CHANGELOG.md | sed '/^$/N;/^\n$/d')"
    ```
 
    Never use `--generate-notes` — it produces commit-based notes that bypass
    the curated `CHANGELOG.md`. The changelog is the single source of truth.
 
+   Always pass `--latest` when releasing the newest version. GitHub picks the
+   "Latest" badge by each release's **publish timestamp**, not by semver order,
+   so without an explicit pin any release published afterwards — including an
+   old version backfilled later — steals the badge.
+
+   Verify the badge landed on the right tag:
+   ```
+   gh api repos/olibartfast/neuriplo-tasks/releases/latest --jq .tag_name
+   ```
+
    Every tag must have a corresponding release. There must never be a tag
    visible on GitHub without a matching release entry. If you discover a
-   missing release (tag exists, release does not), create it immediately.
+   missing release (tag exists, release does not), create it immediately —
+   following the backfill rules below.
+
+### Backfilling missing releases
+
+When creating releases for tags that already exist, two rules prevent the
+"Latest" badge from ending up on an old version:
+
+1. Iterate **oldest → newest** (`git tag --sort=v:refname`), never newest-first.
+2. Pass `--latest=false` on every release older than the current version, and
+   `--latest` only on the highest one.
+
+```
+for tag in $(git tag --sort=v:refname); do
+  gh release view "$tag" >/dev/null 2>&1 && continue
+  gh release create "$tag" --repo olibartfast/neuriplo-tasks --title "$tag" \
+    --latest=false \
+    --notes "$(sed -n "/^## \[${tag#v}\]/,/^## \[/{ /^## \[/!p}" CHANGELOG.md | sed '/^$/N;/^\n$/d')"
+done
+gh release edit "$(git tag --sort=-v:refname | head -1)" --latest
+```
+
+The final `gh release edit ... --latest` re-pins the badge to the highest tag
+regardless of publish order. Confirm with the `releases/latest` check above.
 
 6. **Bump develop** — merge back and set the next dev version:
    ```
