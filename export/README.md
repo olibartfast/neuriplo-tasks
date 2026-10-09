@@ -12,6 +12,7 @@ export/
 │   └── vit/                # Vision Transformer export
 ├── detection/
 │   ├── yolo/               # Universal YOLO export (v5-v12, NAS)
+│   ├── yolo_world/         # YOLO-World export with a fixed vocabulary
 │   ├── rtdetr/             # RT-DETR detection export
 │   ├── rfdetr/             # RF-DETR detection export
 │   └── edgecrafter/        # EdgeCrafter detection export
@@ -52,6 +53,9 @@ cd /path/to/neuriplo-tasks
 
 # Export YOLO model
 python export/detection/yolo/export.py --model yolov8n.pt --format onnx
+
+# Export YOLO-World with a fixed class list
+python export/detection/yolo_world/export.py --model yolov8s-worldv2.pt --classes person bus --test
 
 # Export Vision Transformer
 python export/classification/vit/onnx/export.py
@@ -126,6 +130,7 @@ Refer to:
 * [Open-Vocabulary Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/open_vocab_detection/OWLv2.md)
 * [Video Classification](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/video_classification/VideoClassification.md)
 * [Image Understanding (VLM)](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/image_understanding/ImageUnderstanding.md)
+* [YOLO-World (Fixed Vocabulary)](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/yolo_world/README.md)
 * [EdgeCrafter Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/edgecrafter/README.md)
 * [EdgeCrafter Segmentation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/segmentation/edgecrafter/README.md)
 * [RF-DETR Keypoint Pose Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/rfdetr/README.md)
