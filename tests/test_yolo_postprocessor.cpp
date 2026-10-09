@@ -1,3 +1,5 @@
+#include "neuriplo/tasks/core/model_info.hpp"
+#include "neuriplo/tasks/core/task_factory.hpp"
 #include "neuriplo/tasks/object_detection/object_detection_task.hpp"
 #include "neuriplo/tasks/object_detection/yolo_postprocessor.hpp"
 #include "vision_test_utils.hpp"
@@ -272,4 +274,38 @@ TEST_F(YoloPostprocessorTest, YoloV7E2EFormatScalesXyxyFromModelSpace) {
     EXPECT_EQ(detections[0].class_id, 2);
     EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.85f);
     EXPECT_EQ(detections[0].bbox, BoundingBox(160, 80, 160, 160));
+}
+
+// YOLO-World exported with a fixed vocabulary (export/detection/yolo_world) has the
+// YOLOv8 [1, 4 + num_classes, anchors] layout with a custom class count.
+TEST(YoloWorldFixedVocabTest, FactoryRoutesToYoloAndDecodesCustomClassCount) {
+    ModelInfo info;
+    info.input_shapes = {{1, 3, 640, 640}};
+    info.input_formats = {"FORMAT_NCHW"};
+    info.input_names = {"images"};
+    info.output_names = {"output0"};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
+
+    const int num_classes = 3;
+    const int anchors = 8400;
+    std::vector<TensorElement> output(static_cast<size_t>((4 + num_classes) * anchors), 0.0f);
+    output[0 * anchors] = 320.0f;
+    output[1 * anchors] = 320.0f;
+    output[2 * anchors] = 100.0f;
+    output[3 * anchors] = 100.0f;
+    output[(4 + 2) * anchors] = 0.9f;
+    const Tensor tensor(output, {1, 4 + num_classes, anchors});
+
+    for (const char* alias : {"yoloworld", "yolo-world", "yolov8s-worldv2"}) {
+        auto task = TaskFactory::createTaskInstance(alias, info);
+        ASSERT_NE(task, nullptr) << alias;
+        EXPECT_EQ(task->getTaskType(), TaskType::Detection) << alias;
+
+        const auto results = task->postprocess(neuriplo_tasks::Size(640, 640), {tensor});
+        ASSERT_EQ(results.size(), 1u) << alias;
+        const auto& det = std::get<Detection>(results[0]);
+        EXPECT_EQ(det.class_id, 2) << alias;
+        EXPECT_FLOAT_EQ(det.class_confidence, 0.9f) << alias;
+        EXPECT_EQ(det.bbox, BoundingBox(270, 270, 100, 100)) << alias;
+    }
 }
