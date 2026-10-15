@@ -16,7 +16,7 @@ be run is **not executed**, not a pass.
 | V-6 | R-5 postprocess seams | Family postprocessors throw `std::logic_error` while undecoded; empty tensor list returns no results | **pass** |
 | V-7 | Constitution | No new runtime dependencies; no new OpenCV use; existing suites unchanged and green | **pass** |
 | V-8 | Gate | clang-format-18 `--dry-run --Werror`, cppcheck, `-DWERROR=ON` build, `ctest` | **pass** |
-| V-9 | Gate | Valgrind on the Debug test build (new suite included) | **not executed** |
+| V-9 | Gate | Valgrind on the Debug test build (new suite included) | **pass (CI)** — local Valgrind unavailable; the CI `valgrind` job ran the full suite green |
 | V-10 | Consumer docs | `export/README.md` links resolve; `export/keypoint_matching/README.md` present; batch matrix has the new family row | **pass** |
 | V-11 | Deferred work is honest | README and changelog say decoding is not implemented; no decoder claims behavior that was never run against an ONNX file | **pass** |
 
@@ -44,9 +44,14 @@ local run. Build: Debug, `-DWERROR=ON`, GCC, in a scratch build directory.
 | V-6 | `DecodingIsNotImplementedYet` (all three families throw `std::logic_error`) and `PostprocessWithEmptyTensorsReturnsEmpty` pass. |
 | V-7 | `ctest`: 30/30 suites pass; no new dependency or OpenCV include in the diff. |
 | V-8 | `clang-format 18.1.8 --dry-run --Werror`: clean (installed to match CI's pin); `cppcheck` exit 0 (58/58 files); library build with `-DWERROR=ON` exit 0. `clang-tidy` run on the new sources: no warnings (a newer local clang-tidy 21 reported only pre-existing `image.hpp` warnings under a check added after 18). |
-| V-9 | **Not executed.** Valgrind is not installed on the authoring machine. The CI `valgrind` job runs the full suite and is the authoritative check; the new suite has no test-only heap state beyond standard GTest fixtures. |
+| V-9 | **Passed in CI, not locally.** Valgrind is not installed on the authoring machine, so the gate was left to the CI `valgrind` job, which runs every test binary under `--leak-check=full`; it completed green on run `38814696657`. |
 | V-10 | `export/keypoint_matching/README.md` added; `export/README.md` tree, quick-start pointer, and reference link updated; `docs/batch_support_matrix.md` gained the keypoint-matching row and the pair-semantics note. Relative references resolve; the absolute GitHub link follows the existing pattern and resolves once merged to `master`. |
 | V-11 | README Features bullet, `TASKFACTORY_MODEL_LIST` entry, changelog entry, and both postprocessor headers all state that decoding is not implemented pending a verified export. |
+
+**CI:** all seven jobs green on run
+[`38814696657`](https://github.com/olibartfast/neuriplo-tasks/actions/runs/38814696657) —
+Format Check, Clang-Tidy, Cppcheck, Build & Test, Build with Strict Warnings,
+Valgrind, Windows MSVC.
 
 ## Deviations recorded during the work
 
