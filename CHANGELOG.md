@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Keypoint-matching task scaffold: `KeypointMatchingTask` routes `superglue*`,
+  `lightglue*`, and `matchanything*` and consumes one image pair per call
+  (`getRequiredFrames() == 2`). Adds `KeypointMatch` / `KeypointMatching` to the
+  `Result` variant and TaskType, a pair preprocessor, and per-family
+  postprocessor seams. Decoding is deliberately not implemented: the
+  postprocessors throw `std::logic_error` until each family's output layout is
+  verified against a real ONNX export (see `specs/2026-10-15-keypoint-matching/`).
+
 ## [0.8.2] - 2026-09-11
 
 ### Added
