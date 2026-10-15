@@ -46,8 +46,7 @@ Two consequences shape the scope:
   NCHW float32), one buffer per image — mirrors `RaftPreprocessor`.
 - Per-family postprocessor seams: `SuperGluePostprocessor`,
   `LightGluePostprocessor`, `MatchAnythingPostprocessor`.
-- `TaskFactory` routing: `superglue*`, `lightglue*`, `matchanything*` by prefix,
-  plus the generic `keypointmatching`.
+- `TaskFactory` routing: `superglue*`, `lightglue*`, `matchanything*` by prefix.
 - Tests: routing and alias normalization, pair validation, preprocessing
   buffers, postprocess seams, result-variant coverage.
 - README `## Features` bullet and `TASKFACTORY_MODEL_LIST` block;
@@ -83,7 +82,11 @@ Two consequences shape the scope:
 3. **Prefix aliases.** `superglue`, `lightglue`, `matchanything` match by prefix
    so `lightglue_v2`, `matchanything-eloftr`, and later revisions resolve
    without another patch — the `deimv2` failure repeated by design would be a
-   regression. `keypointmatching` is the discoverable generic name.
+   regression. A generic `keypointmatching` alias was considered and **dropped**:
+   routing a family-less name creates a task that cannot select a decoder, so
+   `detectModelType` would reject it one layer later. A generic alias only
+   becomes meaningful once output tensor names can be matched to a family (open
+   question 5).
 4. **Stubs that throw, not decoders that guess.** Each family postprocessor
    documents the expected tensor layout it will implement and throws
    `std::logic_error` until that layout is verified against a real ONNX export.
@@ -118,6 +121,9 @@ Two consequences shape the scope:
    its guide documents how to check `input_names` / output shapes.
 4. Does any consumer need **multiple pairs per call** (`neuriplo-track` pairs
    frames)? If yes, a batch-aware design is a new packet, not a patch.
+5. Could a generic `keypointmatching` alias pick a family from
+   `ModelInfo::output_names` once at least one decoder is implemented? Deferred
+   until there is something real to dispatch to.
 
 ## Constraint check against the constitution
 

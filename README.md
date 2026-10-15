@@ -14,6 +14,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: VideoMAE, ViViT, TimeSformer
 - **Optical Flow**: RAFT
+- **Keypoint Matching**: SuperGlue, LightGlue, MatchAnything (image pair → matched keypoints; decoders pending verified ONNX contracts)
 - **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose
 - **Depth Estimation**: Depth Anything V2, YOLO26 Depth
 - **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO
@@ -266,6 +267,15 @@ Any model type starting with `resnet` (e.g. `resnet50`) or containing `tensorflo
 
 **Optical Flow:**
 - `"raft"` - RAFT optical flow
+
+**Keypoint Matching:**
+- `"superglue"` - SuperGlue-style end-to-end matching pipelines (any string starting with `superglue`)
+- `"lightglue"` - LightGlue matching pipelines, including the LightGlue-ONNX exports (any string starting with `lightglue`)
+- `"matchanything"` - MatchAnything detector-free matchers (EfficientLoFTR / RoMa backbones; any string starting with `matchanything`)
+
+One image pair per call — `getRequiredFrames()` returns 2. Results are `KeypointMatching` entries containing source/target keypoints and matched index pairs. **Decoding is not implemented yet**: postprocessing throws `std::logic_error` until each family's output layout has been verified against a real ONNX export. Matcher-only exports (keypoints and descriptors in — the original SuperGlue matcher) do not fit the image-in task contract and are not supported.
+
+For export and verification details, see [export/keypoint_matching/README.md](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/keypoint_matching/README.md).
 
 **Pose Estimation:**
 - `"yolov8pose"`, `"yolov8-pose"` - YOLOv8 pose (single-stage, returns bbox + keypoints)

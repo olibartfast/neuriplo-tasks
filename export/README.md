@@ -20,6 +20,7 @@ export/
 │   └── edgecrafter/        # EdgeCrafter segmentation export
 ├── optical_flow/
 │   └── raft/               # RAFT optical flow export
+├── keypoint_matching/      # SuperGlue / LightGlue / MatchAnything export guide
 ├── open_vocab_detection/
 │   └── owlv2/              # OWLv2 open-vocabulary detection export
 ├── pose_estimation/
@@ -58,6 +59,10 @@ python export/classification/vit/onnx/export.py
 
 # Export RAFT optical flow
 python export/optical_flow/raft/raft_exporter.py --model-type large --format onnx
+
+# Keypoint matching (SuperGlue / LightGlue / MatchAnything) — no repo script yet;
+# the LightGlue-ONNX pipeline export works end to end. See the guide:
+# export/keypoint_matching/README.md
 
 # Export YOLO pose (YOLOv8/YOLO11/YOLO26)
 python export/pose_estimation/yolo_pose/export.py --model yolov8n-pose.pt --format onnx
@@ -121,6 +126,7 @@ Refer to:
 
 * [Instance Segmentation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/segmentation/InstanceSegmentation.md)
 * [Optical Flow](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/optical_flow/OpticalFlow.md)
+* [Keypoint Matching](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/keypoint_matching/README.md)
 * [Pose Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/PoseEstimation.md)
 * [Depth Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/depth_estimation/DepthEstimation.md)
 * [Open-Vocabulary Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/open_vocab_detection/OWLv2.md)
