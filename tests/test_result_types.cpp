@@ -33,6 +33,8 @@ std::string resultTypeName(const Result& result) {
             return "gaussian_splatting";
         } else if constexpr (std::is_same_v<T, ImageUnderstanding>) {
             return "image_understanding";
+        } else if constexpr (std::is_same_v<T, KeypointMatching>) {
+            return "keypoint_matching";
         }
     });
 }
@@ -287,16 +289,43 @@ TEST_F(ResultTypesTest, ResultVariantHoldsDepthEstimation) {
     EXPECT_TRUE(std::holds_alternative<DepthEstimation>(result));
 }
 
+TEST_F(ResultTypesTest, KeypointMatchingDefaultConstruction) {
+    KeypointMatching matching;
+    EXPECT_TRUE(matching.source_keypoints.empty());
+    EXPECT_TRUE(matching.target_keypoints.empty());
+    EXPECT_TRUE(matching.matches.empty());
+
+    KeypointMatch match;
+    EXPECT_EQ(match.source_index, -1);
+    EXPECT_EQ(match.target_index, -1);
+    EXPECT_FLOAT_EQ(match.score, 0.0f);
+}
+
+TEST_F(ResultTypesTest, ResultVariantHoldsKeypointMatching) {
+    KeypointMatching matching;
+    matching.matches.push_back(KeypointMatch(0, 1, 0.8f));
+
+    Result result = matching;
+    ASSERT_TRUE(std::holds_alternative<KeypointMatching>(result));
+
+    const auto& stored = std::get<KeypointMatching>(result);
+    ASSERT_EQ(stored.matches.size(), 1U);
+    EXPECT_EQ(stored.matches[0].source_index, 0);
+    EXPECT_EQ(stored.matches[0].target_index, 1);
+    EXPECT_FLOAT_EQ(stored.matches[0].score, 0.8f);
+}
+
 TEST_F(ResultTypesTest, VisitResultAcceptsEveryResultAlternative) {
     const std::vector<Result> results = {
-        Classification{},      Detection{},      OpenVocabDetection{}, InstanceSegmentation{}, OpticalFlow{},
-        VideoClassification{}, PoseEstimation{}, DepthEstimation{},    GaussianSplatting{},    ImageUnderstanding{},
+        Classification{},    Detection{},           OpenVocabDetection{}, InstanceSegmentation{},
+        OpticalFlow{},       VideoClassification{}, PoseEstimation{},     DepthEstimation{},
+        GaussianSplatting{}, ImageUnderstanding{},  KeypointMatching{},
     };
     const std::vector<std::string> expected = {
-        "classification",        "detection",        "open_vocab_detection",
-        "instance_segmentation", "optical_flow",     "video_classification",
-        "pose_estimation",       "depth_estimation", "gaussian_splatting",
-        "image_understanding",
+        "classification",        "detection",         "open_vocab_detection",
+        "instance_segmentation", "optical_flow",      "video_classification",
+        "pose_estimation",       "depth_estimation",  "gaussian_splatting",
+        "image_understanding",   "keypoint_matching",
     };
 
     ASSERT_EQ(results.size(), expected.size());
@@ -327,6 +356,7 @@ TEST_F(ResultTypesTest, TaskTypeEnumValues) {
     EXPECT_EQ(static_cast<int>(TaskType::PoseEstimation), 5);
     EXPECT_EQ(static_cast<int>(TaskType::DepthEstimation), 6);
     EXPECT_EQ(static_cast<int>(TaskType::OpenVocabDetection), 7);
+    EXPECT_EQ(static_cast<int>(TaskType::KeypointMatching), 10);
 }
 
 int main(int argc, char** argv) {

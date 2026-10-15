@@ -7,6 +7,7 @@
 #include "neuriplo/tasks/image_understanding/image_understanding_task.hpp"
 #include "neuriplo/tasks/instance_segmentation/instance_segmentation_task.hpp"
 #include "neuriplo/tasks/instance_segmentation/segmentation_postprocessor.hpp"
+#include "neuriplo/tasks/keypoint_matching/keypoint_matching_task.hpp"
 #include "neuriplo/tasks/object_detection/object_detection_task.hpp"
 #include "neuriplo/tasks/open_vocab_detection/open_vocab_detection_task.hpp"
 #include "neuriplo/tasks/optical_flow/optical_flow_postprocessor.hpp"
@@ -39,6 +40,7 @@ enum class TaskFamily : uint8_t {
     VideoClassification,
     OpticalFlow,
     ImageUnderstanding,
+    KeypointMatching,
 };
 
 struct TaskDescriptor {
@@ -188,6 +190,17 @@ const std::vector<TaskDescriptor>& taskDescriptors() {
         {"OpticalFlow", TaskFamily::OpticalFlow, [](const std::string& normalized) { return normalized == "raft"; },
          []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
             const TaskConfig&) { return std::make_unique<OpticalFlowTask>(model_info, normalized); }},
+
+        // Keypoint matching aliases. Matched by prefix so later revisions of
+        // each family (lightglue_v2, matchanything-eloftr, ...) resolve
+        // without another patch.
+        {"KeypointMatching", TaskFamily::KeypointMatching,
+         [](const std::string& normalized) {
+             return startsWith(normalized, "superglue") || startsWith(normalized, "lightglue") ||
+                    startsWith(normalized, "matchanything");
+         },
+         []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
+            const TaskConfig&) { return std::make_unique<KeypointMatchingTask>(model_info, normalized); }},
 
         // vision::Image understanding aliases.
         {"ImageUnderstanding", TaskFamily::ImageUnderstanding,
