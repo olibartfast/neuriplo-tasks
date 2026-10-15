@@ -93,6 +93,11 @@ set(CORE_SOURCES
     src/instance_segmentation/edgecrafter_segmentation_postprocessor.cpp
     src/optical_flow/optical_flow_task.cpp
     src/optical_flow/raft_postprocessor.cpp
+    src/keypoint_matching/keypoint_matching_task.cpp
+    src/keypoint_matching/keypoint_matching_preprocessor.cpp
+    src/keypoint_matching/superglue_postprocessor.cpp
+    src/keypoint_matching/lightglue_postprocessor.cpp
+    src/keypoint_matching/matchanything_postprocessor.cpp
     src/open_vocab_detection/clip_tokenizer.cpp
     src/open_vocab_detection/open_vocab_detection_task.cpp
     src/open_vocab_detection/owlv2_postprocessor.cpp
@@ -165,6 +170,12 @@ set(CORE_HEADERS
     include/neuriplo/tasks/optical_flow/optical_flow_task.hpp
     include/neuriplo/tasks/optical_flow/optical_flow_postprocessor.hpp
     include/neuriplo/tasks/optical_flow/raft_postprocessor.hpp
+    include/neuriplo/tasks/keypoint_matching/keypoint_matching_task.hpp
+    include/neuriplo/tasks/keypoint_matching/keypoint_matching_preprocessor.hpp
+    include/neuriplo/tasks/keypoint_matching/keypoint_matching_postprocessor.hpp
+    include/neuriplo/tasks/keypoint_matching/superglue_postprocessor.hpp
+    include/neuriplo/tasks/keypoint_matching/lightglue_postprocessor.hpp
+    include/neuriplo/tasks/keypoint_matching/matchanything_postprocessor.hpp
     include/neuriplo/tasks/open_vocab_detection/clip_tokenizer.hpp
     include/neuriplo/tasks/open_vocab_detection/open_vocab_detection_task.hpp
     include/neuriplo/tasks/open_vocab_detection/owlv2_postprocessor.hpp
