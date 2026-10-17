@@ -232,6 +232,7 @@ The TaskFactory supports the following model type strings. Matching normalizes s
 
 - `"yolo"`, `"yolov7e2e"`, `"yolov10"`, `"yolo26"`, `"yolov4"` - YOLO-based variants
 - `"yolonas"` - YOLO-NAS
+- `"yoloworld"` - Ultralytics YOLO-World exported with a fixed class list (same output as YOLOv8; see the [YOLO-World export guide](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/yolo_world/README.md))
 - `"rtdetr"`, `"rtdetrv2"` - RT-DETR family (RT-DETR v1, v2, and v4; excludes v3)
 - `"dfine"`, `"deim"`, `"deimv2"` - D-FINE and DEIM; same export signature and postprocessing as RT-DETR, matched by prefix so later revisions resolve too
 - `"rtdetrul"`, `"rtdetrultralytics"` - RT-DETR (Ultralytics implementation)
