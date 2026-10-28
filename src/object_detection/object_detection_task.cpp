@@ -333,12 +333,12 @@ bool ObjectDetectionTask::validateTensorInputs(const std::vector<Tensor>& tensor
     case ModelType::YOLO_STANDARD:
     case ModelType::YOLO_V4:
     case ModelType::YOLO_NMS_FREE:
+    case ModelType::RT_DETR_UL:
         return tensors.size() >= 1;
 
     case ModelType::YOLO_NAS:
     case ModelType::YOLO_V7_E2E:
     case ModelType::RT_DETR_STYLE:
-    case ModelType::RT_DETR_UL:
     case ModelType::RF_DETR:
     case ModelType::EDGECRAFTER:
         return tensors.size() >= 2;

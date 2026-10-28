@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Accept the single output of Ultralytics RT-DETR at the task boundary instead of silently discarding detections before decoding.
+
 ## [0.8.3] - 2026-10-28
 
 ### Fixed
