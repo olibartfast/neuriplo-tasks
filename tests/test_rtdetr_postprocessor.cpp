@@ -103,3 +103,22 @@ TEST_F(RtDetrPostprocessorTest, EmptyInput) {
     // Should throw because RT-DETR style requires 3 tensors
     EXPECT_THROW({ processor.postprocess({}, neuriplo_tasks::Size(640, 640)); }, std::runtime_error);
 }
+
+TEST_F(RtDetrPostprocessorTest, UltralyticsEndToEndNormalizedBoxes) {
+    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_UL, Size(640, 640), 0.5f);
+    Tensor output({0.5f, 0.5f, 0.25f, 0.5f, 0.9f, 16.0f, 0.5f, 0.5f, 0.25f, 0.5f, 0.1f, 1.0f}, {1, 2, 6});
+    const auto detections = processor.postprocess({output}, Size(800, 400));
+    ASSERT_EQ(detections.size(), 1u);
+    EXPECT_EQ(detections[0].class_id, 16);
+    EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.9f);
+    EXPECT_EQ(detections[0].bbox.x, 300);
+    EXPECT_EQ(detections[0].bbox.y, 100);
+    EXPECT_EQ(detections[0].bbox.width, 200);
+    EXPECT_EQ(detections[0].bbox.height, 200);
+}
+
+TEST_F(RtDetrPostprocessorTest, UltralyticsEndToEndTruncatedTensor) {
+    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_UL, Size(640, 640), 0.5f);
+    Tensor output({0.5f, 0.5f, 0.25f}, {1, 1, 6});
+    EXPECT_TRUE(processor.postprocess({output}, Size(800, 400)).empty());
+}

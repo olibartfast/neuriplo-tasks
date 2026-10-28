@@ -2,6 +2,7 @@
 
 #include "neuriplo/tasks/core/tensor_utils.hpp"
 
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 
@@ -124,6 +125,36 @@ std::vector<Detection> RtDetrPostprocessor::postprocessRTDETRUL(const Tensor& ou
     const int batch = static_cast<int>(output.shape[0]);
     const int num_dets = static_cast<int>(output.shape[1]);
     const int dims = static_cast<int>(output.shape[2]);
+    // Current Ultralytics exports contain normalized cx, cy, w, h, score, class_id.
+    if (dims == 6) {
+        const size_t count = static_cast<size_t>(batch) * static_cast<size_t>(num_dets);
+        if (output.data.size() != count * 6)
+            return {};
+        const float frame_width = static_cast<float>(frame_size.width);
+        const float frame_height = static_cast<float>(frame_size.height);
+        for (size_t i = 0; i < count; ++i) {
+            const size_t offset = i * 6;
+            const float score = tensorElementToFloat(output.data[offset + 4]);
+            if (!std::isfinite(score) || score < confidence_threshold_ || score > 1.0f)
+                continue;
+            const float cx = tensorElementToFloat(output.data[offset]);
+            const float cy = tensorElementToFloat(output.data[offset + 1]);
+            const float w = tensorElementToFloat(output.data[offset + 2]);
+            const float h = tensorElementToFloat(output.data[offset + 3]);
+            const float label = tensorElementToFloat(output.data[offset + 5]);
+            if (!std::isfinite(cx) || !std::isfinite(cy) || !std::isfinite(w) || !std::isfinite(h) ||
+                !std::isfinite(label) || w <= 0 || h <= 0 || label < 0 || std::floor(label) != label)
+                continue;
+            Detection det;
+            det.class_id = label;
+            det.class_confidence = score;
+            det.bbox = vision::Rect(static_cast<int>((cx - w * 0.5f) * frame_width),
+                                    static_cast<int>((cy - h * 0.5f) * frame_height), static_cast<int>(w * frame_width),
+                                    static_cast<int>(h * frame_height));
+            detections.push_back(det);
+        }
+        return detections;
+    }
     const int num_classes = dims - 4;
 
     if (num_classes <= 0)

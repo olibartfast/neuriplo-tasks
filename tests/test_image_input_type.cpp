@@ -1,4 +1,5 @@
 #include "neuriplo/tasks/classification/classification_preprocessor.hpp"
+#include "neuriplo/tasks/classification/classification_task.hpp"
 #include "neuriplo/tasks/core/model_info.hpp"
 #include "neuriplo/tasks/core/preprocessor.hpp"
 #include "neuriplo/tasks/object_detection/object_detection_task.hpp"
@@ -7,6 +8,7 @@
 #include "neuriplo/tasks/video_classification/video_classification_task.hpp"
 #include "vision_test_utils.hpp"
 
+#include <cstring>
 #include <gtest/gtest.h>
 #include <stdexcept>
 #include <string>
@@ -179,4 +181,51 @@ TEST(ApplyImageInputType, RaftCannotEmitRawPixels) {
 TEST(ApplyImageInputType, VideoMaeCannotEmitRawPixels) {
     EXPECT_THROW(VideoClassificationTask(imageModel({1, 16, 3, 8, 8}, PixelType::UInt8), "videomae", 5, true),
                  std::invalid_argument);
+}
+
+TEST(ApplyImageInputType, TensorflowFloat32NchwKeepsBgrPixelValues) {
+    TensorflowPreprocessor preprocessor(Size(4, 2), ImageFormat::NCHW, DataType::FLOAT32);
+    const auto bytes = preprocessor.preprocess(bgrImage(4, 2).view());
+    ASSERT_EQ(bytes.size(), 24u * sizeof(float));
+    std::vector<float> values(24);
+    std::memcpy(values.data(), bytes.data(), bytes.size());
+    EXPECT_FLOAT_EQ(values[0], 10.0f);
+    EXPECT_FLOAT_EQ(values[8], 20.0f);
+    EXPECT_FLOAT_EQ(values[16], 30.0f);
+}
+
+TEST(ApplyImageInputType, TensorflowFloat32NhwcKeepsBgrPixelValues) {
+    TensorflowPreprocessor preprocessor(Size(4, 2), ImageFormat::NHWC, DataType::FLOAT32);
+    const auto bytes = preprocessor.preprocess(bgrImage(4, 2).view());
+    ASSERT_EQ(bytes.size(), 24u * sizeof(float));
+    std::vector<float> values(24);
+    std::memcpy(values.data(), bytes.data(), bytes.size());
+    EXPECT_FLOAT_EQ(values[0], 10.0f);
+    EXPECT_FLOAT_EQ(values[1], 20.0f);
+    EXPECT_FLOAT_EQ(values[2], 30.0f);
+}
+
+TEST(ApplyImageInputType, TensorflowTaskUsesDeclaredLayoutAndDtype) {
+    for (const bool nhwc : {false, true}) {
+        for (const PixelType dtype : {PixelType::Float32, PixelType::UInt8}) {
+            auto info = imageModel(nhwc ? std::vector<int64_t>{1, 2, 4, 3} : std::vector<int64_t>{1, 3, 2, 4}, dtype);
+            info.input_formats[0] = nhwc ? "FORMAT_NHWC" : "FORMAT_NCHW";
+            ClassificationTask task(info, "tensorflow-classifier");
+            const auto tensors = task.preprocess({bgrImage(4, 2)});
+            ASSERT_EQ(tensors.size(), 1u);
+            if (dtype == PixelType::Float32) {
+                ASSERT_EQ(tensors[0].size(), 24u * sizeof(float));
+                std::vector<float> values(24);
+                std::memcpy(values.data(), tensors[0].data(), tensors[0].size());
+                EXPECT_FLOAT_EQ(values[0], 10.0f);
+                EXPECT_FLOAT_EQ(values[nhwc ? 1 : 8], 20.0f);
+                EXPECT_FLOAT_EQ(values[nhwc ? 2 : 16], 30.0f);
+            } else {
+                ASSERT_EQ(tensors[0].size(), 24u);
+                EXPECT_EQ(tensors[0][0], 10);
+                EXPECT_EQ(tensors[0][nhwc ? 1 : 8], 20);
+                EXPECT_EQ(tensors[0][nhwc ? 2 : 16], 30);
+            }
+        }
+    }
 }
