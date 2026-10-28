@@ -2,8 +2,9 @@ name: Classifier export regressions
 
 on:
   push:
-    branches: [develop, 'feature/**', 'feat/**']
+    branches: [master, develop, 'release/**', 'feature/**', 'feat/**']
     paths:
+      - 'VERSION'
       - 'export/classification/torchvision/**'
       - 'export/classification/tensorflow/**'
       - 'export/depth_estimation/depth_anything_v2/**'
@@ -14,6 +15,7 @@ on:
   pull_request:
     branches: [develop, master]
     paths:
+      - 'VERSION'
       - 'export/classification/torchvision/**'
       - 'export/classification/tensorflow/**'
       - 'export/depth_estimation/depth_anything_v2/**'

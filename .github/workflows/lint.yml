@@ -2,13 +2,13 @@ name: C++ Lint & Build
 
 on:
   push:
-    branches: [develop, "feature/**", "feat/**"]
+    branches: [master, develop, "release/**", "feature/**", "feat/**"]
     paths-ignore:
       - '**.md'
       - 'export/**'
       - 'docs/**'
   pull_request:
-    branches: [develop]
+    branches: [develop, master]
     paths-ignore:
       - '**.md'
       - 'export/**'
