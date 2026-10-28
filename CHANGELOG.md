@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Fixed
+- Export TensorFlow ResNet50 with raw BGR preprocessing and logits; verify resource restoration through a SavedModel Session.
 - Preserve pretrained classifier weights and evaluation mode during export; reject a class-count mismatch instead of creating a random head.
 - Match TensorFlow classifier input layout and dtype to model metadata.
 - Decode current Ultralytics RT-DETR normalized end-to-end outputs and accept YOLO end-to-end models exported with the legacy head.
