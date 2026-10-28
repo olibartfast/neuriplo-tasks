@@ -23,11 +23,12 @@ class TorchvisionPreprocessor : public Preprocessor {
 
 /**
  * @brief TensorFlow/Keras models preprocessor
- * No ImageNet normalization, just [0, 1] scaling
+ * Raw BGR pixels in [0, 255], with layout and dtype selected by the task metadata
  */
 class TensorflowPreprocessor : public Preprocessor {
   public:
     explicit TensorflowPreprocessor(const Size& input_size = Size(224, 224));
+    TensorflowPreprocessor(const Size& input_size, ImageFormat format, DataType data_type);
 };
 
 /**
