@@ -38,7 +38,7 @@ python export/depth_estimation/depth_anything_v2/export_depth_anything_v2_to_onn
 | `--output` | Output ONNX file path | `depth_anything_v2.onnx` |
 | `--image-height` | Input height | 518 |
 | `--image-width` | Input width | 518 |
-| `--opset` | ONNX opset version | 14 |
+| `--opset` | ONNX opset version | 18 |
 | `--static-batch` | Disable dynamic batch size | Off |
 | `--test` | Run ONNX Runtime inference test | Off |
 
@@ -56,3 +56,18 @@ onnxruntime  # optional, for --test
 
 - Keep export input size aligned with your deployment model config for best runtime compatibility.
 - The C++ `neuriplo-tasks` depth postprocessor accepts common depth output layouts, including `[B,H,W]` and `[B,1,H,W]`.
+
+
+### OpenCV DNN 5
+
+Use opset 20 with a static batch to retain the native ONNX `Gelu` operator:
+
+```bash
+python export/depth_estimation/depth_anything_v2/export_depth_anything_v2_to_onnx.py \
+  --opset 20 --static-batch --output depth_anything_v2_opencv5.onnx
+```
+
+This avoids the OpenCV 5 importer crash in GELU subgraph fusion observed with the
+decomposed opset-18 graph. A Small-model opset-20 artifact was run through the UI
+with OpenCV 5.0.0 and its depth output inspected. Keep separate artifacts for
+backends that require opset 18; this does not establish opset-20 support for them.
