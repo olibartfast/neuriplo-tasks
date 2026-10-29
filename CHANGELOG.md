@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Preserve each runtime input datatype and pack size tensors, token IDs and masks independently, including mixed FP32/INT32/INT64/BOOL model inputs.
+- Accept the single output of Ultralytics RT-DETR at the task boundary instead of silently discarding detections before decoding.
+
 ## [0.8.3] - 2026-10-28
 
 ### Fixed
