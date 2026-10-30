@@ -309,3 +309,19 @@ TEST(YoloWorldFixedVocabTest, FactoryRoutesToYoloAndDecodesCustomClassCount) {
         EXPECT_EQ(det.bbox, BoundingBox(270, 270, 100, 100)) << alias;
     }
 }
+
+TEST_F(YoloPostprocessorTest, NmsFreeSelectorAcceptsLegacyExportHead) {
+    YoloPostprocessor processor(ObjectDetectionTask::ModelType::YOLO_NMS_FREE, Size(640, 640), 0.5f, 0.45f);
+    constexpr int anchors = 100;
+    std::vector<TensorElement> data(84 * anchors, 0.0f);
+    data[0] = 320.0f;
+    data[anchors] = 320.0f;
+    data[2 * anchors] = 100.0f;
+    data[3 * anchors] = 200.0f;
+    data[(4 + 16) * anchors] = 0.9f;
+    const auto detections = processor.postprocess({Tensor(data, {1, 84, anchors})}, Size(640, 640));
+    ASSERT_EQ(detections.size(), 1u);
+    EXPECT_EQ(detections[0].class_id, 16);
+    EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.9f);
+    EXPECT_EQ(detections[0].bbox.width, 100);
+}

@@ -13,6 +13,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   routes to the existing YOLO detection task; a smoke test covers routing and decoding
   a custom class count.
 
+## [0.8.4] - 2026-10-30
+
+### Fixed
+- Preserve each runtime input datatype and pack size tensors, token IDs and masks independently, including mixed FP32/INT32/INT64/BOOL model inputs.
+- Accept the single output of Ultralytics RT-DETR at the task boundary instead of silently discarding detections before decoding.
+- Recover the RT-DETR/DEIM/DFINE output layout from tensor rank and element type when an export carries no output names, so TorchScript label tensors are no longer decoded as confidence scores.
+
+## [0.8.3] - 2026-10-28
+
+### Fixed
+- Support native GELU depth export with ONNX opset 20 for OpenCV 5; default other depth exports to opset 18 and test numerical output on a small deterministic model.
+- Export TensorFlow ResNet50 with raw BGR preprocessing and logits; verify resource restoration through a SavedModel Session.
+- Preserve pretrained classifier weights and evaluation mode during export; reject a class-count mismatch instead of creating a random head.
+- Match TensorFlow classifier input layout and dtype to model metadata.
+- Decode current Ultralytics RT-DETR normalized end-to-end outputs and accept YOLO end-to-end models exported with the legacy head.
+- Decode YOLO26 pose class IDs and xyxy boxes without treating class zero as zero confidence.
+
 ## [0.8.2] - 2026-09-11
 
 ### Added
@@ -227,7 +244,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - clang-format and clang-tidy configuration
 - CI workflow with lint, static analysis, build, and test jobs
 
-[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.8.4...HEAD
 [0.8.2]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.7.0...v0.8.0
@@ -242,3 +259,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 [0.3.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/olibartfast/neuriplo-tasks/releases/tag/v0.1.0
+
+[0.8.4]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.8.3...v0.8.4
+[0.8.3]: https://github.com/olibartfast/neuriplo-tasks/compare/v0.8.2...v0.8.3
