@@ -14,13 +14,26 @@ RtDetrPostprocessor::RtDetrPostprocessor(ObjectDetectionTask::ModelType model_ty
     findOutputIndices(output_names);
 }
 
-void RtDetrPostprocessor::findOutputIndices(const std::vector<std::string>& output_names) {
-    scores_idx_ = 0;
-    boxes_idx_ = 1;
-    labels_idx_ = 2;
+namespace {
 
-    if (output_names.empty())
-        return;
+bool holdsInteger(const Tensor& tensor) {
+    if (tensor.data.empty())
+        return false;
+    return std::holds_alternative<int32_t>(tensor.data.front()) || std::holds_alternative<int64_t>(tensor.data.front());
+}
+
+bool looksLikeBoxes(const Tensor& tensor) { return tensor.shape.size() == 3 && tensor.shape[2] == 4; }
+
+bool looksLikeScores(const Tensor& tensor) { return tensor.shape.size() == 2 && !holdsInteger(tensor); }
+
+bool looksLikeLabels(const Tensor& tensor) { return tensor.shape.size() == 2 && holdsInteger(tensor); }
+
+} // namespace
+
+void RtDetrPostprocessor::findOutputIndices(const std::vector<std::string>& output_names) {
+    scores_idx_ = -1;
+    boxes_idx_ = -1;
+    labels_idx_ = -1;
 
     for (size_t i = 0; i < output_names.size(); ++i) {
         const auto& name = output_names[i];
@@ -34,6 +47,47 @@ void RtDetrPostprocessor::findOutputIndices(const std::vector<std::string>& outp
     }
 }
 
+void RtDetrPostprocessor::resolveOutputIndices(const std::vector<Tensor>& tensors) {
+    const auto at = [&tensors](int index) -> const Tensor& { return tensors[static_cast<size_t>(index)]; };
+
+    const bool named_layout_valid = scores_idx_ >= 0 && boxes_idx_ >= 0 && labels_idx_ >= 0 &&
+                                    scores_idx_ != boxes_idx_ && scores_idx_ != labels_idx_ &&
+                                    boxes_idx_ != labels_idx_ && looksLikeScores(at(scores_idx_)) &&
+                                    looksLikeBoxes(at(boxes_idx_)) && looksLikeLabels(at(labels_idx_));
+    if (named_layout_valid)
+        return;
+
+    // TorchScript exports carry no output names. Recover the layout from the
+    // shape and dtype signature: boxes are the only 3-D tensor with a
+    // trailing 4, labels are the integer 2-D tensor, scores the float one.
+    int scores = -1;
+    int boxes = -1;
+    int labels = -1;
+    for (size_t i = 0; i < tensors.size(); ++i) {
+        const auto index = static_cast<int>(i);
+        if (boxes < 0 && looksLikeBoxes(tensors[i])) {
+            boxes = index;
+        } else if (labels < 0 && looksLikeLabels(tensors[i])) {
+            labels = index;
+        } else if (scores < 0 && looksLikeScores(tensors[i])) {
+            scores = index;
+        }
+    }
+
+    if (scores < 0 || boxes < 0 || labels < 0)
+        return;
+
+    const Tensor& score_tensor = at(scores);
+    const Tensor& box_tensor = at(boxes);
+    const Tensor& label_tensor = at(labels);
+    if (score_tensor.shape[1] != box_tensor.shape[1] || score_tensor.shape[1] != label_tensor.shape[1])
+        return;
+
+    scores_idx_ = scores;
+    boxes_idx_ = boxes;
+    labels_idx_ = labels;
+}
+
 std::vector<Detection> RtDetrPostprocessor::postprocess(const std::vector<Tensor>& tensors,
                                                         const vision::Size& frame_size) {
 
@@ -43,6 +97,13 @@ std::vector<Detection> RtDetrPostprocessor::postprocess(const std::vector<Tensor
     case ObjectDetectionTask::ModelType::RT_DETR_STYLE: {
         if (tensors.size() < 3) {
             throw std::runtime_error("RT-DETR style models require 3 output tensors");
+        }
+        resolveOutputIndices(tensors);
+        if (scores_idx_ < 0 || boxes_idx_ < 0 || labels_idx_ < 0) {
+            // Legacy scores/boxes/labels tuple order.
+            scores_idx_ = 0;
+            boxes_idx_ = 1;
+            labels_idx_ = 2;
         }
         detections =
             postprocessRTDETR(tensors[static_cast<size_t>(scores_idx_)], tensors[static_cast<size_t>(boxes_idx_)],
