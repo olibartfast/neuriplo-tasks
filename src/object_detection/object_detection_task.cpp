@@ -1,5 +1,6 @@
 #include "neuriplo/tasks/object_detection/object_detection_task.hpp"
 
+#include "neuriplo/tasks/core/input_tensor_bytes.hpp"
 #include "neuriplo/tasks/object_detection/detection_preprocessor.hpp"
 #include "neuriplo/tasks/object_detection/edgecrafter_postprocessor.hpp"
 #include "neuriplo/tasks/object_detection/rfdetr_postprocessor.hpp"
@@ -107,9 +108,7 @@ class ModelInputDetectionPreprocessStrategy final : public DetectionPreprocessSt
                         all_sizes.push_back(static_cast<int64_t>(input_size_.width));
                     }
                 }
-                const auto* begin = reinterpret_cast<const uint8_t*>(all_sizes.data());
-                const auto* end = begin + all_sizes.size() * sizeof(int64_t);
-                results.emplace_back(begin, end);
+                results.push_back(packTensorInputValues(model_info_, i, all_sizes));
             } else {
                 results.emplace_back();
             }
@@ -333,12 +332,12 @@ bool ObjectDetectionTask::validateTensorInputs(const std::vector<Tensor>& tensor
     case ModelType::YOLO_STANDARD:
     case ModelType::YOLO_V4:
     case ModelType::YOLO_NMS_FREE:
+    case ModelType::RT_DETR_UL:
         return tensors.size() >= 1;
 
     case ModelType::YOLO_NAS:
     case ModelType::YOLO_V7_E2E:
     case ModelType::RT_DETR_STYLE:
-    case ModelType::RT_DETR_UL:
     case ModelType::RF_DETR:
     case ModelType::EDGECRAFTER:
         return tensors.size() >= 2;

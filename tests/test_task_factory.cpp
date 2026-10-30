@@ -313,3 +313,27 @@ int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
+
+// Exercise the full task boundary: a decoder-only test misses its input gate.
+TEST_F(TaskFactoryTest, RtDetrUltralyticsSingleOutputReachesDecoder) {
+    auto info = createValidModelInfo();
+    info.output_names = {"output0"};
+    info.output_shapes = {{1, 1, 6}};
+    Tensor output;
+    output.shape = {1, 1, 6};
+    output.data = {0.5f, 0.5f, 0.25f, 0.5f, 0.9f, 16.0f};
+    for (const char* alias : {"rtdetrul", "rtdetrultralytics"}) {
+        auto task = TaskFactory::createTaskInstance(alias, info);
+        const auto results = task->postprocess(Size(800, 600), {output});
+        ASSERT_EQ(results.size(), 1U) << alias;
+        const auto* detection = std::get_if<Detection>(&results[0]);
+        ASSERT_NE(detection, nullptr);
+        EXPECT_FLOAT_EQ(detection->class_id, 16.0f);
+        EXPECT_FLOAT_EQ(detection->class_confidence, 0.9f);
+        EXPECT_EQ(detection->bbox.x, 300);
+        EXPECT_EQ(detection->bbox.y, 150);
+        EXPECT_EQ(detection->bbox.width, 200);
+        EXPECT_EQ(detection->bbox.height, 300);
+        EXPECT_TRUE(task->postprocess(Size(800, 600), {}).empty());
+    }
+}
