@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- YOLO-World fixed-vocabulary export recipe (`export/detection/yolo_world/`): bakes a
+  class list into an Ultralytics `-worldv2` model and exports ONNX with the YOLOv8
+  output layout, plus a `<model>_classes.txt` labels file. The `yoloworld` model type
+  routes to the existing YOLO detection task; a smoke test covers routing and decoding
+  a custom class count.
+
 ## [0.8.4] - 2026-10-30
 
 ### Fixed
