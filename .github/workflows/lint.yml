@@ -4,15 +4,25 @@ on:
   push:
     branches: [master, develop, "release/**", "feature/**", "feat/**"]
     paths-ignore:
-      - '**.md'
       - 'export/**'
       - 'docs/**'
+      - 'specs/**'
+      - '.claude/**/*.md'
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+      - 'CHANGELOG.md'
+      - 'PRE_COMMIT_GUIDE.md'
   pull_request:
     branches: [develop, master]
     paths-ignore:
-      - '**.md'
       - 'export/**'
       - 'docs/**'
+      - 'specs/**'
+      - '.claude/**/*.md'
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+      - 'CHANGELOG.md'
+      - 'PRE_COMMIT_GUIDE.md'
 
 jobs:
   format-check:
