@@ -18,20 +18,62 @@ be run is **not executed**, not a pass.
 | V-8 | Gate | clang-format-18 `--dry-run --Werror`, cppcheck, `-DWERROR=ON` build, `ctest` | **pass** |
 | V-9 | Gate | Valgrind on the Debug test build (new suite included) | **pass (CI)** — local Valgrind unavailable; the CI `valgrind` job ran the full suite green |
 | V-10 | Consumer docs | `export/README.md` links resolve; `export/keypoint_matching/README.md` present; batch matrix has the new family row | **pass** |
-| V-11 | Deferred work is honest | README and changelog say decoding is not implemented; no decoder claims behavior that was never run against an ONNX file | **pass** |
+| V-11 | Deferred work is honest | README and changelog say decoding is not implemented; no decoder claims behavior that was never run against an ONNX file | **pass** (scaffold), superseded for SuperGlue by V-13 |
+| V-12 | In scope — SuperGlue preprocessing | `SuperGluePreprocessor` emits one buffer of `2 × 3 × H × W × 4` bytes; grayscale values match torchvision weights on a palette image; the two channels planes are identical | **pass** |
+| V-13 | In scope — SuperGlue decoding | On a real ONNX export, C++ decode equals the Python `post_process_keypoint_matching` reference (match count and per-match score/coordinates) | **pass** |
+| V-14 | Decision 7 — score threshold | Matches at or below `TaskConfig::confidence_threshold` are dropped; a threshold above every score yields no matches | **pass** |
+| V-15 | Gate | clang-format-18 `--dry-run --Werror`, cppcheck, clang-tidy-18, `-DWERROR=ON` build, `ctest`, Valgrind | **pass (local)** |
 
 **Explicitly not executed in this packet:**
 
-- End-to-end keypoint matching against a real SuperGlue / LightGlue /
-  MatchAnything ONNX export — no verified file exists in this repo yet; that is
-  the next packet (requirements open questions 1–3).
+- End-to-end keypoint matching against a real LightGlue / MatchAnything ONNX
+  export — no verified file exists for those families yet; that is the next
+  slice (requirements open questions 1–4). **SuperGlue was executed — see the
+  2026-11-02 results below.**
 - Matching accuracy against labelled pairs — needs a dataset and an evaluation
   harness this repository does not have.
 - Multi-pair / batched matching — out of scope by decision 2.
 
-## Results
+## Results — SuperGlue decoder (2026-11-02)
 
-**Date:** 2026-10-16 · **Branch:** `feature/keypoint-matching` at first full
+**Model:** `KnightsAnalytics/superglue_outdoor` (Optimum export of
+`magic-leap-community/superglue_outdoor`, opset 17, input
+`pixel_values [1, 2, 3, 480, 640]`).
+**Images:** magicleap phototourism Capitol pair, `1016x762` (source) and
+`1048x626` (target).
+
+| Check | Evidence |
+|-------|----------|
+| V-12 | `SuperGluePreprocessPacksOnePairBuffer`: one buffer of `2 × 3 × 480 × 640 × 4` bytes. `SuperGluePreprocessAppliesGrayscaleAndUnitScaling`: red→`0.2989`, blue→`0.1140`, green→`0.5870`, white→`0.9999`, all three channel planes identical, second slot carries the target image. |
+| V-13 | Real export: `N=903`, 795 source / 903 target valid keypoints, 233 matches above score 0. C++ decode reproduced the Python reference on all 233 matches — max score/coordinate delta `1.17e-6` (float32 rounding). Preprocessed pixels versus the transformers pipeline (PIL resize + torchvision grayscale): `mean |diff| = 0.004`, `max 0.21` on the `[0,1]` scale; the residual is PIL's antialiased bilinear downscale versus this library's plain bilinear, not a convention error. A `Linear`-kernel buffer is the closest of the three available kernels (mean 0.004 vs 0.012 `Area`, 0.007 `Cubic`). |
+| V-14 | `SuperGlueDropsMatchesBelowThreshold`: 1 match at threshold 0, 0 matches at 0.995. `SuperGlueTaskScalesToRecordedPairSizes`: factory default (`confidence_threshold=0.25`) keeps the 0.99 match and rescales coordinates by the recorded pair sizes. |
+| V-15 | `clang-format-18 --dry-run --Werror` clean; `cppcheck` exit 0 (59 files); `clang-tidy-18` clean on the three touched sources (an earlier `readability-function-cognitive-complexity` warning on `extractInputSize` was removed by the rank switch, not suppressed); `-DWERROR=ON` build exit 0; `ctest` 30/30; Valgrind on the Debug `test_keypoint_matching` (17 tests) `0 errors, 0 leaks`. |
+
+**Deviations recorded during the SuperGlue work:**
+
+- **`preprocess()` returns one buffer for SuperGlue, not two.** The export has a
+  single rank-5 input holding the pair, and every buffer maps 1:1 onto a model
+  input, so `SuperGluePreprocessor` packs both images into one buffer. The
+  scaffold's "one buffer per image" rule holds only for two-input families;
+  requirements decision 5 was rewritten to record this.
+- **The scaffold's RGB preprocessor was wrong for this family.** Verified
+  grayscale with torchvision weights; the split the scaffold deferred is now
+  implemented as `SuperGluePreprocessor`.
+- **`matches` indexes padded keypoints, not masked ones.** Verified by checking
+  that every referenced index falls inside the mask and that the mask is
+  prefix-packed. The decoder still guards `mask[1][k] > 0`, so it stays correct
+  if a future export changes the packing.
+- **No detector score in the export.** `Keypoint::confidence` stays `0` for
+  SuperGlue keypoints; this is documented on the postprocessor, in the README
+  contract, and in the export guide rather than faked with a placeholder value.
+- **Raising `TaskConfig::confidence_threshold` changes match counts.** On the export's shipped
+  reference pair (`reference_0.npz`), 184 of 184 matches survive 0, 174 survive the factory default
+  0.25, and 156 survive 0.9. Consumers relying on "every mutual match" should
+  set the threshold to 0.
+
+## Results — scaffold (2026-10-16)
+
+**Branch:** `feature/keypoint-matching` at first full
 local run. Build: Debug, `-DWERROR=ON`, GCC, in a scratch build directory.
 
 | Check | Evidence |

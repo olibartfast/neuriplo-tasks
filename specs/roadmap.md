@@ -23,10 +23,11 @@ which stays the authority on the detail. This is the shape of the arc:
 
 ## In flight
 
-- **Keypoint matching (SuperGlue / LightGlue / MatchAnything)** — scaffold on
-  `feature/keypoint-matching`: result type, routing, pair contract, and
-  per-family postprocessor seams. Decoders are pending verified ONNX layouts;
-  see [2026-10-15-keypoint-matching](2026-10-15-keypoint-matching/requirements.md).
+- **Keypoint matching (SuperGlue / LightGlue / MatchAnything)** — on
+  `feature/keypoint-matching`: result type, routing, pair contract, SuperGlue
+  decoder verified against a real ONNX export (see
+  [2026-10-15-keypoint-matching](2026-10-15-keypoint-matching/requirements.md)).
+  LightGlue and MatchAnything decoders are the remaining slices.
 
 ## Proposed
 

@@ -70,3 +70,24 @@ Run the local gate from [AGENTS.md](../../AGENTS.md): clang-format, cppcheck,
 
 **Observable:** every runnable check green before the branch is offered for
 review.
+
+## 7. SuperGlue decoder (delivered 2026-11-02)
+
+Added after the scaffold merged to the branch, once an export could be probed.
+
+- `include/.../superglue_preprocessor.hpp` + `src/.../superglue_preprocessor.cpp`:
+  grayscale, `[0,1]`, pair packed into one `[2, 3, H, W]` buffer.
+  `KeypointMatchingPreprocessor::preprocess_pair` becomes virtual so the family
+  can override it.
+- `SuperGluePostprocessor`: shape-driven output classification, mask-aware
+  keypoint collection, match index remapping, score threshold.
+- `KeypointMatchingTask`: rank-5 input-size extraction (`[1, 2, C, H, W]`),
+  SuperGlue preprocessor/postprocessor selection, 640x480 default, threshold
+  from `TaskConfig::confidence_threshold` via `TaskFactory`.
+- `tests/test_keypoint_matching.cpp`: packing, grayscale values, verified-export
+  decode, threshold, missing mask, malformed tensors, task-level pair sizes.
+- Docs: README contract, export guide with the verified table and
+  `probe_superglue.py`, batch matrix, changelog, roadmap, this packet.
+
+**Observable:** `test_keypoint_matching` green (17 tests), and the decoder
+reproduces the Python reference on a real ONNX export (validation V-12/V-13).

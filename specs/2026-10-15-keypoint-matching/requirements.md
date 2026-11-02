@@ -2,16 +2,51 @@
 
 **Date:** 2026-10-15
 **Branch:** `feature/keypoint-matching` → `develop`
-**Status:** scaffold phase — decoding is deliberately deferred (see Decisions).
+**Status:** SuperGlue decoder delivered and verified against a real ONNX export;
+LightGlue and MatchAnything decoding still deferred (see Decisions).
+
+## SuperGlue contract (verified 2026-11-02)
+
+Probed against `KnightsAnalytics/superglue_outdoor` (an Optimum export of
+`magic-leap-community/superglue_outdoor`, transformers 5.20, opset 17), whose
+repo also ships `reference_*.npz` inputs/outputs and an `export_verification.json`.
+Reproduce with [`export/keypoint_matching/probe_superglue.py`](../../export/keypoint_matching/probe_superglue.py).
+
+| Tensor | Shape | Meaning |
+|--------|-------|---------|
+| `pixel_values` (in) | `[1, 2, 3, 480, 640]` float32 | **one** input; pair on axis 1; grayscale replicated to 3 channels; `[0, 1]`; no mean/std |
+| `keypoints` | `[1, 2, N, 2]` float32 | normalized `x / width`, `y / height` |
+| `matches` | `[1, 2, N]` int64 | side 0 → index into side 1's keypoints, or `-1`; side 1 is the inverse map |
+| `matching_scores` | `[1, 2, N]` float32 | mutual-match probability |
+| `mask` | `[1, 2, N]` int64 | `1` = detected keypoint, `0` = padding (packed at the front) |
+
+`N` is dynamic — 568 for the reference pair's blank image, 903 for the
+phototourism Capitol pair — so decoders must read it from the tensor, never
+assume it. The export carries no SuperPoint detector score, so
+`Keypoint::confidence` cannot be filled. Preprocessing is resize-to-`640x480`
+bilinear, BGR→RGB, torchvision grayscale weights (`0.2989, 0.5870, 0.1140`),
+`[0, 1]`, three replicated channels.
+
+Two consequences that changed the scaffold design:
+
+1. **One buffer, not two.** `preprocess()` returns buffers that map 1:1 onto
+   model inputs. This export has a single input holding the pair, so
+   `SuperGluePreprocessor` overrides `preprocess_pair()` and emits one packed
+   `[2, 3, 480, 640]` buffer (source first). The two-input families keep the
+   one-buffer-per-image behaviour.
+2. **The shared preprocessor was wrong for SuperGlue.** It emitted RGB at
+   `[0, 1]`; the verified export needs grayscale. This is the split that
+   decision 5 anticipated, executed on evidence rather than assumption.
 
 ## Goal
 
 A `KeypointMatchingTask` that finds correspondences between the two images of a
 pair, so consumers stop reimplementing SuperGlue-family preprocessing and
-decoding per project. This packet delivers the **scaffold**: the task contract,
-the result type, factory routing, the preprocessing seam, and the tests that
-lock them. Per-family decoders land once each export's tensor layout has been
-probed against a real ONNX file.
+decoding per project. This packet delivered the **scaffold** — the task
+contract, the result type, factory routing, the preprocessing seam, and the
+tests that lock them — and now adds the **SuperGlue decoder**, built only after
+the export's tensor layout was probed against a real ONNX file (see the
+contract section above). LightGlue and MatchAnything decoders land the same way.
 
 ## Context
 
@@ -44,8 +79,13 @@ Two consequences shape the scope:
   call, `postprocess` returns one `KeypointMatching` per pair.
 - `KeypointMatchingPreprocessor`: pair preprocessing (resize, BGR→RGB, `[0,1]`,
   NCHW float32), one buffer per image — mirrors `RaftPreprocessor`.
-- Per-family postprocessor seams: `SuperGluePostprocessor`,
-  `LightGluePostprocessor`, `MatchAnythingPostprocessor`.
+- `SuperGluePreprocessor`: the same resize path plus grayscale and pair packing
+  into the single `pixel_values` tensor, one buffer total.
+- `SuperGluePostprocessor`: mask-aware decode of `keypoints` / `matches` /
+  `matching_scores`, normalized-to-original coordinate rescaling, and score
+  thresholding from `TaskConfig::confidence_threshold`.
+- Per-family postprocessor seams: `LightGluePostprocessor`,
+  `MatchAnythingPostprocessor` (still throwing).
 - `TaskFactory` routing: `superglue*`, `lightglue*`, `matchanything*` by prefix.
 - Tests: routing and alias normalization, pair validation, preprocessing
   buffers, postprocess seams, result-variant coverage.
@@ -55,10 +95,10 @@ Two consequences shape the scope:
 
 ## Out of scope
 
-- **Decoding matches from real tensors.** The postprocessors throw
+- **Decoding LightGlue and MatchAnything tensors.** Those postprocessors throw
   `std::logic_error` until an export's layout is verified against a real file.
-  This is the next packet; writing a decoder from assumed layouts is how the
-  RT-DETR/EdgeCrafter normalization bugs happened.
+  Writing a decoder from assumed layouts is how the RT-DETR/EdgeCrafter
+  normalization bugs happened.
 - **Matcher-only exports** (keypoints/descriptors in — the original SuperGlue
   export). Documented as unsupported; a front-end orchestration design would be
   its own packet.
@@ -92,31 +132,38 @@ Two consequences shape the scope:
    `std::logic_error` until that layout is verified against a real ONNX export.
    The repo's history (two coordinate-convention bugs, one normalization bug)
    is the reason: conventions are detected, not assumed.
-5. **One pair preprocessor for now.** `KeypointMatchingPreprocessor` is shared
-   by all three families with RGB, `[0,1]`, NCHW. It is split per family when a
-   real export says the normalization or channel count differs (LightGlue's
-   SuperPoint pipeline expects grayscale — open question 1). Sharing one
-   parameterized preprocessor across families is the pattern the roadmap flags
-   as a known source of bugs; the split is the follow-up, not the initial
-   abstraction.
+5. **The shared preprocessor was split on evidence.** The scaffold shipped one
+   RGB `[0,1]` preprocessor for all three families and recorded grayscale as an
+   open question. The verified SuperGlue export needs grayscale and a single
+   packed pair tensor, so `SuperGluePreprocessor` overrides `preprocess_pair()`
+   while `KeypointMatchingPreprocessor` keeps the two-buffer behaviour for
+   LightGlue and MatchAnything. One shared parameterized preprocessor across
+   families is the pattern the roadmap flags as a bug source; the split is now
+   per family, each awaiting its own export.
 6. **`postprocess` receives both original sizes.** `TaskInterface::postprocess`
    carries one `frame_size`, but matches must be rescaled to two images that can
    differ in size. The task records the pair's sizes during `preprocess()` and
    passes them to the decoder; tensor-only callers that never preprocessed fall
    back to `frame_size` for both. This avoids a contract change now and unblocks
    correct rescaling later.
-7. **No `TaskConfig` additions yet.** A match-score threshold
-   (`confidence_threshold`) and keypoint-cap tuning arrive with the decoders
-   that can honor them.
+7. **The score threshold uses the existing knob.** `SuperGluePostprocessor` takes
+   a match-score threshold that the task fills from
+   `TaskConfig::confidence_threshold` (default `0.25`), so no new field was
+   added and consumers configure matches like detections. `KeypointMatch::score`
+   carries the raw probability, so a caller who wants every match can set the
+   threshold to `0`. Keypoint-cap tuning stays deferred.
 
 ## Open questions
 
-1. LightGlue's SuperPoint pipeline takes **grayscale** `(2B, 1, H, W)`; the
-   shared preprocessor emits the source channel count. Confirm channels and
-   normalization (`[0,1]`, `mean/std 0.5`?) against the export when the decoder
-   lands.
-2. Do pipeline exports return keypoints in **input space** or original-image
-   space? Decides the rescale policy; probe, do not assume.
+1. ~~LightGlue's SuperPoint pipeline takes **grayscale** `(2B, 1, H, W)`.~~
+   **SuperGlue answered (2026-11-02):** grayscale, three replicated channels,
+   `[0, 1]`, no mean/std. LightGlue's own channel count and normalization stay
+   open until its export is probed.
+2. ~~Do pipeline exports return keypoints in **input space** or original-image
+   space?~~ **Answered (2026-11-02):** SuperGlue returns normalized
+   `x / width` and `y / height`, so each image's original size rescales it
+   directly; no letterbox offset is involved because the export stretches
+   rather than pads.
 3. MatchAnything's ONNX export (HF Optimum? custom?) — no verified contract yet;
    its guide documents how to check `input_names` / output shapes.
 4. Does any consumer need **multiple pairs per call** (`neuriplo-track` pairs
