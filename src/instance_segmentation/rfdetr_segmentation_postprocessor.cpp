@@ -3,11 +3,60 @@
 #include "image_ops.hpp"
 #include "neuriplo/tasks/core/tensor_utils.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
 
 namespace neuriplo_tasks {
+namespace {
+
+bool isAllDigits(const std::string& s) {
+    return !s.empty() && std::all_of(s.begin(), s.end(), [](unsigned char c) { return std::isdigit(c) != 0; });
+}
+
+// Ground-truth resolution by tensor rank/shape. Handles both the ONNX order
+// (boxes, masks, labels) and exporter-native orders (e.g. LiteRT/Torch
+// `serving_default_output_*`: boxes, labels, masks) under synthetic names.
+void resolveSegIndicesByShape(const std::vector<Tensor>& tensors, int& boxes_idx, int& masks_idx, int& labels_idx) {
+    if (tensors.size() != 3) {
+        return;
+    }
+    int boxes = -1;
+    int labels = -1;
+    int masks = -1;
+    for (size_t i = 0; i < tensors.size(); ++i) {
+        const auto& shape = tensors[i].shape;
+        if (shape.size() == 4) {
+            if (masks >= 0) {
+                return; // ambiguous
+            }
+            masks = static_cast<int>(i);
+        } else if (shape.size() == 3) {
+            if (shape[2] == 4) {
+                if (boxes >= 0) {
+                    return; // ambiguous
+                }
+                boxes = static_cast<int>(i);
+            } else {
+                if (labels >= 0) {
+                    return; // ambiguous
+                }
+                labels = static_cast<int>(i);
+            }
+        } else {
+            return; // unexpected rank
+        }
+    }
+    if (boxes >= 0 && labels >= 0 && masks >= 0) {
+        boxes_idx = boxes;
+        labels_idx = labels;
+        masks_idx = masks;
+    }
+}
+
+} // namespace
 
 RfDetrSegmentationPostprocessor::RfDetrSegmentationPostprocessor(const vision::Size& input_size,
                                                                  float confidence_threshold, float mask_threshold,
@@ -30,8 +79,11 @@ void RfDetrSegmentationPostprocessor::findOutputIndices(const std::vector<std::s
         const auto& name = output_names[i];
         if (name == "boxes" || name == "dets") {
             boxes_idx_ = static_cast<int>(i);
-        } else if (name == "masks" || name.find_first_of("0123456789") != std::string::npos) {
-            // Masks can be identified by numeric name like "4245" or explicit "masks"
+        } else if (name == "masks" || isAllDigits(name)) {
+            // Masks can be identified by purely numeric name like "4245" or explicit "masks".
+            // NOTE: must be all-digits, not merely contains-a-digit: native LiteRT/Torch
+            // exports use `serving_default_output_<i>_output`, which contains digits
+            // but must NOT all collapse onto masks.
             masks_idx_ = static_cast<int>(i);
         } else if (name == "labels") {
             labels_idx_ = static_cast<int>(i);
@@ -46,12 +98,21 @@ std::vector<InstanceSegmentation> RfDetrSegmentationPostprocessor::postprocess(c
         throw std::runtime_error("RF-DETR segmentation requires at least 3 output tensors");
     }
 
-    const auto& boxes = tensors[static_cast<size_t>(boxes_idx_)].data;
-    const auto& labels = tensors[static_cast<size_t>(labels_idx_)].data;
-    const auto& masks = tensors[static_cast<size_t>(masks_idx_)].data;
-    const auto& boxes_shape = tensors[static_cast<size_t>(boxes_idx_)].shape;
-    const auto& labels_shape = tensors[static_cast<size_t>(labels_idx_)].shape;
-    const auto& masks_shape = tensors[static_cast<size_t>(masks_idx_)].shape;
+    // Prefer shape ground truth over name heuristics: synthetic exporter names
+    // (LiteRT/Torch `serving_default_output_*`) carry no role info and the two
+    // known orders (ONNX boxes/masks/labels vs native boxes/labels/masks)
+    // differ only in positions 1 and 2.
+    int boxes_idx = boxes_idx_;
+    int masks_idx = masks_idx_;
+    int labels_idx = labels_idx_;
+    resolveSegIndicesByShape(tensors, boxes_idx, masks_idx, labels_idx);
+
+    const auto& boxes = tensors[static_cast<size_t>(boxes_idx)].data;
+    const auto& labels = tensors[static_cast<size_t>(labels_idx)].data;
+    const auto& masks = tensors[static_cast<size_t>(masks_idx)].data;
+    const auto& boxes_shape = tensors[static_cast<size_t>(boxes_idx)].shape;
+    const auto& labels_shape = tensors[static_cast<size_t>(labels_idx)].shape;
+    const auto& masks_shape = tensors[static_cast<size_t>(masks_idx)].shape;
 
     std::vector<InstanceSegmentation> segmentations;
 
