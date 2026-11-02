@@ -22,7 +22,17 @@ ClassificationTask::ClassificationTask(const ModelInfo& model_info, const std::s
     input_height_ = input_size.height;
 
     // Create appropriate preprocessor
-    preprocessor_ = createPreprocessor(model_type_, input_size);
+    if (model_type_ == ModelType::TENSORFLOW) {
+        const auto format = !model_info.input_formats.empty() && model_info.input_formats[0] == "FORMAT_NHWC"
+                                ? ImageFormat::NHWC
+                                : ImageFormat::NCHW;
+        const auto dtype = !model_info.input_types.empty() && model_info.input_types[0] == PixelType::UInt8
+                               ? DataType::UINT8
+                               : DataType::FLOAT32;
+        preprocessor_ = std::make_unique<TensorflowPreprocessor>(input_size, format, dtype);
+    } else {
+        preprocessor_ = createPreprocessor(model_type_, input_size);
+    }
 
     if (!preprocessor_) {
         throw std::runtime_error("Failed to create preprocessor for classifier: " + model_name);

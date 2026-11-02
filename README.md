@@ -9,7 +9,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 
 ## Features
 
-- **Object Detection**: YOLO (v4-v12, yolo26), RT-DETR family (RT-DETR v1/v2/v4, D-FINE, DEIM v1/v2), YOLO-NAS, RF-DETR, EdgeCrafter
+- **Object Detection**: YOLO (v4-v12, yolo26), YOLO-World (fixed vocabulary), RT-DETR family (RT-DETR v1/v2/v4, D-FINE, DEIM v1/v2), YOLO-NAS, RF-DETR, EdgeCrafter
 - **Instance Segmentation**: YOLOv5/v8/v11-seg, YOLOv10-seg, YOLO26-seg, RF-DETR-Seg, EdgeCrafter; mask output by default or framework-neutral polygons on request
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: VideoMAE, ViViT, TimeSformer
@@ -17,7 +17,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Keypoint Matching**: SuperGlue (image pair → matched keypoints, decoded); LightGlue and MatchAnything routed, decoders pending verified ONNX contracts
 - **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose
 - **Depth Estimation**: Depth Anything V2, YOLO26 Depth
-- **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO
+- **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO; YOLO-World (fixed vocabulary)
 - **Gaussian Splatting**: LGM, LGM-mini, GRM (feed-forward image → 3D Gaussians)
 - **Image Understanding (VLM)**: Gemma 4 and compatible vision-language models via llama.cpp (image captioning, visual Q&A)
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
@@ -233,6 +233,7 @@ The TaskFactory supports the following model type strings. Matching normalizes s
 
 - `"yolo"`, `"yolov7e2e"`, `"yolov10"`, `"yolo26"`, `"yolov4"` - YOLO-based variants
 - `"yolonas"` - YOLO-NAS
+- `"yoloworld"` - Ultralytics YOLO-World exported with a fixed class list (same output as YOLOv8; see the [YOLO-World export guide](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/yolo_world/README.md))
 - `"rtdetr"`, `"rtdetrv2"` - RT-DETR family (RT-DETR v1, v2, and v4; excludes v3)
 - `"dfine"`, `"deim"`, `"deimv2"` - D-FINE and DEIM; same export signature and postprocessing as RT-DETR, matched by prefix so later revisions resolve too
 - `"rtdetrul"`, `"rtdetrultralytics"` - RT-DETR (Ultralytics implementation)
@@ -304,14 +305,17 @@ YOLO26 depth expects RGB NCHW float input normalized to `[0,1]` with YOLO letter
 - `"owlv2"` - OWLv2 open-vocabulary detection
 - `"owlvit"` - OWL-ViT compatible open-vocabulary detection
 - `"groundingdino"` - Grounding DINO text-conditioned detection
+- `"yoloworld"` - YOLO-World with the class list baked in at export time; no runtime prompts, so it routes to the YOLO detection task and returns `Detection` results (see the [YOLO-World export guide](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/yolo_world/README.md))
 
-Open-vocabulary models use text prompts supplied at runtime through `TaskConfig::text_prompts`. Tokenizer assets can be passed either as file paths (`tokenizer_vocab_path`, `tokenizer_merges_path`) or preloaded text blobs (`tokenizer_vocab_json`, `tokenizer_merges_text`).
+OWLv2, OWL-ViT, and Grounding DINO use text prompts supplied at runtime through `TaskConfig::text_prompts`. Tokenizer assets can be passed either as file paths (`tokenizer_vocab_path`, `tokenizer_merges_path`) or preloaded text blobs (`tokenizer_vocab_json`, `tokenizer_merges_text`).
 
-The expected ONNX contract is:
+Their expected ONNX contract is:
 - Inputs: `pixel_values`, `input_ids`, `attention_mask`
 - Outputs: `logits`, `pred_boxes`, and optional `objectness_logits`
 
 Results are returned as `OpenVocabDetection` entries containing `bbox`, `score`, `prompt_index`, and resolved `label`.
+
+YOLO-World exports instead use the YOLOv8 contract — `images` in, `output0` `[1, 4 + num_classes, 8400]` out — with class IDs in the exported class-list order; changing the vocabulary means re-exporting.
 
 For export details, see [export/open_vocab_detection/OWLv2.md](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/open_vocab_detection/OWLv2.md).
 
@@ -478,3 +482,4 @@ cmake --build build
 ## License
 
 MIT License
+

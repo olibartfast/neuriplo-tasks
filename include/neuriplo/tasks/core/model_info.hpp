@@ -3,6 +3,7 @@
 #include "neuriplo/tasks/core/image.hpp"
 
 #include <cstdint>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -37,6 +38,12 @@ struct ModelInfo {
     std::vector<std::vector<int64_t>> output_shapes; ///< Output tensor shapes (from neuriplo)
     std::vector<size_t> input_batch_sizes;           ///< Per-input batch sizes (from neuriplo)
     std::vector<size_t> output_batch_sizes;          ///< Per-output batch sizes (from neuriplo)
+
+    // Lossless runtime scalar tags (FP32, INT32, INT64, ...), per input.
+    // PixelType describes image storage and cannot represent all tensor types.
+    // When populated, these tags are authoritative; legacy callers may keep
+    // using input_types without this field.
+    std::vector<std::string> input_datatypes;
 
     ModelInfo() = default;
 
@@ -76,5 +83,28 @@ struct ModelInfo {
         output_batch_sizes.push_back(batch_size);
     }
 };
+
+/** Resolve one input's scalar type without treating tensor types as pixel types. */
+[[nodiscard]] inline std::string modelInputDatatype(const ModelInfo& info, size_t index) {
+    if (!info.input_datatypes.empty()) {
+        if (info.input_datatypes.size() != info.input_shapes.size() || index >= info.input_datatypes.size() ||
+            info.input_datatypes[index].empty()) {
+            throw std::invalid_argument("Missing runtime datatype for input #" + std::to_string(index));
+        }
+        return info.input_datatypes[index];
+    }
+    // Legacy source compatibility: respect the type the caller supplied.
+    if (index < info.input_types.size()) {
+        switch (info.input_types[index]) {
+        case PixelType::Float32:
+            return "FP32";
+        case PixelType::UInt8:
+            return "UINT8";
+        case PixelType::Int32:
+            return "INT32";
+        }
+    }
+    throw std::invalid_argument("Missing datatype for input #" + std::to_string(index));
+}
 
 } // namespace neuriplo_tasks

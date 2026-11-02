@@ -1,0 +1,60 @@
+name: Classifier export regressions
+
+on:
+  push:
+    branches: [master, develop, 'release/**', 'feature/**', 'feat/**']
+    paths:
+      - 'VERSION'
+      - 'export/classification/torchvision/**'
+      - 'export/classification/tensorflow/**'
+      - 'export/depth_estimation/depth_anything_v2/**'
+      - 'tests/test_torchvision_export.py'
+      - 'tests/test_tensorflow_export.py'
+      - 'tests/test_depth_export.py'
+      - '.github/workflows/export-tests.yml'
+  pull_request:
+    branches: [develop, master]
+    paths:
+      - 'VERSION'
+      - 'export/classification/torchvision/**'
+      - 'export/classification/tensorflow/**'
+      - 'export/depth_estimation/depth_anything_v2/**'
+      - 'tests/test_torchvision_export.py'
+      - 'tests/test_tensorflow_export.py'
+      - 'tests/test_depth_export.py'
+      - '.github/workflows/export-tests.yml'
+
+jobs:
+  preserve-pretrained-head:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install tested CPU exporter dependencies
+        run: python -m pip install torch==2.12.0 torchvision==0.27.0 --index-url https://download.pytorch.org/whl/cpu
+      - name: Install tested ONNX exporter dependency
+        run: python -m pip install onnx==1.21.0
+      - name: Verify exports preserve learned weights
+        run: python tests/test_torchvision_export.py
+      - name: Verify depth GELU export and values
+        run: python tests/test_depth_export.py
+
+  preserve-tensorflow-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CUDA_VISIBLE_DEVICES: '-1'
+      TF_NUM_INTRAOP_THREADS: '2'
+      TF_NUM_INTEROP_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install tested TensorFlow exporter dependency
+        run: python -m pip install tensorflow-cpu==2.19.1
+      - name: Verify SavedModel Session compatibility and logits
+        run: python tests/test_tensorflow_export.py

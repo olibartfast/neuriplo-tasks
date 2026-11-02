@@ -1,5 +1,6 @@
 #include "neuriplo/tasks/open_vocab_detection/open_vocab_detection_task.hpp"
 
+#include "neuriplo/tasks/core/input_tensor_bytes.hpp"
 #include "neuriplo/tasks/object_detection/detection_preprocessor.hpp"
 #include "neuriplo/tasks/open_vocab_detection/grounding_dino_postprocessor.hpp"
 #include "neuriplo/tasks/open_vocab_detection/owlv2_postprocessor.hpp"
@@ -23,16 +24,6 @@ std::string normalizeModelName(const std::string& name) {
         normalized.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
     }
     return normalized;
-}
-
-std::vector<uint8_t> toByteBuffer(const std::vector<int32_t>& values) {
-    // ONNX models typically expect int64 for token inputs
-    std::vector<int64_t> values64(values.begin(), values.end());
-    std::vector<uint8_t> bytes(values64.size() * sizeof(int64_t));
-    if (!values64.empty()) {
-        std::memcpy(bytes.data(), values64.data(), bytes.size());
-    }
-    return bytes;
 }
 
 bool isImageInput(const std::string& input_name, const std::vector<int64_t>& input_shape) {
@@ -250,11 +241,13 @@ std::vector<std::vector<uint8_t>> OpenVocabDetectionTask::preprocess(const std::
             }
             results.push_back(std::move(batched));
         } else if (normalized.find("inputids") != std::string::npos) {
-            results.push_back(toByteBuffer(input_ids));
+            results.push_back(
+                packTensorInputValues(model_info_, index, std::vector<int64_t>(input_ids.begin(), input_ids.end())));
         } else if (normalized.find("attentionmask") != std::string::npos) {
-            results.push_back(toByteBuffer(attention_mask));
+            results.push_back(packTensorInputValues(
+                model_info_, index, std::vector<int64_t>(attention_mask.begin(), attention_mask.end())));
         } else if (normalized.find("tokentypeids") != std::string::npos) {
-            results.push_back(toByteBuffer(std::vector<int32_t>(input_ids.size(), 0)));
+            results.push_back(packTensorInputValues(model_info_, index, std::vector<int64_t>(input_ids.size(), 0)));
         } else {
             results.emplace_back();
         }

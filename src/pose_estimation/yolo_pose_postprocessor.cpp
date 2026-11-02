@@ -7,7 +7,12 @@ namespace neuriplo_tasks {
 
 YoloPosePostprocessor::YoloPosePostprocessor(const vision::Size& input_size, float confidence_threshold,
                                              float nms_threshold)
-    : input_size_(input_size), confidence_threshold_(confidence_threshold), nms_threshold_(nms_threshold) {}
+    : YoloPosePostprocessor(input_size, confidence_threshold, nms_threshold, false) {}
+
+YoloPosePostprocessor::YoloPosePostprocessor(const vision::Size& input_size, float confidence_threshold,
+                                             float nms_threshold, bool end_to_end)
+    : input_size_(input_size), confidence_threshold_(confidence_threshold), nms_threshold_(nms_threshold),
+      end_to_end_(end_to_end) {}
 
 vision::Rect YoloPosePostprocessor::scaleBoxToOriginal(float cx, float cy, float w, float h,
                                                        const vision::Size& frame_size) const {
@@ -89,6 +94,7 @@ std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector
     // YOLOv5 (with objectness): [batch, anchors, channels] → dim2 < dim1
     // YOLOv8+  (no objectness): [batch, channels, anchors] → dim1 < dim2
     bool has_objectness = (dim2 < dim1);
+    const bool end_to_end = end_to_end_ && has_objectness && dim2 > 6 && (dim2 - 6) % 3 == 0;
 
     int channels = has_objectness ? dim2 : dim1;
     int anchors = has_objectness ? dim1 : dim2;
@@ -124,7 +130,7 @@ std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector
                 if (obj < confidence_threshold_)
                     continue;
 
-                if (kpts_start == 6) {
+                if (kpts_start == 6 && !end_to_end) {
                     float cls = tensorElementToFloat(data[batch_offset + static_cast<size_t>(i * channels + 5)]);
                     conf = obj * cls;
                 } else {
@@ -151,7 +157,12 @@ std::vector<PoseEstimation> YoloPosePostprocessor::postprocess(const std::vector
 
             PoseEstimation pose;
             pose.score = conf;
-            pose.bbox = scaleBoxToOriginal(cx, cy, w, h, original_size);
+            if (end_to_end) {
+                // End-to-end rows contain xyxy, score, class_id, keypoints.
+                pose.bbox = scaleBoxToOriginal((cx + w) * 0.5f, (cy + h) * 0.5f, w - cx, h - cy, original_size);
+            } else {
+                pose.bbox = scaleBoxToOriginal(cx, cy, w, h, original_size);
+            }
 
             pose.keypoints.reserve(static_cast<size_t>(num_kpts));
             for (int j = 0; j < num_kpts; ++j) {

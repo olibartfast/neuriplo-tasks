@@ -19,13 +19,14 @@ TorchvisionPreprocessor::TorchvisionPreprocessor(const vision::Size& input_size)
       }) {}
 
 TensorflowPreprocessor::TensorflowPreprocessor(const vision::Size& input_size)
+    : TensorflowPreprocessor(input_size, ImageFormat::NHWC, DataType::UINT8) {}
+
+TensorflowPreprocessor::TensorflowPreprocessor(const vision::Size& input_size, ImageFormat format, DataType data_type)
     : Preprocessor(PreprocessConfig{
-          input_size,
-          ImageFormat::NHWC, // TensorFlow uses channel-last
-          DataType::UINT8,   // TensorFlow often uses uint8
-          false,             // no normalization (keeps 0-255)
-          false,             // no ImageNet normalization
-          false              // TensorFlow models expect BGR
+          input_size, format, data_type,
+          false, // no normalization (keeps 0-255)
+          false, // no ImageNet normalization
+          false  // TensorFlow models expect BGR
       }) {}
 
 ViTPreprocessor::ViTPreprocessor(const vision::Size& input_size)

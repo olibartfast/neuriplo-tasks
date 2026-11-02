@@ -15,7 +15,10 @@ file.
 - **Releases must align with tags**: Every Git tag (e.g., `v0.4.1`) must have
   a corresponding GitHub Release. Never push a tag without also creating the
   release via `gh release create`. Release notes must come from `CHANGELOG.md`
-  — never use `--generate-notes`. If a tag exists without a release, create
+  — never use `--generate-notes`. Pass `--latest` on the newest
+  release and `--latest=false` when backfilling older tags: GitHub assigns the
+  "Latest" badge by publish time, not semver, so backfilling newest-first puts
+  the badge on the oldest version. If a tag exists without a release, create
   the release immediately. See [`docs/Versioning.md`](./docs/Versioning.md)
   for the full release workflow.
 - **Priorities when reviewing a change**: correctness → backward compatibility

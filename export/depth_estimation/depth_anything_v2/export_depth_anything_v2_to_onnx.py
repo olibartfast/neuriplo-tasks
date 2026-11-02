@@ -13,7 +13,7 @@ def export_depth_anything_v2_to_onnx(
     output_path="depth_anything_v2.onnx",
     image_height=518,
     image_width=518,
-    opset_version=14,
+    opset_version=18,
     dynamic_batch=True,
 ):
     """Export Depth Anything V2 model to ONNX format."""
@@ -70,6 +70,7 @@ def export_depth_anything_v2_to_onnx(
             dummy_input,
             output_path,
             export_params=True,
+            dynamo=False,
             opset_version=opset_version,
             do_constant_folding=True,
             input_names=input_names,
@@ -143,7 +144,7 @@ def main():
         parser.add_argument("--output", default="depth_anything_v2.onnx", help="Output ONNX file path")
         parser.add_argument("--image-height", type=int, default=518, help="Input image height")
         parser.add_argument("--image-width", type=int, default=518, help="Input image width")
-        parser.add_argument("--opset", type=int, default=14, help="ONNX opset version")
+        parser.add_argument("--opset", type=int, default=18, help="ONNX opset version (use 20 for native GELU on OpenCV 5)")
         parser.add_argument(
             "--static-batch",
             action="store_true",

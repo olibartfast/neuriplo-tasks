@@ -3,6 +3,7 @@
 #include "neuriplo/tasks/open_vocab_detection/grounding_dino_postprocessor.hpp"
 #include "vision_test_utils.hpp"
 
+#include <cstring>
 #include <gtest/gtest.h>
 
 using namespace neuriplo_tasks;
@@ -14,6 +15,7 @@ ModelInfo makeOwlv2Info() {
     info.input_shapes = {{1, 3, 960, 960}, {2, 8}, {2, 8}};
     info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW", "FORMAT_NCHW"};
     info.input_names = {"pixel_values", "input_ids", "attention_mask"};
+    info.input_datatypes = {"FP32", "INT64", "INT64"};
     info.output_names = {"pred_boxes", "logits"};
     info.input_types = {neuriplo_tasks::PixelType::Float32, neuriplo_tasks::PixelType::Int32,
                         neuriplo_tasks::PixelType::Int32};
@@ -50,6 +52,7 @@ ModelInfo makeGroundingDinoInfo() {
     info.input_shapes = {{1, 3, 800, 800}, {1, 16}, {1, 16}};
     info.input_formats = {"FORMAT_NCHW", "FORMAT_NCHW", "FORMAT_NCHW"};
     info.input_names = {"pixel_values", "input_ids", "attention_mask"};
+    info.input_datatypes = {"FP32", "INT64", "INT64"};
     info.output_names = {"pred_boxes", "pred_logits"};
     info.input_types = {neuriplo_tasks::PixelType::Float32, neuriplo_tasks::PixelType::Int32,
                         neuriplo_tasks::PixelType::Int32};
@@ -206,6 +209,7 @@ TEST(GroundingDinoTest, PreprocessWithTokenTypeIds) {
     info.input_shapes.push_back({1, 16});
     info.input_formats.push_back("FORMAT_NCHW");
     info.input_names.push_back("token_type_ids");
+    info.input_datatypes.push_back("INT64");
     info.input_types.push_back(neuriplo_tasks::PixelType::Int32);
 
     TaskConfig cfg;
@@ -280,4 +284,32 @@ TEST(GroundingDinoTest, PostprocessNoPhraseRangesFallsBackToMaxToken) {
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
+}
+
+TEST(OpenVocabDetectionTest, RuntimeTypesControlTokenAndMaskPackingIndependently) {
+    TaskConfig config;
+    config.text_prompts = {"cat", "dog"};
+    config.tokenizer_vocab_json = R"({"<|endoftext|>":49407,"cat":10,"dog":11,"cat</w>":10,"dog</w>":11})";
+    config.tokenizer_merges_text = "#version: 0.2\nc a\n";
+    const auto image = neuriplo_tasks::vision_test::makeImage(32, 32, 3, 127);
+    auto info = makeOwlv2Info();
+    auto reference = TaskFactory::createTaskInstance("owlv2", info, config);
+    const auto wide = reference->preprocess({image});
+    info.input_datatypes = {"FP32", "INT32", "BOOL"};
+    auto mixed = TaskFactory::createTaskInstance("owlv2", info, config);
+    const auto packed = mixed->preprocess({image});
+    ASSERT_EQ(packed.size(), 3U);
+    EXPECT_EQ(packed[0], wide[0]);
+    ASSERT_EQ(packed[1].size(), 16U * sizeof(int32_t));
+    ASSERT_EQ(packed[2].size(), 16U);
+    for (size_t i = 0; i < 16; ++i) {
+        int64_t wide_id = 0;
+        int64_t wide_mask = 0;
+        int32_t id = 0;
+        std::memcpy(&wide_id, wide[1].data() + i * sizeof(int64_t), sizeof(wide_id));
+        std::memcpy(&wide_mask, wide[2].data() + i * sizeof(int64_t), sizeof(wide_mask));
+        std::memcpy(&id, packed[1].data() + i * sizeof(int32_t), sizeof(id));
+        EXPECT_EQ(id, wide_id);
+        EXPECT_EQ(packed[2][i], wide_mask);
+    }
 }

@@ -31,16 +31,24 @@ Preprocessor::Preprocessor(const PreprocessConfig& config) : config_(config) {}
 void Preprocessor::applyImageInputType(const ModelInfo& model_info) {
     std::optional<vision::PixelType> image_type;
     std::string image_input;
-    const std::size_t count = std::min(model_info.input_shapes.size(), model_info.input_types.size());
+    const std::size_t count = model_info.input_datatypes.empty()
+                                  ? std::min(model_info.input_shapes.size(), model_info.input_types.size())
+                                  : model_info.input_shapes.size();
     for (std::size_t i = 0; i < count; ++i) {
         if (!isImageInputShape(model_info.input_shapes[i])) {
             continue;
         }
-        const vision::PixelType type = model_info.input_types[i];
+        const std::string datatype = modelInputDatatype(model_info, i);
+        const vision::PixelType type = datatype == "FP32"    ? vision::PixelType::Float32
+                                       : datatype == "UINT8" ? vision::PixelType::UInt8
+                                                             : vision::PixelType::Int32;
         const std::string name =
             i < model_info.input_names.size() ? model_info.input_names[i] : "#" + std::to_string(i);
         if (type != vision::PixelType::Float32 && type != vision::PixelType::UInt8) {
-            throw std::invalid_argument("image input '" + name + "' has pixel type " + pixelTypeName(type) +
+            const auto type_description = model_info.input_datatypes.empty()
+                                              ? std::string("pixel type ") + pixelTypeName(type)
+                                              : "runtime datatype " + datatype;
+            throw std::invalid_argument("image input '" + name + "' has " + type_description +
                                         "; image preprocessing emits Float32 or UInt8");
         }
         if (!image_type) {
@@ -69,6 +77,8 @@ void Preprocessor::applyImageInputType(const ModelInfo& model_info) {
         config_.data_type = DataType::UINT8;
         config_.normalize = false;
         config_.apply_imagenet_norm = false;
+    } else if (image_type == vision::PixelType::Float32 && !model_info.input_datatypes.empty()) {
+        config_.data_type = DataType::FLOAT32;
     }
 }
 

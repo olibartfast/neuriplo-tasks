@@ -127,6 +127,18 @@ python export.py --weights <yolov7_version>.pt --grid --simplify --topk-all 100 
 - **Do NOT use** `--end2end` flag (adds TensorRT NMS plugin, requires TensorRT backend)
 - For TensorRT end-to-end format, add `--end2end` and use model type `yolov7e2e`
 
+## YOLO-World (Fixed Vocabulary)
+Bake a class list into an [Ultralytics YOLO-World](https://docs.ultralytics.com/models/yolo-world/) `-worldv2` model and export it to ONNX:
+
+```bash
+cd neuriplo-tasks/export/detection/yolo_world
+python export.py --model yolov8s-worldv2.pt --classes person bus "traffic light" --test
+```
+
+- **Output Format**: `[1, 4 + num_classes, 8400]`, same as YOLOv8; class ids follow the `--classes` order
+- **Model Type**: `yoloworld`
+- **Note**: the vocabulary is fixed at export time; re-export to change it. See [export/detection/yolo_world/README.md](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/yolo_world/README.md)
+
 ## YOLO-NAS
 ### OnnxRuntime
 Follow [YoloNAS Quickstart](https://github.com/Deci-AI/super-gradients/blob/master/documentation/source/YoloNASQuickstart.md#export-to-onnx). Example for yolo_nas_s:

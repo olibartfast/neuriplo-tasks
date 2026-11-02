@@ -201,7 +201,8 @@ std::unique_ptr<PosePostprocessor> PoseEstimationTask::createPostprocessor(Model
                                                          kDefaultRfDetrKeypointUncertaintyAlpha);
 
     case ModelType::YOLO:
-        return std::make_unique<YoloPosePostprocessor>(input_size, confidence_threshold, nms_threshold);
+        return std::make_unique<YoloPosePostprocessor>(input_size, confidence_threshold, nms_threshold,
+                                                       model_name_.find("26") != std::string::npos);
 
     case ModelType::VITPOSE:
         return std::make_unique<ViTPosePostprocessor>();

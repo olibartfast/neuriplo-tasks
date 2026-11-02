@@ -103,3 +103,65 @@ TEST_F(RtDetrPostprocessorTest, EmptyInput) {
     // Should throw because RT-DETR style requires 3 tensors
     EXPECT_THROW({ processor.postprocess({}, neuriplo_tasks::Size(640, 640)); }, std::runtime_error);
 }
+
+TEST_F(RtDetrPostprocessorTest, UltralyticsEndToEndNormalizedBoxes) {
+    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_UL, Size(640, 640), 0.5f);
+    Tensor output({0.5f, 0.5f, 0.25f, 0.5f, 0.9f, 16.0f, 0.5f, 0.5f, 0.25f, 0.5f, 0.1f, 1.0f}, {1, 2, 6});
+    const auto detections = processor.postprocess({output}, Size(800, 400));
+    ASSERT_EQ(detections.size(), 1u);
+    EXPECT_EQ(detections[0].class_id, 16);
+    EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.9f);
+    EXPECT_EQ(detections[0].bbox.x, 300);
+    EXPECT_EQ(detections[0].bbox.y, 100);
+    EXPECT_EQ(detections[0].bbox.width, 200);
+    EXPECT_EQ(detections[0].bbox.height, 200);
+}
+
+TEST_F(RtDetrPostprocessorTest, UltralyticsEndToEndTruncatedTensor) {
+    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_UL, Size(640, 640), 0.5f);
+    Tensor output({0.5f, 0.5f, 0.25f}, {1, 1, 6});
+    EXPECT_TRUE(processor.postprocess({output}, Size(800, 400)).empty());
+}
+
+TEST_F(RtDetrPostprocessorTest, TorchScriptLabelsFirstLayoutWithoutNames) {
+    // TorchScript exports keep the upstream tuple order (labels, boxes,
+    // scores) and expose no output names. Regression for the DEIM adapter
+    // rendering the label tensor as a confidence score.
+    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_STYLE, Size(640, 640), 0.25f);
+
+    constexpr int kQueries = 3;
+    std::vector<TensorElement> labels = {int64_t{16}, int64_t{1}, int64_t{0}};
+    std::vector<TensorElement> boxes = {100.0f, 200.0f, 300.0f, 500.0f, 10.0f, 20.0f,
+                                        30.0f,  40.0f,  0.0f,   0.0f,   0.0f,  0.0f};
+    std::vector<TensorElement> scores = {0.86f, 0.81f, 0.10f};
+
+    std::vector<Tensor> tensors = {Tensor(labels, {1, kQueries}), Tensor(boxes, {1, kQueries, 4}),
+                                   Tensor(scores, {1, kQueries})};
+
+    const auto detections = processor.postprocess(tensors, Size(640, 640));
+
+    ASSERT_EQ(detections.size(), 2u);
+    EXPECT_EQ(detections[0].class_id, 16);
+    EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.86f);
+    EXPECT_EQ(detections[0].bbox.x, 100);
+    EXPECT_EQ(detections[0].bbox.y, 200);
+    EXPECT_EQ(detections[0].bbox.width, 200);
+    EXPECT_EQ(detections[0].bbox.height, 300);
+    EXPECT_EQ(detections[1].class_id, 1);
+    EXPECT_FLOAT_EQ(detections[1].class_confidence, 0.81f);
+}
+
+TEST_F(RtDetrPostprocessorTest, NamedLayoutWinsOverShapeInference) {
+    RtDetrPostprocessor processor(ObjectDetectionTask::ModelType::RT_DETR_STYLE, Size(640, 640), 0.25f,
+                                  {"labels", "boxes", "scores"});
+
+    std::vector<TensorElement> labels = {int64_t{7}};
+    std::vector<TensorElement> boxes = {1.0f, 2.0f, 3.0f, 4.0f};
+    std::vector<TensorElement> scores = {0.9f};
+    std::vector<Tensor> tensors = {Tensor(labels, {1, 1}), Tensor(boxes, {1, 1, 4}), Tensor(scores, {1, 1})};
+
+    const auto detections = processor.postprocess(tensors, Size(640, 640));
+    ASSERT_EQ(detections.size(), 1u);
+    EXPECT_EQ(detections[0].class_id, 7);
+    EXPECT_FLOAT_EQ(detections[0].class_confidence, 0.9f);
+}

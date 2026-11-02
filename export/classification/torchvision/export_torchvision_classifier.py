@@ -1,36 +1,36 @@
 import torch
 import torchvision.models as torch_models
-import timm
 import argparse
 
-def export_to_torchscript(model, output_script, num_classes, input_size, input_name, output_name):
-    # Optional: Modify the model (e.g., change the output layer for your specific classification task)
-    if hasattr(model, "fc"):
-        model.fc = torch.nn.Linear(model.fc.in_features, num_classes)  # Modify the last fully connected layer
-    elif hasattr(model, "classifier"):
-        model.classifier = torch.nn.Linear(model.classifier.in_features, num_classes)
+def validate_num_classes(model, num_classes, input_size):
+    # Validate the real forward contract without replacing any learned layer.
+    with torch.inference_mode():
+        output = model(torch.zeros(input_size))
+    if output.ndim != 2 or output.shape[-1] != num_classes:
+        raise ValueError("Requested class count does not match the trained classifier; load a trained checkpoint first")
 
-    # Export the model to TorchScript
+
+def export_to_torchscript(model, output_script, num_classes, input_size, input_name, output_name):
+    model.eval()
+    validate_num_classes(model, num_classes, input_size)
     scripted_model = torch.jit.script(model)
     scripted_model.save(output_script)
     print(f"TorchScript model saved to {output_script}")
 
-def export_to_onnx(model, output_onnx, num_classes, input_size, input_name, output_name):
-    # Optional: Modify the model (e.g., change the output layer for your specific classification task)
-    if hasattr(model, "fc"):
-        model.fc = torch.nn.Linear(model.fc.in_features, num_classes)  # Modify the last fully connected layer
-    elif hasattr(model, "classifier"):
-        model.classifier = torch.nn.Linear(model.classifier.in_features, num_classes)
 
-    # Export the model to ONNX format
+def export_to_onnx(model, output_onnx, num_classes, input_size, input_name, output_name):
+    model.eval()
+    validate_num_classes(model, num_classes, input_size)
     dummy_input = torch.randn(input_size)
     torch.onnx.export(model, dummy_input, output_onnx, input_names=[input_name], output_names=[output_name], verbose=True)
     print(f"ONNX model saved to {output_onnx}")
 
 def load_torchvision_model(model_name, pretrained=True):
-    return torch_models.__dict__[model_name](pretrained=pretrained)
+    return torch_models.get_model(model_name, weights="DEFAULT" if pretrained else None)
 
 def load_timm_model(model_name, pretrained=True):
+    import timm
+
     return timm.create_model(model_name, pretrained=pretrained)
 
 if __name__ == "__main__":

@@ -306,3 +306,48 @@ TEST(PoseEstimationTaskTest, TaskTypeRfDetrPose) {
         EXPECT_EQ(task.getTaskType(), TaskType::PoseEstimation) << "Failed for: " << name;
     }
 }
+
+TEST(YoloPosePostprocessorTest, Yolo26EndToEndClassZeroIsNotConfidence) {
+    constexpr int anchors = 300;
+    constexpr int channels = 57;
+    std::vector<TensorElement> data(anchors * channels, 0.0f);
+    data[0] = 100.0f;
+    data[1] = 120.0f;
+    data[2] = 300.0f;
+    data[3] = 520.0f;
+    data[4] = 0.9f;
+    data[5] = 0.0f;
+    data[6] = 150.0f;
+    data[7] = 160.0f;
+    data[8] = 0.8f;
+    YoloPosePostprocessor processor(Size(640, 640), 0.25f, 0.45f, true);
+    const auto poses = processor.postprocess({Tensor(data, {1, anchors, channels})}, Size(640, 640), Size(640, 640));
+    ASSERT_EQ(poses.size(), 1u);
+    EXPECT_FLOAT_EQ(poses[0].score, 0.9f);
+    EXPECT_EQ(poses[0].bbox.x, 100);
+    EXPECT_EQ(poses[0].bbox.y, 120);
+    EXPECT_EQ(poses[0].bbox.width, 200);
+    EXPECT_EQ(poses[0].bbox.height, 400);
+    ASSERT_EQ(poses[0].keypoints.size(), 17u);
+    EXPECT_FLOAT_EQ(poses[0].keypoints[0].x, 150.0f);
+    EXPECT_FLOAT_EQ(poses[0].keypoints[0].y, 160.0f);
+
+    ModelInfo info;
+    info.addInput("images", {1, 3, 640, 640});
+    info.addOutput("output0", {1, anchors, channels});
+    PoseEstimationTask task(info, "yolo26pose");
+    const auto results = task.postprocess(Size(640, 640), {Tensor(data, {1, anchors, channels})});
+    ASSERT_EQ(results.size(), 1u);
+    EXPECT_FLOAT_EQ(std::get<PoseEstimation>(results[0]).score, 0.9f);
+}
+
+TEST(YoloPosePostprocessorTest, Yolo26AlsoAcceptsLegacyExportHead) {
+    YoloPosePostprocessor processor(Size(640, 640), 0.25f, 0.45f, true);
+    const auto tensors = makeYolov8PoseTensor(8400, 17, 320.0f, 320.0f, 200.0f, 200.0f, 0.9f);
+    const auto poses = processor.postprocess(tensors, Size(640, 640), Size(640, 640));
+    ASSERT_EQ(poses.size(), 1u);
+    EXPECT_FLOAT_EQ(poses[0].score, 0.9f);
+    EXPECT_EQ(poses[0].bbox.width, 200);
+    EXPECT_EQ(poses[0].bbox.height, 200);
+    EXPECT_EQ(poses[0].keypoints.size(), 17u);
+}

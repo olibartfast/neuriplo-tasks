@@ -104,7 +104,14 @@ std::vector<Detection> YoloPostprocessor::postprocess(const std::vector<Tensor>&
     case ObjectDetectionTask::ModelType::YOLO_NMS_FREE: {
         if (tensors.empty())
             return {};
-        detections = postprocessYoloNmsFree(tensors[0], frame_size);
+        const auto& output = tensors[0];
+        if (output.shape.size() == 3 && output.shape[1] >= 5 && output.shape[2] != 6 &&
+            output.shape[2] > output.shape[1]) {
+            // ExecuTorch disables the end-to-end head and exports [N,4+C,anchors].
+            detections = postprocessYoloStandard(output.data, output.shape, frame_size);
+        } else {
+            detections = postprocessYoloNmsFree(output, frame_size);
+        }
         break;
     }
 

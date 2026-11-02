@@ -13,12 +13,14 @@ namespace neuriplo_tasks {
  * Output tensor format (auto-detected by shape):
  *   - YOLOv8/v11+ (no objectness): [batch, 4+1+3*kpts, anchors]
  *   - YOLOv5      (objectness):    [batch, anchors, 4+1+3*kpts]
+ *   - YOLO26 end-to-end:          [batch, anchors, 6+3*kpts] (xyxy, score, class ID)
  *
  * Per detection: cx, cy, w, h, confidence, kpt0_x, kpt0_y, kpt0_conf, ...
  */
 class YoloPosePostprocessor : public PosePostprocessor {
   public:
     YoloPosePostprocessor(const Size& input_size, float confidence_threshold, float nms_threshold);
+    YoloPosePostprocessor(const Size& input_size, float confidence_threshold, float nms_threshold, bool end_to_end);
 
     std::vector<PoseEstimation> postprocess(const std::vector<Tensor>& tensors, const Size& original_size,
                                             const Size& input_size) override;
@@ -27,6 +29,7 @@ class YoloPosePostprocessor : public PosePostprocessor {
     Size input_size_;
     float confidence_threshold_;
     float nms_threshold_;
+    bool end_to_end_;
 
     BoundingBox scaleBoxToOriginal(float cx, float cy, float w, float h, const Size& frame_size) const;
     Point2f scaleKptToOriginal(float kx, float ky, const Size& frame_size) const;
