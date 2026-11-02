@@ -16,7 +16,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Optical Flow**: RAFT
 - **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose
 - **Depth Estimation**: Depth Anything V2, YOLO26 Depth
-- **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO
+- **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO; YOLO-World (fixed vocabulary)
 - **Gaussian Splatting**: LGM, LGM-mini, GRM (feed-forward image → 3D Gaussians)
 - **Image Understanding (VLM)**: Gemma 4 and compatible vision-language models via llama.cpp (image captioning, visual Q&A)
 - **Unified Task Interface**: Factory pattern for creating task instances with integrated preprocessing and postprocessing
@@ -291,14 +291,17 @@ YOLO26 depth expects RGB NCHW float input normalized to `[0,1]` with YOLO letter
 - `"owlv2"` - OWLv2 open-vocabulary detection
 - `"owlvit"` - OWL-ViT compatible open-vocabulary detection
 - `"groundingdino"` - Grounding DINO text-conditioned detection
+- `"yoloworld"` - YOLO-World with the class list baked in at export time; no runtime prompts, so it routes to the YOLO detection task and returns `Detection` results (see the [YOLO-World export guide](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/yolo_world/README.md))
 
-Open-vocabulary models use text prompts supplied at runtime through `TaskConfig::text_prompts`. Tokenizer assets can be passed either as file paths (`tokenizer_vocab_path`, `tokenizer_merges_path`) or preloaded text blobs (`tokenizer_vocab_json`, `tokenizer_merges_text`).
+OWLv2, OWL-ViT, and Grounding DINO use text prompts supplied at runtime through `TaskConfig::text_prompts`. Tokenizer assets can be passed either as file paths (`tokenizer_vocab_path`, `tokenizer_merges_path`) or preloaded text blobs (`tokenizer_vocab_json`, `tokenizer_merges_text`).
 
-The expected ONNX contract is:
+Their expected ONNX contract is:
 - Inputs: `pixel_values`, `input_ids`, `attention_mask`
 - Outputs: `logits`, `pred_boxes`, and optional `objectness_logits`
 
 Results are returned as `OpenVocabDetection` entries containing `bbox`, `score`, `prompt_index`, and resolved `label`.
+
+YOLO-World exports instead use the YOLOv8 contract — `images` in, `output0` `[1, 4 + num_classes, 8400]` out — with class IDs in the exported class-list order; changing the vocabulary means re-exporting.
 
 For export details, see [export/open_vocab_detection/OWLv2.md](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/open_vocab_detection/OWLv2.md).
 
