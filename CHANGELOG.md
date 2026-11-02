@@ -7,6 +7,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Keypoint-matching task scaffold: `KeypointMatchingTask` routes `superglue*`,
+  `lightglue*`, and `matchanything*` and consumes one image pair per call
+  (`getRequiredFrames() == 2`). Adds `KeypointMatch` / `KeypointMatching` to the
+  `Result` variant and TaskType, a pair preprocessor, and per-family
+  postprocessor seams (see `specs/2026-10-15-keypoint-matching/`).
+- SuperGlue keypoint-matching decoder, verified against the
+  `magic-leap-community/superglue_outdoor` ONNX export. `SuperGluePreprocessor`
+  packs the pair into the export's single rank-5 `pixel_values` tensor
+  (grayscale, `[0,1]`, 640x480), so `preprocess()` returns one buffer that maps
+  1:1 onto the model input. `SuperGluePostprocessor` drops masked-out padding
+  keypoints, rescales normalized coordinates to each original image size, and
+  keeps matches above `TaskConfig::confidence_threshold`. `export/keypoint_matching/`
+  gains the verified contract, an Optimum export recipe, and
+  `probe_superglue.py`.
+- LightGlue and MatchAnything postprocessors still throw `std::logic_error`
+  until their output layouts are probed.
 - YOLO-World fixed-vocabulary export recipe (`export/detection/yolo_world/`): bakes a
   class list into an Ultralytics `-worldv2` model and exports ONNX with the YOLOv8
   output layout, plus a `<model>_classes.txt` labels file. The `yoloworld` model type

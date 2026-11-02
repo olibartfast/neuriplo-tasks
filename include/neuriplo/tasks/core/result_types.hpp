@@ -96,6 +96,34 @@ struct Keypoint {
 };
 
 /**
+ * @brief A correspondence between one keypoint in the first image and one in the second
+ */
+struct KeypointMatch {
+    int source_index{-1}; ///< Index into KeypointMatching::source_keypoints
+    int target_index{-1}; ///< Index into KeypointMatching::target_keypoints
+    float score{0.0f};    ///< Matching confidence [0.0, 1.0]
+
+    KeypointMatch() = default;
+    KeypointMatch(int source, int target, float match_score)
+        : source_index(source), target_index(target), score(match_score) {}
+};
+
+/**
+ * @brief Keypoint matching result structure (SuperGlue / LightGlue / MatchAnything style)
+ *
+ * One entry per processed image pair. Keypoint coordinates and match indices
+ * refer to the two original images of the pair, not to the model input
+ * resolution.
+ */
+struct KeypointMatching {
+    std::vector<Keypoint> source_keypoints; ///< Keypoints in the first image of the pair
+    std::vector<Keypoint> target_keypoints; ///< Keypoints in the second image of the pair
+    std::vector<KeypointMatch> matches;     ///< Mutually matched keypoint pairs
+
+    KeypointMatching() = default;
+};
+
+/**
  * @brief Pose estimation result structure
  */
 struct PoseEstimation {
@@ -183,7 +211,7 @@ struct ImageUnderstanding {
  */
 using Result =
     std::variant<Classification, Detection, OpenVocabDetection, InstanceSegmentation, OpticalFlow, VideoClassification,
-                 PoseEstimation, DepthEstimation, GaussianSplatting, ImageUnderstanding>;
+                 PoseEstimation, DepthEstimation, GaussianSplatting, ImageUnderstanding, KeypointMatching>;
 
 /**
  * @brief Optional visitor helper for Result (forwards to std::visit).
@@ -212,7 +240,8 @@ enum class TaskType : uint8_t {
     DepthEstimation,
     OpenVocabDetection,
     GaussianSplatting,
-    ImageUnderstanding
+    ImageUnderstanding,
+    KeypointMatching
 };
 
 } // namespace neuriplo_tasks
