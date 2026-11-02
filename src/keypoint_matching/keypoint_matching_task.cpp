@@ -4,6 +4,7 @@
 #include "neuriplo/tasks/keypoint_matching/lightglue_postprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/matchanything_postprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/superglue_postprocessor.hpp"
+#include "neuriplo/tasks/keypoint_matching/superglue_preprocessor.hpp"
 
 #include <cctype>
 #include <stdexcept>
@@ -30,8 +31,10 @@ bool startsWith(const std::string& value, const std::string& prefix) {
 
 } // namespace
 
-KeypointMatchingTask::KeypointMatchingTask(const ModelInfo& model_info, const std::string& model_name)
-    : TaskInterface(model_info), model_type_(detectModelType(model_name)) {
+KeypointMatchingTask::KeypointMatchingTask(const ModelInfo& model_info, const std::string& model_name,
+                                           float match_score_threshold)
+    : TaskInterface(model_info), model_type_(detectModelType(model_name)),
+      match_score_threshold_(match_score_threshold) {
     const Size input_size = extractInputSize(model_info);
     input_width_ = input_size.width;
     input_height_ = input_size.height;
@@ -99,6 +102,7 @@ std::unique_ptr<KeypointMatchingPreprocessor> KeypointMatchingTask::createPrepro
                                                                                        const Size& input_size) {
     switch (type) {
     case ModelType::SUPERGLUE:
+        return std::make_unique<SuperGluePreprocessor>(input_size);
     case ModelType::LIGHTGLUE:
     case ModelType::MATCH_ANYTHING:
         return std::make_unique<KeypointMatchingPreprocessor>(input_size);
@@ -109,7 +113,7 @@ std::unique_ptr<KeypointMatchingPreprocessor> KeypointMatchingTask::createPrepro
 std::unique_ptr<KeypointMatchingPostprocessor> KeypointMatchingTask::createPostprocessor(ModelType type) {
     switch (type) {
     case ModelType::SUPERGLUE:
-        return std::make_unique<SuperGluePostprocessor>();
+        return std::make_unique<SuperGluePostprocessor>(match_score_threshold_);
     case ModelType::LIGHTGLUE:
         return std::make_unique<LightGluePostprocessor>();
     case ModelType::MATCH_ANYTHING:
@@ -119,23 +123,25 @@ std::unique_ptr<KeypointMatchingPostprocessor> KeypointMatchingTask::createPostp
 }
 
 Size KeypointMatchingTask::extractInputSize(const ModelInfo& model_info) {
-    int width = 512;
-    int height = 512;
-
-    if (!model_info.input_shapes.empty()) {
-        const auto& shape = model_info.input_shapes[0];
-        const bool is_nhwc = !model_info.input_formats.empty() && model_info.input_formats[0] == "FORMAT_NHWC";
-
-        if (shape.size() == 4) {
-            height = static_cast<int>(is_nhwc ? shape[1] : shape[2]);
-            width = static_cast<int>(is_nhwc ? shape[2] : shape[3]);
-        } else if (shape.size() == 3) {
-            height = static_cast<int>(is_nhwc ? shape[0] : shape[1]);
-            width = static_cast<int>(is_nhwc ? shape[1] : shape[2]);
-        }
+    // SuperGlue exports resize to 640x480; the other families use square inputs.
+    const Size fallback = model_type_ == ModelType::SUPERGLUE ? Size(640, 480) : Size(512, 512);
+    if (model_info.input_shapes.empty()) {
+        return fallback;
     }
 
-    return Size(width, height);
+    const auto& shape = model_info.input_shapes[0];
+    const bool is_nhwc = !model_info.input_formats.empty() && model_info.input_formats[0] == "FORMAT_NHWC";
+
+    switch (shape.size()) {
+    case 5: // pair input [1, 2, C, H, W]; the pair sits on the batch-pair axis
+        return Size(static_cast<int>(is_nhwc ? shape[3] : shape[4]), static_cast<int>(is_nhwc ? shape[2] : shape[3]));
+    case 4: // [N, C, H, W]
+        return Size(static_cast<int>(is_nhwc ? shape[2] : shape[3]), static_cast<int>(is_nhwc ? shape[1] : shape[2]));
+    case 3: // [C, H, W]
+        return Size(static_cast<int>(is_nhwc ? shape[1] : shape[2]), static_cast<int>(is_nhwc ? shape[0] : shape[1]));
+    default:
+        return fallback;
+    }
 }
 
 } // namespace neuriplo_tasks

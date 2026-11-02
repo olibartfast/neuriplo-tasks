@@ -200,7 +200,9 @@ const std::vector<TaskDescriptor>& taskDescriptors() {
                     startsWith(normalized, "matchanything");
          },
          []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
-            const TaskConfig&) { return std::make_unique<KeypointMatchingTask>(model_info, normalized); }},
+            const TaskConfig& config) {
+             return std::make_unique<KeypointMatchingTask>(model_info, normalized, config.confidence_threshold);
+         }},
 
         // vision::Image understanding aliases.
         {"ImageUnderstanding", TaskFamily::ImageUnderstanding,

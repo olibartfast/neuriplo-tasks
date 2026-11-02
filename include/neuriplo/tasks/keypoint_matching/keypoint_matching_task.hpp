@@ -26,9 +26,10 @@ class KeypointMatchingPreprocessor;
  * Matcher-only exports (keypoints and descriptors in, matches out) cannot be
  * driven through TaskInterface's image contract and are out of scope.
  *
- * Decoding is not implemented yet: the family postprocessors throw
- * std::logic_error until their output layouts are verified against real ONNX
- * exports.
+ * SuperGlue decoding is implemented against the transformers
+ * SuperGlueForKeypointMatching ONNX export. The LightGlue and MatchAnything
+ * family postprocessors still throw std::logic_error until their output layouts
+ * are verified against real ONNX exports.
  */
 class KeypointMatchingTask : public TaskInterface {
   public:
@@ -38,7 +39,16 @@ class KeypointMatchingTask : public TaskInterface {
         MATCH_ANYTHING, ///< MatchAnything (EfficientLoFTR / RoMa) pipeline
     };
 
-    explicit KeypointMatchingTask(const ModelInfo& model_info, const std::string& model_name);
+    /**
+     * @brief Construct a keypoint matching task
+     *
+     * @param model_info Model input/output metadata
+     * @param model_name Model family string (e.g. "superglue", "lightglue_v2")
+     * @param match_score_threshold Matches with a score at or below this value
+     *        are dropped (TaskConfig::confidence_threshold in TaskFactory)
+     */
+    explicit KeypointMatchingTask(const ModelInfo& model_info, const std::string& model_name,
+                                  float match_score_threshold = 0.0f);
     ~KeypointMatchingTask() override;
 
     TaskType getTaskType() override { return TaskType::KeypointMatching; }
@@ -52,6 +62,7 @@ class KeypointMatchingTask : public TaskInterface {
 
   private:
     ModelType model_type_;
+    float match_score_threshold_{0.0f};
     std::unique_ptr<KeypointMatchingPreprocessor> preprocessor_;
     std::unique_ptr<KeypointMatchingPostprocessor> postprocessor_;
     /// Original sizes of the last preprocessed pair, in call order.
