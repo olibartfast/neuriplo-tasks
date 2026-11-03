@@ -1,7 +1,8 @@
 # Keypoint matching (SuperGlue family) — requirements
 
 **Date:** 2026-10-15
-**Branch:** `feature/keypoint-matching` → `develop`
+**Branch:** `feature/keypoint-matching` → `develop` (merged in
+[PR #21](https://github.com/olibartfast/neuriplo-tasks/pull/21), commit `6b78f7f`)
 **Status:** SuperGlue decoder delivered and verified against a real ONNX export;
 LightGlue and MatchAnything decoding still deferred (see Decisions).
 

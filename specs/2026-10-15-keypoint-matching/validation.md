@@ -41,6 +41,9 @@ be run is **not executed**, not a pass.
 `pixel_values [1, 2, 3, 480, 640]`).
 **Images:** magicleap phototourism Capitol pair, `1016x762` (source) and
 `1048x626` (target).
+**Merged:** PR [#21](https://github.com/olibartfast/neuriplo-tasks/pull/21) into
+`develop` (`6b78f7f`); post-merge develop CI run
+`41440696505` green on all seven jobs.
 
 | Check | Evidence |
 |-------|----------|
