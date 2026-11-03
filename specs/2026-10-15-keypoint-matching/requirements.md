@@ -3,8 +3,8 @@
 **Date:** 2026-10-15
 **Branch:** `feature/keypoint-matching` → `develop` (merged in
 [PR #21](https://github.com/olibartfast/neuriplo-tasks/pull/21), commit `6b78f7f`)
-**Status:** SuperGlue decoder delivered and verified against a real ONNX export;
-LightGlue and MatchAnything decoding still deferred (see Decisions).
+**Status:** SuperGlue and LightGlue decoders delivered and verified against real
+ONNX exports; MatchAnything decoding still deferred (see Decisions).
 
 ## SuperGlue contract (verified 2026-11-02)
 
@@ -38,6 +38,27 @@ Two consequences that changed the scaffold design:
 2. **The shared preprocessor was wrong for SuperGlue.** It emitted RGB at
    `[0, 1]`; the verified export needs grayscale. This is the split that
    decision 5 anticipated, executed on evidence rather than assumption.
+
+## LightGlue contract (verified 2026-11-03)
+
+Probed against `thomasonzhou/superpoint-lightglue` (`model.onnx`, 51 MB), an
+end-to-end SuperPoint + LightGlue export:
+
+| Tensor | Shape | Meaning |
+|--------|-------|---------|
+| `images` (in) | `[2, 1, H, W]` float32 | pair on the batch axis, grayscale, `[0, 1]`, no mean/std |
+| `keypoints` | `[2, K, 2]` int64 | pixel coordinates in the **model input space** |
+| `matches` | `[M, 3]` int64 | rows of `[pair_index, source_index, target_index]` |
+| `mscores` | `[M]` float32 | match score |
+
+Consequences:
+
+1. **The input is one tensor, so one buffer.** `LightGluePreprocessor` packs the
+   pair, with the channel count read from the model input (1 for SuperPoint,
+   3 for ALIKED/DISK pipelines).
+2. **Keypoints are pixels, not normalized.** The decoder must know the input
+   size the graph ran at, so `LightGluePostprocessor` is constructed with it and
+   scales by `original / input` per axis.
 
 ## Goal
 
@@ -85,8 +106,9 @@ Two consequences shape the scope:
 - `SuperGluePostprocessor`: mask-aware decode of `keypoints` / `matches` /
   `matching_scores`, normalized-to-original coordinate rescaling, and score
   thresholding from `TaskConfig::confidence_threshold`.
-- Per-family postprocessor seams: `LightGluePostprocessor`,
-  `MatchAnythingPostprocessor` (still throwing).
+- `LightGluePreprocessor` and `LightGluePostprocessor`: pair packing into
+  `[2, C, H, W]`, pixel-space keypoint rescaling, match/scores decoding.
+- Per-family postprocessor seam: `MatchAnythingPostprocessor` (still throwing).
 - `TaskFactory` routing: `superglue*`, `lightglue*`, `matchanything*` by prefix.
 - Tests: routing and alias normalization, pair validation, preprocessing
   buffers, postprocess seams, result-variant coverage.
@@ -96,7 +118,7 @@ Two consequences shape the scope:
 
 ## Out of scope
 
-- **Decoding LightGlue and MatchAnything tensors.** Those postprocessors throw
+- **Decoding MatchAnything tensors.** Its postprocessor throws
   `std::logic_error` until an export's layout is verified against a real file.
   Writing a decoder from assumed layouts is how the RT-DETR/EdgeCrafter
   normalization bugs happened.
@@ -138,7 +160,9 @@ Two consequences shape the scope:
    open question. The verified SuperGlue export needs grayscale and a single
    packed pair tensor, so `SuperGluePreprocessor` overrides `preprocess_pair()`
    while `KeypointMatchingPreprocessor` keeps the two-buffer behaviour for
-   LightGlue and MatchAnything. One shared parameterized preprocessor across
+   LightGlue and MatchAnything. LightGlue then split the same way once its
+   export was probed: one packed `[2, C, H, W]` buffer with channels from the
+   model shape. One shared parameterized preprocessor across
    families is the pattern the roadmap flags as a bug source; the split is now
    per family, each awaiting its own export.
 6. **`postprocess` receives both original sizes.** `TaskInterface::postprocess`

@@ -23,16 +23,36 @@ be run is **not executed**, not a pass.
 | V-13 | In scope — SuperGlue decoding | On a real ONNX export, C++ decode equals the Python `post_process_keypoint_matching` reference (match count and per-match score/coordinates) | **pass** |
 | V-14 | Decision 7 — score threshold | Matches at or below `TaskConfig::confidence_threshold` are dropped; a threshold above every score yields no matches | **pass** |
 | V-15 | Gate | clang-format-18 `--dry-run --Werror`, cppcheck, clang-tidy-18, `-DWERROR=ON` build, `ctest`, Valgrind | **pass (local)** |
+| V-16 | LightGlue preprocessing | `LightGluePreprocessor` emits one `[2, C, H, W]` buffer; grayscale values match torchvision weights; the target image fills the second slot | **pass** |
+| V-17 | LightGlue decoding | On a real export, the C++ decode equals a Python decode of the same tensors (count, score, and pixel coordinates) | **pass** |
+| V-18 | LightGlue filtering | Rows for other pair indices are skipped; scores at or below the threshold are dropped | **pass** |
 
 **Explicitly not executed in this packet:**
 
-- End-to-end keypoint matching against a real LightGlue / MatchAnything ONNX
-  export — no verified file exists for those families yet; that is the next
-  slice (requirements open questions 1–4). **SuperGlue was executed — see the
-  2026-11-02 results below.**
+- End-to-end keypoint matching against a real MatchAnything ONNX export — no
+  verified file exists for that family yet. **SuperGlue (2026-11-02) and
+  LightGlue (2026-11-03) were executed — see the results sections.**
 - Matching accuracy against labelled pairs — needs a dataset and an evaluation
   harness this repository does not have.
 - Multi-pair / batched matching — out of scope by decision 2.
+
+## Results — LightGlue decoder (2026-11-03)
+
+**Model:** `thomasonzhou/superpoint-lightglue` (`model.onnx`, 51 MB, 512x512 input).
+**Images:** magicleap phototourism Capitol pair, `1016x762` / `1048x626`.
+
+| Check | Evidence |
+|-------|----------|
+| V-16 | `LightGluePreprocessPacksOneGrayscalePairBuffer` asserts `2 × 1 × 512 × 512 × 4` bytes; `LightGluePreprocessAppliesGrayscaleAndUnitScaling` checks `0.2989 / 0.1140 / 0.5870 / 0.9999` and a zeroed second slot. |
+| V-17 | ONNX run on the C++ buffer: 107 matches (111 from a PIL-preprocessed buffer — resize-kernel difference), 63 above the default 0.25 threshold in both. Decoding the same tensors in C++ and Python gives identical rows, max score/coordinate delta `5e-7`. |
+| V-18 | `LightGlueDropsMatchesBelowThreshold` (2 → 1) and the pair-index row in `LightGlueDecodesVerifiedExportValues`; `LightGlueRejectsMalformedTensors` covers missing keypoints and short matches. |
+| Gate | clang-format-18 clean, cppcheck exit 0, clang-tidy-18 clean on the touched sources, `-DWERROR=ON` build OK, `ctest` green, Valgrind on the suite 0 errors / 0 leaks. |
+
+**Deviations recorded:** the LightGlue decoder needs the model input size because
+its keypoints are pixels, not normalized coordinates — `LightGluePostprocessor`
+is constructed with it from `ModelInfo`. The preprocessor channel count follows
+the model input so ALIKED/DISK pipelines can reuse it, but only the grayscale
+SuperPoint export has been verified end to end.
 
 ## Results — SuperGlue decoder (2026-11-02)
 
