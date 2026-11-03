@@ -195,7 +195,7 @@ TEST_F(TaskFactoryTest, FactoryRoutesEveryTaskDomain) {
         EXPECT_EQ(task->getTaskType(), alias.second) << "alias: " << alias.first;
     }
 
-    for (const char* alias : {"videomae", "vivit", "timesformer"}) {
+    for (const char* alias : {"videomae", "vivit", "timesformer", "pevideo", "vjepa2", "videoprism"}) {
         auto video_task = TaskFactory::createTaskInstance(alias, createVideoModelInfo());
         ASSERT_NE(video_task, nullptr) << "null for alias: " << alias;
         EXPECT_EQ(video_task->getTaskType(), TaskType::VideoClassification) << "alias: " << alias;
@@ -229,7 +229,7 @@ TEST_F(TaskFactoryTest, PlatformStableModelTypeStringsRouteToExpectedTaskTypes) 
         EXPECT_EQ(task->getTaskType(), alias.second) << "platform stable alias: " << alias.first;
     }
 
-    for (const char* alias : {"videomae", "vivit", "timesformer"}) {
+    for (const char* alias : {"videomae", "vivit", "timesformer", "pevideo", "vjepa2", "videoprism"}) {
         auto task = TaskFactory::createTaskInstance(alias, createVideoModelInfo());
         ASSERT_NE(task, nullptr) << "null for platform stable alias: " << alias;
         EXPECT_EQ(task->getTaskType(), TaskType::VideoClassification) << "platform stable alias: " << alias;

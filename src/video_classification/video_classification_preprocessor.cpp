@@ -135,4 +135,87 @@ std::vector<uint8_t> TimeSformerPreprocessor::preprocess(const vision::ImageView
     return splitToNCHW(processed);
 }
 
+// ============ PE Video preprocessor ============
+
+PeVideoPreprocessor::PeVideoPreprocessor(const vision::Size& input_size)
+    : Preprocessor(PreprocessConfig{input_size, ImageFormat::NCHW, DataType::FLOAT32, false, false, true}) {}
+
+std::vector<uint8_t> PeVideoPreprocessor::preprocess(const vision::ImageView& image) const {
+    vision::Image processed = vision::Image(image.width(), image.height(), image.channels(), image.pixelType());
+    std::memcpy(processed.raw(), image.raw(), image.sizeBytes());
+
+    if (config_.bgr_to_rgb && processed.channels() == 3) {
+        image_ops::swapBgrRgb(processed);
+    }
+
+    processed = image_ops::resize(processed, config_.input_size, image_ops::Interpolation::Linear);
+
+    processed.convertTo(vision::PixelType::Float32, 1.0 / 255.0);
+
+    applyChannelNormalization(processed, kMean.data(), kStd.data());
+
+    return splitToNCHW(processed);
+}
+
+// ============ V-JEPA 2 preprocessor ============
+
+Vjepa2Preprocessor::Vjepa2Preprocessor(const vision::Size& input_size)
+    : Preprocessor(PreprocessConfig{input_size, ImageFormat::NCHW, DataType::FLOAT32, false, false, true}) {}
+
+std::vector<uint8_t> Vjepa2Preprocessor::preprocess(const vision::ImageView& image) const {
+    vision::Image processed = vision::Image(image.width(), image.height(), image.channels(), image.pixelType());
+    std::memcpy(processed.raw(), image.raw(), image.sizeBytes());
+
+    if (config_.bgr_to_rgb && processed.channels() == 3) {
+        image_ops::swapBgrRgb(processed);
+    }
+
+    // transformers resizes the shortest edge to crop x 256/224 before the crop
+    // (292 for the 256 crop used by fpc16/fpc32/fpc64 checkpoints).
+    const int shortest_edge = config_.input_size.height * 256 / 224;
+    const float scale =
+        static_cast<float>(shortest_edge) / static_cast<float>(std::min(processed.height(), processed.width()));
+    const int new_h = static_cast<int>(static_cast<float>(processed.height()) * scale);
+    const int new_w = static_cast<int>(static_cast<float>(processed.width()) * scale);
+    processed = image_ops::resize(processed, new_w, new_h, image_ops::Interpolation::Linear);
+
+    const int crop_x = (processed.width() - config_.input_size.width) / 2;
+    const int crop_y = (processed.height() - config_.input_size.height) / 2;
+
+    vision::Image cropped = vision::Image::uninit(config_.input_size.width, config_.input_size.height,
+                                                  processed.channels(), processed.pixelType());
+    image_ops::copyRegion(processed.view(),
+                          vision::Rect(crop_x, crop_y, config_.input_size.width, config_.input_size.height), cropped,
+                          vision::Rect(0, 0, config_.input_size.width, config_.input_size.height));
+    processed = std::move(cropped);
+
+    processed.convertTo(vision::PixelType::Float32, 1.0 / 255.0);
+
+    applyChannelNormalization(processed, kMean.data(), kStd.data());
+
+    return splitToNCHW(processed);
+}
+
+// ============ VideoPrism preprocessor ============
+
+VideoPrismPreprocessor::VideoPrismPreprocessor(const vision::Size& input_size)
+    : Preprocessor(PreprocessConfig{input_size, ImageFormat::NCHW, DataType::FLOAT32, false, false, true}) {}
+
+std::vector<uint8_t> VideoPrismPreprocessor::preprocess(const vision::ImageView& image) const {
+    vision::Image processed = vision::Image(image.width(), image.height(), image.channels(), image.pixelType());
+    std::memcpy(processed.raw(), image.raw(), image.sizeBytes());
+
+    if (config_.bgr_to_rgb && processed.channels() == 3) {
+        image_ops::swapBgrRgb(processed);
+    }
+
+    // VideoPrism resizes straight to 288x288 with bicubic sampling and does not
+    // normalize; only the [0, 1] rescale applies.
+    processed = image_ops::resize(processed, config_.input_size, image_ops::Interpolation::Cubic);
+
+    processed.convertTo(vision::PixelType::Float32, 1.0 / 255.0);
+
+    return splitToNCHW(processed);
+}
+
 } // namespace neuriplo_tasks

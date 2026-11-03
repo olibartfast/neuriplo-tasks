@@ -15,6 +15,22 @@ VideoClassificationTask::VideoClassificationTask(const ModelInfo& model_info, co
       apply_softmax_(apply_softmax), num_frames_(16) {
     input_width_ = 224;
     input_height_ = 224;
+    switch (model_type_) {
+    case ModelType::PE_VIDEO:
+        input_width_ = 336;
+        input_height_ = 336;
+        break;
+    case ModelType::VJEPA2:
+        input_width_ = 256;
+        input_height_ = 256;
+        break;
+    case ModelType::VIDEOPRISM:
+        input_width_ = 288;
+        input_height_ = 288;
+        break;
+    default:
+        break;
+    }
     extractVideoInputSize(model_info);
 
     vision::Size input_size(input_width_, input_height_);
@@ -82,6 +98,15 @@ VideoClassificationTask::ModelType VideoClassificationTask::detectModelType(cons
     std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(),
                    [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
 
+    if (lower_name.find("videoprism") != std::string::npos) {
+        return ModelType::VIDEOPRISM;
+    }
+    if (lower_name.find("vjepa") != std::string::npos) {
+        return ModelType::VJEPA2;
+    }
+    if (lower_name.find("pevideo") != std::string::npos) {
+        return ModelType::PE_VIDEO;
+    }
     if (lower_name.find("vivit") != std::string::npos) {
         return ModelType::VIVIT;
     }
@@ -101,6 +126,12 @@ std::unique_ptr<Preprocessor> VideoClassificationTask::createPreprocessor(ModelT
         return std::make_unique<VivitPreprocessor>(input_size);
     case ModelType::TIMESFORMER:
         return std::make_unique<TimeSformerPreprocessor>(input_size);
+    case ModelType::PE_VIDEO:
+        return std::make_unique<PeVideoPreprocessor>(input_size);
+    case ModelType::VJEPA2:
+        return std::make_unique<Vjepa2Preprocessor>(input_size);
+    case ModelType::VIDEOPRISM:
+        return std::make_unique<VideoPrismPreprocessor>(input_size);
     }
     return nullptr;
 }

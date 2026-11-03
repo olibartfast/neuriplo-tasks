@@ -178,7 +178,9 @@ const std::vector<TaskDescriptor>& taskDescriptors() {
         // Video classification aliases.
         {"VideoClassification", TaskFamily::VideoClassification,
          [](const std::string& normalized) {
-             return normalized == "videomae" || normalized == "vivit" || normalized == "timesformer";
+             return normalized == "videomae" || normalized == "vivit" || normalized == "timesformer" ||
+                    startsWith(normalized, "pevideo") || startsWith(normalized, "vjepa") ||
+                    startsWith(normalized, "videoprism");
          },
          []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
             const TaskConfig& config) {
