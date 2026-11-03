@@ -91,3 +91,17 @@ Added after the scaffold merged to the branch, once an export could be probed.
 
 **Observable:** `test_keypoint_matching` green (17 tests), and the decoder
 reproduces the Python reference on a real ONNX export (validation V-12/V-13).
+
+## 8. LightGlue decoder (delivered 2026-11-03)
+
+- `lightglue_preprocessor.*`: one packed `[2, C, H, W]` buffer, channels from the
+  model input shape, grayscale for the SuperPoint pipeline.
+- `LightGluePostprocessor`: shape-driven output classification, pixel-space
+  rescaling with the model input size, pair-row filtering, score threshold.
+- `KeypointMatchingTask`: family preprocessor/postprocessor selection and the
+  model input size retained for rescaling.
+- `tests/test_keypoint_matching.cpp`: packing, grayscale values, verified-export
+  decode, threshold, pair filtering, malformed tensors, task-level rescaling.
+
+**Observable:** `test_keypoint_matching` green (23 tests) and the decoder
+reproduces the Python decode on a real export (validation V-16/V-17).

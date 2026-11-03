@@ -2,6 +2,7 @@
 
 #include "neuriplo/tasks/keypoint_matching/keypoint_matching_preprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/lightglue_postprocessor.hpp"
+#include "neuriplo/tasks/keypoint_matching/lightglue_preprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/matchanything_postprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/superglue_postprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/superglue_preprocessor.hpp"
@@ -36,6 +37,7 @@ KeypointMatchingTask::KeypointMatchingTask(const ModelInfo& model_info, const st
     : TaskInterface(model_info), model_type_(detectModelType(model_name)),
       match_score_threshold_(match_score_threshold) {
     const Size input_size = extractInputSize(model_info);
+    model_input_size_ = input_size;
     input_width_ = input_size.width;
     input_height_ = input_size.height;
 
@@ -104,6 +106,7 @@ std::unique_ptr<KeypointMatchingPreprocessor> KeypointMatchingTask::createPrepro
     case ModelType::SUPERGLUE:
         return std::make_unique<SuperGluePreprocessor>(input_size);
     case ModelType::LIGHTGLUE:
+        return std::make_unique<LightGluePreprocessor>(input_size, input_channels_);
     case ModelType::MATCH_ANYTHING:
         return std::make_unique<KeypointMatchingPreprocessor>(input_size);
     }
@@ -115,7 +118,7 @@ std::unique_ptr<KeypointMatchingPostprocessor> KeypointMatchingTask::createPostp
     case ModelType::SUPERGLUE:
         return std::make_unique<SuperGluePostprocessor>(match_score_threshold_);
     case ModelType::LIGHTGLUE:
-        return std::make_unique<LightGluePostprocessor>();
+        return std::make_unique<LightGluePostprocessor>(match_score_threshold_, model_input_size_);
     case ModelType::MATCH_ANYTHING:
         return std::make_unique<MatchAnythingPostprocessor>();
     }

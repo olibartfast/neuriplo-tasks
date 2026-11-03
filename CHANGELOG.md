@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- LightGlue keypoint-matching decoder, verified against
+  `thomasonzhou/superpoint-lightglue`. `LightGluePreprocessor` packs the pair into
+  the export's single `images [2, C, H, W]` input (grayscale for SuperPoint,
+  channel count from the model shape) and `LightGluePostprocessor` decodes
+  `keypoints [2, K, 2]` (input-space pixels), `matches [M, 3]`
+  (`[pair_index, source, target]`) and `mscores [M]`, rescaling to each original
+  image and filtering by `TaskConfig::confidence_threshold`. MatchAnything remains
+  undecoded.
 - Video classification families: V-JEPA 2 (`vjepa*`), VideoPrism (`videoprism*`), and
   PE Video (`pevideo*`). Each has a preprocessor matching the transformers processor:
   V-JEPA 2 resizes the shortest edge to `crop*256/224` (292), center-crops, and applies

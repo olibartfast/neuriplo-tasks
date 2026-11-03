@@ -2,10 +2,10 @@
 
 Export SuperGlue-family models to ONNX for the C++ `KeypointMatchingTask`.
 
-> **Status: SuperGlue decoded, LightGlue / MatchAnything pending.** `superglue*`
-> decoding is implemented and verified against a real export (see below). The
-> LightGlue and MatchAnything postprocessors still throw `std::logic_error`
-> until their output layouts are probed the same way.
+> **Status: SuperGlue and LightGlue decoded, MatchAnything pending.** Both
+> decoders are implemented and verified against real exports (see below). The
+> MatchAnything postprocessor still throws `std::logic_error` until its export
+> is probed the same way.
 
 ## Export shapes in the wild
 
@@ -16,7 +16,7 @@ There are two shapes, and only one fits this library's contract
 |--------|-------------|--------|---------|----------------|
 | SuperGlue (transformers / Optimum) | `optimum-cli export onnx` of `magic-leap-community/superglue_outdoor` (or `_indoor`); pre-exported and verified at [KnightsAnalytics/superglue_outdoor](https://huggingface.co/KnightsAnalytics/superglue_outdoor) | `pixel_values [1, 2, 3, 480, 640]` — pair on axis 1 | `keypoints`, `matches`, `matching_scores`, `mask` | **Yes** — images in, matches out. **Decoded.** |
 | SuperGlue (original matcher) | [jadehh/SuperPoint-SuperGlue-ONNX](https://github.com/jadehh/SuperPoint-SuperGlue-ONNX), magicleap export scripts | `keypoints_0`, `scores_0`, `descriptors_0`, `keypoints_1`, `scores_1`, `descriptors_1` | `matches0 [1,N0]`, `matching_scores0 [1,N0]` | **No** — keypoints and descriptors go in, not images. Needs a separate front-end orchestration design. |
-| LightGlue pipeline | [fabio-sim/LightGlue-ONNX](https://github.com/fabio-sim/LightGlue-ONNX) `lightglue-onnx export` | interleaved pair `(2B, 1, H, W)` (SuperPoint extractor; 3-channel variants for other extractors) | `keypoints (2B, K, 2)`, `matches (M, 3)` (`[batch, idx_left, idx_right]`), `match_scores (M,)` | **Yes** — images in, matches out. Decoder pending. |
+| LightGlue pipeline | [fabio-sim/LightGlue-ONNX](https://github.com/fabio-sim/LightGlue-ONNX) `lightglue-onnx export`; pre-exported and verified at [thomasonzhou/superpoint-lightglue](https://huggingface.co/thomasonzhou/superpoint-lightglue) | interleaved pair `images [2, C, H, W]` (SuperPoint: grayscale; 3-channel for ALIKED/DISK) | `keypoints [2, K, 2]` int64, `matches [M, 3]`, `mscores [M]` | **Yes** — images in, matches out. **Decoded.** |
 | MatchAnything | HF [`zju-community/matchanything_eloftr`](https://huggingface.co/zju-community/matchanything_eloftr) (`AutoModelForKeypointMatching`); exportable with Optimum | `pixel_values`-style pair input; contract not pinned | `keypoints0` / `keypoints1` / `matching_scores` after HF postprocessing | **Likely** — verify the ONNX graph before implementing. |
 
 Preprocessing is per family, because the exports disagree: SuperGlue wants a
@@ -77,6 +77,27 @@ uv run lightglue-onnx export superpoint \
 `-b 2` is the **pair** batch axis: the model expects the source and target
 images interleaved on the batch dimension (`[left, right]`), not a plain pair of
 separate inputs.
+
+**Verified contract** (`thomasonzhou/superpoint-lightglue`, 51 MB, 512x512 run):
+
+| Tensor | Shape | Meaning |
+|--------|-------|---------|
+| `images` (in) | `[2, 1, H, W]` float32 | grayscale pair on the batch axis, `[0, 1]`, no mean/std |
+| `keypoints` | `[2, K, 2]` int64 | pixel coordinates **in the model input space** (not normalized) |
+| `matches` | `[M, 3]` int64 | rows of `[pair_index, source_index, target_index]`; pair index 0 applies to the task's single pair |
+| `mscores` | `[M]` float32 | match score |
+
+`LightGluePreprocessor` packs the pair into the single input and takes the
+channel count from the model input shape (1 for SuperPoint, 3 for ALIKED/DISK).
+`LightGluePostprocessor` rescales keypoints by `original / model input` per axis,
+which is why it is constructed with the model input size.
+
+**Verification run (2026-11-03)** on the magicleap Capitol pair (1016x762 /
+1048x626 at 512x512 input): the C++ buffer fed to the export produced 107
+matches (111 from a PIL-preprocessed buffer; the difference is the resize
+kernel); above the default 0.25 threshold both yield 63. Decoding the same
+tensors in C++ and Python gives identical rows (max score/coordinate delta
+`5e-7`).
 
 ## Probing a file before implementing its decoder
 

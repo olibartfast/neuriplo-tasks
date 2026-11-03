@@ -96,6 +96,7 @@ set(CORE_SOURCES
     src/keypoint_matching/keypoint_matching_task.cpp
     src/keypoint_matching/keypoint_matching_preprocessor.cpp
     src/keypoint_matching/superglue_preprocessor.cpp
+    src/keypoint_matching/lightglue_preprocessor.cpp
     src/keypoint_matching/superglue_postprocessor.cpp
     src/keypoint_matching/lightglue_postprocessor.cpp
     src/keypoint_matching/matchanything_postprocessor.cpp
@@ -175,6 +176,7 @@ set(CORE_HEADERS
     include/neuriplo/tasks/keypoint_matching/keypoint_matching_preprocessor.hpp
     include/neuriplo/tasks/keypoint_matching/keypoint_matching_postprocessor.hpp
     include/neuriplo/tasks/keypoint_matching/superglue_preprocessor.hpp
+    include/neuriplo/tasks/keypoint_matching/lightglue_preprocessor.hpp
     include/neuriplo/tasks/keypoint_matching/superglue_postprocessor.hpp
     include/neuriplo/tasks/keypoint_matching/lightglue_postprocessor.hpp
     include/neuriplo/tasks/keypoint_matching/matchanything_postprocessor.hpp
