@@ -18,6 +18,9 @@ as such, not as a pass.
 
 ## Results (2026-11-03)
 
+**Merged:** PR [#23](https://github.com/olibartfast/neuriplo-tasks/pull/23) into
+`develop` (`2ab2c4b`).
+
 **V-JEPA 2 export:** `onnx-community/vjepa2-vitl-fpc32-256-diving48-ONNX`
 (`onnx/model.onnx`, 1.4 GB). Frame: the magicleap phototourism Capitol image
 (1016x762), repeated 32 times to fill the clip.

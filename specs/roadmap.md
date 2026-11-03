@@ -29,6 +29,13 @@ which stays the authority on the detail. This is the shape of the arc:
   against a real ONNX export (see
   [2026-10-15-keypoint-matching](2026-10-15-keypoint-matching/requirements.md)).
   Ships in the next release cut from `master`.
+- **Video classification — V-JEPA 2, VideoPrism, PE Video** (PR
+  [#23](https://github.com/olibartfast/neuriplo-tasks/pull/23)): per-family
+  preprocessors and routing on the existing task, V-JEPA 2 verified against a
+  real ONNX export (see
+  [2026-11-03-video-model-families](2026-11-03-video-model-families/requirements.md)).
+  PE Video classification additionally needs a fixed-vocabulary export.
+  Ships in the next release cut from `master`.
 
 ## In flight
 

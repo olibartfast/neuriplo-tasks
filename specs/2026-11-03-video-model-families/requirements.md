@@ -1,7 +1,8 @@
 # Video model families (V-JEPA 2, VideoPrism, PE Video) — requirements
 
 **Date:** 2026-11-03
-**Branch:** `feature/video-models-pe-vjepa2-videoprism` → `develop`
+**Branch:** `feature/video-models-pe-vjepa2-videoprism` → `develop` (merged in
+[PR #23](https://github.com/olibartfast/neuriplo-tasks/pull/23), commit `2ab2c4b`)
 **Status:** preprocessors and routing delivered; V-JEPA 2 verified against a real
 ONNX export, VideoPrism and PE Video verified against their processor contracts only.
 
