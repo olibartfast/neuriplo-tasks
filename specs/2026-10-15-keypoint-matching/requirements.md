@@ -2,7 +2,9 @@
 
 **Date:** 2026-10-15
 **Branch:** `feature/keypoint-matching` → `develop` (merged in
-[PR #21](https://github.com/olibartfast/neuriplo-tasks/pull/21), commit `6b78f7f`)
+[PR #21](https://github.com/olibartfast/neuriplo-tasks/pull/21), commit `6b78f7f`;
+LightGlue decoder merged in [PR #24](https://github.com/olibartfast/neuriplo-tasks/pull/24),
+commit `d42cc66`)
 **Status:** SuperGlue and LightGlue decoders delivered and verified against real
 ONNX exports; MatchAnything decoding still deferred (see Decisions).
 

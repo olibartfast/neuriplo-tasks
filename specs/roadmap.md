@@ -29,6 +29,11 @@ which stays the authority on the detail. This is the shape of the arc:
   against a real ONNX export (see
   [2026-10-15-keypoint-matching](2026-10-15-keypoint-matching/requirements.md)).
   Ships in the next release cut from `master`.
+- **Keypoint matching — LightGlue** (PR
+  [#24](https://github.com/olibartfast/neuriplo-tasks/pull/24)): end-to-end
+  pipeline decoding verified against `thomasonzhou/superpoint-lightglue`
+  (pixel-space keypoints, `[pair, src, tgt]` matches). MatchAnything remains
+  undecoded. Ships in the next release cut from `master`.
 - **Video classification — V-JEPA 2, VideoPrism, PE Video** (PR
   [#23](https://github.com/olibartfast/neuriplo-tasks/pull/23)): per-family
   preprocessors and routing on the existing task, V-JEPA 2 verified against a

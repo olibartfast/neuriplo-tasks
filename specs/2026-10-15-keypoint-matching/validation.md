@@ -39,6 +39,8 @@ be run is **not executed**, not a pass.
 ## Results — LightGlue decoder (2026-11-03)
 
 **Model:** `thomasonzhou/superpoint-lightglue` (`model.onnx`, 51 MB, 512x512 input).
+**Merged:** PR [#24](https://github.com/olibartfast/neuriplo-tasks/pull/24) into
+`develop` (`d42cc66`).
 **Images:** magicleap phototourism Capitol pair, `1016x762` / `1048x626`.
 
 | Check | Evidence |
