@@ -7,6 +7,41 @@
 #include <stdexcept>
 
 namespace neuriplo_tasks {
+namespace {
+
+// Ground-truth resolution by tensor rank/shape: boxes are [N,D,4], labels are
+// [N,D,C]. Covers synthetic exporter names (`serving_default_output_*`) and
+// any order swap across ONNX / Torch / LiteRT artifacts.
+void resolveDetIndicesByShape(const std::vector<Tensor>& tensors, int& dets_idx, int& labels_idx) {
+    if (tensors.size() != 2) {
+        return;
+    }
+    int dets = -1;
+    int labels = -1;
+    for (size_t i = 0; i < tensors.size(); ++i) {
+        const auto& shape = tensors[i].shape;
+        if (shape.size() != 3) {
+            return;
+        }
+        if (shape[2] == 4) {
+            if (dets >= 0) {
+                return; // ambiguous
+            }
+            dets = static_cast<int>(i);
+        } else {
+            if (labels >= 0) {
+                return; // ambiguous
+            }
+            labels = static_cast<int>(i);
+        }
+    }
+    if (dets >= 0 && labels >= 0) {
+        dets_idx = dets;
+        labels_idx = labels;
+    }
+}
+
+} // namespace
 
 RfDetrPostprocessor::RfDetrPostprocessor(const vision::Size& input_size, float confidence_threshold,
                                          const std::vector<std::string>& output_names)
@@ -40,10 +75,15 @@ std::vector<Detection> RfDetrPostprocessor::postprocess(const std::vector<Tensor
         throw std::runtime_error("RF-DETR requires 2 output tensors (dets, labels)");
     }
 
-    const auto& boxes = tensors[static_cast<size_t>(dets_idx_)].data;
-    const auto& logits = tensors[static_cast<size_t>(labels_idx_)].data;
-    const auto& box_shape = tensors[static_cast<size_t>(dets_idx_)].shape;
-    const auto& logit_shape = tensors[static_cast<size_t>(labels_idx_)].shape;
+    // Prefer shape ground truth over name defaults under synthetic names.
+    int dets_idx = dets_idx_;
+    int labels_idx = labels_idx_;
+    resolveDetIndicesByShape(tensors, dets_idx, labels_idx);
+
+    const auto& boxes = tensors[static_cast<size_t>(dets_idx)].data;
+    const auto& logits = tensors[static_cast<size_t>(labels_idx)].data;
+    const auto& box_shape = tensors[static_cast<size_t>(dets_idx)].shape;
+    const auto& logit_shape = tensors[static_cast<size_t>(labels_idx)].shape;
 
     std::vector<Detection> detections;
 

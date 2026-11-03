@@ -4,20 +4,32 @@ on:
   push:
     branches: [master, develop, "release/**", "feature/**", "feat/**"]
     paths-ignore:
-      - '**.md'
       - 'export/**'
       - 'docs/**'
+      - 'specs/**'
+      - '.claude/**/*.md'
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+      - 'CHANGELOG.md'
+      - 'PRE_COMMIT_GUIDE.md'
   pull_request:
     branches: [develop, master]
     paths-ignore:
-      - '**.md'
       - 'export/**'
       - 'docs/**'
+      - 'specs/**'
+      - '.claude/**/*.md'
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+      - 'CHANGELOG.md'
+      - 'PRE_COMMIT_GUIDE.md'
 
 jobs:
   format-check:
     name: Format Check
-    runs-on: ubuntu-latest
+    # ubuntu-latest moved to 26.04, which no longer ships clang-format-18.
+    # Pin until the repo's pinned clang-18 toolchain moves to 19+.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -28,7 +40,8 @@ jobs:
 
   clang-tidy:
     name: Clang-Tidy
-    runs-on: ubuntu-latest
+    # ubuntu-latest moved to 26.04, which no longer ships clang-tidy-18.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 

@@ -12,6 +12,7 @@ export/
 │   └── vit/                # Vision Transformer export
 ├── detection/
 │   ├── yolo/               # Universal YOLO export (v5-v12, NAS)
+│   ├── yolo_world/         # YOLO-World export with a fixed vocabulary
 │   ├── rtdetr/             # RT-DETR detection export
 │   ├── rfdetr/             # RF-DETR detection export
 │   └── edgecrafter/        # EdgeCrafter detection export
@@ -20,6 +21,7 @@ export/
 │   └── edgecrafter/        # EdgeCrafter segmentation export
 ├── optical_flow/
 │   └── raft/               # RAFT optical flow export
+├── keypoint_matching/      # SuperGlue / LightGlue / MatchAnything export guide
 ├── open_vocab_detection/
 │   └── owlv2/              # OWLv2 open-vocabulary detection export
 ├── pose_estimation/
@@ -53,11 +55,18 @@ cd /path/to/neuriplo-tasks
 # Export YOLO model
 python export/detection/yolo/export.py --model yolov8n.pt --format onnx
 
+# Export YOLO-World with a fixed class list
+python export/detection/yolo_world/export.py --model yolov8s-worldv2.pt --classes person bus --test
+
 # Export Vision Transformer
 python export/classification/vit/onnx/export.py
 
 # Export RAFT optical flow
 python export/optical_flow/raft/raft_exporter.py --model-type large --format onnx
+
+# Keypoint matching (SuperGlue / LightGlue / MatchAnything) — no repo script yet;
+# the LightGlue-ONNX pipeline export works end to end. See the guide:
+# export/keypoint_matching/README.md
 
 # Export YOLO pose (YOLOv8/YOLO11/YOLO26)
 python export/pose_estimation/yolo_pose/export.py --model yolov8n-pose.pt --format onnx
@@ -121,11 +130,13 @@ Refer to:
 
 * [Instance Segmentation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/segmentation/InstanceSegmentation.md)
 * [Optical Flow](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/optical_flow/OpticalFlow.md)
+* [Keypoint Matching](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/keypoint_matching/README.md)
 * [Pose Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/PoseEstimation.md)
 * [Depth Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/depth_estimation/DepthEstimation.md)
 * [Open-Vocabulary Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/open_vocab_detection/OWLv2.md)
 * [Video Classification](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/video_classification/VideoClassification.md)
 * [Image Understanding (VLM)](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/image_understanding/ImageUnderstanding.md)
+* [YOLO-World (Fixed Vocabulary)](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/yolo_world/README.md)
 * [EdgeCrafter Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/edgecrafter/README.md)
 * [EdgeCrafter Segmentation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/segmentation/edgecrafter/README.md)
 * [RF-DETR Keypoint Pose Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/rfdetr/README.md)

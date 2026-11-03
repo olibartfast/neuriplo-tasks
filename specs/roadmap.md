@@ -21,9 +21,21 @@ which stays the authority on the detail. This is the shape of the arc:
 | 0.8.0 | YOLO26 depth estimation; vision hot-loop fast paths |
 | 0.8.1 | `vision::decodeImage` for in-memory encoded images; [detector gaps](2026-08-20-detector-gaps/requirements.md) — YOLO NMS-free coordinate convention, RT-DETR-family normalization, D-FINE/DEIM factory routing |
 
+## Merged to `develop`, unreleased
+
+- **Keypoint matching — SuperGlue** (PR
+  [#21](https://github.com/olibartfast/neuriplo-tasks/pull/21)): `KeypointMatchingTask`
+  with result type, factory routing, the pair contract, and a decoder verified
+  against a real ONNX export (see
+  [2026-10-15-keypoint-matching](2026-10-15-keypoint-matching/requirements.md)).
+  Ships in the next release cut from `master`.
+
 ## In flight
 
-Nothing on `develop` beyond the last release.
+- **Keypoint matching — LightGlue / MatchAnything decoders.** The task and the
+  SuperGlue decoder are on `develop`; these two families still throw
+  `std::logic_error` until their exports are probed. Same packet:
+  [2026-10-15-keypoint-matching](2026-10-15-keypoint-matching/requirements.md).
 
 ## Proposed
 

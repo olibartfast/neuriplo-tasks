@@ -22,7 +22,7 @@ adoption flow: [batch_processing.md](./batch_processing.md).
 | Task family | Example `model_type` strings | Input layout (`N` axis) | Preprocess packs batch? | Postprocess splits batch? | Status | Notes |
 |-------------|------------------------------|-------------------------|----------------------|---------------------------|--------|-------|
 | Classification | `torchvisionclassifier`, `vitclassifier`, `tensorflowclassifier`, `resnet*` | `[N,C,H,W]` NCHW or `[N,H,W,C]` NHWC | No — one buffer per image | **Yes** — one top-1 per `shape[0]` when `N>1` | **Ready** | Full `top_k` when `N=1`; batched `[N,C]` via `postprocessClassificationLogits`. Covered by `tests/test_classification_batch.cpp`. |
-| Object detection — YOLO | `yolo*`, `yolov10`, `yolo26`, `yolonas`, `yolov7e2e` | `[N,anchors,C]` or `[N,C,anchors]` | No — one buffer per image | **Yes** — `YoloPostprocessor` iterates `shape[0]`; per-slice NMS | **Ready** | Batch loop in `postprocessYoloStandard`. Covered by `tests/test_object_detection_batch.cpp`. |
+| Object detection — YOLO | `yolo*`, `yolov10`, `yolo26`, `yoloworld`, `yolonas`, `yolov7e2e` | `[N,anchors,C]` or `[N,C,anchors]` | No — one buffer per image | **Yes** — `YoloPostprocessor` iterates `shape[0]`; per-slice NMS | **Ready** | Batch loop in `postprocessYoloStandard`. Covered by `tests/test_object_detection_batch.cpp`. |
 | Object detection — RT-DETR / DEIM / DFINE | `rtdetr`, `rtdetrv2`, `dfine`, `deim` | `[N,Q,*]` typical | **Yes** — stacked image buffers + batched `orig_target_sizes` | **Yes** — `postprocessRTDETR` iterates `shape[0]` | **Ready** | |
 | Object detection — RT-DETR Ultralytics | `rtdetrul`, `rtdetrultralytics` | `[N,C,H,W]` | No — one buffer per image | **Yes** — `postprocessRTDETRUL` iterates `shape[0]` | **Ready** | |
 | Object detection — RF-DETR | `rfdetr` | `[N,C,H,W]` | No — one buffer per image | **Yes** — batch loop over `shape[0]` for boxes + labels | **Ready** | |
@@ -37,6 +37,7 @@ adoption flow: [batch_processing.md](./batch_processing.md).
 | Gaussian splatting | `lgm`, `grm`, `*splat*` | `[N,C,H,W]` views; output `[N,G,14]` | No — **one buffer per view** (`getRequiredFrames()=4`) | Partial — reads `[N,G,14]` but **one** `Result` | N/A | Multi-view ≠ image batch; merged gaussian list. |
 | Video classification | `videomae`, `vivit`, `timesformer` | `[N,T,C,H,W]` clip | Temporal — **one** concatenated buffer | No — single clip `top_k` | N/A | `vector<Image>` = frame list; batch axis is clip, not images. |
 | Optical flow | `raft` | `[N,2,H,W]` flow field | Pair — even `Mat` count, one buffer per pair | No — assumes `[1,2,H,W]` | N/A | `getRequiredFrames()=2`; not `N` independent images. |
+| Keypoint matching | `superglue*`, `lightglue*`, `matchanything*` | One image pair per call; family layouts differ | Pair — exactly 2 images; one packed buffer for SuperGlue, one buffer per image for the two-input families | No — one `KeypointMatching` per pair | N/A | `getRequiredFrames()=2`; SuperGlue decoded, LightGlue / MatchAnything pending verified ONNX exports. |
 | Open-vocab detection | `owlv2`, `owlvit`, `groundingdino` | `[N,C,H,W]` + text | **Yes** — stacked image buffers; text tokens shared across batch | **Yes** — batch loop over `shape[0]` for boxes + logits | **Ready** | |
 | Image understanding | `gemma4`, `imageunderstanding`, `llama*` | Text + raw RGB payload | No — prompt + **one** image | No — single `ImageUnderstanding` string | N/A | Generative; single request semantics. |
 
@@ -118,6 +119,7 @@ _No components remain in this category — all postprocessors now iterate `shape
 |--------|-----|
 | Video classification | Batch axis is **clip batch**; input is a **frame sequence** in one tensor (`[N,T,C,H,W]`). Running `N=2` clips needs different `ModelInfo` and frame sourcing, not `N` unrelated `Mat`s. |
 | Optical flow | Input is **frame pairs**; output is one flow field per pair. Batching is pair-wise, not independent images. |
+| Keypoint matching | Input is a **two-image pair**; output is one match set per pair. Batching is pair-wise, not independent images. |
 | Gaussian splatting | Input is **fixed multi-view** (4 views); output is one splat asset. `N` in `[N,G,14]` is view-batch for the model, not consumer image batch. |
 | Image understanding | Single prompt + single image (VLM decode). |
 
