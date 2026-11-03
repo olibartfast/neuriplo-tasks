@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Video classification families: V-JEPA 2 (`vjepa*`), VideoPrism (`videoprism*`), and
+  PE Video (`pevideo*`). Each has a preprocessor matching the transformers processor:
+  V-JEPA 2 resizes the shortest edge to `crop*256/224` (292), center-crops, and applies
+  ImageNet normalization; VideoPrism resizes straight to 288x288 with bicubic sampling,
+  rescales to `[0,1]`, and applies no mean/std; PE Video resizes to 336x336 and
+  normalizes with mean/std 0.5. Frames per clip come from the model's 5D input shape.
+  PE Video is a video-text contrastive encoder, so its classification path needs a
+  fixed-vocabulary ONNX export with baked text embeddings (see
+  `export/video_classification/`).
 - Keypoint-matching task scaffold: `KeypointMatchingTask` routes `superglue*`,
   `lightglue*`, and `matchanything*` and consumes one image pair per call
   (`getRequiredFrames() == 2`). Adds `KeypointMatch` / `KeypointMatching` to the

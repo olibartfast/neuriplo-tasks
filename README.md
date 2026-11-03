@@ -12,7 +12,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Object Detection**: YOLO (v4-v12, yolo26), YOLO-World (fixed vocabulary), RT-DETR family (RT-DETR v1/v2/v4, D-FINE, DEIM v1/v2), YOLO-NAS, RF-DETR, EdgeCrafter
 - **Instance Segmentation**: YOLOv5/v8/v11-seg, YOLOv10-seg, YOLO26-seg, RF-DETR-Seg, EdgeCrafter; mask output by default or framework-neutral polygons on request
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
-- **Video Classification**: VideoMAE, ViViT, TimeSformer
+- **Video Classification**: VideoMAE, ViViT, TimeSformer, V-JEPA 2, VideoPrism, PE Video (fixed-vocabulary export)
 - **Optical Flow**: RAFT
 - **Keypoint Matching**: SuperGlue (image pair → matched keypoints, decoded); LightGlue and MatchAnything routed, decoders pending verified ONNX contracts
 - **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose
@@ -265,6 +265,9 @@ Any model type starting with `resnet` (e.g. `resnet50`) or containing `tensorflo
 - `"videomae"` - VideoMAE
 - `"vivit"` - ViViT
 - `"timesformer"` - TimeSformer
+- `"pevideo"` - PE Video (any string starting with `pevideo`; classification needs a fixed-vocabulary export, see the export guide)
+- `"vjepa"` - V-JEPA 2 (any string starting with `vjepa`, e.g. `vjepa2-vitl-fpc16-256-ssv2`)
+- `"videoprism"` - VideoPrism (any string starting with `videoprism`)
 
 **Optical Flow:**
 - `"raft"` - RAFT optical flow
