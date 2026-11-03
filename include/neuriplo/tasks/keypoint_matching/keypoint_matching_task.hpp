@@ -63,6 +63,8 @@ class KeypointMatchingTask : public TaskInterface {
   private:
     ModelType model_type_;
     float match_score_threshold_{0.0f};
+    /// Input size the model runs at (LightGlue keypoints are in this space).
+    Size model_input_size_{512, 512};
     std::unique_ptr<KeypointMatchingPreprocessor> preprocessor_;
     std::unique_ptr<KeypointMatchingPostprocessor> postprocessor_;
     /// Original sizes of the last preprocessed pair, in call order.

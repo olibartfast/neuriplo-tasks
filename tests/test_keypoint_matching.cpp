@@ -2,6 +2,8 @@
 #include "neuriplo/tasks/core/result_types.hpp"
 #include "neuriplo/tasks/core/task_factory.hpp"
 #include "neuriplo/tasks/keypoint_matching/keypoint_matching_preprocessor.hpp"
+#include "neuriplo/tasks/keypoint_matching/lightglue_postprocessor.hpp"
+#include "neuriplo/tasks/keypoint_matching/lightglue_preprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/superglue_postprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/superglue_preprocessor.hpp"
 #include "vision_test_utils.hpp"
@@ -86,7 +88,7 @@ TEST_F(KeypointMatchingTest, PreprocessRejectsEmptyImageInPair) {
 }
 
 TEST_F(KeypointMatchingTest, PreprocessReturnsOneBufferPerImage) {
-    auto task = TaskFactory::createTaskInstance("lightglue", createModelInfo());
+    auto task = TaskFactory::createTaskInstance("matchanything", createModelInfo());
     ASSERT_NE(task, nullptr);
 
     auto [image1, image2] = createTestPair();
@@ -126,7 +128,7 @@ TEST_F(KeypointMatchingTest, PostprocessWithEmptyTensorsReturnsEmpty) {
 }
 
 TEST_F(KeypointMatchingTest, RemainingFamiliesStillThrowInsteadOfGuessing) {
-    const std::vector<std::string> aliases = {"lightglue", "matchanything"};
+    const std::vector<std::string> aliases = {"matchanything"};
     const std::vector<Tensor> tensors = {Tensor({TensorElement{0.0f}}, {1, 1})};
 
     for (const auto& alias : aliases) {
@@ -334,4 +336,116 @@ TEST_F(KeypointMatchingTest, SuperGlueTaskScalesToRecordedPairSizes) {
     EXPECT_NEAR(matching.source_keypoints[0].y, 0.04791666567325592F * 150.0F, 1e-3F);
     // TaskConfig's default confidence_threshold (0.25) keeps the 0.99 match.
     ASSERT_EQ(matching.matches.size(), 1U);
+}
+
+namespace {
+
+// Three keypoints per image, coordinates lifted from the verified
+// thomasonzhou/superpoint-lightglue export (512x512 input space).
+std::vector<Tensor> makeLightGlueOutputs() {
+    const std::vector<int64_t> keypoints = {325, 208, 313, 315, 401, 120, 347, 320, 332, 429, 210, 90};
+    const std::vector<int64_t> matches = {0, 0, 2, 0, 1, 0, 1, 2, 1};
+    const std::vector<float> scores = {0.9F, 0.27867886F, 0.9F};
+    return {makeIntTensor(keypoints, {2, 3, 2}), makeIntTensor(matches, {3, 3}), makeFloatTensor(scores, {3})};
+}
+
+} // namespace
+
+TEST_F(KeypointMatchingTest, LightGluePreprocessPacksOneGrayscalePairBuffer) {
+    auto task = TaskFactory::createTaskInstance("lightglue", createModelInfo());
+    ASSERT_NE(task, nullptr);
+
+    auto [image1, image2] = createTestPair();
+    const auto buffers = task->preprocess({image1, image2});
+
+    // One model input [2, 1, H, W]: one buffer, grayscale, both images.
+    ASSERT_EQ(buffers.size(), 1U);
+    EXPECT_EQ(buffers[0].size(), static_cast<std::size_t>(2 * 1 * kInputSize * kInputSize) * kBytesPerElement);
+}
+
+TEST_F(KeypointMatchingTest, LightGluePreprocessAppliesGrayscaleAndUnitScaling) {
+    LightGluePreprocessor preprocessor(Size(2, 2), 1);
+    neuriplo_tasks::Image source = neuriplo_tasks::vision_test::makeImage(2, 2, 3, 0);
+    const std::uint8_t pixels[4][3] = {{0, 0, 255}, {255, 0, 0}, {0, 255, 0}, {255, 255, 255}};
+    for (std::size_t p = 0; p < 4; ++p) {
+        for (std::size_t c = 0; c < 3; ++c) {
+            source.raw()[p * 3 + c] = pixels[p][c];
+        }
+    }
+    neuriplo_tasks::Image target = neuriplo_tasks::vision_test::makeImage(2, 2, 3, 0);
+
+    const auto buffers = preprocessor.preprocess_pair(source.view(), target.view());
+    ASSERT_EQ(buffers.size(), 1U);
+    ASSERT_EQ(buffers[0].size(), static_cast<std::size_t>(2 * 1 * 2 * 2) * sizeof(float));
+
+    const auto* values = reinterpret_cast<const float*>(buffers[0].data());
+    const float expected[4] = {0.2989F, 0.1140F, 0.5870F, 0.9999F};
+    for (std::size_t p = 0; p < 4; ++p) {
+        EXPECT_NEAR(values[p], expected[p], 1e-6F) << "pixel " << p;
+        EXPECT_FLOAT_EQ(values[4 + p], 0.0F) << "target slot " << p;
+    }
+}
+
+TEST_F(KeypointMatchingTest, LightGlueDecodesVerifiedExportValues) {
+    LightGluePostprocessor postprocessor(0.0F, Size(kInputSize, kInputSize));
+    const KeypointMatching result = postprocessor.postprocess(makeLightGlueOutputs(), Size(1024, 768), Size(800, 600));
+
+    ASSERT_EQ(result.source_keypoints.size(), 3U);
+    ASSERT_EQ(result.target_keypoints.size(), 3U);
+
+    // Keypoints are input-space pixels, rescaled by original/input per axis.
+    EXPECT_NEAR(result.source_keypoints[1].x, 313.0F * 1024.0F / 512.0F, 1e-3F);
+    EXPECT_NEAR(result.source_keypoints[1].y, 315.0F * 768.0F / 512.0F, 1e-3F);
+    EXPECT_NEAR(result.target_keypoints[1].x, 332.0F * 800.0F / 512.0F, 1e-3F);
+    EXPECT_NEAR(result.target_keypoints[1].y, 429.0F * 600.0F / 512.0F, 1e-3F);
+
+    // The row with pair index 1 belongs to another pair and is ignored.
+    ASSERT_EQ(result.matches.size(), 2U);
+    EXPECT_EQ(result.matches[0].source_index, 0);
+    EXPECT_EQ(result.matches[0].target_index, 2);
+    EXPECT_NEAR(result.matches[0].score, 0.9F, 1e-6F);
+    EXPECT_EQ(result.matches[1].source_index, 1);
+    EXPECT_EQ(result.matches[1].target_index, 0);
+}
+
+TEST_F(KeypointMatchingTest, LightGlueDropsMatchesBelowThreshold) {
+    const auto tensors = makeLightGlueOutputs();
+
+    LightGluePostprocessor generous(0.0F, Size(kInputSize, kInputSize));
+    EXPECT_EQ(generous.postprocess(tensors, Size(1024, 768), Size(800, 600)).matches.size(), 2U);
+
+    LightGluePostprocessor strict(0.5F, Size(kInputSize, kInputSize));
+    const KeypointMatching filtered = strict.postprocess(tensors, Size(1024, 768), Size(800, 600));
+    ASSERT_EQ(filtered.matches.size(), 1U);
+    EXPECT_FLOAT_EQ(filtered.matches[0].score, 0.9F);
+}
+
+TEST_F(KeypointMatchingTest, LightGlueRejectsMalformedTensors) {
+    LightGluePostprocessor postprocessor(0.0F, Size(kInputSize, kInputSize));
+    const auto tensors = makeLightGlueOutputs();
+
+    std::vector<Tensor> no_keypoints = {tensors[1], tensors[2]};
+    EXPECT_THROW(postprocessor.postprocess(no_keypoints, Size(1024, 768), Size(800, 600)), std::invalid_argument);
+
+    std::vector<Tensor> short_matches = tensors;
+    short_matches[1] = makeIntTensor(std::vector<int64_t>(6, 0), {3, 3});
+    EXPECT_THROW(postprocessor.postprocess(short_matches, Size(1024, 768), Size(800, 600)), std::invalid_argument);
+}
+
+TEST_F(KeypointMatchingTest, LightGlueTaskUsesModelInputSizeForRescaling) {
+    auto task = TaskFactory::createTaskInstance("lightglue", createModelInfo());
+    ASSERT_NE(task, nullptr);
+
+    auto [image1, image2] = createTestPair(200, 150);
+    (void)task->preprocess({image1, image2});
+
+    const auto results = task->postprocess(Size(200, 150), makeLightGlueOutputs());
+    ASSERT_EQ(results.size(), 1U);
+
+    const auto& matching = std::get<KeypointMatching>(results[0]);
+    ASSERT_EQ(matching.source_keypoints.size(), 3U);
+    EXPECT_NEAR(matching.source_keypoints[1].x, 313.0F * 200.0F / 512.0F, 1e-3F);
+    EXPECT_NEAR(matching.source_keypoints[1].y, 315.0F * 150.0F / 512.0F, 1e-3F);
+    // Default confidence_threshold 0.25 keeps the 0.9 and 0.2787 matches.
+    EXPECT_EQ(matching.matches.size(), 2U);
 }
