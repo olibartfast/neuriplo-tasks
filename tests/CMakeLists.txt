@@ -161,6 +161,14 @@ target_link_libraries(test_keypoint_matching
     GTest::Main
 )
 
+# Video classification tests
+add_executable(test_video_classification test_video_classification.cpp)
+target_link_whole_archive(test_video_classification neuriplo-tasks)
+target_link_libraries(test_video_classification
+    GTest::GTest
+    GTest::Main
+)
+
 # Pose estimation tests
 add_executable(test_pose_estimation test_pose_estimation.cpp)
 target_link_whole_archive(test_pose_estimation neuriplo-tasks)
@@ -260,6 +268,7 @@ add_test(NAME test_task_config COMMAND test_task_config)
 add_test(NAME test_concrete_tasks COMMAND test_concrete_tasks)
 add_test(NAME test_optical_flow COMMAND test_optical_flow)
 add_test(NAME test_keypoint_matching COMMAND test_keypoint_matching)
+add_test(NAME test_video_classification COMMAND test_video_classification)
 add_test(NAME test_pose_estimation COMMAND test_pose_estimation)
 add_test(NAME test_depth_estimation COMMAND test_depth_estimation)
 add_test(NAME test_open_vocab_detection COMMAND test_open_vocab_detection)

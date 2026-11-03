@@ -17,13 +17,16 @@ class VideoClassificationPostprocessor;
  * - VideoMAE
  * - ViViT
  * - TimeSformer
+ * - PE Video (fixed-vocabulary export — see export/video_classification/)
+ * - V-JEPA 2
+ * - VideoPrism
  *
  * Input shape is 5D: [batch, num_frames, channels, height, width]
  * Each frame is preprocessed independently, then concatenated into a single buffer.
  */
 class VideoClassificationTask : public TaskInterface {
   public:
-    enum class ModelType : uint8_t { VIDEOMAE, VIVIT, TIMESFORMER };
+    enum class ModelType : uint8_t { VIDEOMAE, VIVIT, TIMESFORMER, PE_VIDEO, VJEPA2, VIDEOPRISM };
 
     explicit VideoClassificationTask(const ModelInfo& model_info, const std::string& model_name, int top_k = 5,
                                      bool apply_softmax = true);
