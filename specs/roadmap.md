@@ -74,3 +74,11 @@ the maintainer's to set.
 Pick an item, open a packet under `specs/YYYY-MM-DD-name/`, and follow
 [specs/README.md](README.md). A packet that merges updates this file in the
 same branch — otherwise the roadmap describes intentions rather than history.
+
+## OpenCV vector MatMul export compatibility — local validation
+
+The opt-in RT-DETR ONNX helper preserves external model I/O while adapting
+constant-vector MatMul to matrix-only runtimes. Synthetic reference tests and
+real RT-DETRv4 ORT/OpenCV comparisons pass; downstream Slurm rerun awaits the
+existing controller. See
+[validation](2026-11-04-opencv-vector-matmul/validation.md).
