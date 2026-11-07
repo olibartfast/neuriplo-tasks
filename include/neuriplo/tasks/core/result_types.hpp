@@ -1,5 +1,7 @@
 #pragma once
 
+#define NEURIPLO_TASKS_HAS_GAZE_ESTIMATION 1
+
 #include "neuriplo/tasks/core/bounding_box.hpp"
 #include "neuriplo/tasks/core/image_matrix.hpp"
 #include "neuriplo/tasks/core/segmentation_types.hpp"
