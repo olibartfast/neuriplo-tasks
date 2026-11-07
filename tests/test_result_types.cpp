@@ -1,5 +1,6 @@
 #include "neuriplo/tasks/core/result_types.hpp"
 #include "neuriplo/tasks/core/tensor_utils.hpp"
+#include "neuriplo/tasks/monocular_3d_detection/monocular_3d_detection_types.hpp"
 #include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
@@ -371,4 +372,12 @@ TEST_F(ResultTypesTest, AppendedGazePreservesExistingAlternativeIndices) {
     EXPECT_EQ(Result(GazeEstimation{}).index(), 11U);
     EXPECT_EQ(static_cast<int>(TaskType::KeypointMatching), 10);
     EXPECT_EQ(static_cast<int>(TaskType::GazeEstimation), 11);
+}
+
+TEST_F(ResultTypesTest, MonocularCuboidIsSeparateFromHumanPose) {
+    Monocular3DDetection result;
+    EXPECT_EQ(result.projected_corners.size(), 8U);
+    EXPECT_EQ(result.class_id, -1);
+    EXPECT_FLOAT_EQ(result.geometry_confidence, 0.0f);
+    EXPECT_FALSE((std::is_same_v<Monocular3DDetection, PoseEstimation>));
 }
