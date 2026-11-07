@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+- Decode valid LightGlue zero-match outputs as an empty correspondence list.
+
 ### Added
 - Opt-in RT-DETR ONNX export adapter for OpenCV 5: expand constant-vector
   MatMul into matrix MatMul with equivalent squeeze operations; preserve model

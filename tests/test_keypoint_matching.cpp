@@ -449,3 +449,21 @@ TEST_F(KeypointMatchingTest, LightGlueTaskUsesModelInputSizeForRescaling) {
     // Default confidence_threshold 0.25 keeps the 0.9 and 0.2787 matches.
     EXPECT_EQ(matching.matches.size(), 2U);
 }
+
+TEST_F(KeypointMatchingTest, LightGlueAcceptsZeroMatches) {
+    auto tensors = makeLightGlueOutputs();
+    for (auto& tensor : tensors) {
+        if (tensor.shape.size() == 2 && tensor.shape[1] == 3) {
+            tensor.shape[0] = 0;
+            tensor.data.clear();
+        } else if (tensor.shape.size() == 1) {
+            tensor.shape[0] = 0;
+            tensor.data.clear();
+        }
+    }
+    LightGluePostprocessor decoder(0.2f, Size(kInputSize, kInputSize));
+    const auto result = decoder.postprocess(tensors, Size(1024, 768), Size(800, 600));
+    EXPECT_TRUE(result.matches.empty());
+    EXPECT_FALSE(result.source_keypoints.empty());
+    EXPECT_FALSE(result.target_keypoints.empty());
+}
