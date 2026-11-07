@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+- Decode valid LightGlue zero-match outputs as an empty correspondence list.
+
 ### Added
 - LightGlue keypoint-matching decoder, verified against
   `thomasonzhou/superpoint-lightglue`. `LightGluePreprocessor` packs the pair into
