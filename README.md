@@ -15,7 +15,9 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Video Classification**: VideoMAE, ViViT, TimeSformer, V-JEPA 2, VideoPrism, PE Video (fixed-vocabulary export)
 - **Optical Flow**: RAFT
 - **Keypoint Matching**: SuperGlue and LightGlue (image pair → matched keypoints, decoded); MatchAnything routed, decoder pending a verified ONNX contract
-- **Pose Estimation**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose
+- **Pose Estimation (2D Human Pose)**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose
+- **Monocular 3D Detection**: projected cuboid result contract; model implementation pending. See [pose task scope](docs/pose_estimation_scope.md).
+- **Gaze Estimation**: result contract for pitch/yaw and a normalized 3D direction; model implementation pending. See [gaze estimation](docs/gaze_estimation.md).
 - **Depth Estimation**: Depth Anything V2, YOLO26 Depth
 - **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO; YOLO-World (fixed vocabulary)
 - **Gaussian Splatting**: LGM, LGM-mini, GRM (feed-forward image → 3D Gaussians)
@@ -287,7 +289,7 @@ One image pair per call — `getRequiredFrames()` returns 2. Results are `Keypoi
 
 For export and verification details, see [export/keypoint_matching/README.md](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/keypoint_matching/README.md).
 
-**Pose Estimation:**
+**Pose Estimation (2D Human Pose):**
 - `"yolov8pose"`, `"yolov8-pose"` - YOLOv8 pose (single-stage, returns bbox + keypoints)
 - `"yolo11pose"`, `"yolo11-pose"` - YOLO11 pose
 - `"yolo26pose"`, `"yolo26-pose"` - YOLO26 pose

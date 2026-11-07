@@ -47,7 +47,7 @@ LightGlueOutputs classifyOutputs(const std::vector<Tensor>& tensors) {
             }
             continue;
         }
-        if (shape.size() == 2 && shape[1] == 3 && holdsInteger(tensor)) {
+        if (shape.size() == 2 && shape[1] == 3 && (tensor.data.empty() || holdsInteger(tensor))) {
             if (outputs.matches == nullptr) {
                 outputs.matches = &tensor;
             }

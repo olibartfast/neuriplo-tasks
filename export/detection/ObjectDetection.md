@@ -358,3 +358,20 @@ trtexec --onnx=/path/to/model.onnx --saveEngine=/path/to/model.engine --memPoolS
 ```bash
 export NGC_TAG_VERSION=24.12
 docker run --rm -it --gpus=all -v $(pwd)/exports:/exports --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 -v $(pwd)/model.onnx:/workspace/model.onnx -w /workspace nvcr.io/nvidia/tensorrt$NGC_TAG_VERSION:-py3 /bin/bash -cx "trtexec --onnx=model.onnx --saveEngine=/exports/model.engine --memPoolSize=workspace:4096 --fp16 --useCudaGraph --useSpinWait --warmUp=500 --avgRuns=1000 --duration=10"
+
+### RT-DETRv4 with OpenCV DNN 5
+
+Some RT-DETRv4 exports use ONNX `MatMul` with a constant vector on the right.
+OpenCV 5's matrix implementation rejects that legal ONNX case. Prepare a separate
+artifact with the export helper before using the model in OpenCV:
+
+```bash
+python export/detection/rtdetr/prepare_opencv_onnx.py model.onnx model-opencv.onnx
+```
+
+The helper inserts `Unsqueeze`, matrix `MatMul`, then `Squeeze` around each
+constant-vector product. Model inputs, outputs and weights retain their values
+and contracts; the original artifact is preserved. ONNX opset 13 or newer is
+required. This does not fix older OpenCV importers or an inference adapter that
+only binds one input. Use the `rtdetr` task type for v4 weights as in the existing
+export recipes; `rtdetrv4` is a preset name, not a TaskFactory alias.

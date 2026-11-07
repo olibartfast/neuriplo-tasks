@@ -1,5 +1,6 @@
 #include "neuriplo/tasks/core/result_types.hpp"
 #include "neuriplo/tasks/core/tensor_utils.hpp"
+#include "neuriplo/tasks/monocular_3d_detection/monocular_3d_detection_types.hpp"
 #include "vision_test_utils.hpp"
 
 #include <gtest/gtest.h>
@@ -35,6 +36,8 @@ std::string resultTypeName(const Result& result) {
             return "image_understanding";
         } else if constexpr (std::is_same_v<T, KeypointMatching>) {
             return "keypoint_matching";
+        } else if constexpr (std::is_same_v<T, GazeEstimation>) {
+            return "gaze_estimation";
         }
     });
 }
@@ -319,13 +322,13 @@ TEST_F(ResultTypesTest, VisitResultAcceptsEveryResultAlternative) {
     const std::vector<Result> results = {
         Classification{},    Detection{},           OpenVocabDetection{}, InstanceSegmentation{},
         OpticalFlow{},       VideoClassification{}, PoseEstimation{},     DepthEstimation{},
-        GaussianSplatting{}, ImageUnderstanding{},  KeypointMatching{},
+        GaussianSplatting{}, ImageUnderstanding{},  KeypointMatching{},   GazeEstimation{},
     };
     const std::vector<std::string> expected = {
         "classification",        "detection",         "open_vocab_detection",
         "instance_segmentation", "optical_flow",      "video_classification",
         "pose_estimation",       "depth_estimation",  "gaussian_splatting",
-        "image_understanding",   "keypoint_matching",
+        "image_understanding",   "keypoint_matching", "gaze_estimation",
     };
 
     ASSERT_EQ(results.size(), expected.size());
@@ -362,4 +365,19 @@ TEST_F(ResultTypesTest, TaskTypeEnumValues) {
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
+}
+
+TEST_F(ResultTypesTest, AppendedGazePreservesExistingAlternativeIndices) {
+    EXPECT_EQ(Result(KeypointMatching{}).index(), 10U);
+    EXPECT_EQ(Result(GazeEstimation{}).index(), 11U);
+    EXPECT_EQ(static_cast<int>(TaskType::KeypointMatching), 10);
+    EXPECT_EQ(static_cast<int>(TaskType::GazeEstimation), 11);
+}
+
+TEST_F(ResultTypesTest, MonocularCuboidIsSeparateFromHumanPose) {
+    Monocular3DDetection result;
+    EXPECT_EQ(result.projected_corners.size(), 8U);
+    EXPECT_EQ(result.class_id, -1);
+    EXPECT_FLOAT_EQ(result.geometry_confidence, 0.0f);
+    EXPECT_FALSE((std::is_same_v<Monocular3DDetection, PoseEstimation>));
 }
