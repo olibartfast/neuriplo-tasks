@@ -68,6 +68,10 @@ the maintainer's to set.
   RF-DETR, and EdgeCrafter share tensor shapes but not normalization. Sharing
   one preprocessor across them is what allowed the RT-DETR bug; the split has
   begun, and finishing it would make the mistake unrepresentable.
+- **TPU-servable TensorFlow classifier export.** Validate the existing
+  raw-BGR/logits SavedModel on a Cloud TPU service; add an opt-in export mode
+  only if the current artifact cannot run there. Packet:
+  [2026-11-09-tensorflow-gpu-remote-tpu](2026-11-09-tensorflow-gpu-remote-tpu/requirements.md).
 
 ## How work gets scheduled
 
