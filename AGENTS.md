@@ -393,3 +393,14 @@ done
 ```
 
 If this is green locally, CI will be green.
+
+## Agent Commit Signing
+
+Every commit produced by an AI agent MUST include a `Co-authored-by` trailer
+that identifies the agent, the LLM model used, and the agent vendor. The
+canonical agent table, vendor emails, and the rule that vendor emails must not
+map to real GitHub profiles live in
+[`neuriplo-platform/AGENTS.md`](https://github.com/olibartfast/neuriplo-platform/blob/main/AGENTS.md#agent-commit-signing).
+
+Place the trailer in the commit body (after the subject line and blank line),
+not the subject.
