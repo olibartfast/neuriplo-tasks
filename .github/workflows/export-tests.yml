@@ -10,6 +10,7 @@ on:
       - 'export/depth_estimation/depth_anything_v2/**'
       - 'tests/test_torchvision_export.py'
       - 'tests/test_tensorflow_export.py'
+      - 'tests/test_verify_tpu_saved_model.py'
       - 'tests/test_depth_export.py'
       - '.github/workflows/export-tests.yml'
   pull_request:
@@ -21,6 +22,7 @@ on:
       - 'export/depth_estimation/depth_anything_v2/**'
       - 'tests/test_torchvision_export.py'
       - 'tests/test_tensorflow_export.py'
+      - 'tests/test_verify_tpu_saved_model.py'
       - 'tests/test_depth_export.py'
       - '.github/workflows/export-tests.yml'
 
@@ -54,7 +56,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install tested TensorFlow exporter dependency
-        run: python -m pip install tensorflow-cpu==2.19.1
+      - name: Install tested TensorFlow exporter dependencies
+        run: python -m pip install tensorflow-cpu==2.19.1 Pillow==13.0.0
       - name: Verify SavedModel Session compatibility and logits
         run: python tests/test_tensorflow_export.py
+      - name: Verify TPU validation helper CPU paths
+        run: python tests/test_verify_tpu_saved_model.py
