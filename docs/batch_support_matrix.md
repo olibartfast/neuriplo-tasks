@@ -33,6 +33,8 @@ adoption flow: [batch_processing.md](./batch_processing.md).
 | Pose — YOLO | `yolo*pose*` | `[N,anchors,C]` or `[N,C,anchors]` | No — one buffer per image | **Yes** — batch loop over `shape[0]`; per-batch body NMS | **Ready** | |
 | Pose — ViTPose | `vitpose` | `[N,J,H,W]` heatmaps | No — one buffer per image | **Yes** — one `PoseEstimation` per `shape[0]` | **Ready** | Covered by `tests/test_pose_estimation_batch.cpp`. |
 | Pose — EdgeCrafter | `ecpose*`, `edgecrafter*pose*` | Multi-input | **Yes** — stacked image buffers + batched `orig_size` | **Yes** — batch loop over `shape[0]` for scores, keypoints, labels | **Ready** | |
+| Gaze estimation | `gaze`, `ethxgaze*`, `gazetr*` | `[B,2]` pitch/yaw or `[B,3]` vector | No — one buffer per image | **Yes** — one `GazeEstimation` per batch row | **Ready** | ETH-XGaze/OpenGaze angle convention. |
+| Monocular 3D detection | `urbanomni*`, `monocular3d*`, `mono3d` | `[B,4+nc+8kd,N]` or `[B,N,4+nc+8kd]`(+obj) | No — one buffer per image | **Yes** — batch loop over `shape[0]`; per-slice NMS | **Ready** | kd=2/3 corner values; ground-first order. |
 | Depth estimation | `*depthanythingv2*` | `[N,H,W]` or `[N,1,H,W]` / NCHW | No — one buffer per image | **Yes** — one `DepthEstimation` per batch index | **Ready** | Covered by `tests/test_depth_estimation_batch.cpp`. |
 | Gaussian splatting | `lgm`, `grm`, `*splat*` | `[N,C,H,W]` views; output `[N,G,14]` | No — **one buffer per view** (`getRequiredFrames()=4`) | Partial — reads `[N,G,14]` but **one** `Result` | N/A | Multi-view ≠ image batch; merged gaussian list. |
 | Video classification | `videomae`, `vivit`, `timesformer`, `pevideo*`, `vjepa*`, `videoprism*` | `[N,T,C,H,W]` clip | Temporal — **one** concatenated buffer | No — single clip `top_k` | N/A | `vector<Image>` = frame list; batch axis is clip, not images. |
@@ -49,7 +51,7 @@ adoption flow: [batch_processing.md](./batch_processing.md).
 
 ### A — Per-image loop (one `vector<uint8_t>` per image)
 
-**Families:** classification, depth, YOLO detection/seg (standard), RF-DETR det/seg, YOLO pose (via `Preprocessor::preprocess(imgs)`), RT-DETR UL.
+**Families:** classification, depth, YOLO detection/seg (standard), RF-DETR det/seg, YOLO pose (via `Preprocessor::preprocess(imgs)`), RT-DETR UL, gaze estimation (ImageNet 224 face crop), monocular 3D (YOLO letterbox).
 
 - Contract: `results.size() == imgs.size()`.
 - Consumer must stack buffers into `[N,C,H,W]` (or engine-specific layout) before inference.
@@ -88,6 +90,8 @@ adoption flow: [batch_processing.md](./batch_processing.md).
 | `ViTPosePostprocessor` | `[N,J,H,W]` | `src/pose_estimation/vit_pose_postprocessor.cpp` |
 | `YoloPostprocessor` (standard) | `[N,anchors,cls+4]` or `[N,cls+4,anchors]` | `src/object_detection/yolo_postprocessor.cpp` |
 | `YoloPosePostprocessor` | `[N,anchors,kpts+C]` or `[N,kpts+C,anchors]` | `src/pose_estimation/yolo_pose_postprocessor.cpp` |
+| `GazePostprocessor` | `[N,2]` pitch/yaw or `[N,3]` vector (+ optional `[N,1]`/`[N]` confidence) | `src/gaze_estimation/gaze_estimation_postprocessor.cpp` |
+| `Monocular3DPostprocessor` | `[N,4+nc+8kd,anchors]` or `[N,anchors,4+nc+8kd]`(+obj) or `[N,anchors,6+8kd]` end-to-end (kd=2/3) | `src/monocular_3d_detection/monocular_3d_detection_postprocessor.cpp` |
 | `YoloSegmentationPostprocessor` | `[N,…]` det + proto heads, per-batch NMS | `src/instance_segmentation/yolo_segmentation_postprocessor.cpp` |
 | `RfDetrPostprocessor` | `[N,Q,4]` boxes + `[N,Q,C]` labels | `src/object_detection/rfdetr_postprocessor.cpp` |
 | `RfDetrSegmentationPostprocessor` | `[N,Q,4]` + `[N,Q,C]` + `[N,Q,H,W]` masks | `src/instance_segmentation/rfdetr_segmentation_postprocessor.cpp` |
@@ -151,6 +155,8 @@ Tests default `batch_size_ = 1` (`tests/test_task_factory.cpp`, `tests/test_read
 | `tests/test_yolo_postprocessor.cpp` | `N=1` YOLO decode (baseline) |
 | `tests/test_depth_estimation.cpp` | `N=1` depth map round-trip (baseline) |
 | `tests/test_pose_estimation.cpp` | ViTPose `N=1` heatmaps (baseline) |
+| `tests/test_gaze_estimation.cpp` | `[B,2]`/`[B,3]` decode incl. `B=2` batch + confidence (baseline) |
+| `tests/test_monocular_3d_detection.cpp` | YOLO-pose-style cuboid decode incl. kd=2/3, layouts, NMS (`N=1` baseline) |
 | `tests/test_gaussian_splatting.cpp` | `[N,G,14]` layout with `N=1` |
 | `tests/test_optical_flow.cpp` | `[1,2,H,W]` RAFT output |
 
@@ -170,6 +176,8 @@ Tests default `batch_size_ = 1` (`tests/test_task_factory.cpp`, `tests/test_read
 | Pose (ViTPose) | `batchPreprocess` → per-`Mat` buffers | `batchPostprocess` → N `PoseEstimation` results | `test_pose_estimation_batch.cpp` | **Done** |
 | Pose (YOLO) | `batchPreprocess` → one buffer per image | `YoloPosePostprocessor` batch loop → N `PoseEstimation` lists | — | **Done** |
 | Pose (EdgeCrafter) | Stacked image buffers + batched `orig_size` | `EdgeCrafterPosePostprocessor` batch loop → N `PoseEstimation` lists | — | **Done** |
+| Gaze estimation | `batchPreprocess` → one buffer per image | `GazePostprocessor` batch loop → N `GazeEstimation` results | — | **Done** |
+| Monocular 3D detection | `batchPreprocess` → one buffer per image | `Monocular3DPostprocessor` batch loop → N `Monocular3DDetection` lists | — | **Done** |
 | Instance segmentation (YOLO) | `batchPreprocess` → one buffer per image | `YoloSegmentationPostprocessor` per-batch NMS + mask gen → N `InstanceSegmentation` lists | — | **Done** |
 | Instance segmentation (RF-DETR) | `batchPreprocess` → one buffer per image | `RfDetrSegmentationPostprocessor` batch loop → N `InstanceSegmentation` lists | — | **Done** |
 | Instance segmentation (EdgeCrafter) | Stacked image buffers + batched `orig_size` | `EdgeCrafterSegmentationPostprocessor` batch loop → N `InstanceSegmentation` lists | — | **Done** |

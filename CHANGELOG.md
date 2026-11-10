@@ -35,6 +35,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   PE Video is a video-text contrastive encoder, so its classification path needs a
   fixed-vocabulary ONNX export with baked text embeddings (see
   `export/video_classification/`).
+- Gaze estimation: `GazeEstimationTask` (`gaze`, `ethxgaze*`, `gazetr*`) with
+  `GazePreprocessor` (ImageNet 224 face crop) and `GazePostprocessor` decoding
+  `[B,2]` pitch/yaw or `[B,3]` gaze vectors in the ETH-XGaze/OpenGaze angle
+  convention, verified against a `hysts/ptgaze-eth-xgaze-resnet18` export (see
+  `export/gaze_estimation/`).
+- Monocular 3D detection: `Monocular3DDetectionTask` (`urbanomni*`,
+  `monocular3d*`, `mono3d`) with YOLO letterbox preprocessing and a
+  YOLO-pose-style single-tensor cuboid decoder (kd=2/3 corner values,
+  channels-first/rows/end-to-end rows, ground-first order), verified against an
+  `urbanomnidetect_yolo11n-p2_640` export (see
+  `export/monocular_3d_detection/`). `Monocular3DDetection` is appended to
+  `Result` and `TaskType` without renumbering existing alternatives.
 
 ## [0.8.5] - 2026-11-03
 
