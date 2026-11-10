@@ -20,16 +20,20 @@ class KeypointMatchingPreprocessor;
  * matches.
  *
  * Supported model families: SuperGlue-style pipelines, LightGlue (including
- * the LightGlue-ONNX pipeline exports), and MatchAnything (EfficientLoFTR /
- * RoMa backbones).
+ * the LightGlue-ONNX pipeline exports), FlexGlue (descriptor + sparse
+ * matcher), and MatchAnything (EfficientLoFTR / RoMa backbones).
  *
  * Matcher-only exports (keypoints and descriptors in, matches out) cannot be
  * driven through TaskInterface's image contract and are out of scope.
+ * FlexGlue is the exception with an explicit forwarding contract:
+ * preprocess() emits the descriptor inputs, and postprocess() takes the
+ * matcher outputs plus the externally detected keypoints forwarded as
+ * tensors, because the matcher returns indices only.
  *
- * SuperGlue decoding is implemented against the transformers
- * SuperGlueForKeypointMatching ONNX export. The LightGlue and MatchAnything
- * family postprocessors still throw std::logic_error until their output layouts
- * are verified against real ONNX exports.
+ * SuperGlue, LightGlue, and FlexGlue decoding are implemented against real
+ * ONNX exports. The MatchAnything family postprocessor still throws
+ * std::logic_error until its output layout is verified against a real ONNX
+ * export.
  */
 class KeypointMatchingTask : public TaskInterface {
   public:
@@ -37,6 +41,7 @@ class KeypointMatchingTask : public TaskInterface {
         SUPERGLUE,      ///< SuperGlue-style end-to-end pipeline
         LIGHTGLUE,      ///< LightGlue end-to-end pipeline
         MATCH_ANYTHING, ///< MatchAnything (EfficientLoFTR / RoMa) pipeline
+        FLEXGLUE,       ///< FlexGlue descriptor + sparse matcher (forwarded keypoints)
     };
 
     /**

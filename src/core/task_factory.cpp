@@ -199,7 +199,7 @@ const std::vector<TaskDescriptor>& taskDescriptors() {
         {"KeypointMatching", TaskFamily::KeypointMatching,
          [](const std::string& normalized) {
              return startsWith(normalized, "superglue") || startsWith(normalized, "lightglue") ||
-                    startsWith(normalized, "matchanything");
+                    startsWith(normalized, "matchanything") || startsWith(normalized, "flexglue");
          },
          []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
             const TaskConfig& config) {

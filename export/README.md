@@ -21,7 +21,7 @@ export/
 │   └── edgecrafter/        # EdgeCrafter segmentation export
 ├── optical_flow/
 │   └── raft/               # RAFT optical flow export
-├── keypoint_matching/      # SuperGlue / LightGlue / MatchAnything export guide
+├── keypoint_matching/      # SuperGlue / LightGlue / FlexGlue / MatchAnything export guide
 ├── open_vocab_detection/
 │   └── owlv2/              # OWLv2 open-vocabulary detection export
 ├── pose_estimation/

@@ -14,7 +14,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Classification**: Torchvision (ResNet, EfficientNet, etc.), TensorFlow/Keras Models, Vision Transformers (ViT)
 - **Video Classification**: VideoMAE, ViViT, TimeSformer, V-JEPA 2, VideoPrism, PE Video (fixed-vocabulary export)
 - **Optical Flow**: RAFT
-- **Keypoint Matching**: SuperGlue and LightGlue (image pair → matched keypoints, decoded); MatchAnything routed, decoder pending a verified ONNX contract
+- **Keypoint Matching**: SuperGlue, LightGlue and FlexGlue (image pair → matched keypoints, decoded); MatchAnything routed, decoder pending a verified ONNX contract
 - **Pose Estimation (2D Human Pose)**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose
 - **Monocular 3D Detection**: projected cuboid result contract; model implementation pending. See [pose task scope](docs/pose_estimation_scope.md).
 - **Gaze Estimation**: result contract for pitch/yaw and a normalized 3D direction; model implementation pending. See [gaze estimation](docs/gaze_estimation.md).
@@ -278,12 +278,15 @@ Any model type starting with `resnet` (e.g. `resnet50`) or containing `tensorflo
 - `"superglue"` - SuperGlue-style end-to-end matching pipelines (any string starting with `superglue`)
 - `"lightglue"` - LightGlue matching pipelines, including the LightGlue-ONNX exports (any string starting with `lightglue`)
 - `"matchanything"` - MatchAnything detector-free matchers (EfficientLoFTR / RoMa backbones; any string starting with `matchanything`)
+- `"flexglue"` - FlexGlue sparse matcher (descriptor + matcher; any string starting with `flexglue`)
 
 One image pair per call — `getRequiredFrames()` returns 2. Results are `KeypointMatching` entries containing source/target keypoints and matched index pairs.
 
 `"superglue"` covers end-to-end `SuperGlueForKeypointMatching` exports (transformers/Optimum, e.g. `magic-leap-community/superglue_outdoor`). Those take the pair as **one** rank-5 input `pixel_values [1, 2, 3, 480, 640]` — grayscale replicated across three channels in `[0, 1]` — so `preprocess()` returns **one** packed buffer, source image first, and every buffer maps 1:1 onto a model input. Keypoints come back normalized (`x / width`, `y / height`) and are rescaled to each original image; matches at or below `TaskConfig::confidence_threshold` (default 0.25) are dropped, as are masked-out padding keypoints. The export carries no SuperPoint detector score, so `Keypoint::confidence` is 0 — use `KeypointMatch::score` for match quality.
 
 `"lightglue"` covers end-to-end LightGlue pipelines (extractor and matcher in one graph, e.g. `thomasonzhou/superpoint-lightglue`). Their single input is the pair interleaved on the batch axis, `images [2, C, H, W]`, so `preprocess()` again returns one packed buffer, source first, with the channel count taken from the model input (1 for the SuperPoint pipeline, 3 for ALIKED/DISK variants). Keypoints come back as input-space pixels (int64) and are rescaled to each original image; `matches [M, 3]` rows are `[pair_index, source_index, target_index]`, and rows for other pairs plus scores at or below `TaskConfig::confidence_threshold` are dropped. The decoder needs the model input size (from `ModelInfo`) to rescale correctly.
+
+`"flexglue"` covers the FlexGlue sparse matcher (`flexglue_descriptor.onnx` + `flexglue_matcher.onnx`, v0.1 release). Unlike the end-to-end families this is two models: `preprocess()` returns **two** buffers (source first), one RGB `[0, 1]` descriptor input per image, and the matcher additionally needs externally detected keypoints (any detector, corner convention: top-left pixel center at 0.5, 0.5). Forward those keypoints as `[1, N, 2]` float tensors (source, target) alongside the matcher outputs `matches0 [1, N0]` (int64, index into kpts1 or -1) and `mscores0 [1, N0]`; keypoints already live in original-image pixels so nothing is rescaled, and matches at or below `TaskConfig::confidence_threshold` are dropped. Gating on `min_covisibility` happens inside the matcher graph. The export carries no detector score, so `Keypoint::confidence` is 0 — use `KeypointMatch::score` for match quality.
 
 **MatchAnything decoding is not implemented yet**: its postprocessor throws `std::logic_error` until its output layout has been verified against a real ONNX export. Matcher-only exports (keypoints and descriptors in — the original SuperGlue matcher) do not fit the image-in task contract and are not supported.
 

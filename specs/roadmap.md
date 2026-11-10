@@ -49,6 +49,12 @@ which stays the authority on the detail. This is the shape of the arc:
   `std::logic_error` until their exports are probed. Same packet:
   [2026-10-15-keypoint-matching](2026-10-15-keypoint-matching/requirements.md).
 
+- **Keypoint matching — FlexGlue decoder.** `flexglue*` factory routing with a
+  descriptor preprocessor (two RGB buffers) and a sparse-matcher postprocessor
+  verified against the v0.1 ONNX release; matcher keypoints are forwarded as
+  tensors since the graph returns indices only. Packet:
+  [2026-11-09-flexglue](2026-11-09-flexglue/requirements.md).
+
 ## Proposed
 
 Candidates, **not commitments** — nothing here is scheduled, and the list is

@@ -2,10 +2,10 @@
 
 Export SuperGlue-family models to ONNX for the C++ `KeypointMatchingTask`.
 
-> **Status: SuperGlue and LightGlue decoded, MatchAnything pending.** Both
-> decoders are implemented and verified against real exports (see below). The
-> MatchAnything postprocessor still throws `std::logic_error` until its export
-> is probed the same way.
+> **Status: SuperGlue, LightGlue and FlexGlue decoded, MatchAnything pending.**
+> All three decoders are implemented and verified against real exports (see
+> below). The MatchAnything postprocessor still throws `std::logic_error`
+> until its export is probed the same way.
 
 ## Export shapes in the wild
 
@@ -18,12 +18,15 @@ There are two shapes, and only one fits this library's contract
 | SuperGlue (original matcher) | [jadehh/SuperPoint-SuperGlue-ONNX](https://github.com/jadehh/SuperPoint-SuperGlue-ONNX), magicleap export scripts | `keypoints_0`, `scores_0`, `descriptors_0`, `keypoints_1`, `scores_1`, `descriptors_1` | `matches0 [1,N0]`, `matching_scores0 [1,N0]` | **No** — keypoints and descriptors go in, not images. Needs a separate front-end orchestration design. |
 | LightGlue pipeline | [fabio-sim/LightGlue-ONNX](https://github.com/fabio-sim/LightGlue-ONNX) `lightglue-onnx export`; pre-exported and verified at [thomasonzhou/superpoint-lightglue](https://huggingface.co/thomasonzhou/superpoint-lightglue) | interleaved pair `images [2, C, H, W]` (SuperPoint: grayscale; 3-channel for ALIKED/DISK) | `keypoints [2, K, 2]` int64, `matches [M, 3]`, `mscores [M]` | **Yes** — images in, matches out. **Decoded.** |
 | MatchAnything | HF [`zju-community/matchanything_eloftr`](https://huggingface.co/zju-community/matchanything_eloftr) (`AutoModelForKeypointMatching`); exportable with Optimum | `pixel_values`-style pair input; contract not pinned | `keypoints0` / `keypoints1` / `matching_scores` after HF postprocessing | **Likely** — verify the ONNX graph before implementing. |
+| FlexGlue sparse matcher | [cvg/FlexGlue](https://github.com/cvg/FlexGlue) v0.1 release (`flexglue_descriptor.onnx` + `flexglue_matcher.onnx`) | descriptor: `image [1, 3, 512, 512]` RGB `[0, 1]` per image; matcher: `features0/1 [1, 256, 64, 64]` + `kpts0/1 [1, N, 2]` (corner pixels) + `image_size0/1 [1, 2]` + scalar gates | `matches0 [1, N0]` int64 (`-1` unmatched), `mscores0 [1, N0]`, `covisibility_score [1]` | **Yes, with forwarding** — images in via the descriptor, externally detected keypoints forwarded with the matcher outputs. **Decoded.** |
 
 Preprocessing is per family, because the exports disagree: SuperGlue wants a
 single rank-5 pair tensor of grayscale values; LightGlue's SuperPoint pipeline
-wants a `(2B, 1, H, W)` grayscale stack of its own; MatchAnything is unpinned.
-`KeypointMatchingPreprocessor` emits one buffer per image for the two-input
-families, and `SuperGluePreprocessor` overrides it with a single packed buffer.
+wants a `(2B, 1, H, W)` grayscale stack of its own; FlexGlue wants one RGB
+`[0, 1]` buffer per image (the descriptor runs once per image); MatchAnything
+is unpinned. `KeypointMatchingPreprocessor` emits one buffer per image for the
+two-input families, and `SuperGluePreprocessor` overrides it with a single
+packed buffer.
 
 ## Exporting SuperGlue (transformers / Optimum)
 
@@ -98,6 +101,43 @@ matches (111 from a PIL-preprocessed buffer; the difference is the resize
 kernel); above the default 0.25 threshold both yield 63. Decoding the same
 tensors in C++ and Python gives identical rows (max score/coordinate delta
 `5e-7`).
+
+## Running a FlexGlue sparse matcher
+
+No export step is needed: download the v0.1 release (SHA-pinned in
+`onnx/match_pair.py` upstream) and run the two-model flow. Keypoints come from
+any detector — the example uses OpenCV SIFT with the +0.5 corner offset
+FlexGlue expects (LightGlue detectors need `origin="corner"`):
+
+```bash
+python probe_flexglue.py --descriptor flexglue_descriptor.onnx \
+  --matcher flexglue_matcher.onnx --source a.jpg --target b.jpg
+```
+
+**Verified contract** (v0.1 release, berlin pair `1100x757` / `960x640`):
+
+| Tensor | Shape | Meaning |
+|--------|-------|---------|
+| `image` (descriptor in) | `[1, 3, 512, 512]` float32 | RGB `[0, 1]`, squashed bilinear, no antialias |
+| `features` (descriptor out) | `[1, 256, 64, 64]` float32 | dense map, once per image |
+| `kpts0/1` (matcher in) | `[1, N, 2]` float32 | corner-origin pixels of the original images; both images need ≥ 1 keypoint |
+| `image_size0/1` | `[1, 2]` float32 | `(w, h)` of the originals |
+| `matches0` | `[1, N0]` int64 | index into kpts1, or `-1`; N0 equals the kpts0 count |
+| `mscores0` | `[1, N0]` float32 | match confidence, `0.0` where unmatched |
+| `covisibility_score` | `[1]` float32 | pair overlap probability |
+
+`FlexGluePreprocessor` emits the two descriptor inputs (RGB, squashed to the
+model size from `ModelInfo`). `FlexGluePostprocessor` takes the matcher
+outputs **plus the forwarded `kpts0/kpts1` tensors** (in order), passes the
+keypoints through unscaled, and keeps matches with scores above
+`TaskConfig::confidence_threshold`. `min_covisibility` gating already happened
+inside the graph; `max_distance_px = 0` rejects all matches in ONNX (unlike
+PyTorch, where 0 disables the check).
+
+**Verification run (2026-11-10)** on the upstream berlin pair (785 / 727 SIFT
+keypoints): 5 valid matches at `filter_threshold=0.1`, covisibility 0.9932,
+all match indices in range, unmatched scores `0.0`. The C++ test suite embeds
+an excerpt of this run (`FlexGlueDecodesVerifiedExportValues`).
 
 ## Probing a file before implementing its decoder
 

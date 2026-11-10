@@ -1,5 +1,7 @@
 #include "neuriplo/tasks/keypoint_matching/keypoint_matching_task.hpp"
 
+#include "neuriplo/tasks/keypoint_matching/flexglue_postprocessor.hpp"
+#include "neuriplo/tasks/keypoint_matching/flexglue_preprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/keypoint_matching_preprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/lightglue_postprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/lightglue_preprocessor.hpp"
@@ -96,6 +98,9 @@ KeypointMatchingTask::ModelType KeypointMatchingTask::detectModelType(const std:
     if (startsWith(normalized, "matchanything")) {
         return ModelType::MATCH_ANYTHING;
     }
+    if (startsWith(normalized, "flexglue")) {
+        return ModelType::FLEXGLUE;
+    }
 
     throw std::invalid_argument("Unsupported keypoint matching model type: " + model_name);
 }
@@ -109,6 +114,8 @@ std::unique_ptr<KeypointMatchingPreprocessor> KeypointMatchingTask::createPrepro
         return std::make_unique<LightGluePreprocessor>(input_size, input_channels_);
     case ModelType::MATCH_ANYTHING:
         return std::make_unique<KeypointMatchingPreprocessor>(input_size);
+    case ModelType::FLEXGLUE:
+        return std::make_unique<FlexGluePreprocessor>(input_size);
     }
     return nullptr;
 }
@@ -121,6 +128,8 @@ std::unique_ptr<KeypointMatchingPostprocessor> KeypointMatchingTask::createPostp
         return std::make_unique<LightGluePostprocessor>(match_score_threshold_, model_input_size_);
     case ModelType::MATCH_ANYTHING:
         return std::make_unique<MatchAnythingPostprocessor>();
+    case ModelType::FLEXGLUE:
+        return std::make_unique<FlexGluePostprocessor>(match_score_threshold_);
     }
     return nullptr;
 }
