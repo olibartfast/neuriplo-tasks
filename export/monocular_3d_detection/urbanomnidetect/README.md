@@ -34,4 +34,4 @@ Public checkpoints live on Hugging Face (`mehmetkeremturkcan/UrbanOmniDetect` fo
 
 Letterbox padding is removed for both boxes and corners, so wide/tall frames map back to the original resolution.
 
-See [docs/monocular_3d_detection.md](../../../docs/monocular_3d_detection.md) for the corner convention and worked contract.
+See [Monocular3DDetection.md](../Monocular3DDetection.md) for the task contract and corner convention.

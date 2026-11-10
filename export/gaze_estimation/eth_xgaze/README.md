@@ -39,4 +39,4 @@ A horizontal flip of the input negates yaw and leaves pitch unchanged — the ch
 
 `[B,2]` angles are converted to `direction`; `[B,3]` vectors are normalized and back out `pitch`/`yaw`, so both families share one result schema.
 
-See [docs/gaze_estimation.md](../../../docs/gaze_estimation.md) for scope (face crop in, no detection/tracking inside the task).
+See [GazeEstimation.md](../GazeEstimation.md) for the task contract and input scope.

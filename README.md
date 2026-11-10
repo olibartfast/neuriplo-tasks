@@ -16,8 +16,8 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Optical Flow**: RAFT
 - **Keypoint Matching**: SuperGlue, LightGlue and FlexGlue (image pair → matched keypoints, decoded); MatchAnything routed, decoder pending a verified ONNX contract
 - **Pose Estimation (2D Human Pose)**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose
-- **Monocular 3D Detection**: UrbanOmniDetect-style projected cuboids (single YOLO-pose tensor: 2D box + 8 projected corners, verified against a real export). See [monocular 3D detection](docs/monocular_3d_detection.md).
-- **Gaze Estimation**: ETH-XGaze-style appearance-based gaze (pitch/yaw radians or 3D vector, ImageNet 224 face crop). See [gaze estimation](docs/gaze_estimation.md).
+- **Monocular 3D Detection**: UrbanOmniDetect-style projected cuboids (single YOLO-pose tensor: 2D box + 8 projected corners, verified against a real export)
+- **Gaze Estimation**: ETH-XGaze-style appearance-based gaze (pitch/yaw radians or 3D vector, ImageNet 224 face crop)
 - **Depth Estimation**: Depth Anything V2, YOLO26 Depth
 - **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO; YOLO-World (fixed vocabulary)
 - **Gaussian Splatting**: LGM, LGM-mini, GRM (feed-forward image → 3D Gaussians)

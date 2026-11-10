@@ -13,8 +13,9 @@ namespace neuriplo_tasks {
  * @brief Appearance-based gaze estimation task (ETH-XGaze / GazeTR style).
  *
  * Input is a normalized face or eye crop; face detection and calibration stay
- * outside this contract (see docs/gaze_estimation.md). Both routed families
- * share the same decoder: [B,2] pitch/yaw radians or [B,3] gaze vector.
+ * outside this contract (see export/gaze_estimation/GazeEstimation.md). Both
+ * routed families share the same decoder: [B,2] pitch/yaw radians or [B,3]
+ * gaze vector.
  */
 class GazeEstimationTask : public BaseTask {
   public:
