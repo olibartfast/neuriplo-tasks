@@ -48,6 +48,10 @@ which stays the authority on the detail. This is the shape of the arc:
   SuperGlue decoder are on `develop`; these two families still throw
   `std::logic_error` until their exports are probed. Same packet:
   [2026-10-15-keypoint-matching](2026-10-15-keypoint-matching/requirements.md).
+- **Gaze + monocular 3D first models.** `GazeEstimationTask` (ETH-XGaze/GazeTR) and
+  `Monocular3DDetectionTask` (UrbanOmniDetect-style cuboids) with factory routing,
+  tests, and export guides. Packet:
+  [2026-11-09-gaze-monocular](2026-11-09-gaze-monocular/requirements.md).
 
 ## Proposed
 

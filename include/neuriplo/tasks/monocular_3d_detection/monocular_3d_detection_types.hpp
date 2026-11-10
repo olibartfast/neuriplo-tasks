@@ -26,11 +26,18 @@ struct CuboidKeypoint {
  * rigid-object cuboid corners, not 2D/3D human skeleton joints and not a
  * canonical 6-DoF (R,t) object pose.
  *
- * Corner convention used by UrbanOmniDetect v2:
+ * Canonical corner convention (ground-first):
  *   - corners 0..3: ground-contact corners
  *   - corners 4..7: roof corners
  *   - corner i+4 lies above ground corner i
  *   - corners 0 and 3 belong to the front face
+ *
+ * Released checkpoints (UrbanOmniDetect v1 and UrbanOmniDetect-2) both
+ * emit ground-first corners, verified empirically on the released weights
+ * and in the upstream runtime (the paper text states the opposite order).
+ * The postprocessor preserves model order by default and offers an opt-in
+ * remap for top-first checkpoints, so consumers always see the canonical
+ * layout documented here.
  */
 struct Monocular3DDetection {
     BoundingBox bbox; ///< 2D image-space detection box

@@ -38,6 +38,8 @@ std::string resultTypeName(const Result& result) {
             return "keypoint_matching";
         } else if constexpr (std::is_same_v<T, GazeEstimation>) {
             return "gaze_estimation";
+        } else if constexpr (std::is_same_v<T, Monocular3DDetection>) {
+            return "monocular_3d_detection";
         }
     });
 }
@@ -320,15 +322,16 @@ TEST_F(ResultTypesTest, ResultVariantHoldsKeypointMatching) {
 
 TEST_F(ResultTypesTest, VisitResultAcceptsEveryResultAlternative) {
     const std::vector<Result> results = {
-        Classification{},    Detection{},           OpenVocabDetection{}, InstanceSegmentation{},
-        OpticalFlow{},       VideoClassification{}, PoseEstimation{},     DepthEstimation{},
-        GaussianSplatting{}, ImageUnderstanding{},  KeypointMatching{},   GazeEstimation{},
+        Classification{},      Detection{},      OpenVocabDetection{},   InstanceSegmentation{}, OpticalFlow{},
+        VideoClassification{}, PoseEstimation{}, DepthEstimation{},      GaussianSplatting{},    ImageUnderstanding{},
+        KeypointMatching{},    GazeEstimation{}, Monocular3DDetection{},
     };
     const std::vector<std::string> expected = {
-        "classification",        "detection",         "open_vocab_detection",
-        "instance_segmentation", "optical_flow",      "video_classification",
-        "pose_estimation",       "depth_estimation",  "gaussian_splatting",
-        "image_understanding",   "keypoint_matching", "gaze_estimation",
+        "classification",         "detection",         "open_vocab_detection",
+        "instance_segmentation",  "optical_flow",      "video_classification",
+        "pose_estimation",        "depth_estimation",  "gaussian_splatting",
+        "image_understanding",    "keypoint_matching", "gaze_estimation",
+        "monocular_3d_detection",
     };
 
     ASSERT_EQ(results.size(), expected.size());
@@ -370,8 +373,10 @@ int main(int argc, char** argv) {
 TEST_F(ResultTypesTest, AppendedGazePreservesExistingAlternativeIndices) {
     EXPECT_EQ(Result(KeypointMatching{}).index(), 10U);
     EXPECT_EQ(Result(GazeEstimation{}).index(), 11U);
+    EXPECT_EQ(Result(Monocular3DDetection{}).index(), 12U);
     EXPECT_EQ(static_cast<int>(TaskType::KeypointMatching), 10);
     EXPECT_EQ(static_cast<int>(TaskType::GazeEstimation), 11);
+    EXPECT_EQ(static_cast<int>(TaskType::Monocular3DDetection), 12);
 }
 
 TEST_F(ResultTypesTest, MonocularCuboidIsSeparateFromHumanPose) {

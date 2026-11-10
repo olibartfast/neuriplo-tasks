@@ -29,6 +29,8 @@ export/
 │   ├── vitpose/            # ViTPose pose estimation export
 │   ├── rfdetr/             # RF-DETR keypoint pose estimation export
 │   └── edgecrafter/        # EdgeCrafter pose estimation export
+├── gaze_estimation/          # ETH-XGaze / GazeTR gaze export guide
+├── monocular_3d_detection/   # UrbanOmniDetect cuboid export guide
 ├── depth_estimation/
 │   ├── depth_anything_v2/  # Depth Anything V2 depth export
 │   └── yolo_depth/         # Ultralytics YOLO26 depth export
@@ -86,6 +88,12 @@ yolo export model=yolo26n-depth.pt format=onnx imgsz=768
 # Export OWLv2
 python export/open_vocab_detection/owlv2/export_owlv2_to_onnx.py --test
 
+# Export ETH-XGaze gaze estimation (downloads ptgaze resnet18 weights)
+python export/gaze_estimation/export.py --test
+
+# Export UrbanOmniDetect monocular 3D cuboids (downloads v1 checkpoint)
+python export/monocular_3d_detection/export.py --test
+
 # Export LGM Gaussian Splatting
 python export/gaussian_splatting/lgm/export_lgm_to_onnx.py
 
@@ -141,6 +149,8 @@ Refer to:
 * [EdgeCrafter Segmentation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/segmentation/edgecrafter/README.md)
 * [RF-DETR Keypoint Pose Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/rfdetr/README.md)
 * [EdgeCrafter Pose Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/edgecrafter/README.md)
+* [Gaze Estimation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/gaze_estimation/README.md)
+* [Monocular 3D Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/monocular_3d_detection/README.md)
 
 
 For Triton-specific deployment tools, see [tritonic](https://github.com/olibartfast/tritonic/tree/master/deploy) repository.

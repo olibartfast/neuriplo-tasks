@@ -2,7 +2,7 @@
 
 Gaze estimation predicts the visual gaze direction of a person from eye or facial appearance.
 
-> **Status:** task contract introduced on `feat/gaze-estimation`; model-specific preprocessing/postprocessing and `TaskFactory` registration are not implemented yet.
+> **Status:** implemented. `GazeEstimationTask` + `GazePostprocessor` decode ETH-XGaze-style `[B,2]` pitch/yaw and GazeTR-style `[B,3]` vectors; `TaskFactory` routes `gaze`, `ethxgaze*`, `gazetr*` (and any string containing `gaze`).
 
 ## Relation to pose estimation
 
@@ -52,17 +52,13 @@ For XR/eye-tracking applications, a downstream system may additionally combine t
 
 ## Initial model plan
 
-The initial reference implementation is planned around an **ETH-XGaze-style** appearance-based model contract, followed by **GazeTR** or another architecture once the common preprocessing/postprocessing boundary is stable.
+The reference implementation covers an **ETH-XGaze-style** appearance-based model contract and a **GazeTR-style** vector contract behind one decoder (`GazePostprocessor`):
 
-Planned implementation steps:
-
-1. gaze-specific face/eye preprocessing and normalization;
-2. model output decoding;
-3. pitch/yaw to normalized 3D direction conversion where required;
-4. task implementation returning `GazeEstimation`;
-5. tests for angle/vector conventions and tensor shapes;
-6. `TaskFactory` aliases only after the corresponding model implementation is present and tested.
+- input: face/eye crop RGB NCHW `[B,3,224,224]`, `[0,1]` + ImageNet mean/std, BGR→RGB (`GazePreprocessor`);
+- output 0: `[B,2]`/`[2]` pitch/yaw radians `[pitch, yaw]` or `[B,3]`/`[3]` xyz vector;
+- output 1 (optional): confidence;
+- direction convention follows the ETH-XGaze / OpenGaze normalized camera (cf. ptgaze): `direction=[-cos(pitch)sin(yaw), -sin(pitch), -cos(pitch)cos(yaw)]`, `pitch=asin(-y)`, `yaw=atan2(-x,-z)`, forward `-Z`. A horizontal flip of the input negates yaw and leaves pitch unchanged.
 
 ## TaskFactory status
 
-There is currently **no gaze-estimation model alias registered in `TaskFactory`**. The task type and result contract are intentionally introduced first so that model wrappers share one stable, framework-agnostic output representation.
+`TaskFactory` routes `gaze`, `ethxgaze*` (e.g. `ethxgaze`, `eth-xgaze`), `gazetr*` (e.g. `gazetr`, `gaze-tr`), and any string containing `gaze` to `GazeEstimationTask` (`TaskType::GazeEstimation`, `Result::GazeEstimation`). See [export/gaze_estimation/README.md](../export/gaze_estimation/README.md).
