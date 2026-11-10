@@ -99,6 +99,8 @@ set(CORE_SOURCES
     src/keypoint_matching/lightglue_preprocessor.cpp
     src/keypoint_matching/superglue_postprocessor.cpp
     src/keypoint_matching/lightglue_postprocessor.cpp
+    src/keypoint_matching/flexglue_preprocessor.cpp
+    src/keypoint_matching/flexglue_postprocessor.cpp
     src/keypoint_matching/matchanything_postprocessor.cpp
     src/open_vocab_detection/clip_tokenizer.cpp
     src/open_vocab_detection/open_vocab_detection_task.cpp
@@ -179,6 +181,8 @@ set(CORE_HEADERS
     include/neuriplo/tasks/keypoint_matching/lightglue_preprocessor.hpp
     include/neuriplo/tasks/keypoint_matching/superglue_postprocessor.hpp
     include/neuriplo/tasks/keypoint_matching/lightglue_postprocessor.hpp
+    include/neuriplo/tasks/keypoint_matching/flexglue_preprocessor.hpp
+    include/neuriplo/tasks/keypoint_matching/flexglue_postprocessor.hpp
     include/neuriplo/tasks/keypoint_matching/matchanything_postprocessor.hpp
     include/neuriplo/tasks/open_vocab_detection/clip_tokenizer.hpp
     include/neuriplo/tasks/open_vocab_detection/open_vocab_detection_task.hpp

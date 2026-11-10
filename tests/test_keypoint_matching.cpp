@@ -1,6 +1,8 @@
 #include "neuriplo/tasks/core/model_info.hpp"
 #include "neuriplo/tasks/core/result_types.hpp"
 #include "neuriplo/tasks/core/task_factory.hpp"
+#include "neuriplo/tasks/keypoint_matching/flexglue_postprocessor.hpp"
+#include "neuriplo/tasks/keypoint_matching/flexglue_preprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/keypoint_matching_preprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/lightglue_postprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/lightglue_preprocessor.hpp"
@@ -49,8 +51,9 @@ class KeypointMatchingTest : public ::testing::Test {
 
 TEST_F(KeypointMatchingTest, FactoryRoutesModelFamilies) {
     const auto info = createModelInfo();
-    const std::vector<std::string> aliases = {"superglue",    "superglue-2020", " light glue ",        "LightGlue",
-                                              "lightglue_v2", "matchanything",  "MatchAnything-EloFTR"};
+    const std::vector<std::string> aliases = {"superglue",    "superglue-2020", " light glue ",         "LightGlue",
+                                              "lightglue_v2", "matchanything",  "MatchAnything-EloFTR", "flexglue",
+                                              "FlexGlue",     "flexglue-fp32"};
 
     for (const auto& alias : aliases) {
         auto task = TaskFactory::createTaskInstance(alias, info);
@@ -466,4 +469,157 @@ TEST_F(KeypointMatchingTest, LightGlueAcceptsZeroMatches) {
     EXPECT_TRUE(result.matches.empty());
     EXPECT_FALSE(result.source_keypoints.empty());
     EXPECT_FALSE(result.target_keypoints.empty());
+}
+
+namespace {
+
+// Three source and three target keypoints with coordinates lifted from a
+// verified flexglue_matcher.onnx run (berlin pair, SIFT + corner offset).
+// matches0 mirrors the export: source 0 -> target 2, source 1 unmatched,
+// source 2 -> target 0.
+std::vector<Tensor> makeFlexGlueOutputs() {
+    const std::vector<float> kpts0 = {158.16482543945312F, 586.9886474609375F, 472.58819580078125F,
+                                      376.54571533203125F, 928.009765625F,     658.8924560546875F};
+    const std::vector<float> kpts1 = {615.3648071289062F, 197.99928283691406F, 802.6985473632812F,
+                                      373.9864501953125F, 605.0105590820312F,  407.8544921875F};
+    const std::vector<int64_t> matches = {2, -1, 0};
+    const std::vector<float> scores = {0.500000F, 0.0F, 0.8999999761581421F};
+    const std::vector<float> covisibility = {0.9931807518005371F};
+    return {makeFloatTensor(kpts0, {1, 3, 2}), makeFloatTensor(kpts1, {1, 3, 2}), makeIntTensor(matches, {1, 3}),
+            makeFloatTensor(scores, {1, 3}), makeFloatTensor(covisibility, {1})};
+}
+
+ModelInfo createFlexGlueModelInfo() {
+    ModelInfo info;
+    // Descriptor input: one RGB image; the task runs it once per pair image.
+    info.input_shapes = {{1, 3, 512, 512}};
+    info.input_formats = {"FORMAT_NCHW"};
+    info.input_names = {"image"};
+    info.output_names = {"matches0", "mscores0", "covisibility_score"};
+    info.input_types = {neuriplo_tasks::PixelType::Float32};
+    return info;
+}
+
+} // namespace
+
+TEST_F(KeypointMatchingTest, FlexGluePreprocessEmitsTwoRgbBuffers) {
+    auto task = TaskFactory::createTaskInstance("flexglue", createFlexGlueModelInfo());
+    ASSERT_NE(task, nullptr);
+
+    auto [image1, image2] = createTestPair();
+    const auto buffers = task->preprocess({image1, image2});
+
+    // One descriptor input per image: two [1, 3, H, W] float32 buffers.
+    ASSERT_EQ(buffers.size(), 2U);
+    EXPECT_EQ(buffers[0].size(), static_cast<std::size_t>(3 * kInputSize * kInputSize) * kBytesPerElement);
+    EXPECT_EQ(buffers[1].size(), buffers[0].size());
+}
+
+TEST_F(KeypointMatchingTest, FlexGluePreprocessKeepsRgbChannels) {
+    FlexGluePreprocessor preprocessor(Size(2, 2));
+    neuriplo_tasks::Image source = neuriplo_tasks::vision_test::makeImage(2, 2, 3, 0);
+    // BGR input: red, blue, green, white. RGB planes must differ (no grayscale).
+    const std::uint8_t pixels[4][3] = {{0, 0, 255}, {255, 0, 0}, {0, 255, 0}, {255, 255, 255}};
+    for (std::size_t p = 0; p < 4; ++p) {
+        for (std::size_t c = 0; c < 3; ++c) {
+            source.raw()[p * 3 + c] = pixels[p][c];
+        }
+    }
+    neuriplo_tasks::Image target = neuriplo_tasks::vision_test::makeImage(2, 2, 3, 0);
+
+    const auto buffers = preprocessor.preprocess_pair(source.view(), target.view());
+    ASSERT_EQ(buffers.size(), 2U);
+    ASSERT_EQ(buffers[0].size(), static_cast<std::size_t>(3 * 2 * 2) * sizeof(float));
+
+    const auto* values = reinterpret_cast<const float*>(buffers[0].data());
+    constexpr std::size_t plane = 4;
+    // Red pixel: R=1, G=0, B=0 across the three planes.
+    EXPECT_NEAR(values[0], 1.0F, 1e-6F);
+    EXPECT_NEAR(values[plane], 0.0F, 1e-6F);
+    EXPECT_NEAR(values[2 * plane], 0.0F, 1e-6F);
+    // White pixel: all planes 1 (values are [0, 1] scaled).
+    EXPECT_NEAR(values[3], 1.0F, 1e-3F);
+    EXPECT_NEAR(values[plane + 3], 1.0F, 1e-3F);
+    EXPECT_NEAR(values[2 * plane + 3], 1.0F, 1e-3F);
+    for (std::size_t i = 0; i < 3 * plane; ++i) {
+        EXPECT_FLOAT_EQ(reinterpret_cast<const float*>(buffers[1].data())[i], 0.0F);
+    }
+}
+
+TEST_F(KeypointMatchingTest, FlexGlueDecodesVerifiedExportValues) {
+    FlexGluePostprocessor postprocessor(0.0F);
+    const KeypointMatching result = postprocessor.postprocess(makeFlexGlueOutputs(), Size(1100, 757), Size(960, 640));
+
+    // Keypoints already live in original pixels: passed through unscaled.
+    ASSERT_EQ(result.source_keypoints.size(), 3U);
+    ASSERT_EQ(result.target_keypoints.size(), 3U);
+    EXPECT_NEAR(result.source_keypoints[0].x, 158.16482543945312F, 1e-3F);
+    EXPECT_NEAR(result.source_keypoints[0].y, 586.9886474609375F, 1e-3F);
+    EXPECT_NEAR(result.target_keypoints[2].x, 605.0105590820312F, 1e-3F);
+    EXPECT_NEAR(result.target_keypoints[2].y, 407.8544921875F, 1e-3F);
+
+    ASSERT_EQ(result.matches.size(), 2U);
+    EXPECT_EQ(result.matches[0].source_index, 0);
+    EXPECT_EQ(result.matches[0].target_index, 2);
+    EXPECT_NEAR(result.matches[0].score, 0.5F, 1e-6F);
+    EXPECT_EQ(result.matches[1].source_index, 2);
+    EXPECT_EQ(result.matches[1].target_index, 0);
+}
+
+TEST_F(KeypointMatchingTest, FlexGlueDropsMatchesBelowThreshold) {
+    const auto tensors = makeFlexGlueOutputs();
+
+    FlexGluePostprocessor generous(0.0F);
+    EXPECT_EQ(generous.postprocess(tensors, Size(1100, 757), Size(960, 640)).matches.size(), 2U);
+
+    FlexGluePostprocessor strict(0.6F);
+    const KeypointMatching filtered = strict.postprocess(tensors, Size(1100, 757), Size(960, 640));
+    ASSERT_EQ(filtered.matches.size(), 1U);
+    EXPECT_EQ(filtered.matches[0].source_index, 2);
+}
+
+TEST_F(KeypointMatchingTest, FlexGlueRequiresForwardedKeypoints) {
+    FlexGluePostprocessor postprocessor(0.0F);
+    auto tensors = makeFlexGlueOutputs();
+
+    // Matcher outputs alone (no forwarded kpts) cannot decode to coordinates.
+    std::vector<Tensor> no_keypoints(tensors.begin() + 2, tensors.end());
+    EXPECT_THROW(postprocessor.postprocess(no_keypoints, Size(1100, 757), Size(960, 640)), std::invalid_argument);
+
+    // Only one forwarded side is not enough either.
+    std::vector<Tensor> one_side(tensors.begin() + 1, tensors.end());
+    EXPECT_THROW(postprocessor.postprocess(one_side, Size(1100, 757), Size(960, 640)), std::invalid_argument);
+}
+
+TEST_F(KeypointMatchingTest, FlexGlueRejectsMismatchedOrBadTensors) {
+    FlexGluePostprocessor postprocessor(0.0F);
+
+    // matches0 length must equal the kpts0 count.
+    auto mismatched = makeFlexGlueOutputs();
+    mismatched[2] = makeIntTensor(std::vector<int64_t>{0, 1}, {1, 2});
+    mismatched[3] = makeFloatTensor(std::vector<float>{0.9F, 0.9F}, {1, 2});
+    EXPECT_THROW(postprocessor.postprocess(mismatched, Size(1100, 757), Size(960, 640)), std::invalid_argument);
+
+    // Out-of-range target index rows are skipped, not fatal.
+    auto out_of_range = makeFlexGlueOutputs();
+    out_of_range[2] = makeIntTensor(std::vector<int64_t>{99, -1, 0}, {1, 3});
+    const KeypointMatching skipped = postprocessor.postprocess(out_of_range, Size(1100, 757), Size(960, 640));
+    ASSERT_EQ(skipped.matches.size(), 1U);
+    EXPECT_EQ(skipped.matches[0].source_index, 2);
+}
+
+TEST_F(KeypointMatchingTest, FlexGlueTaskDecodesWithForwardedKeypoints) {
+    auto task = TaskFactory::createTaskInstance("flexglue", createFlexGlueModelInfo());
+    ASSERT_NE(task, nullptr);
+
+    auto [image1, image2] = createTestPair(200, 150);
+    (void)task->preprocess({image1, image2});
+
+    const auto results = task->postprocess(Size(200, 150), makeFlexGlueOutputs());
+    ASSERT_EQ(results.size(), 1U);
+
+    const auto& matching = std::get<KeypointMatching>(results[0]);
+    ASSERT_EQ(matching.source_keypoints.size(), 3U);
+    // TaskConfig's default confidence_threshold (0.25) keeps both matches.
+    EXPECT_EQ(matching.matches.size(), 2U);
 }

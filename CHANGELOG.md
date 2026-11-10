@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 - Decode valid LightGlue zero-match outputs as an empty correspondence list.
+- FlexGlue keypoint-matching decoder, verified against `cvg/FlexGlue` v0.1
+  release (`flexglue_descriptor.onnx` + `flexglue_matcher.onnx`).
+  `FlexGluePreprocessor` emits one RGB `[0, 1]` descriptor buffer per image;
+  `FlexGluePostprocessor` decodes `matches0`/`mscores0` with the externally
+  detected keypoints forwarded as tensors (corner-origin original pixels,
+  passed through unscaled).
 
 ### Added
 - Opt-in RT-DETR ONNX export adapter for OpenCV 5: expand constant-vector
