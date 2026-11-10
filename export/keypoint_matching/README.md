@@ -169,4 +169,4 @@ Only then implement the family postprocessor in
 Exported files run in any ONNX-capable engine (ONNX Runtime, TensorRT,
 OpenVINO, Triton). Feed `ModelInfo.input_shapes` / `input_formats` /
 `input_names` from the probe above, and create the task with the family name
-(`"superglue"`, `"lightglue"`, `"matchanything"`, or any prefixed revision).
+(`"superglue"`, `"lightglue"`, `"flexglue"`, `"matchanything"`, or any prefixed revision).

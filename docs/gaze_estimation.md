@@ -61,4 +61,4 @@ The reference implementation covers an **ETH-XGaze-style** appearance-based mode
 
 ## TaskFactory status
 
-`TaskFactory` routes `gaze`, `ethxgaze*` (e.g. `ethxgaze`, `eth-xgaze`), `gazetr*` (e.g. `gazetr`, `gaze-tr`), and any string containing `gaze` to `GazeEstimationTask` (`TaskType::GazeEstimation`, `Result::GazeEstimation`). See [export/gaze_estimation/README.md](../export/gaze_estimation/README.md).
+`TaskFactory` routes `gaze`, `ethxgaze*` (e.g. `ethxgaze`, `eth-xgaze`), `gazetr*` (e.g. `gazetr`, `gaze-tr`), and any string containing `gaze` to `GazeEstimationTask` (`TaskType::GazeEstimation`, `Result::GazeEstimation`). See [export/gaze_estimation/eth_xgaze/README.md](../export/gaze_estimation/eth_xgaze/README.md).

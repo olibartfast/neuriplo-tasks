@@ -32,4 +32,4 @@ Released checkpoints (UrbanOmniDetect v1 and UrbanOmniDetect-2) both emit ground
 - Output: one YOLO-pose-style tensor — v1 `[B, 4+nc+24, N]` channels-first, v1 rows `[B, N, 5+nc+24]` with objectness, or v2 `[B, N, 30]` end-to-end rows. Coordinates are input-pixel space; letterbox padding is inverted for boxes and corners.
 - Postprocessing drops rows below `TaskConfig::confidence_threshold`, then runs class-agnostic NMS (`TaskConfig::nms_threshold`).
 
-`TaskFactory` routes `urbanomni*` (incl. `urbanomnidetect`, `urbanomnidetect2`), `monocular3d*`, and `mono3d` here; names containing `v2`/`26` select the v2 layout. See [export/monocular_3d_detection/README.md](../export/monocular_3d_detection/README.md).
+`TaskFactory` routes `urbanomni*` (incl. `urbanomnidetect`, `urbanomnidetect2`), `monocular3d*`, and `mono3d` here; names containing `v2`/`26` select the v2 layout. See [export/monocular_3d_detection/urbanomnidetect/README.md](../export/monocular_3d_detection/urbanomnidetect/README.md).
