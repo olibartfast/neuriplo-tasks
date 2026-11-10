@@ -1,10 +1,12 @@
 #pragma once
 
 #define NEURIPLO_TASKS_HAS_GAZE_ESTIMATION 1
+#define NEURIPLO_TASKS_HAS_MONOCULAR_3D 1
 
 #include "neuriplo/tasks/core/bounding_box.hpp"
 #include "neuriplo/tasks/core/image_matrix.hpp"
 #include "neuriplo/tasks/core/segmentation_types.hpp"
+#include "neuriplo/tasks/monocular_3d_detection/monocular_3d_detection_types.hpp"
 
 #include <array>
 #include <cstdint>
@@ -228,7 +230,7 @@ struct ImageUnderstanding {
  */
 using Result = std::variant<Classification, Detection, OpenVocabDetection, InstanceSegmentation, OpticalFlow,
                             VideoClassification, PoseEstimation, DepthEstimation, GaussianSplatting, ImageUnderstanding,
-                            KeypointMatching, GazeEstimation>;
+                            KeypointMatching, GazeEstimation, Monocular3DDetection>;
 
 /**
  * @brief Optional visitor helper for Result (forwards to std::visit).
@@ -259,7 +261,8 @@ enum class TaskType : uint8_t {
     GaussianSplatting,
     ImageUnderstanding,
     KeypointMatching,
-    GazeEstimation
+    GazeEstimation,
+    Monocular3DDetection
 };
 
 } // namespace neuriplo_tasks

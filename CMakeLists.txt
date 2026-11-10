@@ -115,6 +115,11 @@ set(CORE_SOURCES
     src/video_classification/video_classification_task.cpp
     src/video_classification/video_classification_preprocessor.cpp
     src/video_classification/video_classification_postprocessor.cpp
+    src/gaze_estimation/gaze_estimation_task.cpp
+    src/gaze_estimation/gaze_estimation_preprocessor.cpp
+    src/gaze_estimation/gaze_estimation_postprocessor.cpp
+    src/monocular_3d_detection/monocular_3d_detection_task.cpp
+    src/monocular_3d_detection/monocular_3d_detection_postprocessor.cpp
 
     # Preprocessors (still separate as they're reusable)
     src/object_detection/detection_preprocessor.cpp
@@ -199,6 +204,12 @@ set(CORE_HEADERS
     include/neuriplo/tasks/video_classification/video_classification_task.hpp
     include/neuriplo/tasks/video_classification/video_classification_preprocessor.hpp
     include/neuriplo/tasks/video_classification/video_classification_postprocessor.hpp
+    include/neuriplo/tasks/gaze_estimation/gaze_estimation_task.hpp
+    include/neuriplo/tasks/gaze_estimation/gaze_estimation_preprocessor.hpp
+    include/neuriplo/tasks/gaze_estimation/gaze_estimation_postprocessor.hpp
+    include/neuriplo/tasks/monocular_3d_detection/monocular_3d_detection_types.hpp
+    include/neuriplo/tasks/monocular_3d_detection/monocular_3d_detection_task.hpp
+    include/neuriplo/tasks/monocular_3d_detection/monocular_3d_detection_postprocessor.hpp
 
     # Preprocessor Headers (still separate as they're reusable)
     include/neuriplo/tasks/object_detection/detection_preprocessor.hpp

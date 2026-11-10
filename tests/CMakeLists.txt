@@ -217,6 +217,22 @@ target_link_libraries(test_edgecrafter
     GTest::Main
 )
 
+# Gaze estimation tests
+add_executable(test_gaze_estimation test_gaze_estimation.cpp)
+target_link_whole_archive(test_gaze_estimation neuriplo-tasks)
+target_link_libraries(test_gaze_estimation
+    GTest::GTest
+    GTest::Main
+)
+
+# Monocular 3D detection tests
+add_executable(test_monocular_3d_detection test_monocular_3d_detection.cpp)
+target_link_whole_archive(test_monocular_3d_detection neuriplo-tasks)
+target_link_libraries(test_monocular_3d_detection
+    GTest::GTest
+    GTest::Main
+)
+
 # Docs/code contract: every quoted alias in README Supported Model Types block
 # must route via TaskFactory. Locks neuriplo-tasks/README.md to task_factory.cpp.
 add_executable(test_readme_model_types test_readme_model_types.cpp)
@@ -275,6 +291,8 @@ add_test(NAME test_open_vocab_detection COMMAND test_open_vocab_detection)
 add_test(NAME test_gaussian_splatting COMMAND test_gaussian_splatting)
 add_test(NAME test_image_input_type COMMAND test_image_input_type)
 add_test(NAME test_edgecrafter COMMAND test_edgecrafter)
+add_test(NAME test_gaze_estimation COMMAND test_gaze_estimation)
+add_test(NAME test_monocular_3d_detection COMMAND test_monocular_3d_detection)
 add_test(NAME test_readme_model_types COMMAND test_readme_model_types)
 if(NEURIPLO_TASKS_WITH_STB)
     add_test(NAME test_stb_io COMMAND test_stb_io)

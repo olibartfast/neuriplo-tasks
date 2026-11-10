@@ -4,10 +4,12 @@
 #include "neuriplo/tasks/classification/classification_task.hpp"
 #include "neuriplo/tasks/depth_estimation/depth_estimation_task.hpp"
 #include "neuriplo/tasks/gaussian_splatting/gaussian_splatting_task.hpp"
+#include "neuriplo/tasks/gaze_estimation/gaze_estimation_task.hpp"
 #include "neuriplo/tasks/image_understanding/image_understanding_task.hpp"
 #include "neuriplo/tasks/instance_segmentation/instance_segmentation_task.hpp"
 #include "neuriplo/tasks/instance_segmentation/segmentation_postprocessor.hpp"
 #include "neuriplo/tasks/keypoint_matching/keypoint_matching_task.hpp"
+#include "neuriplo/tasks/monocular_3d_detection/monocular_3d_detection_task.hpp"
 #include "neuriplo/tasks/object_detection/object_detection_task.hpp"
 #include "neuriplo/tasks/open_vocab_detection/open_vocab_detection_task.hpp"
 #include "neuriplo/tasks/optical_flow/optical_flow_postprocessor.hpp"
@@ -41,6 +43,8 @@ enum class TaskFamily : uint8_t {
     OpticalFlow,
     ImageUnderstanding,
     KeypointMatching,
+    GazeEstimation,
+    Monocular3DDetection,
 };
 
 struct TaskDescriptor {
@@ -76,6 +80,19 @@ std::unique_ptr<TaskInterface> createDetectionTask([[maybe_unused]] const std::s
                                                    const TaskConfig& config) {
     return std::make_unique<ObjectDetectionTask>(model_info, normalized, config.confidence_threshold,
                                                  config.nms_threshold);
+}
+
+std::unique_ptr<TaskInterface> createGazeTask([[maybe_unused]] const std::string& model_type,
+                                              const std::string& normalized, const ModelInfo& model_info,
+                                              const TaskConfig& /*config*/) {
+    return std::make_unique<GazeEstimationTask>(model_info, normalized);
+}
+
+std::unique_ptr<TaskInterface> createMonocular3DTask([[maybe_unused]] const std::string& model_type,
+                                                     const std::string& normalized, const ModelInfo& model_info,
+                                                     const TaskConfig& config) {
+    return std::make_unique<Monocular3DDetectionTask>(model_info, normalized, config.confidence_threshold,
+                                                      config.nms_threshold);
 }
 
 const std::vector<TaskDescriptor>& taskDescriptors() {
@@ -216,6 +233,24 @@ const std::vector<TaskDescriptor>& taskDescriptors() {
             const ModelInfo& model_info, const TaskConfig& config) {
              return std::make_unique<ImageUnderstandingTask>(model_info, model_type, config);
          }},
+
+        // Gaze estimation aliases. All routed families contain "gaze", so one
+        // matcher covers "gaze", "ethxgaze", and "gazetr" prefixes.
+        {"GazeEstimation", TaskFamily::GazeEstimation,
+         [](const std::string& normalized) {
+             return normalized == "gaze" || startsWith(normalized, "ethxgaze") || startsWith(normalized, "gazetr") ||
+                    contains(normalized, "gaze");
+         },
+         createGazeTask},
+
+        // Monocular 3D detection aliases. "urbanomni" covers "urbanomnidetect"
+        // and later revisions by prefix.
+        {"Monocular3DDetection", TaskFamily::Monocular3DDetection,
+         [](const std::string& normalized) {
+             return startsWith(normalized, "urbanomni") || startsWith(normalized, "monocular3d") ||
+                    normalized == "mono3d";
+         },
+         createMonocular3DTask},
     };
 
     return descriptors;

@@ -16,8 +16,8 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Optical Flow**: RAFT
 - **Keypoint Matching**: SuperGlue, LightGlue and FlexGlue (image pair → matched keypoints, decoded); MatchAnything routed, decoder pending a verified ONNX contract
 - **Pose Estimation (2D Human Pose)**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose
-- **Monocular 3D Detection**: projected cuboid result contract; model implementation pending. See [pose task scope](docs/pose_estimation_scope.md).
-- **Gaze Estimation**: result contract for pitch/yaw and a normalized 3D direction; model implementation pending. See [gaze estimation](docs/gaze_estimation.md).
+- **Monocular 3D Detection**: UrbanOmniDetect-style projected cuboids (boxes + 8 corners + geometry confidence, DETR-style 4-tensor). See [monocular 3D detection](docs/monocular_3d_detection.md).
+- **Gaze Estimation**: ETH-XGaze-style appearance-based gaze (pitch/yaw radians or 3D vector, ImageNet 224 face crop). See [gaze estimation](docs/gaze_estimation.md).
 - **Depth Estimation**: Depth Anything V2, YOLO26 Depth
 - **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO; YOLO-World (fixed vocabulary)
 - **Gaussian Splatting**: LGM, LGM-mini, GRM (feed-forward image → 3D Gaussians)
@@ -304,6 +304,24 @@ For export and verification details, see [export/keypoint_matching/README.md](ht
 For EdgeCrafter pose-estimation export details, see [export/pose_estimation/edgecrafter/README.md](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/pose_estimation/edgecrafter/README.md).
 
 RF-DETR keypoint models output per-keypoint visibility and 2×2 pixel covariance (decoded from Cholesky L via the ONNX `log_l11`, `l21`, `log_l22` channels). Keypoints are filtered by an uncertainty-weighted score fusion that discounts high-covariance predictions.
+
+**Monocular 3D Detection:**
+- `"urbanomni"`, `"urbanomnidetect"` - UrbanOmniDetect v1 projected cuboids, YOLO-pose-style single tensor (any string starting with `urbanomni`)
+- `"urbanomnidetect2"` - UrbanOmniDetect-2, YOLO26 end-to-end rows (any string starting with `urbanomnidetect2`, or containing `v2`/`26` alongside `urbanomni`)
+- `"monocular3d"`, `"mono3d"` - generic aliases (`monocular3d` by prefix, `mono3d` exact)
+
+Input: RGB NCHW float `[B,3,H,W]` (640/1280/1920 to match the checkpoint) with YOLO letterboxing to `[0,1]`. Output is one `output0` tensor: v1 `[B, 4+nc+16, N]` channels-first (`cx, cy, w, h`, class scores, 8× corner `x, y` pairs in input pixels — no per-corner confidence) or kd=3 variants with `x, y, conf` triples, v1 rows `[B, N, 5+nc+8kd]` with objectness, or v2 `[B, N, 30]` end-to-end rows (`x1, y1, x2, y2, score, class_id`, corners). Boxes and corners are mapped back past letterbox padding to the original frame. Results are `Monocular3DDetection` entries with `bbox`, `class_id`, `class_confidence`, 8 `projected_corners` (0-3 ground, 4-7 roof, `i+4` above `i`, 0/3 front face), and `geometry_confidence` as the mean corner confidence (falls back to the detection score when the export carries none). Rows below `TaskConfig::confidence_threshold` (default 0.25) are dropped, then class-agnostic NMS runs.
+
+For export details, see [export/monocular_3d_detection/README.md](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/monocular_3d_detection/README.md).
+
+**Gaze Estimation:**
+- `"gaze"` - generic appearance-based gaze
+- `"ethxgaze"` - ETH-XGaze-style models (any string starting with `ethxgaze`)
+- `"gazetr"` - GazeTR-style models (any string starting with `gazetr`)
+
+Input: normalized face/eye crop RGB NCHW float `[B,3,224,224]` with ImageNet mean/std. Output tensor 0 is `[B,2]` pitch/yaw radians (`[pitch, yaw]`) or `[B,3]` xyz gaze vector; an optional second tensor carries confidence. Direction follows the ETH-XGaze / OpenGaze normalized camera: `direction=[-cos(pitch)sin(yaw), -sin(pitch), -cos(pitch)cos(yaw)]`, with `pitch=asin(-y)`, `yaw=atan2(-x,-z)`. Results are `GazeEstimation` entries with `pitch`, `yaw`, normalized `direction`, and `confidence`.
+
+For export details, see [export/gaze_estimation/README.md](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/gaze_estimation/README.md).
 
 **Depth Estimation:**
 - `"depth_anything_v2"`, `"depth-anything-v2"` - Depth Anything V2
