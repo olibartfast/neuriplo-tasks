@@ -39,7 +39,7 @@
       "Bash(cmake:*)",
       "Bash(cmake --build:*)",
       "Bash(ctest:*)",
-      "Bash(clang-format-18:*)",
+      "Bash(clang-format-21:*)",
       "Bash(clang-tidy-18:*)",
       "Bash(cppcheck:*)",
       "Bash(find src include tests:*)",

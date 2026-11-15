@@ -14,7 +14,7 @@ cat <<'EOF'
 <neuriplo-tasks-ci-reminder>
 Before editing any C/C++ under src/, include/, or tests/:
   - C++17 only. Column limit: 120. 4-space indent. Pointer left (T* p).
-  - clang-format-18 MUST be clean; the format_on_edit hook re-checks every edit.
+  - clang-format-21 MUST be clean; the format_on_edit hook re-checks every edit.
   - clang-tidy-18 runs over src/*.cpp against compile_commands.json in build/.
   - cppcheck runs --enable=warning --std=c++17 -I include src/.
   - -DWERROR=ON is a gate; do not introduce new compiler warnings.

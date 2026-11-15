@@ -27,16 +27,22 @@ on:
 jobs:
   format-check:
     name: Format Check
-    # ubuntu-latest moved to 26.04, which no longer ships clang-format-18.
-    # Pin until the repo's pinned clang-18 toolchain moves to 19+.
+    # clang-format is pinned via pip for distro independence.
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install clang-format
+        run: pip install clang-format==21.1.8
+
       - name: Check formatting
         run: |
           find src include tests -name '*.cpp' -o -name '*.hpp' | \
-            xargs clang-format-18 --dry-run --Werror
+            xargs clang-format --dry-run --Werror
 
   clang-tidy:
     name: Clang-Tidy
