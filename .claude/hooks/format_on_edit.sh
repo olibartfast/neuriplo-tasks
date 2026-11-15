@@ -5,9 +5,9 @@
 #
 # Reads the tool payload from stdin, pulls the edited file path, and, if it's
 # a C/C++ source or header under src/, include/, or tests/, runs:
-#   clang-format-18 -i <file>
+#   clang-format-21 -i <file>
 # then re-checks with:
-#   clang-format-18 --dry-run --Werror <file>
+#   clang-format-21 --dry-run --Werror <file>
 #
 # The re-check fails if anything can't be auto-formatted cleanly (e.g. a
 # `// clang-format off` block that's itself malformed). This is the single
@@ -53,14 +53,14 @@ case "$file_path" in
   */3rdparty/*|3rdparty/*) exit 0 ;;
 esac
 
-# Pick clang-format-18 first (the pinned CI version), fall back to clang-format.
+# Pick clang-format-21 first (the pinned CI version), fall back to clang-format.
 CF=""
-if command -v clang-format-18 >/dev/null 2>&1; then
-  CF=clang-format-18
+if command -v clang-format-21 >/dev/null 2>&1; then
+  CF=clang-format-21
 elif command -v clang-format >/dev/null 2>&1; then
   CF=clang-format
 else
-  echo "[format_on_edit] clang-format-18 not installed; skipping" >&2
+  echo "[format_on_edit] clang-format-21 not installed; skipping" >&2
   exit 0
 fi
 

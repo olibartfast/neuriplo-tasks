@@ -386,17 +386,17 @@ The core `neuriplo-tasks` target has no image-library dependency. Link `neuriplo
 
 Install clang-format if needed:
 ```bash
-sudo apt-get install -y clang-format-18
+sudo apt-get install -y clang-format-21
 ```
 
 Check for formatting issues without modifying files:
 ```bash
-find src include tests -name '*.cpp' -o -name '*.hpp' | xargs clang-format-18 --dry-run --Werror
+find src include tests -name '*.cpp' -o -name '*.hpp' | xargs clang-format-21 --dry-run --Werror
 ```
 
 Apply formatting in place:
 ```bash
-find src include tests -name '*.cpp' -o -name '*.hpp' | xargs clang-format-18 -i
+find src include tests -name '*.cpp' -o -name '*.hpp' | xargs clang-format-21 -i
 ```
 
 Configuration: `.clang-format` at the project root.
@@ -500,7 +500,7 @@ cmake --build build
 
 | Tool | Purpose | How to run |
 |------|---------|------------|
-| `clang-format-18` | Code formatting | `find src include tests -name '*.cpp' -o -name '*.hpp' \| xargs clang-format-18 -i` |
+| `clang-format-21` | Code formatting | `find src include tests -name '*.cpp' -o -name '*.hpp' \| xargs clang-format-21 -i` |
 | `clang-tidy-18` | Static analysis (AST-based) | `find src -name '*.cpp' \| xargs clang-tidy-18 -p build` |
 | `cppcheck` | Static analysis (flow-based) | `cppcheck --enable=warning --std=c++17 -I include src/` |
 | ASan + UBSan | Runtime memory/UB detection | `-DSANITIZERS=ON` at configure time |

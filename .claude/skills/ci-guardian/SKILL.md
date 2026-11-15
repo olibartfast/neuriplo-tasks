@@ -15,7 +15,7 @@ section here**. The skill compounds in value; do not let it decay.
 
 The repo's six CI jobs (`.github/workflows/lint.yml`) are:
 
-1. `format-check` — clang-format-18 dry-run
+1. `format-check` — clang-format-21 dry-run
 2. `clang-tidy` — clang-tidy-18 over `src/**/*.cpp`
 3. `cppcheck` — cppcheck with `--error-exitcode=1`
 4. `build-and-test` — cmake + build + ctest
@@ -35,13 +35,13 @@ and a unified diff.
 **Local reproduce.**
 ```bash
 find src include tests -name '*.cpp' -o -name '*.hpp' | \
-  xargs clang-format-18 --dry-run --Werror
+  xargs clang-format-21 --dry-run --Werror
 ```
 
 **Fix.**
 ```bash
 find src include tests -name '*.cpp' -o -name '*.hpp' | \
-  xargs clang-format-18 -i
+  xargs clang-format-21 -i
 ```
 
 There is no judgment call here. If the `format_on_edit.sh` hook is installed
@@ -384,7 +384,7 @@ Before pushing, run:
 
 ```bash
 find src include tests -name '*.cpp' -o -name '*.hpp' | \
-  xargs clang-format-18 --dry-run --Werror && \
+  xargs clang-format-21 --dry-run --Werror && \
 cppcheck --enable=warning --std=c++17 \
   --suppress=missingIncludeSystem \
   --suppress=unmatchedSuppression \

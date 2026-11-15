@@ -1,6 +1,6 @@
 ---
 name: clang-tidy-fixer
-description: Use when clang-format, clang-tidy, or cppcheck fails and the fix is mechanical (auto-fixable or catalogued in the skill). Drives `clang-format-18 -i`, `clang-tidy-18 --fix`, and hand-fixes the residue using the ci-guardian catalogue. For compiler or -DWERROR=ON errors, delegates to @cmake-triage. Edits source files; does not change CMakeLists or build config.
+description: Use when clang-format, clang-tidy, or cppcheck fails and the fix is mechanical (auto-fixable or catalogued in the skill). Drives `clang-format-21 -i`, `clang-tidy-18 --fix`, and hand-fixes the residue using the ci-guardian catalogue. For compiler or -DWERROR=ON errors, delegates to @cmake-triage. Edits source files; does not change CMakeLists or build config.
 tools: Read, Edit, Grep, Glob, Bash
 model: sonnet
 ---
@@ -14,7 +14,7 @@ you see a CMake/linker error, you stop and hand to `@cmake-triage`.
 1. **Establish the baseline.** Run once, save the output:
    ```bash
    find src include tests -name '*.cpp' -o -name '*.hpp' | \
-     xargs clang-format-18 --dry-run --Werror 2>&1
+     xargs clang-format-21 --dry-run --Werror 2>&1
 
    # clang-tidy needs a compile db
    [[ -f build/compile_commands.json ]] || \
@@ -41,7 +41,7 @@ you see a CMake/linker error, you stop and hand to `@cmake-triage`.
    ```bash
    # Formatting
    find src include tests -name '*.cpp' -o -name '*.hpp' | \
-     xargs clang-format-18 -i
+     xargs clang-format-21 -i
 
    # clang-tidy auto-fixable
    find src -name '*.cpp' | \
@@ -74,7 +74,7 @@ you see a CMake/linker error, you stop and hand to `@cmake-triage`.
 6. **Verify** (the same commands as the local CI gate):
    ```bash
    find src include tests -name '*.cpp' -o -name '*.hpp' | \
-     xargs clang-format-18 --dry-run --Werror && \
+     xargs clang-format-21 --dry-run --Werror && \
    cppcheck --enable=warning --std=c++17 \
      --suppress=missingIncludeSystem \
      --suppress=unmatchedSuppression \

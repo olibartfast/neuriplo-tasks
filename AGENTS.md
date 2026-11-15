@@ -99,7 +99,7 @@ Pre-commit hooks run clang-format and cppcheck automatically:
 
 | Tool           | Purpose                                  | Config              |
 |----------------|------------------------------------------|---------------------|
-| `clang-format-18` | Formatting (LLVM base, 4-space, 120 col) | `.clang-format`     |
+| `clang-format-21` | Formatting (LLVM base, 4-space, 120 col) | `.clang-format`     |
 | `clang-tidy-18`   | Static analysis on `src/` + `include/`   | `.clang-tidy`       |
 | `cppcheck`        | Additional static analysis               | `.pre-commit-config.yaml` |
 | `ctest` / GoogleTest | Unit tests                            | `tests/CMakeLists.txt` |
@@ -111,11 +111,11 @@ Pre-commit hooks run clang-format and cppcheck automatically:
 ```bash
 # Check (dry-run, CI mode)
 find src include tests -name '*.cpp' -o -name '*.hpp' | \
-  xargs clang-format-18 --dry-run --Werror
+  xargs clang-format-21 --dry-run --Werror
 
 # Apply
 find src include tests -name '*.cpp' -o -name '*.hpp' | \
-  xargs clang-format-18 -i
+  xargs clang-format-21 -i
 ```
 
 ### Static analysis
@@ -250,7 +250,7 @@ them in the tool config instead.
 
 `.github/workflows/lint.yml` runs six jobs in parallel on every push/PR:
 
-1. **format-check** — `clang-format-18 --dry-run --Werror` on `src include tests`
+1. **format-check** — `clang-format-21 --dry-run --Werror` on `src include tests`
 2. **clang-tidy** — `clang-tidy-18 -p build` on every `src/**/*.cpp`
 3. **cppcheck** — `cppcheck --enable=warning --std=c++17 --error-exitcode=1 -I include src/`
 4. **build-and-test** — `cmake -DBUILD_TESTS=ON`, `cmake --build`, `ctest --output-on-failure`
@@ -273,7 +273,7 @@ your tool at it.
 
 | Hook                         | Event                              | What it does |
 |------------------------------|------------------------------------|--------------|
-| `format_on_edit.sh`          | `PostToolUse(Edit\|Write\|MultiEdit)` | Runs `clang-format-18 -i` on every edited `.cpp`/`.hpp`/`.h` under `src/`, `include/`, `tests/`, then re-checks with `--dry-run --Werror`. Blocks the turn if formatting issues remain. |
+| `format_on_edit.sh`          | `PostToolUse(Edit\|Write\|MultiEdit)` | Runs `clang-format-21 -i` on every edited `.cpp`/`.hpp`/`.h` under `src/`, `include/`, `tests/`, then re-checks with `--dry-run --Werror`. Blocks the turn if formatting issues remain. |
 | `block_large_binaries.sh`    | `PreToolUse(Bash)`                 | Denies `git add` / `git commit` of model artefacts and sample media: `*.weights`, `*.onnx`, `*.mp4`, `*.jpg`, `*.png` (outside `docs/`), `vocab.json`, `merges.txt`, `labels.txt`. |
 | `inject_ci_context.sh`       | `UserPromptSubmit`                 | Prepends a short reminder of the core CI rules (clang-format, clang-tidy, cppcheck, `-DWERROR=ON`, no large binaries) to every prompt. |
 
@@ -306,14 +306,14 @@ job categories consistently fail in local Docker:
 
 | Job | Why it fails locally | How it's covered |
 |-----|----------------------|-----------------|
-| `format-check` | `clang-format-18` not installed in the act container image | Run locally by the pre-push hook before calling act |
+| `format-check` | `clang-format-21` not installed in the act container image | Run locally by the pre-push hook before calling act |
 | `clang-tidy`, `build-and-test`, `build-warnings` | `ccache-action` requires GitHub auth (token) inside Docker | Validated by real GitHub CI after push |
 | `cppcheck` | Works fine in act | Run via act in both pre-commit and pre-push hooks |
 | `valgrind` | Runtime job is intentionally slow for local hooks | Run locally on demand or validated by real GitHub CI after push |
 
 **Rule**: never expand the pre-push hook to `act push -W .github/workflows/lint.yml`
 (no `-j` filter) — that runs all jobs and will always fail locally on the
-ccache-auth, clang-format-18, and runtime-job issues above. Only add a job to
+ccache-auth, clang-format-21, and runtime-job issues above. Only add a job to
 the hook when you have verified it works inside the act container without
 network access.
 
@@ -321,20 +321,20 @@ network access.
 
 ### clang-format before every commit
 
-**Run `clang-format-18 -i` on every `.cpp`/`.hpp` you touch before staging.**
-CI runs `clang-format-18 --dry-run --Werror` on all files under `src/`,
+**Run `clang-format-21 -i` on every `.cpp`/`.hpp` you touch before staging.**
+CI runs `clang-format-21 --dry-run --Werror` on all files under `src/`,
 `include/`, and `tests/`. A single misformatted line fails the push.
 
 ```bash
 # Format all changed files
-git diff --name-only HEAD | grep -E '\.(cpp|hpp|h)$' | xargs clang-format-18 -i
+git diff --name-only HEAD | grep -E '\.(cpp|hpp|h)$' | xargs clang-format-21 -i
 
 # Or format all source files at once
-find src include tests -name '*.cpp' -o -name '*.hpp' | xargs clang-format-18 -i
+find src include tests -name '*.cpp' -o -name '*.hpp' | xargs clang-format-21 -i
 
 # Verify (same command CI runs)
 find src include tests -name '*.cpp' -o -name '*.hpp' | \
-  xargs clang-format-18 --dry-run --Werror
+  xargs clang-format-21 --dry-run --Werror
 ```
 
 The `format_on_edit.sh` hook does this automatically for Claude Code edits,
@@ -372,7 +372,7 @@ same checks:
 
 ```bash
 find src include tests -name '*.cpp' -o -name '*.hpp' | \
-  xargs clang-format-18 --dry-run --Werror && \
+  xargs clang-format-21 --dry-run --Werror && \
 cppcheck --enable=warning --std=c++17 \
   --suppress=missingIncludeSystem \
   --suppress=unmatchedSuppression \

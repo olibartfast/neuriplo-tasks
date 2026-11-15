@@ -30,7 +30,7 @@ You are invoked in one of three shapes:
 
    | Signal in log | Bucket | Skill §  |
    |---|---|---|
-   | `clang-format-18 --dry-run --Werror` reports a diff | **format** | §format |
+   | `clang-format-21 --dry-run --Werror` reports a diff | **format** | §format |
    | `clang-tidy-18` warning/error on `src/**/*.cpp` | **clang-tidy** | §clang-tidy |
    | `cppcheck` reports `error:` / `warning:` with `--error-exitcode=1` | **cppcheck** | §cppcheck |
    | `cmake` configure failure (`CMake Error`, missing package, FetchContent fail) | **cmake** | §cmake |

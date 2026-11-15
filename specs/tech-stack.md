@@ -103,9 +103,9 @@ Entrypoints live in [REPO_META.yaml](../REPO_META.yaml); the full local gate
 command and the six CI jobs are in [AGENTS.md](../AGENTS.md). Two notes that
 belong to the stack rather than the tooling:
 
-- CI pins **clang-format-18**. A newer local clang-format formats some
-  constructs differently; after reformatting, re-run the exact CI command
-  before pushing.
+- CI pins **clang-format 21.1.8** via `pip install clang-format==21.1.8`.
+  Run the same major version locally; `scripts` and the format hook reject
+  other majors instead of silently reformatting with a different version.
 - `paths-ignore` covers `**.md`, `export/**`, `docs/**` — documentation-only
   pushes skip CI by design, so a green tick on such a push means "not run".
 
