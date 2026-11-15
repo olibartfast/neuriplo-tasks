@@ -38,14 +38,15 @@ export/
 │   ├── videomae/           # VideoMAE video classification export
 │   ├── vivit/              # ViViT video classification export
 │   └── timesformer/        # TimeSFormer video classification export
-└── image_understanding/    # VLM model download (GGUF, no ONNX export)
+├── image_understanding/    # VLM model download (GGUF, no ONNX export)
+└── ggml/                   # ONNX → GGUF conversion for the GGML backend
 ```
 
 ## Usage
 
 Each subdirectory contains task-specific documentation and, where applicable, export scripts.
 
-Most tasks export to ONNX. The `image_understanding/` task is an exception — it uses GGUF models downloaded from Hugging Face and runs via the llama.cpp backend (no ONNX export step).
+Most tasks export to ONNX. The `image_understanding/` task is an exception — it uses GGUF models downloaded from Hugging Face and runs via the llama.cpp backend (no ONNX export step). The `ggml/` entry is the other GGUF case: it converts an exported ONNX file to GGUF weights for the neuriplo GGML backend (strict-GGUF-only loader).
 
 ### Quick Start Examples
 
@@ -100,6 +101,11 @@ python export/video_classification/timesformer/export_timesformer_to_onnx.py
 
 # Image Understanding (VLM) — download GGUF models, no export step needed
 # See export/image_understanding/ImageUnderstanding.md for wget commands
+
+# GGUF for the GGML backend — convert an exported ONNX file to GGUF weights
+python3 /path/to/neuriplo/scripts/convert_onnx_to_gguf.py \
+    --input /tmp/yolov8n.onnx --output /tmp/yolov8n.gguf
+# See export/ggml/README.md for the weight contract and supported models
 ```
 
 ## Batched inference (dynamic batch axis)
@@ -136,6 +142,7 @@ Refer to:
 * [Open-Vocabulary Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/open_vocab_detection/OWLv2.md)
 * [Video Classification](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/video_classification/VideoClassification.md)
 * [Image Understanding (VLM)](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/image_understanding/ImageUnderstanding.md)
+* [GGUF for the GGML backend](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/ggml/README.md)
 * [YOLO-World (Fixed Vocabulary)](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/yolo_world/README.md)
 * [EdgeCrafter Detection](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/detection/edgecrafter/README.md)
 * [EdgeCrafter Segmentation](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/segmentation/edgecrafter/README.md)
