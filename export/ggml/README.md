@@ -6,7 +6,9 @@ This directory documents the ONNX → GGUF step consumed by the
 rejects any other extension. The converter lives in neuriplo
 (`scripts/convert_onnx_to_gguf.py`); this guide records the contract and the
 models it covers. Produce the input ONNX with the per-task exporters in this
-repo first (torchvision classifier, ultralytics YOLO).
+repo first (torchvision classifier, ultralytics YOLO, RF-DETR detection /
+segmentation — see `export/detection/rfdetr/` and
+`export/segmentation/rfdetr/`).
 
 ## Converter
 
@@ -30,8 +32,12 @@ with an independent read-back parse before exiting.
   ONNX rank (the GGUF C API exposes no rank accessor). The loader rejects
   files without these entries instead of guessing.
 - Tensors are matched by exact name. The minimum loadable head is either the
-  YOLO fixed DFL conv weight (`model.22.dfl.conv.weight`) or one 2D
-  `[1000,512]`/`[1000,2048]` classifier weight plus its `[1000]` bias.
+  YOLO fixed DFL conv weight (`model.22.dfl.conv.weight`), one 2D
+  `[1000,512]`/`[1000,2048]` classifier weight plus its `[1000]` bias, or
+  the RF-DETR 91-class head (`class_embed.bias` `[91]` plus a 2D `[256,91]`
+  class weight). RF-DETR-seg files additionally carry
+  `segmentation_head.bias`; the loader keys the seg path (mask branch) on
+  its presence.
 
 ## Supported models
 
@@ -44,6 +50,8 @@ runs (neuriplo GGUF exporter).
 | ResNet-50 classifier | torchvision `resnet50` (`resnet50-v1-12.onnx`, see `export/classification/`) | 299 | 102,556,256 | 1,3,224,224 |
 | YOLOv8n detection | ultralytics `yolov8n` (opset 12, static 640; see `export/detection/yolo/`) | 132 | 12,791,904 | 1,3,640,640 |
 | YOLOv8n-seg | ultralytics `yolov8n-seg` (opset 12, static 640; see `export/detection/yolo/`) | 158 | 13,804,864 | 1,3,640,640 |
+| RF-DETR detection | RF-DETR base (`export/detection/rfdetr/export.py`) | 352 | 107,591,104 | 1,3,560,560 |
+| RF-DETR-seg | RF-DETR seg (`export/segmentation/rfdetr/export.py`) | 436 | 123,514,688 | 1,3,432,432 |
 
 ## Running the backend
 
@@ -63,6 +71,6 @@ python3 scripts/ggml_app_gate.py \
 
 - YOLO26 is blocked at the converter: its `model.23` head uses attention
   ops and lacks the fixed DFL conv weight the GGUF contract requires.
-- Transformer models (RT-DETR family, ViT, RF-DETR, OWLv2) need loader-side
-  graph support (multi-input, INT64) that the GGML backend does not have;
-  no GGUF export is claimed for them.
+- Transformer models still without loader-side graph support (RT-DETR
+  family, ViT, OWLv2) have no GGUF export claimed for them. RF-DETR
+  detection and RF-DETR-seg are supported (see table above).
