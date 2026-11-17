@@ -58,3 +58,23 @@ torch.onnx.export(resnet50,
   docker run -it --gpus=all -v $(pwd):/workspace nvcr.io/nvidia/pytorch:23.08-py3 /bin/bash -cx \
    "trtexec --onnx=model.onnx --saveEngine=model.plan --explicitBatch --minShapes=input:1x3x224x224 --optShapes=input:1x3x224x224 --maxShapes=input:256x3x224x224 --fp16
   ```
+
+  #### GGUF (GGML backend)
+  Convert the exported ONNX to GGUF weights for the neuriplo GGML backend
+  (`GGMLInfer`, strict-GGUF-only loader) with the converter from neuriplo
+  (`scripts/convert_onnx_to_gguf.py`; requires Python 3 with `onnx` and `numpy`):
+
+  ```bash
+  python3 /path/to/neuriplo/scripts/convert_onnx_to_gguf.py \
+      --input resnet50.onnx --output resnet50.gguf
+  ```
+
+  The converter keeps F32 tensors of rank 1..4 (other initializers are
+  skipped with a note) and matches tensors by exact name. A loadable
+  classifier file carries one 2D `[1000,512]`/`[1000,2048]` weight plus its
+  `[1000]` bias. Verified conversions (fixed batch 1):
+
+  | Model | ONNX source | Tensors | `.gguf` bytes | Input |
+  |-------|-------------|---------|---------------|-------|
+  | ResNet-18 | torchvision `resnet18` (`resnet18-v1-7.onnx`) | 102 | 46,810,304 | 1,3,224,224 |
+  | ResNet-50 | torchvision `resnet50` (`resnet50-v1-12.onnx`) | 299 | 102,556,256 | 1,3,224,224 |

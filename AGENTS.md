@@ -205,16 +205,19 @@ task headers are needed by consumers.
 
 | Domain                | Task class                   | Postprocessors                                                        |
 |-----------------------|------------------------------|-----------------------------------------------------------------------|
-| Object Detection      | `ObjectDetectionTask`        | `YoloPostprocessor`, `RtDetrPostprocessor`, `RfDetrPostprocessor`     |
-| Instance Segmentation | `InstanceSegmentationTask`   | `YoloSegmentationPostprocessor`, `RfDetrSegmentationPostprocessor`    |
-| Classification        | `ClassificationTask`         | `TorchvisionPostprocessor`, `VitPostprocessor`, `TensorflowPostprocessor` |
+| Object Detection      | `ObjectDetectionTask`        | `YoloPostprocessor`, `RtDetrPostprocessor`, `RfDetrPostprocessor`, `EdgeCrafterPostprocessor` |
+| Instance Segmentation | `InstanceSegmentationTask`   | `YoloSegmentationPostprocessor`, `RfDetrSegmentationPostprocessor`, `EdgeCrafterSegmentationPostprocessor` |
+| Classification        | `ClassificationTask`         | `TorchvisionPostprocessor`, `VitPostprocessor`, `TensorflowPostprocessor`, `DefaultClassificationPostprocessor` |
 | Video Classification  | `VideoClassificationTask`    | `VideoClassificationPostprocessor`                                    |
 | Optical Flow          | `OpticalFlowTask`            | `RaftPostprocessor`                                                   |
-| Pose Estimation       | `PoseEstimationTask`         | `VitPosePostprocessor`, `YoloPosePostprocessor`                       |
-| Depth Estimation      | `DepthEstimationTask`        | `DepthAnythingV2Postprocessor`                                        |
+| Pose Estimation       | `PoseEstimationTask`         | `VitPosePostprocessor`, `YoloPosePostprocessor`, `RfDetrPosePostprocessor`, `EdgeCrafterPosePostprocessor` |
+| Depth Estimation      | `DepthEstimationTask`        | `DepthAnythingV2Postprocessor`, `YoloDepthPostprocessor`               |
 | Open-Vocabulary Detection | `OpenVocabDetectionTask` | `OwlV2Postprocessor`, `GroundingDinoPostprocessor`                    |
 | Gaussian Splatting    | `GaussianSplattingTask`      | `LgmPostprocessor`                                                    |
 | Image Understanding   | `ImageUnderstandingTask`     | _(none — response decoded directly from float-encoded bytes)_         |
+| Keypoint Matching     | `KeypointMatchingTask`       | `SuperGluePostprocessor`, `LightGluePostprocessor`, `MatchAnythingPostprocessor`, `FlexGluePostprocessor` |
+| Gaze Estimation       | `GazeEstimationTask`         | `GazePostprocessor`                                                   |
+| Monocular 3D Detection | `Monocular3DDetectionTask`  | `Monocular3DPostprocessor`                                            |
 
 ### `Tensor` type
 
@@ -227,24 +230,29 @@ struct Tensor {
 
 ### `TaskFactory` routing
 
-`normalizeModelType()` strips `-`, `_`, whitespace and lowercases. Rules are
-checked in order:
+`normalizeModelType()` strips `-`, `_`, whitespace and lowercases. Descriptors
+in `taskDescriptors()` are checked in order (first match wins):
 
-1. Segmentation before generic YOLO: `"yoloseg"`, `"rfdetrseg"`, `yolo*seg*`
-1b. EdgeCrafter segmentation: `ecseg*`, `edgecrafter*seg*` → `InstanceSegmentationTask` (with `EdgeCrafterSegmentationPostprocessor`)
-2. YOLO pose: `yolo*pose*` → `PoseEstimationTask` (with `YoloPosePostprocessor`)
-2b. EdgeCrafter pose: `ecpose*`, `edgecrafter*pose*` → `PoseEstimationTask` (with `EdgeCrafterPosePostprocessor`)
-3. YOLO prefix: any `yolo*` → `ObjectDetectionTask`
-4. `"rtdetr"`, `"rfdetr"` → `ObjectDetectionTask`
+1. Segmentation before generic YOLO: `"yoloseg"`, `"yolov10seg"`, `"yolo26seg"`, `"rfdetrseg"`, `yolo*seg*` → `InstanceSegmentationTask`
+1b. EdgeCrafter segmentation: `ecseg*`, `edgecrafter*`+`seg` → `InstanceSegmentationTask` (with `EdgeCrafterSegmentationPostprocessor`)
+2. RF-DETR pose: `rfdetr*`+(`pose`|`keypoint`|`kpt`) → `PoseEstimationTask` (with `RfDetrPosePostprocessor`)
+2b. YOLO pose: `yolo*pose*` → `PoseEstimationTask` (with `YoloPosePostprocessor`)
+2c. EdgeCrafter pose: `ecpose*`, `edgecrafter*`+`pose` → `PoseEstimationTask` (with `EdgeCrafterPosePostprocessor`)
+2d. `"vitpose"` → `PoseEstimationTask` (with `VitPosePostprocessor`)
+3. YOLO depth: `yolo*depth*` → `DepthEstimationTask` (with `YoloDepthPostprocessor`)
+4. YOLO prefix: any `yolo*` → `ObjectDetectionTask`
 4b. EdgeCrafter detection: `ecdet*`, `edgecrafter*` → `ObjectDetectionTask` (with `EdgeCrafterPostprocessor`)
-5. `"owlv2"`, `"owlvit"`, `"groundingdino"` → `OpenVocabDetectionTask`
-6. `"lgm"`, `"grm"`, `*splat*` → `GaussianSplattingTask`
+5. RT-DETR family: `"rtdetr"`, `"rtdetrv2"`, `"rtdetrul"`, `"rtdetrultralytics"`, `"rfdetr"`, `"dfine"`, `deim*` → `ObjectDetectionTask`
+6. `"owlv2"`, `"owlvit"`, `"groundingdino"` → `OpenVocabDetectionTask`
 7. `"torchvisionclassifier"`, `"vitclassifier"`, `"tensorflowclassifier"`, `resnet*`, `*tensorflow*` → `ClassificationTask`
-8. `*depthanythingv2*` → `DepthEstimationTask`
-9. `"videomae"`, `"vivit"`, `"timesformer"` → `VideoClassificationTask`
-10. `"raft"` → `OpticalFlowTask`
-11. `"vitpose"` → `PoseEstimationTask`
-12. `"gemma4"`, `"imageunderstanding"` → `ImageUnderstandingTask`
+8. `*depthanythingv2*` → `DepthEstimationTask` (with `DepthAnythingV2Postprocessor`)
+9. `"lgm"`, `"grm"`, `"gaussiansplatting"`, `"lgmmini"`, `*splat*` → `GaussianSplattingTask`
+10. `"videomae"`, `"vivit"`, `"timesformer"`, `pevideo*`, `vjepa*`, `videoprism*` → `VideoClassificationTask`
+11. `"raft"` → `OpticalFlowTask`
+12. Keypoint matching: `superglue*`, `lightglue*`, `matchanything*`, `flexglue*` → `KeypointMatchingTask`
+13. `"gemma4"`, `"gemma"`, `"llama"`, `"llamacpp"`, `"imageunderstanding"` → `ImageUnderstandingTask`
+14. Gaze: `"gaze"`, `ethxgaze*`, `gazetr*`, `*gaze*` → `GazeEstimationTask`
+15. Monocular 3D: `urbanomni*`, `monocular3d*`, `"mono3d"` → `Monocular3DDetectionTask`
 
 ### `export/` directory
 

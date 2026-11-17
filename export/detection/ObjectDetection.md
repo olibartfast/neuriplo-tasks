@@ -317,6 +317,50 @@ python tools/deployment/export_onnx.py --check -c configs/deimv2/$MODEL.yml -r /
 * Same as for lyuwenyu RT-DETR models
 
 
+## GGUF (GGML backend)
+
+Convert an exported ONNX file to GGUF weights for the neuriplo GGML backend
+(`GGMLInfer`, strict-GGUF-only loader) with the converter from neuriplo
+(`scripts/convert_onnx_to_gguf.py`; requires Python 3 with `onnx` and `numpy`):
+
+```bash
+python3 /path/to/neuriplo/scripts/convert_onnx_to_gguf.py \
+    --input /tmp/yolov8n.onnx --output /tmp/yolov8n.gguf
+```
+
+The converter keeps F32 tensors of rank 1..4 (other initializers are skipped
+with a note), stores dims in ggml order, and matches tensors by exact name.
+Verified conversions (fixed batch 1):
+
+| Model | ONNX source | Tensors | `.gguf` bytes | Input |
+|-------|-------------|---------|---------------|-------|
+| YOLOv8n detection | ultralytics `yolov8n` (opset 12, static 640; see `export/detection/yolo/`) | 132 | 12,791,904 | 1,3,640,640 |
+| RF-DETR detection | RF-DETR base (`export/detection/rfdetr/export.py`) | 352 | 107,591,104 | 1,3,560,560 |
+
+(YOLOv8n-seg GGUF is covered under [Instance Segmentation](../segmentation/InstanceSegmentation.md).)
+
+Notes:
+
+- A loadable YOLO file must contain the fixed DFL conv weight
+  (`model.22.dfl.conv.weight`); a loadable RF-DETR file must contain the
+  91-class head (`class_embed.bias` `[91]` plus a 2D `[256,91]` class weight).
+- YOLO26 is blocked at the converter: its `model.23` head uses attention ops
+  and lacks the fixed DFL conv weight the GGUF contract requires.
+- Transformer detectors without loader-side graph support (RT-DETR family,
+  OWLv2) have no GGUF export.
+
+`neuriplo-infer` gates GGUF models with `scripts/ggml_app_gate.py`:
+
+```bash
+python3 scripts/ggml_app_gate.py \
+    --onnx /tmp/yolov8n.onnx \
+    --model-type yolov8 \
+    --source data/dog.jpg \
+    --input-sizes 1,3,640,640 \
+    --labels labels/coco.names
+```
+
+
 ## RF-DETR
 
 Follow the procedure described in the [RF-DETR documentation](https://github.com/roboflow/rf-detr?tab=readme-ov-file#onnx-export).
