@@ -18,7 +18,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Options
 option(BUILD_TESTS "Build tests" OFF)
 option(NEURIPLO_TASKS_WITH_STB "Enable stb image I/O helpers" ON)
-option(NEURIPLO_TASKS_WITH_OPENCV "Enable optional OpenCV interop adapter" OFF)
 
 # --- Compiler Warnings (applied to project targets only, not third-party) ---
 set(PROJECT_WARNING_FLAGS
@@ -55,10 +54,6 @@ if(SANITIZERS)
         add_link_options(-fsanitize=address,undefined)
         message(STATUS "Sanitizers: AddressSanitizer + UndefinedBehaviorSanitizer enabled")
     endif()
-endif()
-
-if(NEURIPLO_TASKS_WITH_OPENCV)
-    find_package(OpenCV REQUIRED COMPONENTS core)
 endif()
 
 # All library sources - UNIFIED ARCHITECTURE
@@ -282,23 +277,6 @@ if(NEURIPLO_TASKS_WITH_STB)
     list(APPEND NEURIPLO_TASKS_INSTALL_TARGETS neuriplo-tasks-vision-stb)
 endif()
 
-if(NEURIPLO_TASKS_WITH_OPENCV)
-    add_library(neuriplo-tasks-vision-opencv src/core/vision/opencv_adapter.cpp)
-    add_library(neuriplo-tasks::vision-opencv ALIAS neuriplo-tasks-vision-opencv)
-    target_link_libraries(neuriplo-tasks-vision-opencv PUBLIC neuriplo-tasks opencv_core)
-    set_target_properties(neuriplo-tasks-vision-opencv PROPERTIES EXPORT_NAME vision-opencv)
-    target_include_directories(neuriplo-tasks-vision-opencv PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
-    target_compile_features(neuriplo-tasks-vision-opencv PUBLIC cxx_std_17)
-    if(MSVC)
-        target_compile_options(neuriplo-tasks-vision-opencv PRIVATE /W4)
-        if(WERROR)
-            target_compile_options(neuriplo-tasks-vision-opencv PRIVATE /WX)
-        endif()
-    else()
-        target_compile_options(neuriplo-tasks-vision-opencv PRIVATE ${PROJECT_WARNING_FLAGS})
-    endif()
-endif()
-
 # Install rules
 include(GNUInstallDirs)
 
@@ -309,21 +287,6 @@ install(TARGETS ${NEURIPLO_TASKS_INSTALL_TARGETS}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
-
-if(NEURIPLO_TASKS_WITH_OPENCV)
-    install(TARGETS neuriplo-tasks-vision-opencv
-        EXPORT neuriplo-tasks-opencv-targets
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
-    install(EXPORT neuriplo-tasks-opencv-targets
-        FILE neuriplo-tasks-opencv-targets.cmake
-        NAMESPACE neuriplo-tasks::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/neuriplo-tasks
-    )
-endif()
 
 install(DIRECTORY include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
@@ -369,4 +332,3 @@ message(STATUS "  Version: ${PROJECT_VERSION}")
 message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "  Build tests: ${BUILD_TESTS}")
 message(STATUS "  stb image I/O: ${NEURIPLO_TASKS_WITH_STB}")
-message(STATUS "  OpenCV adapter: ${NEURIPLO_TASKS_WITH_OPENCV}")

@@ -44,7 +44,7 @@ must defer to this one.
 - **Artifact**: `libneuriplo-tasks.a` — C++17 static library
 - **Source roots**: `src/`, `include/neuriplo/tasks/`
 - **Tests**: `tests/` (GoogleTest, fetched via CMake `FetchContent`)
-- **Core runtime dependencies**: none; optional adapters provide stb image I/O and OpenCV interop
+- **Core runtime dependencies**: none; an optional adapter provides stb image I/O
 - **Consumers**: [tritonic](https://github.com/olibartfast/tritonic),
   [neuriplo-infer](https://github.com/olibartfast/neuriplo-infer)
 - **GitHub repo**: `https://github.com/olibartfast/neuriplo-tasks`
@@ -187,7 +187,6 @@ cppcheck --enable=warning --std=c++17 \
 | `result_types.hpp`    | `Result` variant plus optional `visitResult()` helper (forwards to `std::visit`); OpenCV-free (`BoundingBox`, `ImageMatrix`) |
 | `bounding_box.hpp`    | Pixel-space `BoundingBox` replacing `cv::Rect` in public result types |
 | `image_matrix.hpp`    | Opaque `ImageMatrix` replacing `cv::Mat` in public result types |
-| `vision/opencv_adapter.hpp` | Optional OpenCV conversions; available only through `vision-opencv` |
 | `vision/stb_io.hpp` | Optional file load/save helpers; available only through `vision-stb` |
 | `model_info.hpp`      | `ModelInfo`: `input_shapes`, `input_formats` (`FORMAT_NCHW` / `FORMAT_NHWC`), `input_names`, `output_names` |
 | `batch_types.hpp`     | `BatchRequest`, `BatchPreprocessOutput`, `BatchPostprocessOutput`, invariant helpers |
@@ -316,7 +315,6 @@ verify with the listed local command.
 | compiler `error:` during `cmake --build` | Build |
 | compiler `warning:` promoted by `-DWERROR=ON` | Werror |
 | `ctest` failure / GoogleTest assertion | ctest |
-| `undefined reference to cv::...` | OpenCV |
 | GoogleTest `FetchContent` failure | FetchContent |
 
 ### Format
@@ -422,7 +420,6 @@ cmake --build build-werror --parallel
 | `-Wsign-compare` | `static_cast<size_t>(...)` on the signed side, or match the loop-index type. |
 | `-Wreturn-type` | Fix the control flow — real bug. |
 | `-Wshadow` | Rename the inner variable; do not disable `-Wshadow` globally. |
-| `-Wdeprecated-declarations` on OpenCV | Use the new `cv::` API; targeted `#pragma` plus TODO only if genuinely transitional. |
 | `-Wconversion` / `-Wnarrowing` | Add an explicit `static_cast`. |
 | `-Wreorder` | Reorder the ctor init list to match member declaration order. |
 | `-Wunused-result` on `fread`/`fwrite` | Capture and check, or cast to `(void)` with a reason. |
@@ -448,7 +445,6 @@ cmake -S . -B build -DBUILD_TESTS=ON -DWERROR=ON \
 
 | Symptom | Cause / fix |
 |---|---|
-| `Could NOT find OpenCV` | Runner missing `libopencv-dev`; add it to the apt install in `lint.yml`. Locally: `sudo apt-get install libopencv-dev`. |
 | FetchContent hang / GoogleTest network error | Stale `build/_deps/`; delete `build/` and reconfigure. If recurring, pin `GIT_TAG` to a release tag. |
 | `add_subdirectory given source ... not an existing directory` | Typo after a module rename. |
 | `target_link_libraries called with non-compatible type: UTILITY` | Linking against a non-library target. |
@@ -473,9 +469,6 @@ exactly what is wrong.
 
 | Symptom | Fix |
 |---|---|
-| `fatal error: opencv2/...: No such file or directory` | Add `${OpenCV_INCLUDE_DIRS}` / `${OpenCV_LIBS}` to the target. |
-| `use of undeclared identifier 'cv::...'` | Add the missing `<opencv2/...>` include. |
-| `undefined reference to cv::...` at link | Add `${OpenCV_LIBS}` to `target_link_libraries`. |
 | `static assertion failed: ... std::variant` | `Result` variant mismatch — a postprocessor returns a type missing from `result_types.hpp`. |
 | `no matching function for call to 'Tensor'` | `Tensor` constructor signature changed; update the call site. |
 
@@ -511,21 +504,6 @@ Invalid read/write or use-after-free: fix ownership/lifetime and add or tighten
 the regression test. `definitely lost` / `indirectly lost`: free the owning
 allocation or replace manual ownership with RAII. Use a narrow suppression only
 after proving the report is outside `neuriplo-tasks` code; never hide real leaks.
-
-### OpenCV
-
-```bash
-dpkg -l | grep libopencv-dev
-pkg-config --modversion opencv4
-```
-
-| Symptom | Fix |
-|---|---|
-| `undefined reference to cv::dnn::...` | Link `${OpenCV_LIBS}` including `opencv_dnn`; check the `find_package` components. |
-| `cv::Exception: OpenCV(4.x) error: (-215)` | Preconditions violated (wrong type, empty matrix, shape mismatch) — fix the caller. |
-| Runner/local version mismatch | Compare `pkg-config --modversion opencv4`; pin or upgrade the apt source. |
-
-Do not wrap OpenCV calls in `try/catch(cv::Exception)` to silence test failures.
 
 ### FetchContent / GoogleTest
 

@@ -370,7 +370,7 @@ cmake -S . -B build -DBUILD_TESTS=ON
 cmake --build build --parallel
 ```
 
-The core `neuriplo-tasks` target has no image-library dependency. Link `neuriplo-tasks::vision-stb` for file loading and saving. Enable and link `neuriplo-tasks::vision-opencv` only at an OpenCV consumer boundary. Public task contracts use `vision::Image`, `vision::Size`, and `vision::PixelType`.
+The core `neuriplo-tasks` target has no image-library dependency. Link `neuriplo-tasks::vision-stb` for file loading and saving. Public task contracts use `vision::Image`, `vision::Size`, and `vision::PixelType`.
 
 ### Build Options
 
@@ -380,7 +380,6 @@ The core `neuriplo-tasks` target has no image-library dependency. Link `neuriplo
 | `-DWERROR=ON/OFF` | `OFF` | Treat compiler warnings as errors (used in CI) |
 | `-DSANITIZERS=ON/OFF` | `OFF` | Enable AddressSanitizer + UndefinedBehaviorSanitizer |
 | `-DNEURIPLO_TASKS_WITH_STB=ON/OFF` | `ON` | Build the optional `neuriplo-tasks::vision-stb` image I/O target |
-| `-DNEURIPLO_TASKS_WITH_OPENCV=ON/OFF` | `OFF` | Build the optional `neuriplo-tasks::vision-opencv` interop target |
 
 ### Format Code (Optional)
 

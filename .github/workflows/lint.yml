@@ -50,7 +50,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libopencv-dev ninja-build
+          sudo apt-get install -y ninja-build
 
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1
@@ -58,7 +58,7 @@ jobs:
           key: ${{ github.job }}-${{ runner.os }}
 
       - name: Generate compile_commands.json
-        run: cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DNEURIPLO_TASKS_WITH_OPENCV=ON
+        run: cmake -S . -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Run clang-tidy
         run: |
@@ -93,7 +93,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libopencv-dev ninja-build
+          sudo apt-get install -y ninja-build
 
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1
@@ -101,7 +101,7 @@ jobs:
           key: ${{ github.job }}-${{ runner.os }}
 
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DBUILD_TESTS=ON -DNEURIPLO_TASKS_WITH_OPENCV=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        run: cmake -S . -B build -G Ninja -DBUILD_TESTS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
       - name: Build
         run: cmake --build build --parallel
@@ -118,7 +118,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libopencv-dev valgrind
+          sudo apt-get install -y valgrind
 
       - name: Configure
         run: cmake -S . -B build-valgrind -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON
@@ -161,7 +161,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libopencv-dev ninja-build
+          sudo apt-get install -y ninja-build
 
       - name: Set up ccache
         uses: hendrikmuhs/ccache-action@v1
@@ -180,36 +180,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache OpenCV
-        id: cache-opencv
-        uses: actions/cache@v4
-        with:
-          path: C:\opencv
-          key: opencv-4.12.0-windows-x64-v1
-
-      - name: Install OpenCV (pre-built)
-        if: steps.cache-opencv.outputs.cache-hit != 'true'
-        shell: pwsh
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/opencv/opencv/releases/download/4.12.0/opencv-4.12.0-windows.exe" -OutFile opencv.exe
-          7z x opencv.exe -oC:\opencv -y
-
       - name: Configure CMake
         shell: pwsh
         run: |
           cmake -S . -B build `
             -DBUILD_TESTS=ON `
-            -DWERROR=ON `
-            -DNEURIPLO_TASKS_WITH_OPENCV=ON `
-            -DOpenCV_DIR="C:\opencv\opencv\build"
-
-      - name: Add OpenCV DLLs to PATH
-        shell: pwsh
-        run: |
-          $binDir = Get-ChildItem -Path "C:\opencv\opencv\build\x64" -Directory |
-            Where-Object { $_.Name -like "vc*" } |
-            Select-Object -First 1
-          "$($binDir.FullName)\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+            -DWERROR=ON
 
       - name: Build (Release)
         run: cmake --build build --config Release --parallel
