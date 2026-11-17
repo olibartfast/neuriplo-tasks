@@ -2,7 +2,6 @@ build*/*
 .cache/
 .venv/
 **/__pycache__/
-.claude/settings.local.json
 # Cloned third-party repositories
 3rdparty/*
 # ...but vendored single-header libraries are tracked
