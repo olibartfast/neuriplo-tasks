@@ -18,7 +18,7 @@ A set of framework-agnostic computer vision algorithms including common pre-proc
 - **Pose Estimation (2D Human Pose)**: YOLO pose (v5/v8/v11/v26), ViTPose, EdgeCrafter, RF-DETR keypoint pose
 - **Monocular 3D Detection**: UrbanOmniDetect-style projected cuboids (single YOLO-pose tensor: 2D box + 8 projected corners, verified against a real export)
 - **Gaze Estimation**: ETH-XGaze-style appearance-based gaze (pitch/yaw radians or 3D vector, ImageNet 224 face crop)
-- **Depth Estimation**: Depth Anything V2, YOLO26 Depth
+- **Depth Estimation**: Depth Anything V2, Depth Anything 3 (relative depth), YOLO26 Depth
 - **Open-Vocabulary Detection**: OWLv2 / OWL-ViT style text-conditioned detection; Grounding DINO; YOLO-World (fixed vocabulary)
 - **Gaussian Splatting**: LGM, LGM-mini, GRM (feed-forward image → 3D Gaussians)
 - **Image Understanding (VLM)**: Gemma 4 and compatible vision-language models via llama.cpp (image captioning, visual Q&A)
@@ -325,7 +325,9 @@ For export details, see [export/gaze_estimation/eth_xgaze/README.md](https://git
 
 **Depth Estimation:**
 - `"depth_anything_v2"`, `"depth-anything-v2"` - Depth Anything V2
-- `"yolo-depth"`, `"yolo26n-depth"` - Ultralytics YOLO26 depth models; any YOLO-prefixed model type containing `depth` routes here
+- `"depth_anything_3"`, `"depth-anything-3"`, `"da3"`, `"da3-small"`, `"da3mono-large"` - Depth Anything 3 relative-depth models; any type containing `depthanything3` or starting with `da3` routes here (metric/nested variants are rejected: they need focal-length scaling)
+
+Depth Anything 3 expects RGB NCHW float input `[B,3,H,W]` (default 504x504, multiples of 14) normalized to `[0,1]` with ImageNet mean/std. Its exported output is a relative depth map `[B,H,W]` (an optional second `conf` map is currently ignored); postprocessing resizes the map to the original frame. See the [Depth Anything 3 export guide](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/depth_estimation/depth_anything_3/README.md).
 
 YOLO26 depth expects RGB NCHW float input normalized to `[0,1]` with YOLO letterboxing. Its exported output is an unbounded metric-depth map shaped `[B,1,H,W]`; postprocessing removes letterbox padding and resizes the map to the original frame. See the [YOLO depth export guide](https://github.com/olibartfast/neuriplo-tasks/blob/master/export/depth_estimation/yolo_depth/README.md).
 

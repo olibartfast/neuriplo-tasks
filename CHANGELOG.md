@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+- Depth Anything 3 relative-depth support (`da3-small`, `da3mono-large`,
+  `depth-anything-3`): `DepthAnything3Preprocessor` (504 default, ImageNet),
+  shared `[1,H,W]` postprocessing via `DepthAnythingV2Postprocessor`,
+  factory routing, and an export setup guide. Metric/nested variants are
+  rejected until focal-length scaling is plumbed through.
 - Decode valid LightGlue zero-match outputs as an empty correspondence list.
 - FlexGlue keypoint-matching decoder, verified against `cvg/FlexGlue` v0.1
   release (`flexglue_descriptor.onnx` + `flexglue_matcher.onnx`).

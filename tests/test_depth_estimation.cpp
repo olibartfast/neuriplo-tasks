@@ -116,6 +116,82 @@ TEST_F(DepthEstimationTest, YoloDepthPostprocessRemovesLetterboxPadding) {
     EXPECT_FLOAT_EQ(depth.max_depth, 2.0f);
 }
 
+TEST_F(DepthEstimationTest, DepthAnything3PreprocessUsesImageNetNormalization) {
+    auto model_info = createModelInfo();
+    model_info.input_shapes = {{1, 3, 504, 504}};
+    DepthEstimationTask task(model_info, "da3-small");
+
+    neuriplo_tasks::Image image = neuriplo_tasks::vision_test::makeImage(504, 504, 3, 255);
+    const auto outputs = task.preprocess({image});
+
+    ASSERT_EQ(outputs.size(), 1);
+    ASSERT_EQ(outputs[0].size(), 3U * 504U * 504U * sizeof(float));
+    const auto* values = reinterpret_cast<const float*>(outputs[0].data());
+    // White pixel through [0,1] + ImageNet normalization, BGR input swapped to
+    // RGB: R channel uses means[0]/stds[0], B channel uses means[2]/stds[2].
+    EXPECT_FLOAT_EQ(values[0], (1.0f - 0.485f) / 0.229f);
+    EXPECT_FLOAT_EQ(values[2U * 504U * 504U], (1.0f - 0.406f) / 0.225f);
+}
+
+TEST_F(DepthEstimationTest, DepthAnything3FallsBackTo504OnEmptyShapes) {
+    ModelInfo model_info;
+    model_info.input_formats = {"FORMAT_NCHW"};
+    DepthEstimationTask task(model_info, "depth-anything-3");
+
+    neuriplo_tasks::Image image = neuriplo_tasks::vision_test::makeImage(640, 480, 3, 128);
+    const auto outputs = task.preprocess({image});
+
+    ASSERT_EQ(outputs.size(), 1);
+    EXPECT_EQ(outputs[0].size(), 3U * 504U * 504U * sizeof(float));
+}
+
+TEST_F(DepthEstimationTest, DepthAnything3PostprocessConvertsSingleBatchMap) {
+    auto model_info = createModelInfo();
+    model_info.input_shapes = {{1, 3, 504, 504}};
+    DepthEstimationTask task(model_info, "da3mono-large");
+
+    std::vector<TensorElement> data;
+    for (int i = 0; i < 20; ++i) {
+        data.emplace_back(static_cast<float>(i));
+    }
+
+    const auto results = task.postprocess(neuriplo_tasks::Size(5, 4), {Tensor(data, {1, 4, 5})});
+
+    ASSERT_EQ(results.size(), 1);
+    ASSERT_TRUE(std::holds_alternative<DepthEstimation>(results[0]));
+    const auto& depth = std::get<DepthEstimation>(results[0]);
+    EXPECT_EQ(depth.depth.rows(), 4);
+    EXPECT_EQ(depth.depth.cols(), 5);
+    EXPECT_FLOAT_EQ(depth.min_depth, 0.0f);
+    EXPECT_FLOAT_EQ(depth.max_depth, 19.0f);
+}
+
+TEST_F(DepthEstimationTest, DepthAnything3PostprocessResizesToFrame) {
+    auto model_info = createModelInfo();
+    model_info.input_shapes = {{1, 3, 504, 504}};
+    DepthEstimationTask task(model_info, "da3-small");
+
+    std::vector<TensorElement> data;
+    for (int i = 0; i < 20; ++i) {
+        data.emplace_back(static_cast<float>(i));
+    }
+
+    const auto results = task.postprocess(neuriplo_tasks::Size(10, 8), {Tensor(data, {1, 4, 5})});
+
+    ASSERT_EQ(results.size(), 1);
+    const auto& depth = std::get<DepthEstimation>(results[0]);
+    EXPECT_EQ(depth.depth.rows(), 8);
+    EXPECT_EQ(depth.depth.cols(), 10);
+    EXPECT_LE(depth.min_depth, depth.max_depth);
+}
+
+TEST_F(DepthEstimationTest, DepthAnything3MetricAndNestedNamesAreRejected) {
+    auto model_info = createModelInfo();
+    EXPECT_THROW(DepthEstimationTask(model_info, "da3metric-large"), std::invalid_argument);
+    EXPECT_THROW(DepthEstimationTask(model_info, "da3-nested-giant-large"), std::invalid_argument);
+    EXPECT_THROW(DepthEstimationTask(model_info, "depth-anything-3-metric"), std::invalid_argument);
+}
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

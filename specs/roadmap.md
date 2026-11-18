@@ -52,6 +52,11 @@ which stays the authority on the detail. This is the shape of the arc:
 
 ## In flight
 
+- **Depth Anything 3 relative depth.** `DepthEstimationTask` gains
+  `DEPTH_ANYTHING_3` (504-default ImageNet preprocessor, shared `[1,H,W]`
+  postprocessing, `depthanything3*`/`da3*` routing; metric/nested rejected).
+  Packet:
+  [2026-11-18-depth-anything-3](2026-11-18-depth-anything-3/requirements.md).
 - **Keypoint matching — LightGlue / MatchAnything decoders.** The task and the
   SuperGlue decoder are on `develop`; these two families still throw
   `std::logic_error` until their exports are probed. Same packet:

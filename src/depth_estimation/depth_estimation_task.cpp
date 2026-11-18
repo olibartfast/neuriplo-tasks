@@ -5,6 +5,7 @@
 #include "neuriplo/tasks/depth_estimation/yolo_depth_postprocessor.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <stdexcept>
 
 namespace neuriplo_tasks {
@@ -41,6 +42,19 @@ DepthEstimationTask::ModelType DepthEstimationTask::detectModelType(const std::s
     std::string lower_name = model_name;
     std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(),
                    [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+    lower_name.erase(std::remove_if(lower_name.begin(), lower_name.end(),
+                                    [](unsigned char character) {
+                                        return std::isspace(character) != 0 || character == '-' || character == '_';
+                                    }),
+                     lower_name.end());
+
+    if (lower_name.find("depthanything3") != std::string::npos || lower_name.find("da3") == 0) {
+        if (lower_name.find("metric") != std::string::npos || lower_name.find("nested") != std::string::npos) {
+            throw std::invalid_argument("DA3 metric/nested models need focal-length scaling, not yet supported: " +
+                                        model_name);
+        }
+        return ModelType::DEPTH_ANYTHING_3;
+    }
 
     if (lower_name.find("depthanythingv2") != std::string::npos ||
         lower_name.find("depth-anything-v2") != std::string::npos ||
@@ -59,6 +73,8 @@ std::unique_ptr<Preprocessor> DepthEstimationTask::createPreprocessor(ModelType 
     switch (type) {
     case ModelType::DEPTH_ANYTHING_V2:
         return std::make_unique<DepthAnythingV2Preprocessor>(input_size);
+    case ModelType::DEPTH_ANYTHING_3:
+        return std::make_unique<DepthAnything3Preprocessor>(input_size);
     case ModelType::YOLO_DEPTH:
         return std::make_unique<YoloDepthPreprocessor>(input_size);
 
@@ -70,6 +86,7 @@ std::unique_ptr<Preprocessor> DepthEstimationTask::createPreprocessor(ModelType 
 std::unique_ptr<DepthEstimationPostprocessor> DepthEstimationTask::createPostprocessor(ModelType type) {
     switch (type) {
     case ModelType::DEPTH_ANYTHING_V2:
+    case ModelType::DEPTH_ANYTHING_3:
         return std::make_unique<DepthAnythingV2Postprocessor>();
     case ModelType::YOLO_DEPTH:
         return std::make_unique<YoloDepthPostprocessor>();
@@ -80,8 +97,9 @@ std::unique_ptr<DepthEstimationPostprocessor> DepthEstimationTask::createPostpro
 }
 
 vision::Size DepthEstimationTask::extractInputSize(const ModelInfo& model_info) {
-    int width = 518;
-    int height = 518;
+    // DA3 exports default to process_res 504 (multiples of 14); V2 to 518.
+    int width = model_type_ == ModelType::DEPTH_ANYTHING_3 ? 504 : 518;
+    int height = model_type_ == ModelType::DEPTH_ANYTHING_3 ? 504 : 518;
 
     if (!model_info.input_shapes.empty()) {
         const auto& shape = model_info.input_shapes[0];

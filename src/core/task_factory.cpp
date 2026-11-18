@@ -128,6 +128,15 @@ const std::vector<TaskDescriptor>& taskDescriptors() {
          []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
             const TaskConfig&) { return std::make_unique<DepthEstimationTask>(model_info, normalized); }},
 
+        // Depth Anything 3 relative-depth models. Metric/nested variants reach
+        // DepthEstimationTask, whose constructor rejects them with the reason.
+        {"DepthAnything3", TaskFamily::DepthEstimation,
+         [](const std::string& normalized) {
+             return contains(normalized, "depthanything3") || startsWith(normalized, "da3");
+         },
+         []([[maybe_unused]] const std::string& model_type, const std::string& normalized, const ModelInfo& model_info,
+            const TaskConfig&) { return std::make_unique<DepthEstimationTask>(model_info, normalized); }},
+
         // Object detection aliases.
         {"YoloDetection", TaskFamily::Detection,
          [](const std::string& normalized) { return startsWith(normalized, "yolo"); }, createDetectionTask},

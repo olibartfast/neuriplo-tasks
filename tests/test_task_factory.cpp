@@ -151,6 +151,17 @@ TEST_F(TaskFactoryTest, CreateValidYoloDepthEstimationTask) {
     EXPECT_EQ(task->getTaskType(), TaskType::DepthEstimation);
 }
 
+TEST_F(TaskFactoryTest, CreateValidDepthAnything3Task) {
+    auto info = createValidModelInfo();
+    info.input_shapes = {{1, 3, 504, 504}};
+
+    for (const char* alias : {"da3-small", "depth-anything-3", "da3mono-large"}) {
+        auto task = TaskFactory::createTaskInstance(alias, info);
+        ASSERT_NE(task, nullptr) << "null for alias: " << alias;
+        EXPECT_EQ(task->getTaskType(), TaskType::DepthEstimation) << "alias: " << alias;
+    }
+}
+
 // Regression guard: the unreachable `normalized == "lgm-mini"` branch was
 // removed from TaskFactory. normalizeModelType strips hyphens, so the
 // hyphenated form must still route through the "lgmmini" branch.
@@ -182,6 +193,7 @@ TEST_F(TaskFactoryTest, FactoryRoutesEveryTaskDomain) {
         {"raft", TaskType::OpticalFlow},
         {"yolov8pose", TaskType::PoseEstimation},
         {"depth-anything-v2", TaskType::DepthEstimation},
+        {"depth-anything-3", TaskType::DepthEstimation},
         {"yolo26n-depth", TaskType::DepthEstimation},
         {"owlv2", TaskType::OpenVocabDetection},
         {"lgm", TaskType::GaussianSplatting},
@@ -219,6 +231,7 @@ TEST_F(TaskFactoryTest, PlatformStableModelTypeStringsRouteToExpectedTaskTypes) 
         {"raft", TaskType::OpticalFlow},
         {"vitpose", TaskType::PoseEstimation},
         {"depth_anything_v2", TaskType::DepthEstimation},
+        {"depth_anything_3", TaskType::DepthEstimation},
         {"owlv2", TaskType::OpenVocabDetection},
     };
 
@@ -241,6 +254,7 @@ TEST_F(TaskFactoryTest, NormalizedAliasesRouteToSameTaskType) {
     expectAliasesRouteTo({"RT-DETR", "rt_detr", " RT DETR "}, TaskType::Detection);
     expectAliasesRouteTo({"ViT-Classifier", "vit_classifier", " VIT CLASSIFIER "}, TaskType::Classification);
     expectAliasesRouteTo({"Depth-Anything-V2", "depth_anything_v2", " DEPTH ANYTHING V2 "}, TaskType::DepthEstimation);
+    expectAliasesRouteTo({"Depth-Anything-3", "da3_small", " DA3 MONO LARGE "}, TaskType::DepthEstimation);
     expectAliasesRouteTo({"YOLO26N-Depth", "yolo26n_depth", " YOLO26N DEPTH "}, TaskType::DepthEstimation);
     expectAliasesRouteTo({"LGM-Mini", "lgm_mini", " LGM MINI "}, TaskType::GaussianSplatting);
     expectAliasesRouteTo({"Image-Understanding", "image_understanding", " IMAGE UNDERSTANDING "},
