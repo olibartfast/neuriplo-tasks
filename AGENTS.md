@@ -245,6 +245,7 @@ in `taskDescriptors()` are checked in order (first match wins):
 6. `"owlv2"`, `"owlvit"`, `"groundingdino"` → `OpenVocabDetectionTask`
 7. `"torchvisionclassifier"`, `"vitclassifier"`, `"tensorflowclassifier"`, `resnet*`, `*tensorflow*` → `ClassificationTask`
 8. `*depthanythingv2*` → `DepthEstimationTask` (with `DepthAnythingV2Postprocessor`)
+8b. `*depthanything3*`, `da3*` → `DepthEstimationTask` (relative-depth DA3; metric/nested rejected; reuses `DepthAnythingV2Postprocessor`)
 9. `"lgm"`, `"grm"`, `"gaussiansplatting"`, `"lgmmini"`, `*splat*` → `GaussianSplattingTask`
 10. `"videomae"`, `"vivit"`, `"timesformer"`, `pevideo*`, `vjepa*`, `videoprism*` → `VideoClassificationTask`
 11. `"raft"` → `OpticalFlowTask`

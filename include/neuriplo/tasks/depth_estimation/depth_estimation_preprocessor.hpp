@@ -14,6 +14,11 @@ class DepthAnythingV2Preprocessor : public Preprocessor {
     explicit DepthAnythingV2Preprocessor(const Size& input_size = Size(518, 518));
 };
 
+class DepthAnything3Preprocessor : public Preprocessor {
+  public:
+    explicit DepthAnything3Preprocessor(const Size& input_size = Size(504, 504));
+};
+
 class YoloDepthPreprocessor : public Preprocessor {
   public:
     explicit YoloDepthPreprocessor(const Size& input_size = Size(768, 768));
